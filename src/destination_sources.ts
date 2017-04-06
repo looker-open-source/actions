@@ -19,3 +19,18 @@ export function allDestinations() : Promise<Destination[]>  {
   });
 }
 
+export function findDestination(id : string) : Promise<Destination> {
+  return new Promise((resolve, reject) => {
+    allDestinations().then((destinations) => {
+      let dest = destinations.filter((d) => {
+        return d.id == id;
+      })[0];
+      if (dest) {
+        resolve(dest);
+      } else {
+        reject();
+      }
+    });
+  });
+}
+

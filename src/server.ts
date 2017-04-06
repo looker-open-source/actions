@@ -1,5 +1,6 @@
 import * as express from "express";
-import { allDestinations } from "./destination_sources";
+import { allDestinations, findDestination } from "./destination_sources";
+import { DataActionRequest } from './data_action_request';
 
 export class Server {
 
@@ -20,11 +21,16 @@ export class Server {
     });
 
     this.app.get("/destinations/:destinationId", (req, res) => {
-      allDestinations().then((destinations) => {
-        let dest = destinations.filter((d) => {
-          return d.id == req.params.destinationId;
-        })[0];
-        res.send(JSON.stringify(dest));
+      findDestination(req.params.destinationId).then((destination) => {
+        res.send(JSON.stringify(destination));
+      });
+    });
+
+    this.app.get("/destinations/:destinationId/action", (req, res) => {
+      findDestination(req.params.destinationId).then((destination) => {
+        return destination.action(new DataActionRequest());
+      }).then((dataActionResponse) => {
+        res.send(dataActionResponse.asJson());
       });
     });
 

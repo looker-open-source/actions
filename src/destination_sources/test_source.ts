@@ -1,5 +1,6 @@
 import { Destination } from "../destination";
 import { DestinationSource } from "../destination_source";
+import { DataActionResponse } from "../data_action_response";
 
 export class TestDestinationSource {
 
@@ -9,6 +10,9 @@ export class TestDestinationSource {
       let dest = new Destination();
       dest.id = "hotdest";
       dest.label = "Cool Zone Dotcom";
+      dest.action = function(request) {
+        return Promise.resolve(new DataActionResponse());
+      }
 
       resolve([dest]);
     });
