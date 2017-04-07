@@ -19,46 +19,44 @@ export class Server {
 
     this.app = express();
 
-    this.app.get("/destinations", (req, res) => {
-      allDestinations().then((destinations) => {
-        res.send(JSON.stringify(destinations.map((d) => {return d.asJson()})));
-      });
+    this.app.get("/destinations", async (req, res) => {
+      let destinations = await allDestinations();
+      res.json(destinations.map((d) => { return d.asJson() }));
     });
 
-    this.app.get("/destinations/:destinationId", (req, res) => {
-      findDestination(req.params.destinationId).then((destination) => {
-        res.send(JSON.stringify(destination.asJson()));
-      });
+    this.app.get("/destinations/:destinationId", async (req, res) => {
+      let destination = await findDestination(req.params.destinationId)
+      res.json(destination.asJson());
     });
 
-    this.app.get("/destinations/:destinationId/action", (req, res) => {
-      findDestination(req.params.destinationId).then((destination) => {
+    this.app.get("/destinations/:destinationId/action", async (req, res) => {
+      try {
+        let destination = await findDestination(req.params.destinationId)
         if (destination.action) {
-           return destination.action(new DataActionRequest());
+           let actionResponse = await destination.action(new DataActionRequest());
+           res.json(actionResponse.asJson());
         } else {
-          return Promise.reject("No action defined for destination.");
+          throw "No action defined for destination.";
         }
-      }).then((dataActionResponse) => {
-        res.send(dataActionResponse.asJson());
-      }, (err) => {
+      } catch (e) {
         res.status(404);
-        res.send(JSON.stringify({success: false, error: err}))
-      });
+        res.json({success: false, error: e});
+      }
     });
 
-    this.app.get("/destinations/:destinationId/form", (req, res) => {
-      findDestination(req.params.destinationId).then((destination) => {
+    this.app.get("/destinations/:destinationId/form", async (req, res) => {
+      try {
+        let destination = await findDestination(req.params.destinationId)
         if (destination.form) {
-           return destination.form(new DataActionForm());
+           let form = await destination.form(new DataActionRequest());
+           res.json(form.asJson());
         } else {
-          return Promise.reject("No form defined for destination.");
+          throw "No form defined for destination.";
         }
-      }).then((form) => {
-        res.send(form.asJson());
-      }, (err) => {
+      } catch (e) {
         res.status(404);
-        res.send(JSON.stringify({success: false, error: err}))
-      });
+        res.json({success: false, error: e});
+      }
     });
 
   }

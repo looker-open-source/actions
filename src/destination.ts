@@ -1,5 +1,3 @@
-import  { Promise } from 'es6-promise';
-
 import { Server } from "./server";
 
 import  { DataActionRequest } from './data_action_request';

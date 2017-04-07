@@ -10,27 +10,18 @@ export function allSources() : DestinationSource[] {
   ];
 }
 
-export function allDestinations() : Promise<Destination[]>  {
-  return new Promise<Destination[]>((resolve, reject) => {
-    let srcPromises = allSources().map((src) => { return src.sourcedDestinations() });
-    var prom = Promise.all(srcPromises).then((all) => {
-      resolve(all.reduce((a, b) => { return a.concat(b); }, []));
-    });
-  });
+export async function allDestinations() {
+  let srcPromises = allSources().map((src) => { return src.sourcedDestinations() });
+  var all = await Promise.all(srcPromises);
+  return all.reduce((a, b) => {
+    return a.concat(b);
+   }, []);
 }
 
-export function findDestination(id : string) : Promise<Destination> {
-  return new Promise((resolve, reject) => {
-    allDestinations().then((destinations) => {
-      let dest = destinations.filter((d) => {
-        return d.id == id;
-      })[0];
-      if (dest) {
-        resolve(dest);
-      } else {
-        reject(`No destination with id "${id}".`);
-      }
-    });
-  });
+export async function findDestination(id : string) {
+  let destinations = await allDestinations();
+  let dest = destinations.filter((d) => {
+    return d.id == id;
+  })[0];
+  return dest;
 }
-
