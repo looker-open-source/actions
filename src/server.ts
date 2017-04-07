@@ -20,8 +20,14 @@ export class Server {
       try {
         await fn(req, res);
       } catch (e) {
-        res.status(404);
-        res.json({success: false, error: e});
+        if (typeof(e) === "string") {
+          res.status(404);
+          res.json({success: false, error: e});
+        } else {
+          res.status(500);
+          res.json({success: false, error: "Internal server error."});
+          console.error(e);
+        }
       }
     })
   }
@@ -43,7 +49,7 @@ export class Server {
     this.route("/destinations/:destinationId/action", async (req, res) => {
       let destination = await findDestination(req.params.destinationId)
       if (destination.action) {
-         let actionResponse = await destination.action(new DataActionRequest());
+         let actionResponse = await destination.action(DataActionRequest.fromJSON(req.body));
          res.json(actionResponse.asJson());
       } else {
         throw "No action defined for destination.";
@@ -53,7 +59,7 @@ export class Server {
     this.route("/destinations/:destinationId/form", async (req, res) => {
       let destination = await findDestination(req.params.destinationId)
       if (destination.form) {
-         let form = await destination.form(new DataActionRequest());
+         let form = await destination.form(DataActionRequest.fromJSON(req.body));
          res.json(form.asJson());
       } else {
         throw "No form defined for destination.";

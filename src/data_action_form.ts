@@ -3,12 +3,17 @@ export class DataActionForm {
 
   asJson() : any {
     return {
+      fields: this.fields
     };
   }
 
 }
 
-export class DataActionFormField {
-  public name : string;
-  public label : string;
+export interface DataActionFormField {
+  name : string;
+  label ?: string;
+  description ?: string;
+  type ?: "string" | "textarea" | "select";
+  options ?: { name: string, label: string }[];
+  required ?: boolean,
 }

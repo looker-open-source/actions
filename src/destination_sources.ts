@@ -3,10 +3,12 @@ import  { Destination } from './destination';
 
 // Sources
 import { TestDestinationSource } from "./destination_sources/test_source";
+import { DropboxSource } from "./destination_sources/dropbox";
 
 export function allSources() : DestinationSource[] {
   return [
-    new TestDestinationSource()
+    new TestDestinationSource(),
+    new DropboxSource(),
   ];
 }
 

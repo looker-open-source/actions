@@ -14,7 +14,10 @@
   "dependencies": {
     "@types/express": "^4.0.35",
     "@types/node": "^7.0.12",
+    "@types/sanitize-filename": "^1.1.28",
+    "dropbox": "dropbox/dropbox-sdk-js#02e4561745997ba7d10f4cef620ee5d6e58caf6f",
     "nodemon": "^1.11.0",
+    "sanitize-filename": "^1.6.1",
     "ts-node": "^3.0.2",
     "typescript": "^2.2.2"
   },
