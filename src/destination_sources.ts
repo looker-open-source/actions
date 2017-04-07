@@ -23,5 +23,8 @@ export async function findDestination(id : string) {
   let dest = destinations.filter((d) => {
     return d.id == id;
   })[0];
+  if (!dest) {
+    throw "No destination found.";
+  }
   return dest;
 }
