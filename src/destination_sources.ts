@@ -28,7 +28,7 @@ export function findDestination(id : string) : Promise<Destination> {
       if (dest) {
         resolve(dest);
       } else {
-        reject();
+        reject(`No destination with id "${id}".`);
       }
     });
   });
