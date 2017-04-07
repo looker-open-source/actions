@@ -20,5 +20,8 @@
     "ts-node": "^3.0.2",
     "typescript": "^2.2.2"
   },
-  "typings": "lib/index"
+  "typings": "lib/index",
+  "engines": {
+    "node": "6.10.2"
+  }
 }
