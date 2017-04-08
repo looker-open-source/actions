@@ -1,17 +1,13 @@
-import { Destination } from "../destination";
-import { DestinationSource } from "../destination_source";
-import { DataActionResponse } from "../data_action_response";
-import { DataActionRequest} from "../data_action_request";
-import { DataActionForm, DataActionFormField } from "../data_action_form";
+import * as D from "../framework";
 
 import Dropbox = require("dropbox");
 import * as sanitizeFilename from "sanitize-filename";
 
-export class DropboxSource extends DestinationSource {
+export class DropboxSource extends D.DestinationSource {
 
   async sourcedDestinations() {
 
-    let dest = new Destination();
+    let dest = new D.Destination();
     dest.id = "dropbox";
     dest.label = "Dropbox";
 
@@ -41,7 +37,7 @@ export class DropboxSource extends DestinationSource {
         throw "No attachment provided.";
       }
 
-      return new DataActionResponse();
+      return new D.DataActionResponse();
     }
 
     dest.form = async function(request) {
@@ -53,7 +49,7 @@ export class DropboxSource extends DestinationSource {
         return file[".tag"] == "folder";
       });
 
-      let form = new DataActionForm();
+      let form = new D.DataActionForm();
       form.fields = [{
         type: "select",
         label: "Folder",
@@ -74,7 +70,7 @@ export class DropboxSource extends DestinationSource {
 
 }
 
-function dropboxClientFromRequest(request : DataActionRequest) {
+function dropboxClientFromRequest(request : D.DataActionRequest) {
   if (!request.params) {
     throw "No params provided.";
   }

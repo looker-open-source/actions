@@ -1,4 +1,4 @@
-import { Server } from "./server";
+import { Server } from "../server";
 
 import  { DataActionRequest } from './data_action_request';
 import  { DataActionResponse } from './data_action_response';

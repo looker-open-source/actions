@@ -1,7 +1,6 @@
 import * as express from "express";
-import { allDestinations, findDestination } from "./destination_sources";
-import { DataActionRequest } from './data_action_request';
-import { DataActionForm } from './data_action_form';
+import * as D from "./framework";
+import * as Sources from "./sources";
 
 export class Server {
 
@@ -37,19 +36,19 @@ export class Server {
     this.app = express();
 
     this.route("/destinations", async (req, res) => {
-      let destinations = await allDestinations();
+      let destinations = await Sources.allDestinations();
       res.json(destinations.map((d) => { return d.asJson() }));
     });
 
     this.route("/destinations/:destinationId", async (req, res) => {
-      let destination = await findDestination(req.params.destinationId)
+      let destination = await Sources.findDestination(req.params.destinationId)
       res.json(destination.asJson());
     });
 
     this.route("/destinations/:destinationId/action", async (req, res) => {
-      let destination = await findDestination(req.params.destinationId)
+      let destination = await Sources.findDestination(req.params.destinationId)
       if (destination.action) {
-         let actionResponse = await destination.action(DataActionRequest.fromJSON(req.body));
+         let actionResponse = await destination.action(D.DataActionRequest.fromJSON(req.body));
          res.json(actionResponse.asJson());
       } else {
         throw "No action defined for destination.";
@@ -57,9 +56,9 @@ export class Server {
     });
 
     this.route("/destinations/:destinationId/form", async (req, res) => {
-      let destination = await findDestination(req.params.destinationId)
+      let destination = await Sources.findDestination(req.params.destinationId)
       if (destination.form) {
-         let form = await destination.form(DataActionRequest.fromJSON(req.body));
+         let form = await destination.form(D.DataActionRequest.fromJSON(req.body));
          res.json(form.asJson());
       } else {
         throw "No form defined for destination.";

@@ -1,11 +1,10 @@
-import  { DestinationSource } from './destination_source';
-import  { Destination } from './destination';
+import * as D from "./framework";
 
 // Sources
-import { TestDestinationSource } from "./destination_sources/test_source";
-import { DropboxSource } from "./destination_sources/dropbox";
+import { TestDestinationSource } from "./sources/test_source";
+import { DropboxSource } from "./sources/dropbox";
 
-export function allSources() : DestinationSource[] {
+export function allSources() : D.DestinationSource[] {
   return [
     new TestDestinationSource(),
     new DropboxSource(),
