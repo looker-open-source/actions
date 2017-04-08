@@ -1,6 +1,7 @@
 import { Destination } from "../destination";
 import { DestinationSource } from "../destination_source";
 import { DataActionResponse } from "../data_action_response";
+import { DataActionRequest} from "../data_action_request";
 import { DataActionForm, DataActionFormField } from "../data_action_form";
 
 import Dropbox = require("dropbox");
@@ -9,12 +10,18 @@ import * as sanitizeFilename from "sanitize-filename";
 export class DropboxSource extends DestinationSource {
 
   async sourcedDestinations() {
+
     let dest = new Destination();
     dest.id = "dropbox";
     dest.label = "Dropbox";
+
     dest.action = async function(request) {
 
-      let dropboxClient = new Dropbox({accessToken: process.env.TEMP_DROPBOX_TEST});
+      let dropboxClient = dropboxClientFromRequest(request);
+
+      if (request.type != "query") {
+        throw "Only query actions are supported.";
+      }
 
       if (request.attachment && request.attachment.fileExtension) {
 
@@ -36,9 +43,11 @@ export class DropboxSource extends DestinationSource {
 
       return new DataActionResponse();
     }
+
     dest.form = async function(request) {
 
-      let dropboxClient = new Dropbox({accessToken: process.env.TEMP_DROPBOX_TEST});
+      let dropboxClient = dropboxClientFromRequest(request);
+
       var files = await dropboxClient.filesListFolder({path: ""});
       var folders = files.entries.filter((file: any) => {
         return file[".tag"] == "folder";
@@ -59,7 +68,24 @@ export class DropboxSource extends DestinationSource {
 
       return form;
     }
+
     return [dest];
   }
 
+}
+
+function dropboxClientFromRequest(request : DataActionRequest) {
+  if (!request.params) {
+    throw "No params provided.";
+  }
+
+  let accessToken = request.params["dropbox_access_token"];
+
+  if (!accessToken) {
+    throw "No dropbox_access_token provided.";
+  }
+
+  return new Dropbox({
+    accessToken: accessToken,
+  });
 }

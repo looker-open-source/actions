@@ -2,9 +2,7 @@ export class DataActionForm {
   public fields : DataActionFormField[];
 
   asJson() : any {
-    return {
-      fields: this.fields
-    };
+    return this.fields;
   }
 
 }
