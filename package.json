@@ -4,7 +4,7 @@
   "description": "",
   "main": "lib/index",
   "scripts": {
-    "start": "npm run build:live",
+    "start": "yarn run build:live",
     "build:live": "nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,6 +16,7 @@
     "@types/node": "^7.0.12",
     "@types/sanitize-filename": "^1.1.28",
     "dropbox": "dropbox/dropbox-sdk-js#02e4561745997ba7d10f4cef620ee5d6e58caf6f",
+    "express": "^4.15.2",
     "nodemon": "^1.11.0",
     "sanitize-filename": "^1.6.1",
     "ts-node": "^3.0.2",
