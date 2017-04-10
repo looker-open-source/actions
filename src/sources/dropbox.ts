@@ -10,6 +10,9 @@ export class DropboxSource extends D.DestinationSource {
     let dest = new D.Destination();
     dest.name = "dropbox";
     dest.label = "Dropbox";
+    dest.params = [
+      {name: "dropbox_access_token", label: "Dropbox Access Token", required: true}
+    ];
 
     dest.action = async function(request) {
 
