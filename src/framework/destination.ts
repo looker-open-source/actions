@@ -17,7 +17,7 @@ export class Destination {
       name: this.name,
       label: this.label,
       url: this.action ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/action`) : null,
-      form: this.form ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/form`) : null,
+      form_url: this.form ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/form`) : null,
     };
   }
 
