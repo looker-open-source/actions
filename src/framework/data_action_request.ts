@@ -22,7 +22,7 @@ export class DataActionRequest {
   public static fromJSON(json : any) {
 
     if (!json) {
-      throw "Request body must valid JSON.";
+      throw "Request body must be valid JSON.";
     }
 
     let request = new DataActionRequest();
@@ -31,8 +31,8 @@ export class DataActionRequest {
 
     if (json && json.attachment) {
       request.attachment = {};
-      request.attachment.mime = json.mimetype;
-      request.attachment.fileExtension = json.extension;
+      request.attachment.mime = json.attachment.mimetype;
+      request.attachment.fileExtension = json.attachment.extension;
       if (request.attachment.mime && json.attachment.data) {
         request.attachment.data64 = json.attachment.data;
         if (request.attachment.data64) {
@@ -46,8 +46,9 @@ export class DataActionRequest {
       request.title = json.scheduled_plan.title;
     }
 
-    if (json && json.data) {
-      request.params = json.data;
+    // TODO: solidify api between cell and query level actions
+    if (json && json.params) {
+      request.params = json.params;
     }
 
     if (json && json.form_params) {

@@ -1,4 +1,6 @@
 import * as express from "express";
+import * as bodyParser from "body-parser";
+
 import * as D from "./framework";
 import * as Sources from "./sources";
 
@@ -15,13 +17,17 @@ export class Server {
   }
 
   route(path : string, fn : (req: express.Request, res: express.Response) => void) : void {
-    this.app.get(path, async (req, res) => {
+    this.app.post(path, async (req, res) => {
+      console.info(`Starting request for ${req.url}`);
       try {
         await fn(req, res);
+        console.info(`Completed request for ${req.url}`);
       } catch (e) {
+        console.error(`Error on request for ${req.url}:`);
         if (typeof(e) === "string") {
           res.status(404);
           res.json({success: false, error: e});
+          console.error(e);
         } else {
           res.status(500);
           res.json({success: false, error: "Internal server error."});
@@ -34,6 +40,7 @@ export class Server {
   constructor() {
 
     this.app = express();
+    this.app.use(bodyParser.json({limit: "250mb"}));
 
     this.route("/destinations", async (req, res) => {
       let destinations = await Sources.allDestinations();
