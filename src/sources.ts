@@ -1,12 +1,10 @@
 import * as D from "./framework";
 
 // Sources
-import { TestDestinationSource } from "./sources/test_source";
 import { DropboxSource } from "./sources/dropbox";
 
 export function allSources() : D.DestinationSource[] {
   return [
-    new TestDestinationSource(),
     new DropboxSource(),
   ];
 }
@@ -22,7 +20,7 @@ export async function allDestinations() {
 export async function findDestination(id : string) {
   let destinations = await allDestinations();
   let dest = destinations.filter((d) => {
-    return d.id == id;
+    return d.name == id;
   })[0];
   if (!dest) {
     throw "No destination found.";

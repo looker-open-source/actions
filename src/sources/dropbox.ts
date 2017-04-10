@@ -8,7 +8,7 @@ export class DropboxSource extends D.DestinationSource {
   async sourcedDestinations() {
 
     let dest = new D.Destination();
-    dest.id = "dropbox";
+    dest.name = "dropbox";
     dest.label = "Dropbox";
 
     dest.action = async function(request) {

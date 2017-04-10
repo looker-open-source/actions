@@ -44,7 +44,10 @@ export class Server {
 
     this.route("/destinations", async (req, res) => {
       let destinations = await Sources.allDestinations();
-      res.json(destinations.map((d) => { return d.asJson() }));
+      let response = {
+        destinations: destinations.map((d) => { return d.asJson() })
+      };
+      res.json(response);
     });
 
     this.route("/destinations/:destinationId", async (req, res) => {
