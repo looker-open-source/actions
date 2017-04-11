@@ -8,12 +8,14 @@ export interface DestinationParameter {
   name : string;
   label : string;
   required : boolean;
+  description ?: string;
 }
 
 export class Destination {
 
   public name : string;
   public label : string;
+  public description : string;
 
   public params : DestinationParameter[] = [];
 
@@ -24,6 +26,7 @@ export class Destination {
     return {
       name: this.name,
       label: this.label,
+      description: this.description,
       url: this.action ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/action`) : null,
       form_url: this.form ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/form`) : null,
       params: this.params,
