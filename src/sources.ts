@@ -2,10 +2,12 @@ import * as D from "./framework";
 
 // Sources
 import { DropboxSource } from "./sources/dropbox";
+import { SegmentSource } from "./sources/segment";
 
 export function allSources() : D.DestinationSource[] {
   return [
     new DropboxSource(),
+    new SegmentSource(),
   ];
 }
 

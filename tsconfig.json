@@ -2,12 +2,10 @@
     "compilerOptions": {
       "declaration": true,
       "noEmitOnError": true,
-      "noImplicitAny": true,
-      "noImplicitReturns": true,
       "outDir": "lib",
       "sourceMap": false,
-      "strictNullChecks": true,
-      "typeRoots": ["node_modules/@types"],
-      "target": "ES2015"
+      "strict": true,
+      "target": "ES2015",
+      "typeRoots": ["node_modules/@types"]
     }
 }

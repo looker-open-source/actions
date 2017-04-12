@@ -8,8 +8,8 @@ export type DataActionFormat = "txt" | "html" | "csv" | "json" | "xlsx" | "wysiw
 export class DataActionRequest {
 
   public type : DataActionType;
-  public params ?: ParamMap;
-  public formParams ?: ParamMap;
+  public params : ParamMap = {};
+  public formParams : ParamMap = {};
 
   public attachment ?: {
     data64 ?: string,
