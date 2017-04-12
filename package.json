@@ -19,6 +19,7 @@
     "body-parser": "^1.17.1",
     "dropbox": "dropbox/dropbox-sdk-js#02e4561745997ba7d10f4cef620ee5d6e58caf6f",
     "express": "^4.15.2",
+    "mailchimp": "^1.2.0",
     "nodemon": "^1.11.0",
     "sanitize-filename": "^1.6.1",
     "ts-node": "^3.0.2",

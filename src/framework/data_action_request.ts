@@ -2,9 +2,12 @@ export interface ParamMap {
   [name: string]: string;
 }
 
+export type DataActionType = "cell" | "query" | "dashboard";
+export type DataActionFormat = "txt" | "html" | "csv" | "json" | "xlsx" | "wysiwyg_pdf" | "assembled_pdf" | "wysiwyg_png";
+
 export class DataActionRequest {
 
-  public type : "cell" | "query";
+  public type : DataActionType;
   public params ?: ParamMap;
   public formParams ?: ParamMap;
 

@@ -59,7 +59,7 @@ export class Server {
     this.route("/destinations/:destinationId/action", async (req, res) => {
       let destination = await Sources.findDestination(req.params.destinationId)
       if (destination.action) {
-         let actionResponse = await destination.action(D.DataActionRequest.fromJSON(req.body));
+         let actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body));
          res.json(actionResponse.asJson());
       } else {
         throw "No action defined for destination.";
