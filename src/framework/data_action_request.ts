@@ -49,9 +49,8 @@ export class DataActionRequest {
       request.title = json.scheduled_plan.title;
     }
 
-    // TODO: solidify api between cell and query level actions
-    if (json && json.params) {
-      request.params = json.params;
+    if (json && json.data) {
+      request.params = json.data;
     }
 
     if (json && json.form_params) {

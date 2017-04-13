@@ -11,14 +11,19 @@ export interface DestinationParameter {
   description ?: string;
 }
 
+export interface RequiredField {
+  tag : string;
+}
+
 export class Destination {
 
   public name : string;
   public label : string;
   public description : string;
 
-  public supportedActionTypes : DataActionType[];
-  public supportedFormats : DataActionFormat[];
+  public supportedActionTypes ?: DataActionType[];
+  public supportedFormats ?: DataActionFormat[];
+  public requiredFields : RequiredField[] = [];
 
   public params : DestinationParameter[] = [];
 
@@ -35,12 +40,13 @@ export class Destination {
       params: this.params,
       supported_action_types: this.supportedActionTypes,
       supported_formats: this.supportedFormats,
+      required_fields: this.requiredFields,
     };
   }
 
   async validateAndPerformAction(request : DataActionRequest) {
 
-    if (this.supportedActionTypes.indexOf(request.type) == -1) {
+    if (this.supportedActionTypes && this.supportedActionTypes.indexOf(request.type) == -1) {
        throw `This action does not support requests of type "${request.type}".`;
     }
 

@@ -1,11 +1,9 @@
 {
     "compilerOptions": {
-      "declaration": true,
       "noEmitOnError": true,
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,
-      "target": "ES2015",
-      "typeRoots": ["node_modules/@types"]
+      "target": "ES2015"
     }
 }

@@ -20,6 +20,7 @@ export class SegmentSource extends D.DestinationSource {
     ];
     dest.supportedActionTypes = ["query"];
     dest.supportedFormats = ["json"];
+    dest.requiredFields = [{tag: "segment_user_id"}];
 
     dest.action = async function(request) {
       let segment = segmentClientFromRequest(request);

@@ -3,11 +3,13 @@ import * as D from "./framework";
 // Sources
 import { DropboxSource } from "./sources/dropbox";
 import { SegmentSource } from "./sources/segment";
+import { GitHubSource } from "./sources/github";
 
 export function allSources() : D.DestinationSource[] {
   return [
     new DropboxSource(),
     new SegmentSource(),
+    new GitHubSource(),
   ];
 }
 
