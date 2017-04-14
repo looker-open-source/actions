@@ -42,7 +42,7 @@ export class Server {
     this.app = express();
     this.app.use(bodyParser.json({limit: "250mb"}));
 
-    this.route("/destinations", async (req, res) => {
+    this.route("/", async (req, res) => {
       let destinations = await Sources.allDestinations();
       let response = {
         label: process.env.DESTINATION_PROVIDER_LABEL,
