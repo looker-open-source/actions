@@ -8,7 +8,7 @@ export class SegmentSource extends D.DestinationSource {
 
     let dest = new D.Destination();
     dest.name = "segment_event";
-    dest.label = "Create Segment Events";
+    dest.label = "Segment (Create Events)";
     dest.description = "Send data to Segment as events.";
     dest.params = [
       {
