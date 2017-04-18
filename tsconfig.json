@@ -4,6 +4,7 @@
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,
+      "noImplicitAny": false,
       "target": "ES2015"
     }
 }

@@ -22,6 +22,8 @@
     "dropbox": "dropbox/dropbox-sdk-js#02e4561745997ba7d10f4cef620ee5d6e58caf6f",
     "express": "^4.15.2",
     "github": "^9.2.0",
+    "google-auth-library": "^0.10.0",
+    "googleapis": "^19.0.0",
     "mailchimp": "^1.2.0",
     "nodemon": "^1.11.0",
     "sanitize-filename": "^1.6.1",

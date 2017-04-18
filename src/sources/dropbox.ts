@@ -1,7 +1,6 @@
 import * as D from "../framework";
 
 import Dropbox = require("dropbox");
-import * as sanitizeFilename from "sanitize-filename";
 
 export class DropboxSource extends D.DestinationSource {
 
@@ -30,14 +29,8 @@ export class DropboxSource extends D.DestinationSource {
 
       if (request.attachment && request.attachment.fileExtension) {
 
-        var fileTitle : string;
-        if (request.title) {
-          fileTitle = sanitizeFilename(request.title) + "." + request.attachment.fileExtension;
-        } else {
-          fileTitle = sanitizeFilename(`looker_file_${Date.now()}` + "." + request.attachment.fileExtension);
-        }
-
-        var uploadResponse = await dropboxClient.filesUpload({
+        let fileTitle = request.suggestedFilename();
+        let uploadResponse = await dropboxClient.filesUpload({
           path: `/${fileTitle}`,
           contents: request.attachment.dataBuffer,
         });

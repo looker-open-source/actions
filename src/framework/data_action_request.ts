@@ -1,3 +1,5 @@
+import * as sanitizeFilename from "sanitize-filename";
+
 export interface ParamMap {
   [name: string]: string;
 }
@@ -5,19 +7,21 @@ export interface ParamMap {
 export type DataActionType = "cell" | "query" | "dashboard";
 export type DataActionFormat = "txt" | "html" | "csv" | "json" | "xlsx" | "wysiwyg_pdf" | "assembled_pdf" | "wysiwyg_png";
 
+export type DataActionAttachment = {
+  data64 ?: string,
+  dataBuffer ?: Buffer,
+  dataJSON ?: any,
+  mime ?: string,
+  fileExtension ?: string,
+};
+
 export class DataActionRequest {
 
   public type : DataActionType;
   public params : ParamMap = {};
   public formParams : ParamMap = {};
 
-  public attachment ?: {
-    data64 ?: string,
-    dataBuffer ?: Buffer,
-    dataJSON ?: any,
-    mime ?: string,
-    fileExtension ?: string,
-  };
+  public attachment ?: DataActionAttachment;
 
   public lookerUrl ?: string;
   public title ?: string;
@@ -58,6 +62,16 @@ export class DataActionRequest {
     }
 
     return request;
+  }
+
+  public suggestedFilename() : string | undefined {
+    if (this.attachment) {
+      if (this.title) {
+        return sanitizeFilename(`${this.title}.${this.attachment.fileExtension}`);
+      } else {
+        return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`);
+      }
+    }
   }
 
 }
