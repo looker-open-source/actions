@@ -23,9 +23,33 @@ export class SegmentSource extends D.DestinationSource {
     dest.requiredFields = [{tag: "segment_user_id"}];
 
     dest.action = async function(request) {
-      let segment = segmentClientFromRequest(request);
+      return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      return new D.DataActionResponse();
+        let segment = segmentClientFromRequest(request);
+
+        if (!(request.attachment && request.attachment.dataJSON)) {
+          reject("No attached json");
+          return;
+        }
+
+        for (let row of request.attachment.dataJSON) {
+          let keys = Object.keys(row);
+          segment.identify({
+            userId: row[keys[0]],
+            traits: row
+          });
+        }
+
+        // TODO: does this batching have global state that could be a security problem
+        segment.flush((err, batch) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(new D.DataActionResponse());
+          }
+        });
+
+      });
     }
 
     return [dest];
