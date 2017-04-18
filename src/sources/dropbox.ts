@@ -10,6 +10,7 @@ export class DropboxSource extends D.DestinationSource {
     dest.name = "dropbox";
     dest.label = "Dropbox";
     dest.description = "Send download results directly to your Dropbox.";
+    dest.supportedActionTypes = ["query"];
     dest.params = [
       {
         name: "dropbox_access_token",
