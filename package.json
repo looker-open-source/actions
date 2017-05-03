@@ -28,7 +28,7 @@
     "nodemon": "^1.11.0",
     "sanitize-filename": "^1.6.1",
     "ts-node": "^3.0.2",
-    "typescript": "rc"
+    "typescript": "^2.3.2"
   },
   "typings": "lib/index",
   "engines": {
