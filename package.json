@@ -32,6 +32,6 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "6.10.2"
+    "node": "6.10.3"
   }
 }
