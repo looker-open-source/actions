@@ -1,11 +1,14 @@
+import * as dotenv from 'dotenv'
 import { Server } from "./server";
 
+dotenv.config();
+
 if (!process.env.BASE_URL) {
-  throw new Error("No BASE_URL env var set.")
+  throw new Error("No BASE_URL environment variable set.")
 }
 
-var app = Server.bootstrap().app;
-var port = process.env.PORT || 8080;
+let app = Server.bootstrap().app;
+let port = process.env.PORT || 8080;
 app.listen(port, function() {
-  console.log(`Destination server listening on port ${port}!`)
+  console.log(`Integration Server listening on port ${port}!`)
 });
