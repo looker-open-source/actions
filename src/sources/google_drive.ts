@@ -1,6 +1,7 @@
-import * as D from "../framework";
 import * as googleAuth from "google-auth-library";
 import * as google from "googleapis";
+
+import * as D from "../framework";
 
 export class GoogleDriveSource extends D.DestinationSource {
 
