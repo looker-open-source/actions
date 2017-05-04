@@ -6,7 +6,8 @@
   "scripts": {
     "start": "./node_modules/.bin/ts-node ./src/index.ts",
     "dev": "nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'"
   },
   "keywords": [],
   "author": "",
@@ -35,5 +36,8 @@
   "typings": "lib/index",
   "engines": {
     "node": "6.10.3"
+  },
+  "devDependencies": {
+    "ts-lint": "^4.5.1"
   }
 }

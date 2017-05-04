@@ -8,7 +8,7 @@ export class Server {
 
   public app: express.Application;
 
-  public static bootstrap(): Server {
+  public static bootstrap() {
     return new Server();
   }
 
