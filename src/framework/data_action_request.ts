@@ -43,7 +43,7 @@ export class DataActionRequest {
       if (request.attachment.mime && json.attachment.data) {
         request.attachment.data64 = json.attachment.data;
         if (request.attachment.data64) {
-          request.attachment.dataBuffer = new Buffer(request.attachment.data64, 'base64');
+          request.attachment.dataBuffer = new Buffer(request.attachment.data64, "base64");
         }
         if (request.attachment.mime == "application/json") {
           request.attachment.dataJSON = JSON.parse(json.attachment.data);

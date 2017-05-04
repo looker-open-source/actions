@@ -13,6 +13,6 @@ export interface DataActionFormField {
   description ?: string;
   default ?: string;
   type ?: "string" | "textarea" | "select";
-  options ?: { name: string, label: string }[];
-  required ?: boolean,
+  options ?: Array<{ name: string, label: string }>;
+  required ?: boolean;
 }

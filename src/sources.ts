@@ -2,9 +2,9 @@ import * as D from "./framework";
 
 // Sources
 import { DropboxSource } from "./sources/dropbox";
+import { GitHubSource } from "./sources/github";
 import { GoogleDriveSource } from "./sources/google_drive";
 import { SegmentSource } from "./sources/segment";
-import { GitHubSource } from "./sources/github";
 
 export function allSources() : D.DestinationSource[] {
   return [
@@ -16,8 +16,8 @@ export function allSources() : D.DestinationSource[] {
 }
 
 export async function allDestinations() {
-  let srcPromises = allSources().map((src) => { return src.sourcedDestinations() });
-  var all = await Promise.all(srcPromises);
+  let srcPromises = allSources().map((src) => { return src.sourcedDestinations(); });
+  let all = await Promise.all(srcPromises);
   return all.reduce((a, b) => {
     return a.concat(b);
    }, []);

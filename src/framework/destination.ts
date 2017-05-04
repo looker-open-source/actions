@@ -1,8 +1,8 @@
 import { Server } from "../server";
 
-import  { DataActionRequest, DataActionType, DataActionFormat } from './data_action_request';
-import  { DataActionResponse } from './data_action_response';
-import  { DataActionForm } from './data_action_form';
+import  { DataActionForm } from "./data_action_form";
+import  { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request";
+import  { DataActionResponse } from "./data_action_response";
 
 export interface DestinationParameter {
   name : string;

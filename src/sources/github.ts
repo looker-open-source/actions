@@ -15,8 +15,8 @@ export class GitHubSource extends D.DestinationSource {
         name: "github_api_key",
         label: "GitHub API Key",
         required: true,
-        description: "An API key for GitHub from https://github.com/settings/tokens."
-      }
+        description: "An API key for GitHub from https://github.com/settings/tokens.",
+      },
     ];
     dest.supportedActionTypes = ["cell"];
     dest.supportedFormats = ["json"];
@@ -42,7 +42,7 @@ export class GitHubSource extends D.DestinationSource {
         throw e.message;
       }
       return new D.DataActionResponse();
-    }
+    };
 
     dest.form = async function(request) {
       let github = githubClientFromRequest(request);
@@ -50,7 +50,7 @@ export class GitHubSource extends D.DestinationSource {
       let form = new D.DataActionForm();
       try {
 
-        let issue = await github.issues.get(githubIssueFromRequest(request))
+        let issue = await github.issues.get(githubIssueFromRequest(request));
 
         form.fields = [{
           type: "string",
@@ -58,12 +58,12 @@ export class GitHubSource extends D.DestinationSource {
           name: "title",
           required: true,
           default: issue.data.title,
-        },{
+        }, {
           type: "textarea",
           label: "Body",
           name: "body",
           default: issue.data.body,
-        },{
+        }, {
           type: "select",
           label: "State",
           name: "state",
@@ -77,7 +77,7 @@ export class GitHubSource extends D.DestinationSource {
       }
 
       return form;
-    }
+    };
 
     return [dest];
   }
@@ -87,8 +87,8 @@ export class GitHubSource extends D.DestinationSource {
 function githubIssueFromRequest(request : D.DataActionRequest) {
   let [x, xx, xxx, owner, repo, xxxx, number] = request.params["value"].split("/");
   return {
-    owner: owner,
-    repo: repo,
+    owner,
+    repo,
     number: parseInt(number, 10),
   };
 }

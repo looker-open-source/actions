@@ -1,5 +1,5 @@
-import * as express from "express";
 import * as bodyParser from "body-parser";
+import * as express from "express";
 
 import * as D from "./framework";
 import * as Sources from "./sources";
@@ -34,7 +34,7 @@ export class Server {
           console.error(e);
         }
       }
-    })
+    });
   }
 
   constructor() {
@@ -46,18 +46,18 @@ export class Server {
       let destinations = await Sources.allDestinations();
       let response = {
         label: process.env.DESTINATION_PROVIDER_LABEL,
-        destinations: destinations.map((d) => { return d.asJson() }),
+        destinations: destinations.map((d) => { return d.asJson(); }),
       };
       res.json(response);
     });
 
     this.route("/destinations/:destinationId", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.destinationId)
+      let destination = await Sources.findDestination(req.params.destinationId);
       res.json(destination.asJson());
     });
 
     this.route("/destinations/:destinationId/action", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.destinationId)
+      let destination = await Sources.findDestination(req.params.destinationId);
       if (destination.action) {
          let actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body));
          res.json(actionResponse.asJson());
@@ -67,7 +67,7 @@ export class Server {
     });
 
     this.route("/destinations/:destinationId/form", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.destinationId)
+      let destination = await Sources.findDestination(req.params.destinationId);
       if (destination.form) {
          let form = await destination.form(D.DataActionRequest.fromJSON(req.body));
          res.json(form.asJson());

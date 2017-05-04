@@ -16,8 +16,8 @@ export class DropboxSource extends D.DestinationSource {
         name: "dropbox_access_token",
         label: "Dropbox Access Token",
         required: true,
-        description: "An OAuth access token for the Dropbox API, created at https://www.dropbox.com/developers/apps."
-      }
+        description: "An OAuth access token for the Dropbox API, created at https://www.dropbox.com/developers/apps.",
+      },
     ];
 
     dest.action = async function(request) {
@@ -41,14 +41,14 @@ export class DropboxSource extends D.DestinationSource {
       }
 
       return new D.DataActionResponse();
-    }
+    };
 
     dest.form = async function(request) {
 
       let dropboxClient = dropboxClientFromRequest(request);
 
-      var files = await dropboxClient.filesListFolder({path: ""});
-      var folders = files.entries.filter((file: any) => {
+      let files = await dropboxClient.filesListFolder({path: ""});
+      let folders = files.entries.filter((file: any) => {
         return file[".tag"] == "folder";
       });
 
@@ -58,7 +58,7 @@ export class DropboxSource extends D.DestinationSource {
         label: "Folder",
         name: "path",
         required: true,
-        options: folders.map((f : any) => { return {name: f.path_lower, label: f.path_display}}),
+        options: folders.map((f : any) => { return {name: f.path_lower, label: f.path_display}; }),
       }, {
         label: "Filename",
         name: "filename",
@@ -66,7 +66,7 @@ export class DropboxSource extends D.DestinationSource {
       }];
 
       return form;
-    }
+    };
 
     return [dest];
   }
@@ -85,6 +85,6 @@ function dropboxClientFromRequest(request : D.DataActionRequest) {
   }
 
   return new Dropbox({
-    accessToken: accessToken,
+    accessToken,
   });
 }

@@ -15,8 +15,8 @@ export class SegmentSource extends D.DestinationSource {
         name: "segment_write_key",
         label: "Segment Write Key",
         required: true,
-        description: "A write key for Segment."
-      }
+        description: "A write key for Segment.",
+      },
     ];
     dest.supportedActionTypes = ["query"];
     dest.supportedFormats = ["json"];
@@ -36,7 +36,7 @@ export class SegmentSource extends D.DestinationSource {
           let keys = Object.keys(row);
           segment.identify({
             userId: row[keys[0]],
-            traits: row
+            traits: row,
           });
         }
 
@@ -50,7 +50,7 @@ export class SegmentSource extends D.DestinationSource {
         });
 
       });
-    }
+    };
 
     return [dest];
   }
