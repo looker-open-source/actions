@@ -1,7 +1,4 @@
 import * as D from "../framework";
-
-import * as sanitizeFilename from "sanitize-filename";
-
 import * as googleAuth from "google-auth-library";
 import * as google from "googleapis";
 

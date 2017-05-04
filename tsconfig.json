@@ -1,10 +1,11 @@
 {
     "compilerOptions": {
       "noEmitOnError": true,
+      "noImplicitAny": false,
+      "noUnusedLocals": true,
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,
-      "noImplicitAny": false,
       "target": "ES2015"
     }
 }

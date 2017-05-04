@@ -36,7 +36,7 @@ export class GitHubSource extends D.DestinationSource {
           title: request.formParams.title,
         });
 
-        let issue = await github.issues.edit(params);
+        await github.issues.edit(params);
 
       } catch (e) {
         throw e.message;
@@ -88,7 +88,10 @@ export class GitHubSource extends D.DestinationSource {
 }
 
 function githubIssueFromRequest(request: D.DataActionRequest) {
-  let [_, __, ___, owner, repo, ____, num] = request.params.value.split("/");
+  let splits = request.params.value.split("/");
+  let owner = splits[3];
+  let repo = splits[4];
+  let num = splits[6];
   return {
     owner,
     repo,

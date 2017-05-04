@@ -35,7 +35,7 @@ export class DropboxSource extends D.DestinationSource {
       if (request.attachment && request.attachment.fileExtension) {
 
         let fileTitle = request.suggestedFilename();
-        let uploadResponse = await dropboxClient.filesUpload({
+        await dropboxClient.filesUpload({
           contents: request.attachment.dataBuffer,
           path: `/${fileTitle}`,
         });
