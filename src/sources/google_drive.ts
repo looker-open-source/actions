@@ -1,5 +1,5 @@
-import * as googleAuth from "google-auth-library";
-import * as google from "googleapis";
+let googleAuth = require("google-auth-library");
+let google = require("googleapis");
 
 import * as D from "../framework";
 
@@ -40,7 +40,7 @@ export class GoogleDriveSource extends D.DestinationSource {
           resource: {
             name: request.suggestedFilename(),
           },
-        }, (err, _file) => {
+        }, (err: any) => {
           if (err) {
             reject(err);
           } else {
@@ -62,7 +62,7 @@ export class GoogleDriveSource extends D.DestinationSource {
             auth,
             fields: "nextPageToken, files(id, name)",
             pageSize: 10,
-          }, (err, response) => {
+          }, (err: any, response: any) => {
 
             if (err) {
               reject(err);
@@ -73,7 +73,7 @@ export class GoogleDriveSource extends D.DestinationSource {
             form.fields = [{
               label: "Folder",
               name: "path",
-              options: response.files.map((f: {id, name}) => {
+              options: response.files.map((f: {id: string, name: string}) => {
                 return {name: f.id, label: f.name};
               }),
               required: true,
