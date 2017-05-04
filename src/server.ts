@@ -23,7 +23,7 @@ export class Server {
     this.app = express();
     this.app.use(bodyParser.json({limit: "250mb"}));
 
-    this.route("/", async (req, res) => {
+    this.route("/", async (_req, res) => {
       let destinations = await Sources.allDestinations();
       let response = {
         destinations: destinations.map((d) => { return d.asJson(); }),

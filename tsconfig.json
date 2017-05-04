@@ -3,6 +3,7 @@
       "noEmitOnError": true,
       "noImplicitAny": false,
       "noUnusedLocals": true,
+      "noUnusedParameters": true,
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,

@@ -40,7 +40,7 @@ export class SegmentSource extends D.DestinationSource {
         }
 
         // TODO: does this batching have global state that could be a security problem
-        segment.flush((err, batch) => {
+        segment.flush((err, _batch) => {
           if (err) {
             reject(err);
           } else {

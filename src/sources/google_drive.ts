@@ -39,7 +39,7 @@ export class GoogleDriveSource extends D.DestinationSource {
           resource: {
             name: request.suggestedFilename(),
           },
-        }, (err, file) => {
+        }, (err, _file) => {
           if (err) {
             reject(err);
           } else {
