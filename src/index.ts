@@ -1,5 +1,6 @@
 import * as dotenv from "dotenv";
 import { Server } from "./server";
+import { winston } from "winston";
 
 dotenv.config();
 
@@ -10,5 +11,5 @@ if (!process.env.BASE_URL) {
 let app = Server.bootstrap().app;
 let port = process.env.PORT || 8080;
 app.listen(port, function() {
-  console.log(`Integration Server listening on port ${port}!`);
+  winston.log(`Integration Server listening on port ${port}!`);
 });
