@@ -1,10 +1,9 @@
+import Segment = require("analytics-node");
 import * as D from "../framework";
-
-let Segment = require("analytics-node");
 
 export class SegmentSource extends D.DestinationSource {
 
-  async sourcedDestinations() {
+  public async sourcedDestinations() {
 
     let dest = new D.Destination();
     dest.name = "segment_event";
@@ -12,17 +11,17 @@ export class SegmentSource extends D.DestinationSource {
     dest.description = "Send data to Segment as events.";
     dest.params = [
       {
-        name: "segment_write_key",
-        label: "Segment Write Key",
-        required: true,
         description: "A write key for Segment.",
+        label: "Segment Write Key",
+        name: "segment_write_key",
+        required: true,
       },
     ];
     dest.supportedActionTypes = ["query"];
     dest.supportedFormats = ["json"];
     dest.requiredFields = [{tag: "segment_user_id"}];
 
-    dest.action = async function(request) {
+    dest.action = async (request) => {
       return new Promise<D.DataActionResponse>((resolve, reject) => {
 
         let segment = segmentClientFromRequest(request);
@@ -35,8 +34,8 @@ export class SegmentSource extends D.DestinationSource {
         for (let row of request.attachment.dataJSON) {
           let keys = Object.keys(row);
           segment.identify({
-            userId: row[keys[0]],
             traits: row,
+            userId: row[keys[0]],
           });
         }
 
@@ -57,6 +56,6 @@ export class SegmentSource extends D.DestinationSource {
 
 }
 
-function segmentClientFromRequest(request : D.DataActionRequest) {
-  return new Segment(request.params["segment_write_key"]);
+function segmentClientFromRequest(request: D.DataActionRequest) {
+  return new Segment(request.params.segment_write_key);
 }

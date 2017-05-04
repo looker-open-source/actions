@@ -4,7 +4,7 @@ import * as Github from "github";
 
 export class GitHubSource extends D.DestinationSource {
 
-  async sourcedDestinations() {
+  public async sourcedDestinations() {
 
     let dest = new D.Destination();
     dest.name = "update_issue";
@@ -12,10 +12,10 @@ export class GitHubSource extends D.DestinationSource {
     dest.description = "Update open or closed status on a GitHub issue.";
     dest.params = [
       {
-        name: "github_api_key",
-        label: "GitHub API Key",
-        required: true,
         description: "An API key for GitHub from https://github.com/settings/tokens.",
+        label: "GitHub API Key",
+        name: "github_api_key",
+        required: true,
       },
     ];
     dest.supportedActionTypes = ["cell"];
@@ -24,16 +24,16 @@ export class GitHubSource extends D.DestinationSource {
       {tag: "github_issue_url"},
     ];
 
-    dest.action = async function(request) {
+    dest.action = async (request) => {
       let github = githubClientFromRequest(request);
 
       try {
 
         let issueParams = githubIssueFromRequest(request);
         let params = Object.assign(issueParams, {
-          state: request.formParams["state"],
-          title: request.formParams["title"],
-          body: request.formParams["body"],
+          body: request.formParams.body,
+          state: request.formParams.state,
+          title: request.formParams.title,
         });
 
         let issue = await github.issues.edit(params);
@@ -44,7 +44,7 @@ export class GitHubSource extends D.DestinationSource {
       return new D.DataActionResponse();
     };
 
-    dest.form = async function(request) {
+    dest.form = async (request) => {
       let github = githubClientFromRequest(request);
 
       let form = new D.DataActionForm();
@@ -53,23 +53,26 @@ export class GitHubSource extends D.DestinationSource {
         let issue = await github.issues.get(githubIssueFromRequest(request));
 
         form.fields = [{
-          type: "string",
+          default: issue.data.title,
           label: "Title",
           name: "title",
           required: true,
-          default: issue.data.title,
+          type: "string",
         }, {
-          type: "textarea",
+          default: issue.data.body,
           label: "Body",
           name: "body",
-          default: issue.data.body,
+          type: "textarea",
         }, {
-          type: "select",
+          default: issue.data.state,
           label: "State",
           name: "state",
+          options: [
+            {name: "open", label: "Open"},
+            {name: "closed", label: "Closed"},
+          ],
           required: true,
-          default: issue.data.state,
-          options: [{name: "open", label: "Open"}, {name: "closed", label: "Closed"}],
+          type: "select",
         }];
 
       } catch (e) {
@@ -84,21 +87,21 @@ export class GitHubSource extends D.DestinationSource {
 
 }
 
-function githubIssueFromRequest(request : D.DataActionRequest) {
-  let [x, xx, xxx, owner, repo, xxxx, number] = request.params["value"].split("/");
+function githubIssueFromRequest(request: D.DataActionRequest) {
+  let [_, __, ___, owner, repo, ____, num] = request.params.value.split("/");
   return {
     owner,
     repo,
-    number: parseInt(number, 10),
+    number: parseInt(num, 10),
   };
 }
 
-function githubClientFromRequest(request : D.DataActionRequest) {
+function githubClientFromRequest(request: D.DataActionRequest) {
   let github = new Github();
 
   github.authenticate({
+    token: request.params.github_api_key,
     type: "oauth",
-    token: request.params["github_api_key"],
   });
 
   return github;

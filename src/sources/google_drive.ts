@@ -7,7 +7,7 @@ import * as google from "googleapis";
 
 export class GoogleDriveSource extends D.DestinationSource {
 
-  async sourcedDestinations() {
+  public async sourcedDestinations() {
 
     let dest = new D.Destination();
     dest.name = "google_drive";
@@ -15,14 +15,14 @@ export class GoogleDriveSource extends D.DestinationSource {
     dest.description = "Send download results directly to your Google Drive.";
     dest.params = [
       {
-        name: "google_oauth_token",
-        label: "Google API OAuth Token",
-        required: true,
         description: "An OAuth access token for Google APIs that's authorized to read and write files on Google Drive.",
+        label: "Google API OAuth Token",
+        name: "google_oauth_token",
+        required: true,
       },
     ];
 
-    dest.action = function(request) {
+    dest.action = (request) => {
       return new Promise<D.DataActionResponse>((resolve, reject) => {
 
         if (!request.attachment) {
@@ -35,14 +35,14 @@ export class GoogleDriveSource extends D.DestinationSource {
 
         drive.files.create({
           auth,
-          resource: {
-            name: request.suggestedFilename(),
-          },
+          fields: "id",
           media: {
             body: request.attachment.dataBuffer,
           },
-          fields: "id",
-        }, function(err, file) {
+          resource: {
+            name: request.suggestedFilename(),
+          },
+        }, (err, file) => {
           if (err) {
             reject(err);
           } else {
@@ -53,7 +53,7 @@ export class GoogleDriveSource extends D.DestinationSource {
 
     };
 
-    dest.form = function(request) {
+    dest.form = (request) => {
 
       let promise = new Promise<D.DataActionForm>((resolve, reject) => {
 
@@ -62,8 +62,8 @@ export class GoogleDriveSource extends D.DestinationSource {
           let drive = google.drive("v3");
           drive.files.list({
             auth,
-            pageSize: 10,
             fields: "nextPageToken, files(id, name)",
+            pageSize: 10,
           }, (err, response) => {
 
             if (err) {
@@ -73,15 +73,17 @@ export class GoogleDriveSource extends D.DestinationSource {
             let form = new D.DataActionForm();
 
             form.fields = [{
-              type: "select",
               label: "Folder",
               name: "path",
+              options: response.files.map((f: {id, name}) => {
+                return {name: f.id, label: f.name};
+              }),
               required: true,
-              options: response.files.map((f : {id, name}) => { return {name: f.id, label: f.name}; }),
+              type: "select",
             }, {
+              description: "Leave blank to use a suggested filename including the date and time.",
               label: "Filename",
               name: "filename",
-              description: "Leave blank to use a suggested filename including the date and time.",
             }];
 
             resolve(form);
@@ -100,12 +102,12 @@ export class GoogleDriveSource extends D.DestinationSource {
 
 }
 
-function googleClientFromRequest(request : D.DataActionRequest) {
+function googleClientFromRequest(request: D.DataActionRequest) {
   if (!request.params) {
     throw "No params provided.";
   }
 
-  let accessToken = request.params["google_oauth_token"];
+  let accessToken = request.params.google_oauth_token;
 
   if (!accessToken) {
     throw "No google_oauth_token provided.";
