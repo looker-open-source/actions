@@ -1,17 +1,17 @@
-export interface ValidationError {
-  field : string;
-  message : string;
+export interface IValidationError {
+  field: string;
+  message: string;
 }
 
 export class DataActionResponse {
 
-  public message : string;
-  public refreshQuery : boolean = false;
-  public success : boolean = true;
-  public validationErrors : ValidationError[] = [];
+  public message: string;
+  public refreshQuery: boolean = false;
+  public success: boolean = true;
+  public validationErrors: IValidationError[] = [];
 
-  asJson() : any {
-    let errs : any = {};
+  public asJson(): any {
+    let errs: any = {};
     for (let error of (this.validationErrors || [])) {
       errs[error.field] = error.message;
     }

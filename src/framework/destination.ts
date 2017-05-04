@@ -4,49 +4,49 @@ import  { DataActionForm } from "./data_action_form";
 import  { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request";
 import  { DataActionResponse } from "./data_action_response";
 
-export interface DestinationParameter {
-  name : string;
-  label : string;
-  required : boolean;
-  description ?: string;
+export interface IDestinationParameter {
+  name: string;
+  label: string;
+  required: boolean;
+  description?: string;
 }
 
-export interface RequiredField {
-  tag : string;
+export interface IRequiredField {
+  tag: string;
 }
 
 export class Destination {
 
-  public name : string;
-  public label : string;
-  public description : string;
+  public name: string;
+  public label: string;
+  public description: string;
 
-  public supportedActionTypes ?: DataActionType[];
-  public supportedFormats ?: DataActionFormat[];
-  public requiredFields : RequiredField[] = [];
+  public supportedActionTypes?: DataActionType[];
+  public supportedFormats?: DataActionFormat[];
+  public requiredFields: IRequiredField[] = [];
 
-  public params : DestinationParameter[] = [];
+  public params: IDestinationParameter[] = [];
 
-  public action : (request : DataActionRequest) => Promise<DataActionResponse>;
-  public form : (request : DataActionRequest) => Promise<DataActionForm>;
+  public action: (request: DataActionRequest) => Promise<DataActionResponse>;
+  public form: (request: DataActionRequest) => Promise<DataActionForm>;
 
-  public asJson() : any {
+  public asJson(): any {
     return {
-      name: this.name,
-      label: this.label,
       description: this.description,
-      url: this.action ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/action`) : null,
       form_url: this.form ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/form`) : null,
+      label: this.label,
+      name: this.name,
       params: this.params,
+      required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
       supported_formats: this.supportedFormats,
-      required_fields: this.requiredFields,
+      url: this.action ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/action`) : null,
     };
   }
 
-  async validateAndPerformAction(request : DataActionRequest) {
+  public async validateAndPerformAction(request: DataActionRequest) {
 
-    if (this.supportedActionTypes && this.supportedActionTypes.indexOf(request.type) == -1) {
+    if (this.supportedActionTypes && this.supportedActionTypes.indexOf(request.type) === -1) {
        throw `This action does not support requests of type "${request.type}".`;
     }
 

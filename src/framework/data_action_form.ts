@@ -1,18 +1,18 @@
 export class DataActionForm {
-  public fields : DataActionFormField[];
+  public fields: IDataActionFormField[];
 
-  asJson() : any {
+  public asJson(): any {
     return this.fields;
   }
 
 }
 
-export interface DataActionFormField {
-  name : string;
-  label ?: string;
-  description ?: string;
-  default ?: string;
-  type ?: "string" | "textarea" | "select";
-  options ?: Array<{ name: string, label: string }>;
-  required ?: boolean;
+export interface IDataActionFormField {
+  name: string;
+  label?: string;
+  description?: string;
+  default?: string;
+  type?: "string" | "textarea" | "select";
+  options?: Array<{ name: string, label: string }>;
+  required?: boolean;
 }

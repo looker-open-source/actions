@@ -1,32 +1,31 @@
 import * as sanitizeFilename from "sanitize-filename";
 
-export interface ParamMap {
+export interface IParamMap {
   [name: string]: string;
 }
 
 export type DataActionType = "cell" | "query" | "dashboard";
-export type DataActionFormat = "txt" | "html" | "csv" | "json" | "xlsx" | "wysiwyg_pdf" | "assembled_pdf" | "wysiwyg_png";
+export type DataActionFormat =
+  "assembled_pdf" |
+  "csv" |
+  "html" |
+  "json" |
+  "txt" |
+  "wysiwyg_pdf" |
+  "wysiwyg_png" |
+  "xlsx";
 
 export type DataActionAttachment = {
-  data64 ?: string,
-  dataBuffer ?: Buffer,
-  dataJSON ?: any,
-  mime ?: string,
-  fileExtension ?: string,
+  data64?: string,
+  dataBuffer?: Buffer,
+  dataJSON?: any,
+  mime?: string,
+  fileExtension?: string,
 };
 
 export class DataActionRequest {
 
-  public type : DataActionType;
-  public params : ParamMap = {};
-  public formParams : ParamMap = {};
-
-  public attachment ?: DataActionAttachment;
-
-  public lookerUrl ?: string;
-  public title ?: string;
-
-  public static fromJSON(json : any) {
+  public static fromJSON(json: any) {
 
     if (!json) {
       throw "Request body must be valid JSON.";
@@ -45,7 +44,7 @@ export class DataActionRequest {
         if (request.attachment.data64) {
           request.attachment.dataBuffer = new Buffer(request.attachment.data64, "base64");
         }
-        if (request.attachment.mime == "application/json") {
+        if (request.attachment.mime === "application/json") {
           request.attachment.dataJSON = JSON.parse(json.attachment.data);
         }
       }
@@ -67,7 +66,16 @@ export class DataActionRequest {
     return request;
   }
 
-  public suggestedFilename() : string | undefined {
+  public type: DataActionType;
+  public params: IParamMap = {};
+  public formParams: IParamMap = {};
+
+  public attachment?: DataActionAttachment;
+
+  public lookerUrl?: string;
+  public title?: string;
+
+  public suggestedFilename(): string | undefined {
     if (this.attachment) {
       if (this.title) {
         return sanitizeFilename(`${this.title}.${this.attachment.fileExtension}`);
