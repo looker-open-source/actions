@@ -16,7 +16,6 @@ export type DataActionFormat =
   "xlsx";
 
 export type DataActionAttachment = {
-  data64?: string,
   dataBuffer?: Buffer,
   dataJSON?: any,
   mime?: string,
@@ -40,12 +39,13 @@ export class DataActionRequest {
       request.attachment.mime = json.attachment.mimetype;
       request.attachment.fileExtension = json.attachment.extension;
       if (request.attachment.mime && json.attachment.data) {
-        request.attachment.data64 = json.attachment.data;
-        if (request.attachment.data64) {
-          request.attachment.dataBuffer = new Buffer(request.attachment.data64, "base64");
-        }
-        if (request.attachment.mime === "application/json") {
-          request.attachment.dataJSON = JSON.parse(json.attachment.data);
+        if (json.attachment.data) {
+          let encoding = request.attachment.mime.endsWith(";base64") ? "base64" : "utf8";
+          request.attachment.dataBuffer = Buffer.from(json.attachment.data, encoding);
+
+          if (request.attachment.mime === "application/json") {
+            request.attachment.dataJSON = JSON.parse(json.attachment.data);
+          }
         }
       }
     }
