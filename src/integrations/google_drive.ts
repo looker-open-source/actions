@@ -3,11 +3,11 @@ let google = require("googleapis");
 
 import * as D from "../framework";
 
-export class GoogleDriveSource extends D.DestinationSource {
+export class GoogleDriveSource extends D.IntegrationSource {
 
-  public async sourcedDestinations() {
+  public async sourcedIntegrations() {
 
-    let dest = new D.Destination();
+    let dest = new D.Integration();
     dest.name = "google_drive";
     dest.label = "Google Drive";
     dest.description = "Send download results directly to your Google Drive.";

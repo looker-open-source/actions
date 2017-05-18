@@ -1,11 +1,11 @@
 import Segment = require("analytics-node");
 import * as D from "../framework";
 
-export class SegmentSource extends D.DestinationSource {
+export class SegmentSource extends D.IntegrationSource {
 
-  public async sourcedDestinations() {
+  public async sourcedIntegrations() {
 
-    let dest = new D.Destination();
+    let dest = new D.Integration();
     dest.name = "segment_event";
     dest.label = "Segment (Create Events)";
     dest.description = "Send data to Segment as events.";

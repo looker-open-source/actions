@@ -1,22 +1,12 @@
 import * as D from "./framework";
+import * as index from "./integrations/index";
 
-// Sources
-import { DropboxSource } from "./sources/dropbox";
-import { GitHubSource } from "./sources/github";
-import { GoogleDriveSource } from "./sources/google_drive";
-import { SegmentSource } from "./sources/segment";
-
-export function allSources(): D.DestinationSource[] {
-  return [
-    new DropboxSource(),
-    new SegmentSource(),
-    new GitHubSource(),
-    new GoogleDriveSource(),
-  ];
+export function allSources(): D.IntegrationSource[] {
+  return index.allSources();
 }
 
 export async function allDestinations() {
-  let srcPromises = allSources().map((src) => { return src.sourcedDestinations(); });
+  let srcPromises = allSources().map((src) => { return src.sourcedIntegrations(); });
   let all = await Promise.all(srcPromises);
   return all.reduce((a, b) => {
     return a.concat(b);

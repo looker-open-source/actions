@@ -32,13 +32,13 @@ export class Server {
       res.json(response);
     });
 
-    this.route("/destinations/:destinationId", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.destinationId);
+    this.route("/integrations/:integrationId", async (req, res) => {
+      let destination = await Sources.findDestination(req.params.integrationId);
       res.json(destination.asJson());
     });
 
-    this.route("/destinations/:destinationId/action", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.destinationId);
+    this.route("/integrations/:integrationId/action", async (req, res) => {
+      let destination = await Sources.findDestination(req.params.integrationId);
       if (destination.action) {
          let actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body));
          res.json(actionResponse.asJson());
@@ -47,8 +47,8 @@ export class Server {
       }
     });
 
-    this.route("/destinations/:destinationId/form", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.destinationId);
+    this.route("/integrations/:integrationId/form", async (req, res) => {
+      let destination = await Sources.findDestination(req.params.integrationId);
       if (destination.form) {
          let form = await destination.form(D.DataActionRequest.fromJSON(req.body));
          res.json(form.asJson());

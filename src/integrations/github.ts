@@ -2,11 +2,11 @@ import * as D from "../framework";
 
 import * as Github from "github";
 
-export class GitHubSource extends D.DestinationSource {
+export class GitHubSource extends D.IntegrationSource {
 
-  public async sourcedDestinations() {
+  public async sourcedIntegrations() {
 
-    let dest = new D.Destination();
+    let dest = new D.Integration();
     dest.name = "update_issue";
     dest.label = "Update GitHub Issue";
     dest.description = "Update open or closed status on a GitHub issue.";

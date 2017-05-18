@@ -4,7 +4,7 @@ import  { DataActionForm } from "./data_action_form";
 import  { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request";
 import  { DataActionResponse } from "./data_action_response";
 
-export interface IDestinationParameter {
+export interface IIntegrationParameter {
   name: string;
   label: string;
   required: boolean;
@@ -15,7 +15,7 @@ export interface IRequiredField {
   tag: string;
 }
 
-export class Destination {
+export class Integration {
 
   public name: string;
   public label: string;
@@ -25,7 +25,7 @@ export class Destination {
   public supportedFormats?: DataActionFormat[];
   public requiredFields: IRequiredField[] = [];
 
-  public params: IDestinationParameter[] = [];
+  public params: IIntegrationParameter[] = [];
 
   public action: (request: DataActionRequest) => Promise<DataActionResponse>;
   public form: (request: DataActionRequest) => Promise<DataActionForm>;
@@ -33,14 +33,14 @@ export class Destination {
   public asJson(): any {
     return {
       description: this.description,
-      form_url: this.form ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/form`) : null,
+      form_url: this.form ? Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/form`) : null,
       label: this.label,
       name: this.name,
       params: this.params,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
       supported_formats: this.supportedFormats,
-      url: this.action ? Server.absUrl(`/destinations/${encodeURIComponent(this.name)}/action`) : null,
+      url: this.action ? Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/action`) : null,
     };
   }
 

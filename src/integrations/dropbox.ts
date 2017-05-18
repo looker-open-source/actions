@@ -2,11 +2,11 @@ import * as D from "../framework";
 
 import Dropbox = require("dropbox");
 
-export class DropboxSource extends D.DestinationSource {
+export class DropboxSource extends D.IntegrationSource {
 
-  public async sourcedDestinations() {
+  public async sourcedIntegrations() {
 
-    let dest = new D.Destination();
+    let dest = new D.Integration();
     dest.name = "dropbox";
     dest.label = "Dropbox";
     dest.description = "Send download results directly to your Dropbox.";
