@@ -4,6 +4,7 @@
       "noEmitOnError": true,
       "noUnusedLocals": true,
       "noUnusedParameters": true,
+      "skipLibCheck": true,
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,

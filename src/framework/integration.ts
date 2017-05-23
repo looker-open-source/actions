@@ -33,7 +33,7 @@ export interface IIntegration {
 }
 export class Integration {
 
-  integration: IIntegration;
+  private integration: IIntegration;
 
   constructor(def: IIntegration) {
     if (!def.requiredFields) {
@@ -57,20 +57,28 @@ export class Integration {
   public asJson(): any {
     return {
       description: this.integration.description,
-      form_url: this.integration.form ? Server.absUrl(`/integrations/${encodeURIComponent(this.integration.name)}/form`) : null,
+      form_url: this.integration.form ?
+          Server.absUrl(`/integrations/${encodeURIComponent(this.integration.name)}/form`)
+        :
+          null,
       label: this.integration.label,
       name: this.integration.name,
       params: this.integration.params,
       required_fields: this.integration.requiredFields,
       supported_action_types: this.integration.supportedActionTypes,
       supported_formats: this.integration.supportedFormats,
-      url: this.integration.action ? Server.absUrl(`/integrations/${encodeURIComponent(this.integration.name)}/action`) : null,
+      url: this.integration.action ?
+          Server.absUrl(`/integrations/${encodeURIComponent(this.integration.name)}/action`)
+        :
+          null,
     };
   }
 
   public async validateAndPerformAction(request: DataActionRequest) {
 
-    if (this.integration.supportedActionTypes && this.integration.supportedActionTypes.indexOf(request.type) === -1) {
+    if (this.integration.supportedActionTypes &&
+      this.integration.supportedActionTypes.indexOf(request.type) === -1
+    ) {
        throw `This action does not support requests of type "${request.type}".`;
     }
 

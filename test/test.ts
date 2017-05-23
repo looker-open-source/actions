@@ -1,14 +1,16 @@
 import { expect } from "chai";
 
-import * as Sources from "../src/sources";
+import * as D from "../src/framework";
+import "../src/integrations/index";
 
-Sources.allSources().forEach((source) => {
+D.allIntegrations().then((integrations) => {
+  integrations.forEach((integration) => {
 
-  describe(`${source.constructor.name}`, () => {
-    it("should provide at least one destination", async () => {
-      let destinations = await source.sourcedDestinations();
-      expect(destinations).to.have.length.at.least(1);
+    describe(`${integration.name}`, () => {
+      it("should provide the action function", async () => {
+        expect(integration.action).to.exist;
+      });
     });
-  });
 
+  })
 })

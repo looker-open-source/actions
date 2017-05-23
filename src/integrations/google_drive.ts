@@ -1,5 +1,5 @@
-let googleAuth = require("google-auth-library");
-let google = require("googleapis");
+const googleAuth = require("google-auth-library");
+const google = require("googleapis");
 
 import * as D from "../framework";
 

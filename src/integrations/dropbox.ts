@@ -13,7 +13,7 @@ D.addIntegration({
       label: "Dropbox Access Token",
       name: "dropbox_access_token",
       required: true,
-    }
+    },
   ],
   action: async (request) => {
 
@@ -66,7 +66,7 @@ D.addIntegration({
     }];
 
     return form;
-  }
+  },
 });
 
 function dropboxClientFromRequest(request: D.DataActionRequest) {
