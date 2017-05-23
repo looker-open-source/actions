@@ -62,6 +62,16 @@ export class Server {
   private route(path: string, fn: (req: express.Request, res: express.Response) => void): void {
     this.app.post(path, async (req, res) => {
       winston.info(`Starting request for ${req.url}`);
+
+      const auth = req.headers["authorization"];
+      const correct = `Token token="${process.env["INTEGRATION_SERVICE_SECRET"]}"`
+      if (auth != correct) {
+        res.status(403);
+        res.json({success: false, error: "Invalid 'Authorization' header."});
+        winston.info(`Unauthorized request for ${req.url}`);
+        return;
+      }
+
       try {
         await fn(req, res);
         winston.info(`Completed request for ${req.url}`);
