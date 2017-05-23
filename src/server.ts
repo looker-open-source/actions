@@ -2,7 +2,7 @@ import * as bodyParser from "body-parser";
 import * as express from "express";
 
 import * as D from "./framework";
-import * as Sources from "./sources";
+import "./integrations/index";
 
 import * as winston from "winston";
 
@@ -24,7 +24,7 @@ export class Server {
     this.app.use(bodyParser.json({limit: "250mb"}));
 
     this.route("/", async (_req, res) => {
-      let destinations = await Sources.allDestinations();
+      let destinations = await D.allIntegrations();
       let response = {
         destinations: destinations.map((d) => { return d.asJson(); }),
         label: process.env.DESTINATION_PROVIDER_LABEL,
@@ -33,12 +33,12 @@ export class Server {
     });
 
     this.route("/integrations/:integrationId", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.integrationId);
+      let destination = await D.findDestination(req.params.integrationId);
       res.json(destination.asJson());
     });
 
     this.route("/integrations/:integrationId/action", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.integrationId);
+      let destination = await D.findDestination(req.params.integrationId);
       if (destination.action) {
          let actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body));
          res.json(actionResponse.asJson());
@@ -48,7 +48,7 @@ export class Server {
     });
 
     this.route("/integrations/:integrationId/form", async (req, res) => {
-      let destination = await Sources.findDestination(req.params.integrationId);
+      let destination = await D.findDestination(req.params.integrationId);
       if (destination.form) {
          let form = await destination.form(D.DataActionRequest.fromJSON(req.body));
          res.json(form.asJson());
