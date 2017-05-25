@@ -1,11 +1,9 @@
 import * as bodyParser from "body-parser";
 import * as express from "express";
-
+import * as winston from "winston";
+import * as apiKey from "./api_key";
 import * as D from "./framework";
 import "./integrations/index";
-import * as apiKey from "./api_key";
-
-import * as winston from "winston";
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/);
 
@@ -66,7 +64,7 @@ export class Server {
     this.app.post(path, async (req, res) => {
       winston.info(`Starting request for ${req.url}`);
 
-      const tokenMatch = req.headers["authorization"].match(TOKEN_REGEX);
+      const tokenMatch = req.headers.authorization.match(TOKEN_REGEX);
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403);
         res.json({success: false, error: "Invalid 'Authorization' header."});
