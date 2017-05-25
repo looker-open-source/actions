@@ -11,7 +11,11 @@
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts'",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts'"
   },
-  "keywords": ["looker", "data", "integration"],
+  "keywords": [
+    "looker",
+    "data",
+    "integration"
+  ],
   "author": "Looker <support@looker.com>",
   "license": "MIT",
   "dependencies": {
@@ -25,6 +29,7 @@
     "@types/winston": "^2.3.2",
     "analytics-node": "^2.4.0",
     "body-parser": "^1.17.1",
+    "datauri": "^1.0.5",
     "dotenv": "^4.0.0",
     "dropbox": "^2.5.3",
     "express": "^4.15.2",

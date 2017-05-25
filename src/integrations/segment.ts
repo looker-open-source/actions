@@ -4,6 +4,7 @@ import * as D from "../framework";
 D.addIntegration({
   name: "segment_event",
   label: "Segment (Create Events)",
+  iconName: "segment.png",
   description: "Send data to Segment as events.",
   params: [
     {

@@ -4,6 +4,10 @@ import  { DataActionForm } from "./data_action_form";
 import  { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request";
 import  { DataActionResponse } from "./data_action_response";
 
+import * as fs from "fs";
+import * as path from "path";
+const datauri = require("datauri");
+
 export interface IIntegrationParameter {
   name: string;
   label: string;
@@ -20,9 +24,11 @@ export interface IIntegration {
   name: string;
   label: string;
   description: string;
+  iconName?: string;
 
   supportedActionTypes: DataActionType[];
   supportedFormats?: DataActionFormat[];
+  supportedFormattings?: Array<"formatted" | "unformatted">;
   requiredFields?: IRequiredField[];
 
   params: IIntegrationParameter[];
@@ -67,6 +73,8 @@ export class Integration {
       required_fields: this.integration.requiredFields,
       supported_action_types: this.integration.supportedActionTypes,
       supported_formats: this.integration.supportedFormats,
+      supported_formattings: this.integration.supportedFormattings,
+      icon_data_uri: this.getImageDataUri(),
       url: this.integration.action ?
           Server.absUrl(`/integrations/${encodeURIComponent(this.integration.name)}/action`)
         :
@@ -99,6 +107,17 @@ export class Integration {
 
     return this.integration.action(request);
 
+  }
+
+  private getImageDataUri() {
+    if (!this.integration.iconName) {
+      return null;
+    }
+    const iconPath = path.resolve(__dirname, "..", "integrations", "icons", this.integration.iconName);
+    if (fs.existsSync(iconPath)) {
+      return new datauri(iconPath).content;
+    }
+    return null;
   }
 
 }

@@ -3,8 +3,9 @@ import * as D from "../framework";
 import * as Github from "github";
 
 D.addIntegration({
-  name: "update_issue",
+  name: "github_update_issue",
   label: "Update GitHub Issue",
+  iconName: "github.svg",
   description: "Update open or closed status on a GitHub issue.",
   params: [
     {

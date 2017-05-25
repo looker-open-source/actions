@@ -6,6 +6,7 @@ import * as D from "../framework";
 D.addIntegration({
   name: "google_drive",
   label: "Google Drive",
+  iconName: "google_drive.png",
   description: "Send download results directly to your Google Drive.",
   params: [
     {

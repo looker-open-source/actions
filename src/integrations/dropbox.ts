@@ -4,6 +4,7 @@ import Dropbox = require("dropbox");
 D.addIntegration({
   name: "dropbox",
   label: "Dropbox",
+  iconName: "dropbox.png",
   description: "Send download results directly to your Dropbox.",
   supportedActionTypes: ["query"],
   requiredFields: [],
