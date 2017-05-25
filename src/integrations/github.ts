@@ -4,9 +4,9 @@ import * as Github from "github";
 
 D.addIntegration({
   name: "github_update_issue",
-  label: "Update GitHub Issue",
+  label: "GitHub - Update Issue",
   iconName: "github.svg",
-  description: "Update open or closed status on a GitHub issue.",
+  description: "Update status, title, and body for GitHub issues.",
   params: [
     {
       description: "An API key for GitHub from https://github.com/settings/tokens.",

@@ -3,9 +3,9 @@ import * as D from "../framework";
 
 D.addIntegration({
   name: "segment_event",
-  label: "Segment (Create Events)",
+  label: "Segment - Create Events",
   iconName: "segment.png",
-  description: "Send data to Segment as events.",
+  description: "Create events for a particular user in Segment.",
   params: [
     {
       description: "A write key for Segment.",
@@ -16,7 +16,7 @@ D.addIntegration({
   ],
   supportedActionTypes: ["query"],
   supportedFormats: ["json"],
-  requiredFields: [{tag: "segment_user_id"}],
+  requiredFields: [{any_tag: ["email", "segment_user_id"]}],
 
   action: async (request) => {
     return new Promise<D.DataActionResponse>((resolve, reject) => {

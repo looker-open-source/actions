@@ -5,7 +5,7 @@ D.addIntegration({
   name: "dropbox",
   label: "Dropbox",
   iconName: "dropbox.png",
-  description: "Send download results directly to your Dropbox.",
+  description: "Send query results directly to a file in your Dropbox.",
   supportedActionTypes: ["query"],
   requiredFields: [],
   params: [

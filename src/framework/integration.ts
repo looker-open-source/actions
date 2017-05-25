@@ -16,7 +16,9 @@ export interface IIntegrationParameter {
 }
 
 export interface IRequiredField {
-  tag: string;
+  tag?: string;
+  any_tag?: string[];
+  all_tags?: string[];
 }
 
 export interface IIntegration {
