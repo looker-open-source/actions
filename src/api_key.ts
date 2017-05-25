@@ -10,5 +10,8 @@ export function fromNonce(nonce: string) {
 
 export function validate(key: string) {
   const [nonce, providedDigest] = key.split("/");
+  if (!nonce || !providedDigest) {
+    return false;
+  }
   return crypto.timingSafeEqual(new Buffer(providedDigest), new Buffer(digest(nonce)));
 }
