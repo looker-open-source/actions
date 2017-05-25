@@ -7,6 +7,9 @@ dotenv.config();
 if (!process.env.BASE_URL) {
   throw new Error("No BASE_URL environment variable set.");
 }
+if (!process.env.INTEGRATION_PROVIDER_LABEL) {
+  throw new Error("No INTEGRATION_PROVIDER_LABEL environment variable set.");
+}
 
 let app = Server.bootstrap().app;
 let port = process.env.PORT || 8080;

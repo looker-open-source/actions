@@ -24,10 +24,10 @@ export class Server {
     this.app.use(bodyParser.json({limit: "250mb"}));
 
     this.route("/", async (_req, res) => {
-      let destinations = await D.allIntegrations();
+      let integrations = await D.allIntegrations();
       let response = {
-        destinations: destinations.map((d) => { return d.asJson(); }),
-        label: process.env.DESTINATION_PROVIDER_LABEL,
+        integrations: integrations.map((d) => { return d.asJson(); }),
+        label: process.env.INTEGRATION_PROVIDER_LABEL,
       };
       res.json(response);
     });
