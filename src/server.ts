@@ -3,8 +3,11 @@ import * as express from "express";
 
 import * as D from "./framework";
 import "./integrations/index";
+import * as apiKey from "./api_key";
 
 import * as winston from "winston";
+
+const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/);
 
 export class Server {
 
@@ -63,9 +66,8 @@ export class Server {
     this.app.post(path, async (req, res) => {
       winston.info(`Starting request for ${req.url}`);
 
-      const auth = req.headers["authorization"];
-      const correct = `Token token="${process.env["INTEGRATION_SERVICE_SECRET"]}"`
-      if (auth != correct) {
+      const tokenMatch = req.headers["authorization"].match(TOKEN_REGEX);
+      if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403);
         res.json({success: false, error: "Invalid 'Authorization' header."});
         winston.info(`Unauthorized request for ${req.url}`);

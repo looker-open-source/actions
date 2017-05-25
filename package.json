@@ -5,6 +5,7 @@
   "main": "lib/index",
   "scripts": {
     "start": "./node_modules/.bin/ts-node ./src/index.ts",
+    "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/index.ts",
     "test": "yarn test-ts && yarn lint",
     "test-ts": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register test/**/test.ts",
