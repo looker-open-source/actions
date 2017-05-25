@@ -10,6 +10,9 @@ if (!process.env.BASE_URL) {
 if (!process.env.INTEGRATION_PROVIDER_LABEL) {
   throw new Error("No INTEGRATION_PROVIDER_LABEL environment variable set.");
 }
+if (!process.env.INTEGRATION_SERVICE_SECRET) {
+  throw new Error("No INTEGRATION_SERVICE_SECRET environment variable set.");
+}
 
 const app = Server.bootstrap().app;
 const port = process.env.PORT || 8080;
