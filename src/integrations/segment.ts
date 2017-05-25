@@ -21,15 +21,15 @@ D.addIntegration({
   action: async (request) => {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      let segment = segmentClientFromRequest(request);
+      const segment = segmentClientFromRequest(request);
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json");
         return;
       }
 
-      for (let row of request.attachment.dataJSON) {
-        let keys = Object.keys(row);
+      for (const row of request.attachment.dataJSON) {
+        const keys = Object.keys(row);
         segment.identify({
           traits: row,
           userId: row[keys[0]],

@@ -11,8 +11,8 @@ export class DataActionResponse {
   public validationErrors: IValidationError[] = [];
 
   public asJson(): any {
-    let errs: any = {};
-    for (let error of (this.validationErrors || [])) {
+    const errs: any = {};
+    for (const error of (this.validationErrors || [])) {
       errs[error.field] = error.message;
     }
     return {

@@ -18,7 +18,7 @@ D.addIntegration({
   ],
   action: async (request) => {
 
-    let dropboxClient = dropboxClientFromRequest(request);
+    const dropboxClient = dropboxClientFromRequest(request);
 
     if (request.type !== "query") {
       throw "Only query actions are supported.";
@@ -30,7 +30,7 @@ D.addIntegration({
 
     if (request.attachment && request.attachment.fileExtension) {
 
-      let fileTitle = request.suggestedFilename();
+      const fileTitle = request.suggestedFilename();
       await dropboxClient.filesUpload({
         contents: request.attachment.dataBuffer,
         path: `/${fileTitle}`,
@@ -44,14 +44,14 @@ D.addIntegration({
   },
   form: async (request) => {
 
-    let dropboxClient = dropboxClientFromRequest(request);
+    const dropboxClient = dropboxClientFromRequest(request);
 
-    let files = await dropboxClient.filesListFolder({path: ""});
-    let folders = files.entries.filter((file: any) => {
+    const files = await dropboxClient.filesListFolder({path: ""});
+    const folders = files.entries.filter((file: any) => {
       return file[".tag"] === "folder";
     });
 
-    let form = new D.DataActionForm();
+    const form = new D.DataActionForm();
     form.fields = [{
       label: "Folder",
       name: "path",
@@ -75,7 +75,7 @@ function dropboxClientFromRequest(request: D.DataActionRequest) {
     throw "No params provided.";
   }
 
-  let accessToken = request.params.dropbox_access_token;
+  const accessToken = request.params.dropbox_access_token;
 
   if (!accessToken) {
     throw "No dropbox_access_token provided.";

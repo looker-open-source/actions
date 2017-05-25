@@ -21,12 +21,12 @@ D.addIntegration({
     {tag: "github_issue_url"},
   ],
   action: async (request) => {
-    let github = githubClientFromRequest(request);
+    const github = githubClientFromRequest(request);
 
     try {
 
-      let issueParams = githubIssueFromRequest(request);
-      let params = Object.assign(issueParams, {
+      const issueParams = githubIssueFromRequest(request);
+      const params = Object.assign(issueParams, {
         body: request.formParams.body,
         state: request.formParams.state,
         title: request.formParams.title,
@@ -41,12 +41,12 @@ D.addIntegration({
   },
 
   form: async (request) => {
-    let github = githubClientFromRequest(request);
+    const github = githubClientFromRequest(request);
 
-    let form = new D.DataActionForm();
+    const form = new D.DataActionForm();
     try {
 
-      let issue = await github.issues.get(githubIssueFromRequest(request));
+      const issue = await github.issues.get(githubIssueFromRequest(request));
 
       form.fields = [{
         default: issue.data.title,
@@ -80,10 +80,10 @@ D.addIntegration({
 });
 
 function githubIssueFromRequest(request: D.DataActionRequest) {
-  let splits = request.params.value.split("/");
-  let owner = splits[3];
-  let repo = splits[4];
-  let num = splits[6];
+  const splits = request.params.value.split("/");
+  const owner = splits[3];
+  const repo = splits[4];
+  const num = splits[6];
   return {
     owner,
     repo,
@@ -92,7 +92,7 @@ function githubIssueFromRequest(request: D.DataActionRequest) {
 }
 
 function githubClientFromRequest(request: D.DataActionRequest) {
-  let github = new Github();
+  const github = new Github();
 
   github.authenticate({
     token: request.params.github_api_key,

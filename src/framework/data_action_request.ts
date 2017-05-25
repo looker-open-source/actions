@@ -15,12 +15,12 @@ export type DataActionFormat =
   "wysiwyg_png" |
   "xlsx";
 
-export type DataActionAttachment = {
-  dataBuffer?: Buffer,
-  dataJSON?: any,
-  mime?: string,
-  fileExtension?: string,
-};
+export interface IDataActionAttachment {
+  dataBuffer?: Buffer;
+  dataJSON?: any;
+  mime?: string;
+  fileExtension?: string;
+}
 
 export class DataActionRequest {
 
@@ -30,7 +30,7 @@ export class DataActionRequest {
       throw "Request body must be valid JSON.";
     }
 
-    let request = new DataActionRequest();
+    const request = new DataActionRequest();
 
     request.type = json.type;
 
@@ -40,7 +40,7 @@ export class DataActionRequest {
       request.attachment.fileExtension = json.attachment.extension;
       if (request.attachment.mime && json.attachment.data) {
         if (json.attachment.data) {
-          let encoding = request.attachment.mime.endsWith(";base64") ? "base64" : "utf8";
+          const encoding = request.attachment.mime.endsWith(";base64") ? "base64" : "utf8";
           request.attachment.dataBuffer = Buffer.from(json.attachment.data, encoding);
 
           if (request.attachment.mime === "application/json") {
@@ -70,7 +70,7 @@ export class DataActionRequest {
   public params: IParamMap = {};
   public formParams: IParamMap = {};
 
-  public attachment?: DataActionAttachment;
+  public attachment?: IDataActionAttachment;
 
   public lookerUrl?: string;
   public title?: string;

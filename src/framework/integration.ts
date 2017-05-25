@@ -1,8 +1,8 @@
 import { Server } from "../server";
 
-import  { DataActionForm } from "./data_action_form";
-import  { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request";
-import  { DataActionResponse } from "./data_action_response";
+import { DataActionForm } from "./data_action_form";
+import { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request";
+import { DataActionResponse } from "./data_action_response";
 
 import * as fs from "fs";
 import * as path from "path";
@@ -92,12 +92,12 @@ export class Integration {
        throw `This action does not support requests of type "${request.type}".`;
     }
 
-    let requiredParams = this.integration.params.filter((p) => { return p.required; });
+    const requiredParams = this.integration.params.filter((p) => p.required);
 
     if (requiredParams.length > 0) {
       if (request.params) {
-        for (let p of requiredParams) {
-          let param = request.params[p.name];
+        for (const p of requiredParams) {
+          const param = request.params[p.name];
           if (param === undefined || param === null) {
             throw `Required parameter "${p.name}" not provided.`;
           }

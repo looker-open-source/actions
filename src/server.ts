@@ -25,23 +25,23 @@ export class Server {
     this.app.use(bodyParser.json({limit: "250mb"}));
 
     this.route("/", async (_req, res) => {
-      let integrations = await D.allIntegrations();
-      let response = {
-        integrations: integrations.map((d) => { return d.asJson(); }),
+      const integrations = await D.allIntegrations();
+      const response = {
+        integrations: integrations.map((d) => d.asJson()),
         label: process.env.INTEGRATION_PROVIDER_LABEL,
       };
       res.json(response);
     });
 
     this.route("/integrations/:integrationId", async (req, res) => {
-      let destination = await D.findDestination(req.params.integrationId);
+      const destination = await D.findDestination(req.params.integrationId);
       res.json(destination.asJson());
     });
 
     this.route("/integrations/:integrationId/action", async (req, res) => {
-      let destination = await D.findDestination(req.params.integrationId);
+      const destination = await D.findDestination(req.params.integrationId);
       if (destination.action) {
-         let actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body));
+         const actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body));
          res.json(actionResponse.asJson());
       } else {
         throw "No action defined for destination.";
@@ -49,9 +49,9 @@ export class Server {
     });
 
     this.route("/integrations/:integrationId/form", async (req, res) => {
-      let destination = await D.findDestination(req.params.integrationId);
+      const destination = await D.findDestination(req.params.integrationId);
       if (destination.form) {
-         let form = await destination.form(D.DataActionRequest.fromJSON(req.body));
+         const form = await destination.form(D.DataActionRequest.fromJSON(req.body));
          res.json(form.asJson());
       } else {
         throw "No form defined for destination.";

@@ -11,8 +11,8 @@ export async function allIntegrations() {
 }
 
 export async function findDestination(id: string) {
-  let all = await allIntegrations();
-  let integration = all.filter((i) => i.name === id)[0];
+  const all = await allIntegrations();
+  const integration = all.filter((i) => i.name === id)[0];
   if (!integration) {
     throw "No destination found.";
   }

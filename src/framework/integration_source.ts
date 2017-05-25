@@ -1,4 +1,4 @@
-import  { Integration } from "./integration";
+import { Integration } from "./integration";
 
 export abstract class IntegrationSource {
 

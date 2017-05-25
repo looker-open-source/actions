@@ -11,8 +11,8 @@ if (!process.env.INTEGRATION_PROVIDER_LABEL) {
   throw new Error("No INTEGRATION_PROVIDER_LABEL environment variable set.");
 }
 
-let app = Server.bootstrap().app;
-let port = process.env.PORT || 8080;
+const app = Server.bootstrap().app;
+const port = process.env.PORT || 8080;
 app.listen(port, () => {
   winston.info(`Integration Server listening on port ${port}!`);
 });

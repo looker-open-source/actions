@@ -25,8 +25,8 @@ D.addIntegration({
         return;
       }
 
-      let auth  = googleClientFromRequest(request);
-      let drive = google.drive("v3");
+      const auth  = googleClientFromRequest(request);
+      const drive = google.drive("v3");
 
       drive.files.create({
         auth,
@@ -50,11 +50,11 @@ D.addIntegration({
 
   form: (request) => {
 
-    let promise = new Promise<D.DataActionForm>((resolve, reject) => {
+    const promise = new Promise<D.DataActionForm>((resolve, reject) => {
 
-        let auth = googleClientFromRequest(request);
+        const auth = googleClientFromRequest(request);
 
-        let drive = google.drive("v3");
+        const drive = google.drive("v3");
         drive.files.list({
           auth,
           fields: "nextPageToken, files(id, name)",
@@ -65,7 +65,7 @@ D.addIntegration({
             reject(err);
           }
 
-          let form = new D.DataActionForm();
+          const form = new D.DataActionForm();
 
           form.fields = [{
             label: "Folder",
@@ -97,14 +97,14 @@ function googleClientFromRequest(request: D.DataActionRequest) {
     throw "No params provided.";
   }
 
-  let accessToken = request.params.google_oauth_token;
+  const accessToken = request.params.google_oauth_token;
 
   if (!accessToken) {
     throw "No google_oauth_token provided.";
   }
 
-  let auth = new googleAuth();
-  let oauth2 = new auth.OAuth2();
+  const auth = new googleAuth();
+  const oauth2 = new auth.OAuth2();
   oauth2.credentials = {access_token: accessToken};
   return oauth2;
 }
