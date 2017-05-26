@@ -31,7 +31,7 @@ export interface IIntegration {
   supportedActionTypes: DataActionType[];
   supportedFormats?: DataActionFormat[];
   supportedFormattings?: Array<"formatted" | "unformatted">;
-  applyVisualizationOptions?: boolean;
+  supportedVisualizationFormattings?: Array<"apply" | "noapply">;
   requiredFields?: IRequiredField[];
 
   params: IIntegrationParameter[];
@@ -77,7 +77,7 @@ export class Integration {
       supported_action_types: this.integration.supportedActionTypes,
       supported_formats: this.integration.supportedFormats,
       supported_formattings: this.integration.supportedFormattings,
-      apply_visualization_options: !!this.integration.applyVisualizationOptions,
+      supported_visualization_formattings: this.integration.supportedVisualizationFormattings,
       icon_data_uri: this.getImageDataUri(),
       url: this.integration.action ?
           Server.absUrl(`/integrations/${encodeURIComponent(this.integration.name)}/action`)
