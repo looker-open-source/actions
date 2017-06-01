@@ -9,9 +9,7 @@ export type DataActionFormat =
   "assembled_pdf" |
   "csv" |
   "html" |
-  "inline_json" |
   "json" |
-  "json_detail" |
   "txt" |
   "wysiwyg_pdf" |
   "wysiwyg_png" |
