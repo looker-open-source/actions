@@ -61,7 +61,7 @@ export class Server {
 
     // To provide a health or version check endpoint you should place a status.json file
     // into the project root, which will get served by this endpoint (or 404 otherwise).
-    this.app.get("/status.json", (_req, res) => {
+    this.app.get("/status", (_req, res) => {
       res.sendFile(path.resolve(`${__dirname}/../status.json`));
     });
 
