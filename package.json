@@ -49,9 +49,9 @@
     "node": "6.10.3"
   },
   "devDependencies": {
-    "@types/chai": "^3.5.2",
+    "@types/chai": "^4.0.0",
     "@types/mocha": "^2.2.41",
-    "chai": "^3.5.0",
+    "chai": "^4.0.2",
     "mocha": "^3.3.0",
     "tslint": "^5.3.2"
   }
