@@ -13,6 +13,7 @@ D.addIntegration({
       label: "GitHub API Key",
       name: "github_api_key",
       required: true,
+      sensitive: true,
     },
   ],
   supportedActionTypes: ["cell"],

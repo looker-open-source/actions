@@ -12,6 +12,7 @@ D.addIntegration({
       label: "Segment Write Key",
       name: "segment_write_key",
       required: true,
+      sensitive: true,
     },
   ],
   supportedActionTypes: ["query"],

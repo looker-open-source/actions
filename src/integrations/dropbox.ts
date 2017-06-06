@@ -14,6 +14,7 @@ D.addIntegration({
       label: "Dropbox Access Token",
       name: "dropbox_access_token",
       required: true,
+      sensitive: true,
     },
   ],
   action: async (request) => {

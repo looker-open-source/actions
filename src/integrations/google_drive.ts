@@ -14,6 +14,7 @@ D.addIntegration({
       label: "Google API OAuth Token",
       name: "google_oauth_token",
       required: true,
+      sensitive: true,
     },
   ],
   supportedActionTypes: ["query"],

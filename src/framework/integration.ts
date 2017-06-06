@@ -12,6 +12,7 @@ export interface IIntegrationParameter {
   name: string;
   label: string;
   required: boolean;
+  sensitive: boolean;
   description?: string;
 }
 
