@@ -1,5 +1,6 @@
 import * as bodyParser from "body-parser";
 import * as express from "express";
+import * as path from "path";
 import * as winston from "winston";
 import * as apiKey from "./api_key";
 import * as D from "./framework";
@@ -56,6 +57,12 @@ export class Server {
       } else {
         throw "No form defined for destination.";
       }
+    });
+
+    // To provide a health or version check endpoint you should place a status.json file
+    // into the project root, which will get served by this endpoint (or 404 otherwise).
+    this.app.get("/status.json", (_req, res) => {
+      res.sendFile(path.resolve(`${__dirname}/../status.json`));
     });
 
   }
