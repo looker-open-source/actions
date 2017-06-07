@@ -16,7 +16,9 @@ D.addIntegration({
     },
   ],
   supportedActionTypes: ["query"],
-  supportedFormats: ["json"],
+  supportedFormats: ["json_detail"],
+  supportedFormattings: ["unformatted"],
+  supportedVisualizationFormattings: ["noapply"],
   requiredFields: [{any_tag: ["email", "segment_user_id"]}],
 
   action: async (request) => {
