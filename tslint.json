@@ -7,7 +7,8 @@
       "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore"],
       "object-literal-sort-keys": false,
       "no-var-requires": false,
-      "no-string-throw": false
+      "no-string-throw": false,
+      "semicolon": [true, "never"]
     },
     "rulesDirectory": []
 }

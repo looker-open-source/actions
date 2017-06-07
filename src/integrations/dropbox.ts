@@ -1,5 +1,5 @@
-import * as D from "../framework";
-import Dropbox = require("dropbox");
+import * as D from "../framework"
+import Dropbox = require("dropbox")
 
 D.addIntegration({
   name: "dropbox",
@@ -19,45 +19,45 @@ D.addIntegration({
   ],
   action: async (request) => {
 
-    const dropboxClient = dropboxClientFromRequest(request);
+    const dropboxClient = dropboxClientFromRequest(request)
 
     if (request.type !== "query") {
-      throw "Only query actions are supported.";
+      throw "Only query actions are supported."
     }
 
     if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment";
+      throw "Couldn't get data from attachment"
     }
 
     if (request.attachment && request.attachment.fileExtension) {
 
-      const fileTitle = request.suggestedFilename();
+      const fileTitle = request.suggestedFilename()
       await dropboxClient.filesUpload({
         contents: request.attachment.dataBuffer,
         path: `/${fileTitle}`,
-      });
+      })
 
     } else {
-      throw "No attachment provided.";
+      throw "No attachment provided."
     }
 
-    return new D.DataActionResponse();
+    return new D.DataActionResponse()
   },
   form: async (request) => {
 
-    const dropboxClient = dropboxClientFromRequest(request);
+    const dropboxClient = dropboxClientFromRequest(request)
 
-    const files = await dropboxClient.filesListFolder({path: ""});
+    const files = await dropboxClient.filesListFolder({path: ""})
     const folders = files.entries.filter((file: any) => {
-      return file[".tag"] === "folder";
-    });
+      return file[".tag"] === "folder"
+    })
 
-    const form = new D.DataActionForm();
+    const form = new D.DataActionForm()
     form.fields = [{
       label: "Folder",
       name: "path",
       options: folders.map((f: any) => {
-        return {name: f.path_lower, label: f.path_display};
+        return {name: f.path_lower, label: f.path_display}
       }),
       required: true,
       type: "select",
@@ -65,22 +65,22 @@ D.addIntegration({
       description: "Leave blank to use a suggested filename including the date and time.",
       label: "Filename",
       name: "filename",
-    }];
+    }]
 
-    return form;
+    return form
   },
-});
+})
 
 function dropboxClientFromRequest(request: D.DataActionRequest) {
   if (!request.params) {
-    throw "No params provided.";
+    throw "No params provided."
   }
 
-  const accessToken = request.params.dropbox_access_token;
+  const accessToken = request.params.dropbox_access_token
 
   if (!accessToken) {
-    throw "No dropbox_access_token provided.";
+    throw "No dropbox_access_token provided."
   }
 
-  return new Dropbox({accessToken});
+  return new Dropbox({accessToken})
 }

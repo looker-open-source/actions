@@ -1,7 +1,7 @@
-const googleAuth = require("google-auth-library");
-const google = require("googleapis");
+const googleAuth = require("google-auth-library")
+const google = require("googleapis")
 
-import * as D from "../framework";
+import * as D from "../framework"
 
 D.addIntegration({
   name: "google_drive",
@@ -22,12 +22,12 @@ D.addIntegration({
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment) {
-        reject("No attachment.");
-        return;
+        reject("No attachment.")
+        return
       }
 
-      const auth  = googleClientFromRequest(request);
-      const drive = google.drive("v3");
+      const auth  = googleClientFromRequest(request)
+      const drive = google.drive("v3")
 
       drive.files.create({
         auth,
@@ -40,12 +40,12 @@ D.addIntegration({
         },
       }, (err: any) => {
         if (err) {
-          reject(err);
+          reject(err)
         } else {
-          resolve(new D.DataActionResponse());
+          resolve(new D.DataActionResponse())
         }
-      });
-    });
+      })
+    })
 
   },
 
@@ -53,9 +53,9 @@ D.addIntegration({
 
     const promise = new Promise<D.DataActionForm>((resolve, reject) => {
 
-        const auth = googleClientFromRequest(request);
+        const auth = googleClientFromRequest(request)
 
-        const drive = google.drive("v3");
+        const drive = google.drive("v3")
         drive.files.list({
           auth,
           fields: "nextPageToken, files(id, name)",
@@ -63,16 +63,16 @@ D.addIntegration({
         }, (err: any, response: any) => {
 
           if (err) {
-            reject(err);
+            reject(err)
           }
 
-          const form = new D.DataActionForm();
+          const form = new D.DataActionForm()
 
           form.fields = [{
             label: "Folder",
             name: "path",
             options: response.files.map((f: {id: string, name: string}) => {
-              return {name: f.id, label: f.name};
+              return {name: f.id, label: f.name}
             }),
             required: true,
             type: "select",
@@ -80,32 +80,32 @@ D.addIntegration({
             description: "Leave blank to use a suggested filename including the date and time.",
             label: "Filename",
             name: "filename",
-          }];
+          }]
 
-          resolve(form);
+          resolve(form)
 
-        });
+        })
 
-    });
+    })
 
-    return promise;
+    return promise
 
   },
-});
+})
 
 function googleClientFromRequest(request: D.DataActionRequest) {
   if (!request.params) {
-    throw "No params provided.";
+    throw "No params provided."
   }
 
-  const accessToken = request.params.google_oauth_token;
+  const accessToken = request.params.google_oauth_token
 
   if (!accessToken) {
-    throw "No google_oauth_token provided.";
+    throw "No google_oauth_token provided."
   }
 
-  const auth = new googleAuth();
-  const oauth2 = new auth.OAuth2();
-  oauth2.credentials = {access_token: accessToken};
-  return oauth2;
+  const auth = new googleAuth()
+  const oauth2 = new auth.OAuth2()
+  oauth2.credentials = {access_token: accessToken}
+  return oauth2
 }

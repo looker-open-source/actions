@@ -1,5 +1,5 @@
-import Segment = require("analytics-node");
-import * as D from "../framework";
+import Segment = require("analytics-node")
+import * as D from "../framework"
 
 D.addIntegration({
   name: "segment_event",
@@ -24,35 +24,35 @@ D.addIntegration({
   action: async (request) => {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      const segment = segmentClientFromRequest(request);
+      const segment = segmentClientFromRequest(request)
 
       if (!(request.attachment && request.attachment.dataJSON)) {
-        reject("No attached json");
-        return;
+        reject("No attached json")
+        return
       }
 
       for (const row of request.attachment.dataJSON) {
-        const keys = Object.keys(row);
+        const keys = Object.keys(row)
         segment.identify({
           traits: row,
           userId: row[keys[0]],
-        });
+        })
       }
 
       // TODO: does this batching have global state that could be a security problem
       segment.flush((err, _batch) => {
         if (err) {
-          reject(err);
+          reject(err)
         } else {
-          resolve(new D.DataActionResponse());
+          resolve(new D.DataActionResponse())
         }
-      });
+      })
 
-    });
+    })
   },
 
-});
+})
 
 function segmentClientFromRequest(request: D.DataActionRequest) {
-  return new Segment(request.params.segment_write_key);
+  return new Segment(request.params.segment_write_key)
 }

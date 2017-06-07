@@ -1,6 +1,6 @@
-import * as D from "../framework";
+import * as D from "../framework"
 
-import * as Github from "github";
+import * as Github from "github"
 
 D.addIntegration({
   name: "github_update_issue",
@@ -22,32 +22,32 @@ D.addIntegration({
     {tag: "github_issue_url"},
   ],
   action: async (request) => {
-    const github = githubClientFromRequest(request);
+    const github = githubClientFromRequest(request)
 
     try {
 
-      const issueParams = githubIssueFromRequest(request);
+      const issueParams = githubIssueFromRequest(request)
       const params = Object.assign(issueParams, {
         body: request.formParams.body,
         state: request.formParams.state,
         title: request.formParams.title,
-      });
+      })
 
-      await github.issues.edit(params);
+      await github.issues.edit(params)
 
     } catch (e) {
-      throw e.message;
+      throw e.message
     }
-    return new D.DataActionResponse();
+    return new D.DataActionResponse()
   },
 
   form: async (request) => {
-    const github = githubClientFromRequest(request);
+    const github = githubClientFromRequest(request)
 
-    const form = new D.DataActionForm();
+    const form = new D.DataActionForm()
     try {
 
-      const issue = await github.issues.get(githubIssueFromRequest(request));
+      const issue = await github.issues.get(githubIssueFromRequest(request))
 
       form.fields = [{
         default: issue.data.title,
@@ -70,35 +70,35 @@ D.addIntegration({
         ],
         required: true,
         type: "select",
-      }];
+      }]
 
     } catch (e) {
-      throw e.message;
+      throw e.message
     }
 
-    return form;
+    return form
   },
-});
+})
 
 function githubIssueFromRequest(request: D.DataActionRequest) {
-  const splits = request.params.value.split("/");
-  const owner = splits[3];
-  const repo = splits[4];
-  const num = splits[6];
+  const splits = request.params.value.split("/")
+  const owner = splits[3]
+  const repo = splits[4]
+  const num = splits[6]
   return {
     owner,
     repo,
     number: parseInt(num, 10),
-  };
+  }
 }
 
 function githubClientFromRequest(request: D.DataActionRequest) {
-  const github = new Github();
+  const github = new Github()
 
   github.authenticate({
     token: request.params.github_api_key,
     type: "oauth",
-  });
+  })
 
-  return github;
+  return github
 }

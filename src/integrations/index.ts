@@ -1,4 +1,4 @@
-import "./dropbox";
-import "./github";
-import "./google_drive";
-import "./segment";
+import "./dropbox"
+import "./github"
+import "./google_drive"
+import "./segment"

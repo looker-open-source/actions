@@ -9,8 +9,8 @@
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/index.ts",
     "test": "yarn test-ts && yarn lint",
     "test-ts": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register test/**/test.ts",
-    "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts'",
-    "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts'"
+    "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json --type-check",
+    "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json --type-check"
   },
   "keywords": [
     "looker",
