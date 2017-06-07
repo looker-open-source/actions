@@ -10,6 +10,7 @@ export type DataActionFormat =
   "csv" |
   "html" |
   "json" |
+  "json_details" |
   "txt" |
   "wysiwyg_pdf" |
   "wysiwyg_png" |
