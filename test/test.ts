@@ -1,7 +1,8 @@
 import { expect } from "chai"
 
-import * as D from "../src/framework"
 import "../src/integrations/index"
+
+import * as D from "../src/framework"
 
 D.allIntegrations().then((integrations) => {
   integrations.forEach((integration) => {
