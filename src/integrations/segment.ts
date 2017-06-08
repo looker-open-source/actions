@@ -1,6 +1,8 @@
 import Segment = require("analytics-node")
 import * as D from "../framework"
 
+const idTags = ["email", "segment_user_id"]
+
 D.addIntegration({
   name: "segment_event",
   label: "Segment - Create Events",
@@ -19,7 +21,7 @@ D.addIntegration({
   supportedFormats: ["json_detail"],
   supportedFormattings: ["unformatted"],
   supportedVisualizationFormattings: ["noapply"],
-  requiredFields: [{any_tag: ["email", "segment_user_id"]}],
+  requiredFields: [{any_tag: idTags}],
 
   action: async (request) => {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
@@ -31,11 +33,31 @@ D.addIntegration({
         return
       }
 
-      for (const row of request.attachment.dataJSON) {
-        const keys = Object.keys(row)
+      const qr = request.attachment.dataJSON
+      const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
+
+      const idFields = fields.filter((f: any) =>
+        f.tags.some((t: string) => idTags.indexOf(t) !== -1)
+      )
+
+      if (idFields.length == 0) {
+        reject(`Query requires a field tagged ${idTags.join(" or ")}`)
+        return
+      }
+
+      const idField: any = idFields[0]
+
+      for (const row of qr.data) {
+        const idValue = row[idField.name].value
+        const traits: any = {}
+        for (const field of fields) {
+          if (field.name != idField.name) {
+            traits[field.name] = row[field.name].value
+          }
+        }
         segment.identify({
-          traits: row,
-          userId: row[keys[0]],
+          traits: traits,
+          userId: idValue,
         })
       }
 
