@@ -5,9 +5,9 @@ const idTags = ["email", "segment_user_id"]
 
 D.addIntegration({
   name: "segment_event",
-  label: "Segment - Create Events",
+  label: "Segment - Identify User",
   iconName: "segment.png",
-  description: "Create events for a particular user in Segment.",
+  description: "Add traits to your users.",
   params: [
     {
       description: "A write key for Segment.",
