@@ -11,6 +11,7 @@ export type DataActionFormat =
   "html" |
   "json" |
   "json_detail" |
+  "inline_json" |
   "txt" |
   "wysiwyg_pdf" |
   "wysiwyg_png" |
