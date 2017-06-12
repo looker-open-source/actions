@@ -26,10 +26,17 @@ D.addIntegration({
 
     try {
 
+      // Ensure state is a known value
+      const providedState = request.formParams.state
+      if (providedState !== "open" && providedState !== "closed") {
+        throw "Unknown 'state' provided"
+      }
+      const state: "open" | "closed" = providedState
+
       const issueParams = githubIssueFromRequest(request)
       const params = Object.assign(issueParams, {
         body: request.formParams.body,
-        state: request.formParams.state,
+        state,
         title: request.formParams.title,
       })
 
