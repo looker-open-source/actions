@@ -17,7 +17,11 @@
     "data",
     "integration"
   ],
-  "author": "Looker <support@looker.com>",
+  "author": {
+    "name": "Looker",
+    "email": "opensource+integrations@looker.com",
+    "url": "https://looker.com/"
+  },
   "license": "MIT",
   "dependencies": {
     "@types/analytics-node": "^0.0.30",
