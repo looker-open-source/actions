@@ -37,10 +37,10 @@ D.addIntegration({
       const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
 
       const idFields = fields.filter((f: any) =>
-        f.tags.some((t: string) => idTags.indexOf(t) !== -1)
+        f.tags.some((t: string) => idTags.indexOf(t) !== -1),
       )
 
-      if (idFields.length == 0) {
+      if (idFields.length === 0) {
         reject(`Query requires a field tagged ${idTags.join(" or ")}`)
         return
       }
@@ -51,12 +51,12 @@ D.addIntegration({
         const idValue = row[idField.name].value
         const traits: any = {}
         for (const field of fields) {
-          if (field.name != idField.name) {
+          if (field.name !== idField.name) {
             traits[field.name] = row[field.name].value
           }
         }
         segment.identify({
-          traits: traits,
+          traits,
           userId: idValue,
         })
       }
