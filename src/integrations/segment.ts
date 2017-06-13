@@ -34,6 +34,11 @@ D.addIntegration({
       }
 
       const qr = request.attachment.dataJSON
+      if (!qr.fields) {
+        reject("Request payload is an invalid format.")
+        return
+      }
+
       const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
 
       const idFields = fields.filter((f: any) =>
