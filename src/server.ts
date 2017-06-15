@@ -24,6 +24,7 @@ export class Server {
 
     this.app = express()
     this.app.use(bodyParser.json({limit: "250mb"}))
+    this.app.use(express.static("public"))
 
     this.route("/", async (_req, res) => {
       const integrations = await D.allIntegrations()
