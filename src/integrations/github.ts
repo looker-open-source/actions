@@ -24,7 +24,7 @@ class GithubIntegration extends D.Integration {
   ]
 
   async action(request: D.DataActionRequest) {
-    const github = githubClientFromRequest(request)
+    const github = this.githubClientFromRequest(request)
 
     try {
 
@@ -35,7 +35,7 @@ class GithubIntegration extends D.Integration {
       }
       const state: "open" | "closed" = providedState
 
-      const issueParams = githubIssueFromRequest(request)
+      const issueParams = this.githubIssueFromRequest(request)
       const params = Object.assign(issueParams, {
         body: request.formParams.body,
         state,
@@ -51,12 +51,12 @@ class GithubIntegration extends D.Integration {
   }
 
   async form(request: D.DataActionRequest) {
-    const github = githubClientFromRequest(request)
+    const github = this.githubClientFromRequest(request)
 
     const form = new D.DataActionForm()
     try {
 
-      const issue = await github.issues.get(githubIssueFromRequest(request))
+      const issue = await github.issues.get(this.githubIssueFromRequest(request))
 
       form.fields = [{
         default: issue.data.title,
@@ -88,29 +88,29 @@ class GithubIntegration extends D.Integration {
     return form
   }
 
-}
-
-function githubIssueFromRequest(request: D.DataActionRequest) {
-  const splits = request.params.value.split("/")
-  const owner = splits[3]
-  const repo = splits[4]
-  const num = splits[6]
-  return {
-    owner,
-    repo,
-    number: parseInt(num, 10),
+  private githubIssueFromRequest(request: D.DataActionRequest) {
+    const splits = request.params.value.split("/")
+    const owner = splits[3]
+    const repo = splits[4]
+    const num = splits[6]
+    return {
+      owner,
+      repo,
+      number: parseInt(num, 10),
+    }
   }
-}
 
-function githubClientFromRequest(request: D.DataActionRequest) {
-  const github = new Github()
+  private githubClientFromRequest(request: D.DataActionRequest) {
+    const github = new Github()
 
-  github.authenticate({
-    token: request.params.github_api_key,
-    type: "oauth",
-  })
+    github.authenticate({
+      token: request.params.github_api_key,
+      type: "oauth",
+    })
 
-  return github
+    return github
+  }
+
 }
 
 D.addIntegration(new GithubIntegration())

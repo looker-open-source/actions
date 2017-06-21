@@ -31,7 +31,7 @@ class SegmentIntegration extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      const segment = segmentClientFromRequest(request)
+      const segment = this.segmentClientFromRequest(request)
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
@@ -83,10 +83,10 @@ class SegmentIntegration extends D.Integration {
     })
   }
 
-}
+  private segmentClientFromRequest(request: D.DataActionRequest) {
+    return new Segment(request.params.segment_write_key)
+  }
 
-function segmentClientFromRequest(request: D.DataActionRequest) {
-  return new Segment(request.params.segment_write_key)
 }
 
 D.addIntegration(new SegmentIntegration())
