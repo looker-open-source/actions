@@ -72,7 +72,7 @@ export class Server {
     this.app.post(path, async (req, res) => {
       winston.info(`Starting request for ${req.url}`)
 
-      const tokenMatch = (req.headers.authorization || "").match(TOKEN_REGEX)
+      const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})
