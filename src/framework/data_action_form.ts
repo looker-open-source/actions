@@ -1,10 +1,8 @@
 export class DataActionForm {
-  public fields: IDataActionFormField[]
-
-  public asJson(): any {
+  fields: IDataActionFormField[]
+  asJson(): any {
     return this.fields
   }
-
 }
 
 export interface IDataActionFormField {

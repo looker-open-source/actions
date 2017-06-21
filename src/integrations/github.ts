@@ -2,11 +2,12 @@ import * as D from "../framework"
 
 import * as Github from "github"
 
-D.addIntegration({
-  name: "github_update_issue",
-  label: "GitHub - Update Issue",
-  iconName: "github.svg",
-  description: "Update status, title, and body for GitHub issues.",
+class GithubIntegration extends D.Integration {
+
+  name: "github_update_issue"
+  label: "GitHub - Update Issue"
+  iconName: "github.svg"
+  description: "Update status, title, and body for GitHub issues."
   params: [
     {
       description: "An API key for GitHub from https://github.com/settings/tokens.",
@@ -14,14 +15,15 @@ D.addIntegration({
       name: "github_api_key",
       required: true,
       sensitive: true,
-    },
-  ],
-  supportedActionTypes: ["cell"],
-  supportedFormats: ["json"],
+    }
+  ]
+  supportedActionTypes: ["cell"]
+  supportedFormats: ["json"]
   requiredFields: [
-    {tag: "github_issue_url"},
-  ],
-  action: async (request) => {
+    {tag: "github_issue_url"}
+  ]
+
+  async action(request: D.DataActionRequest) {
     const github = githubClientFromRequest(request)
 
     try {
@@ -46,9 +48,9 @@ D.addIntegration({
       throw e.message
     }
     return new D.DataActionResponse()
-  },
+  }
 
-  form: async (request) => {
+  async form(request: D.DataActionRequest) {
     const github = githubClientFromRequest(request)
 
     const form = new D.DataActionForm()
@@ -84,8 +86,9 @@ D.addIntegration({
     }
 
     return form
-  },
-})
+  }
+
+}
 
 function githubIssueFromRequest(request: D.DataActionRequest) {
   const splits = request.params.value.split("/")
@@ -109,3 +112,5 @@ function githubClientFromRequest(request: D.DataActionRequest) {
 
   return github
 }
+
+D.addIntegration(new GithubIntegration())

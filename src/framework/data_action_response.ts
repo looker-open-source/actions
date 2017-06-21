@@ -5,12 +5,12 @@ export interface IValidationError {
 
 export class DataActionResponse {
 
-  public message: string
-  public refreshQuery: boolean = false
-  public success: boolean = true
-  public validationErrors: IValidationError[] = []
+  message: string
+  refreshQuery: boolean = false
+  success: boolean = true
+  validationErrors: IValidationError[] = []
 
-  public asJson(): any {
+  asJson(): any {
     const errs: any = {}
     for (const error of (this.validationErrors || [])) {
       errs[error.field] = error.message

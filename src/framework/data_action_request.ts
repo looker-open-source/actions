@@ -26,7 +26,7 @@ export interface IDataActionAttachment {
 
 export class DataActionRequest {
 
-  public static fromJSON(json: any) {
+  static fromJSON(json: any) {
 
     if (!json) {
       throw "Request body must be valid JSON."
@@ -68,16 +68,16 @@ export class DataActionRequest {
     return request
   }
 
-  public type: DataActionType
-  public params: IParamMap = {}
-  public formParams: IParamMap = {}
+  type: DataActionType
+  params: IParamMap = {}
+  formParams: IParamMap = {}
 
-  public attachment?: IDataActionAttachment
+  attachment?: IDataActionAttachment
 
-  public lookerUrl?: string
-  public title?: string
+  lookerUrl?: string
+  title?: string
 
-  public suggestedFilename(): string | undefined {
+  suggestedFilename(): string | undefined {
     if (this.attachment) {
       if (this.title) {
         return sanitizeFilename(`${this.title}.${this.attachment.fileExtension}`)

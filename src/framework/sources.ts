@@ -1,9 +1,9 @@
-import { IIntegration, Integration } from "./integration"
+import { Integration } from "./integration"
 
 const integrations: Integration[] = []
 
-export function addIntegration(integration: IIntegration) {
-  integrations.push(new Integration(integration))
+export function addIntegration(integration: Integration) {
+  integrations.push(integration)
 }
 
 export async function allIntegrations() {

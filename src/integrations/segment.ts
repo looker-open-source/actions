@@ -3,11 +3,12 @@ import * as D from "../framework"
 
 const idTags = ["email", "segment_user_id"]
 
-D.addIntegration({
-  name: "segment_event",
-  label: "Segment - Identify User",
-  iconName: "segment.png",
-  description: "Add traits to your users.",
+class SegmentIntegration extends D.Integration {
+
+  name: "segment_event"
+  label: "Segment - Identify User"
+  iconName: "segment.png"
+  description: "Add traits to your users."
   params: [
     {
       description: "A write key for Segment.",
@@ -15,15 +16,19 @@ D.addIntegration({
       name: "segment_write_key",
       required: true,
       sensitive: true,
-    },
-  ],
-  supportedActionTypes: ["query"],
-  supportedFormats: ["json_detail"],
-  supportedFormattings: ["unformatted"],
-  supportedVisualizationFormattings: ["noapply"],
-  requiredFields: [{any_tag: idTags}],
+    }
+  ]
+  supportedActionTypes: ["query"]
+  supportedFormats: ["json_detail"]
+  supportedFormattings: ["unformatted"]
+  supportedVisualizationFormattings: ["noapply"]
 
-  action: async (request) => {
+  constructor() {
+    super()
+    this.requiredFields = [{any_tag: idTags}]
+  }
+
+  async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       const segment = segmentClientFromRequest(request)
@@ -76,10 +81,12 @@ D.addIntegration({
       })
 
     })
-  },
+  }
 
-})
+}
 
 function segmentClientFromRequest(request: D.DataActionRequest) {
   return new Segment(request.params.segment_write_key)
 }
+
+D.addIntegration(new SegmentIntegration())

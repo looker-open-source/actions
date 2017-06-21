@@ -10,15 +10,15 @@ const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 
 export class Server {
 
-  public static bootstrap() {
+  static bootstrap() {
     return new Server()
   }
 
-  public static absUrl(rootRelativeUrl: string) {
+  static absUrl(rootRelativeUrl: string) {
     return `${process.env.BASE_URL}${rootRelativeUrl}`
   }
 
-  public app: express.Application
+  app: express.Application
 
   constructor() {
 
@@ -42,7 +42,7 @@ export class Server {
 
     this.route("/integrations/:integrationId/action", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
-      if (destination.action) {
+      if (destination.hasAction) {
          const actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body))
          res.json(actionResponse.asJson())
       } else {
@@ -52,8 +52,8 @@ export class Server {
 
     this.route("/integrations/:integrationId/form", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
-      if (destination.form) {
-         const form = await destination.form(D.DataActionRequest.fromJSON(req.body))
+      if (destination.hasForm) {
+         const form = await destination.validateAndFetchForm(D.DataActionRequest.fromJSON(req.body))
          res.json(form.asJson())
       } else {
         throw "No form defined for destination."
