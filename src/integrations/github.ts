@@ -4,24 +4,27 @@ import * as Github from "github"
 
 class GithubIntegration extends D.Integration {
 
-  name: "github_update_issue"
-  label: "GitHub - Update Issue"
-  iconName: "github.svg"
-  description: "Update status, title, and body for GitHub issues."
-  params: [
-    {
-      description: "An API key for GitHub from https://github.com/settings/tokens.",
-      label: "GitHub API Key",
-      name: "github_api_key",
-      required: true,
-      sensitive: true,
-    }
-  ]
-  supportedActionTypes: ["cell"]
-  supportedFormats: ["json"]
-  requiredFields: [
-    {tag: "github_issue_url"}
-  ]
+  constructor() {
+    super()
+    this.name = "github_update_issue"
+    this.label = "GitHub - Update Issue"
+    this.iconName = "github.svg"
+    this.description = "Update status, title, and body for GitHub issues."
+    this.params = [
+      {
+        description: "An API key for GitHub from https://github.com/settings/tokens.",
+        label: "GitHub API Key",
+        name: "github_api_key",
+        required: true,
+        sensitive: true,
+      },
+    ]
+    this.supportedActionTypes = ["cell"]
+    this.supportedFormats = ["json"]
+    this.requiredFields = [
+      {tag: "github_issue_url"},
+    ]
+  }
 
   async action(request: D.DataActionRequest) {
     const github = this.githubClientFromRequest(request)

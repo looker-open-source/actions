@@ -3,24 +3,30 @@ import * as D from "../framework"
 
 class SegmentIntegration extends D.Integration {
 
-  name: "segment_event"
-  label: "Segment - Identify User"
-  iconName: "segment.png"
-  description: "Add traits to your users."
-  params: [
-    {
-      description: "A write key for Segment.",
-      label: "Segment Write Key",
-      name: "segment_write_key",
-      required: true,
-      sensitive: true,
-    }
-  ]
-  supportedActionTypes: ["query"]
-  supportedFormats: ["json_detail"]
-  supportedFormattings: ["unformatted"]
-  supportedVisualizationFormattings: ["noapply"]
-  requiredFields: [{any_tag: ["email", "segment_user_id"]}]
+  allowedTags = ["email", "segment_user_id"]
+
+  constructor() {
+    super()
+
+    this.name = "segment_event"
+    this.label = "Segment - Identify User"
+    this.iconName = "segment.png"
+    this.description = "Add traits to your users."
+    this.params = [
+      {
+        description: "A write key for Segment.",
+        label: "Segment Write Key",
+        name: "segment_write_key",
+        required: true,
+        sensitive: true,
+      },
+    ]
+    this.supportedActionTypes = ["query"]
+    this.supportedFormats = ["json_detail"]
+    this.supportedFormattings = ["unformatted"]
+    this.supportedVisualizationFormattings = ["noapply"]
+    this.requiredFields = [{any_tag: this.allowedTags}]
+  }
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
@@ -40,14 +46,12 @@ class SegmentIntegration extends D.Integration {
 
       const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
 
-      const tags: string[] = this.requiredFields[0].any_tag
-
       const idFields = fields.filter((f: any) =>
-        f.tags.some((t: string) => tags.indexOf(t) !== -1),
+        f.tags.some((t: string) => this.allowedTags.indexOf(t) !== -1),
       )
 
       if (idFields.length === 0) {
-        reject(`Query requires a field tagged ${tags.join(" or ")}`)
+        reject(`Query requires a field tagged ${this.allowedTags.join(" or ")}`)
         return
       }
 
