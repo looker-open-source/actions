@@ -46,7 +46,7 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "6.10.3"
+    "node": "8.1.4"
   },
   "devDependencies": {
     "@types/chai": "^4.0.0",
