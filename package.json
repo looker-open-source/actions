@@ -7,6 +7,7 @@
     "start": "./node_modules/.bin/ts-node ./src/index.ts",
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/index.ts",
+    "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && yarn lint",
     "test-ts": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register test/**/test.ts",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json --type-check",
@@ -50,9 +51,13 @@
   },
   "devDependencies": {
     "@types/chai": "^4.0.0",
+    "@types/chai-http": "^3.0.0",
     "@types/mocha": "^2.2.41",
+    "@types/sinon": "^2.3.3",
     "chai": "^4.0.2",
+    "chai-http": "^3.0.0",
     "mocha": "^3.3.0",
+    "sinon": "^2.3.8",
     "tslint": "^5.4.3"
   }
 }
