@@ -76,7 +76,6 @@ export class SegmentIntegration extends D.Integration {
           lookerInstanceId: request.instanceId,
           lookerQueryId: request.scheduledPlan && request.scheduledPlan.queryId,
           lookerScheduledPlanId: request.scheduledPlan && request.scheduledPlan.scheduledPlanId,
-          lookerSentAt: request.scheduledPlan && request.scheduledPlan.title,
           lookerTitle: request.scheduledPlan && request.scheduledPlan.title,
           lookerType: request.scheduledPlan && request.scheduledPlan.type,
           lookerUrl: request.scheduledPlan && request.scheduledPlan.url,
