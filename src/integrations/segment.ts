@@ -9,7 +9,7 @@ class SegmentIntegration extends D.Integration {
     super()
 
     this.name = "segment_event"
-    this.label = "Segment - Identify User"
+    this.label = "Segment"
     this.iconName = "segment.png"
     this.description = "Add traits to your users."
     this.params = [
