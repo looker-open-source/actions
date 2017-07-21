@@ -6,15 +6,19 @@ before(async () => {
   const allIntegrations = await D.allIntegrations()
   allIntegrations.forEach((integration) => {
 
-    describe(`${integration.name} smoke tests`, () => {
+    describe("Smoke Tests", () => {
 
-      it("should provide the action function", () => {
-        chai.assert.typeOf(integration.action, "function")
-      })
+      describe(integration.constructor.name, () => {
 
-      it("should properly create json", () => {
-        const json = integration.asJson()
-        chai.assert.typeOf(json.url, "string")
+        it("should provide the action function", () => {
+          chai.assert.typeOf(integration.action, "function")
+        })
+
+        it("should properly create json", () => {
+          const json = integration.asJson()
+          chai.assert.typeOf(json.url, "string")
+        })
+
       })
 
     })
