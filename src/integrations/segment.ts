@@ -1,5 +1,8 @@
-import Segment = require("analytics-node")
+import * as uuid from "uuid"
+
 import * as D from "../framework"
+
+const segment: any = require("analytics-node")
 
 export class SegmentIntegration extends D.Integration {
 
@@ -53,7 +56,8 @@ export class SegmentIntegration extends D.Integration {
         return
       }
 
-      const segment = this.segmentClientFromRequest(request)
+      const segmentClient = this.segmentClientFromRequest(request)
+      const anonymousId = uuid.v4()
 
       const idField: any = idFields[0]
 
@@ -65,14 +69,15 @@ export class SegmentIntegration extends D.Integration {
             traits[field.name] = row[field.name].value
           }
         }
-        segment.identify({
+        segmentClient.identify({
+          anonymousId,
           traits,
           userId: idValue,
         })
       }
 
       // TODO: does this batching have global state that could be a security problem
-      segment.flush((err, _batch) => {
+      segmentClient.flush((err: any) => {
         if (err) {
           reject(err)
         } else {
@@ -84,7 +89,7 @@ export class SegmentIntegration extends D.Integration {
   }
 
   private segmentClientFromRequest(request: D.DataActionRequest) {
-    return new Segment(request.params.segment_write_key)
+    return new segment(request.params.segment_write_key)
   }
 
 }
