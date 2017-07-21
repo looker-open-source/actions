@@ -51,10 +51,12 @@
   },
   "devDependencies": {
     "@types/chai": "^4.0.0",
+    "@types/chai-as-promised": "^0.0.31",
     "@types/chai-http": "^3.0.0",
     "@types/mocha": "^2.2.41",
     "@types/sinon": "^2.3.3",
     "chai": "^4.0.2",
+    "chai-as-promised": "^7.1.1",
     "chai-http": "^3.0.0",
     "mocha": "^3.3.0",
     "sinon": "^2.3.8",

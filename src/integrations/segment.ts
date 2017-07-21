@@ -1,7 +1,7 @@
 import Segment = require("analytics-node")
 import * as D from "../framework"
 
-class SegmentIntegration extends D.Integration {
+export class SegmentIntegration extends D.Integration {
 
   allowedTags = ["email", "segment_user_id"]
 
@@ -31,8 +31,6 @@ class SegmentIntegration extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      const segment = this.segmentClientFromRequest(request)
-
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
         return
@@ -54,6 +52,8 @@ class SegmentIntegration extends D.Integration {
         reject(`Query requires a field tagged ${this.allowedTags.join(" or ")}`)
         return
       }
+
+      const segment = this.segmentClientFromRequest(request)
 
       const idField: any = idFields[0]
 
