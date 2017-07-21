@@ -1,3 +1,4 @@
+import * as express from "express"
 import * as sanitizeFilename from "sanitize-filename"
 
 export interface IParamMap {
@@ -24,7 +25,23 @@ export interface IDataActionAttachment {
   fileExtension?: string
 }
 
+export interface IDataActionScheduledPlan {
+  filtersDifferFromLook?: boolean
+  queryId?: number
+  scheduledPlanId?: number
+  title?: string
+  type?: string
+  url?: string
+}
+
 export class DataActionRequest {
+
+  static fromRequest(request: express.Request) {
+    const dataActionRequest = this.fromJSON(request.body)
+    dataActionRequest.instanceId = request.header("x-looker-instance")
+    dataActionRequest.webhookId = request.header("x-looker-webhook-id")
+    return dataActionRequest
+  }
 
   static fromJSON(json: any) {
 
@@ -53,8 +70,14 @@ export class DataActionRequest {
     }
 
     if (json && json.scheduled_plan) {
-      request.lookerUrl = json.scheduled_plan.url
-      request.title = json.scheduled_plan.title
+      request.scheduledPlan = {
+        filtersDifferFromLook: json.scheduled_plan.filters_differ_from_look,
+        queryId: json.scheduled_plan.query_id,
+        scheduledPlanId: json.scheduled_plan_id,
+        title: json.scheduled_plan.title,
+        type: json.scheduled_plan.type,
+        url: json.scheduled_plan.url,
+      }
     }
 
     if (json && json.data) {
@@ -68,19 +91,18 @@ export class DataActionRequest {
     return request
   }
 
-  type: DataActionType
-  params: IParamMap = {}
-  formParams: IParamMap = {}
-
   attachment?: IDataActionAttachment
-
-  lookerUrl?: string
-  title?: string
+  formParams: IParamMap = {}
+  params: IParamMap = {}
+  scheduledPlan?: IDataActionScheduledPlan
+  type: DataActionType
+  instanceId?: string
+  webhookId?: string
 
   suggestedFilename(): string | undefined {
     if (this.attachment) {
-      if (this.title) {
-        return sanitizeFilename(`${this.title}.${this.attachment.fileExtension}`)
+      if (this.scheduledPlan && this.scheduledPlan.title) {
+        return sanitizeFilename(`${this.scheduledPlan.title}.${this.attachment.fileExtension}`)
       } else {
         return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
       }

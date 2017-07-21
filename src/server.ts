@@ -43,7 +43,7 @@ export class Server {
     this.route("/integrations/:integrationId/action", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       if (destination.hasAction) {
-         const actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromJSON(req.body))
+         const actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromRequest(req))
          res.json(actionResponse.asJson())
       } else {
         throw "No action defined for destination."
@@ -53,7 +53,7 @@ export class Server {
     this.route("/integrations/:integrationId/form", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       if (destination.hasForm) {
-         const form = await destination.validateAndFetchForm(D.DataActionRequest.fromJSON(req.body))
+         const form = await destination.validateAndFetchForm(D.DataActionRequest.fromRequest(req))
          res.json(form.asJson())
       } else {
         throw "No form defined for destination."

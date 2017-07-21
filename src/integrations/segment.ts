@@ -58,12 +58,30 @@ export class SegmentIntegration extends D.Integration {
 
       const segmentClient = this.segmentClientFromRequest(request)
       const anonymousId = uuid.v4()
+      const ranAt = qr.ran_at && new Date(qr.ran_at)
 
       const idField: any = idFields[0]
 
+      const context = {
+        app: {
+          name: "looker/integrations",
+          version: process.env.APP_VERSION,
+        },
+      }
+
       for (const row of qr.data) {
         const idValue = row[idField.name].value
-        const traits: any = {}
+        const traits: any = {
+          lookerFiltersDifferFromLook: request.scheduledPlan && request.scheduledPlan.filtersDifferFromLook,
+          lookerInstanceId: request.instanceId,
+          lookerQueryId: request.scheduledPlan && request.scheduledPlan.queryId,
+          lookerScheduledPlanId: request.scheduledPlan && request.scheduledPlan.scheduledPlanId,
+          lookerSentAt: request.scheduledPlan && request.scheduledPlan.title,
+          lookerTitle: request.scheduledPlan && request.scheduledPlan.title,
+          lookerType: request.scheduledPlan && request.scheduledPlan.type,
+          lookerUrl: request.scheduledPlan && request.scheduledPlan.url,
+          lookerWebhookId: request.webhookId,
+        }
         for (const field of fields) {
           if (field.name !== idField.name) {
             traits[field.name] = row[field.name].value
@@ -71,7 +89,9 @@ export class SegmentIntegration extends D.Integration {
         }
         segmentClient.identify({
           anonymousId,
+          context,
           traits,
+          timestamp: ranAt,
           userId: idValue,
         })
       }
