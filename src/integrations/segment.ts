@@ -86,13 +86,22 @@ export class SegmentIntegration extends D.Integration {
             traits[field.name] = row[field.name].value
           }
         }
-        segmentClient.identify({
-          anonymousId,
-          context,
-          traits,
-          timestamp: ranAt,
-          userId: idValue,
-        })
+        if (idField.name === "email") {
+          segmentClient.identify({
+            anonymousId,
+            context,
+            traits,
+            timestamp: ranAt,
+            email: idValue,
+          })
+        } else if (idField.name === "segment_user_id") {
+          segmentClient.identify({
+            context,
+            traits,
+            timestamp: ranAt,
+            userId: idValue,
+          })
+        }
       }
 
       // TODO: does this batching have global state that could be a security problem
