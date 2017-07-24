@@ -40,27 +40,32 @@ export class SegmentIntegration extends D.Integration {
       }
 
       const qr = request.attachment.dataJSON
-      if (!qr.fields) {
+      if (!qr.fields || !qr.data) {
         reject("Request payload is an invalid format.")
         return
       }
 
       const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
 
-      const idFields = fields.filter((f: any) =>
-        f.tags.some((t: string) => this.allowedTags.indexOf(t) !== -1),
+      const identifiableFields = fields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => this.allowedTags.indexOf(t) !== -1),
       )
-
-      if (idFields.length === 0) {
-        reject(`Query requires a field tagged ${this.allowedTags.join(" or ")}`)
+      if (identifiableFields.length === 0) {
+        reject(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
         return
       }
 
-      const segmentClient = this.segmentClientFromRequest(request)
-      const anonymousId = uuid.v4()
-      const ranAt = qr.ran_at && new Date(qr.ran_at)
+      const idField = identifiableFields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => t === "segment_user_id"),
+      )[0]
 
-      const idField: any = idFields[0]
+      const emailField = identifiableFields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => t === "email"),
+      )[0]
+
+      const segmentClient = this.segmentClientFromRequest(request)
+      const anonymousId = this.generateAnonymousId()
+      const ranAt = qr.ran_at && new Date(qr.ran_at)
 
       const context = {
         app: {
@@ -70,7 +75,6 @@ export class SegmentIntegration extends D.Integration {
       }
 
       for (const row of qr.data) {
-        const idValue = row[idField.name].value
         const traits: any = {
           lookerFiltersDifferFromLook: request.scheduledPlan && request.scheduledPlan.filtersDifferFromLook,
           lookerInstanceId: request.instanceId,
@@ -82,16 +86,20 @@ export class SegmentIntegration extends D.Integration {
           lookerWebhookId: request.webhookId,
         }
         for (const field of fields) {
-          if (field.name !== idField.name) {
-            traits[field.name] = row[field.name].value
+          const value = row[field.name].value
+          if (!idField || field.name !== idField.name) {
+            traits[field.name] = value
+          }
+          if (emailField && field.name === emailField.name) {
+            traits.email = value
           }
         }
         segmentClient.identify({
-          anonymousId,
+          anonymousId: idField ? null : anonymousId,
           context,
           traits,
           timestamp: ranAt,
-          userId: idValue,
+          userId: idField ? row[idField.name].value : null,
         })
       }
 
@@ -109,6 +117,10 @@ export class SegmentIntegration extends D.Integration {
 
   private segmentClientFromRequest(request: D.DataActionRequest) {
     return new segment(request.params.segment_write_key)
+  }
+
+  private generateAnonymousId() {
+    return uuid.v4()
   }
 
 }
