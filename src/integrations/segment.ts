@@ -63,7 +63,7 @@ export class SegmentIntegration extends D.Integration {
         f.tags && f.tags.some((t: string) => t === "email"),
       )[0]
 
-      const sAnonymousIdField = identifiableFields.filter((f: any) =>
+      const anonymousIdField = identifiableFields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
       )[0]
 
@@ -81,10 +81,7 @@ export class SegmentIntegration extends D.Integration {
       }
 
       for (const row of qr.data) {
-        const traits: any = {
-          // lookerQueryId: request.scheduledPlan && request.scheduledPlan.queryId,
-          // lookerTitle: request.scheduledPlan && request.scheduledPlan.title,
-        }
+        const traits: any = {}
         for (const field of fields) {
           const value = row[field.name].value
           if (!idField || field.name !== idField.name) {
@@ -96,7 +93,7 @@ export class SegmentIntegration extends D.Integration {
         }
 
         segmentClient.identify({
-          anonymousId: sAnonymousIdField ? row[sAnonymousIdField.name].value : idField ? null : anonymousId,
+          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
           context,
           traits,
           timestamp: ranAt,
