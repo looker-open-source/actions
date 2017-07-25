@@ -76,14 +76,8 @@ export class SegmentIntegration extends D.Integration {
 
       for (const row of qr.data) {
         const traits: any = {
-          lookerFiltersDifferFromLook: request.scheduledPlan && request.scheduledPlan.filtersDifferFromLook,
-          lookerInstanceId: request.instanceId,
-          lookerQueryId: request.scheduledPlan && request.scheduledPlan.queryId,
-          lookerScheduledPlanId: request.scheduledPlan && request.scheduledPlan.scheduledPlanId,
-          lookerTitle: request.scheduledPlan && request.scheduledPlan.title,
-          lookerType: request.scheduledPlan && request.scheduledPlan.type,
-          lookerUrl: request.scheduledPlan && request.scheduledPlan.url,
-          lookerWebhookId: request.webhookId,
+          // lookerQueryId: request.scheduledPlan && request.scheduledPlan.queryId,
+          // lookerTitle: request.scheduledPlan && request.scheduledPlan.title,
         }
         for (const field of fields) {
           const value = row[field.name].value
