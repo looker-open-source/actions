@@ -6,7 +6,7 @@ const segment: any = require("analytics-node")
 
 export class SegmentIntegration extends D.Integration {
 
-  allowedTags = ["email", "segment_user_id"]
+  allowedTags = ["email", "user_id", "segment_anonymous_id"]
 
   constructor() {
     super()
@@ -56,15 +56,21 @@ export class SegmentIntegration extends D.Integration {
       }
 
       const idField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "segment_user_id"),
+        f.tags && f.tags.some((t: string) => t === "user_id" || t === "segment_anonymous_id"),
       )[0]
 
       const emailField = identifiableFields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "email"),
       )[0]
 
-      const segmentClient = this.segmentClientFromRequest(request)
+      const anonymousIdField = identifiableFields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
+      )[0]
+
       const anonymousId = this.generateAnonymousId()
+
+      const segmentClient = this.segmentClientFromRequest(request)
+
       const ranAt = qr.ran_at && new Date(qr.ran_at)
 
       const context = {
@@ -75,16 +81,7 @@ export class SegmentIntegration extends D.Integration {
       }
 
       for (const row of qr.data) {
-        const traits: any = {
-          lookerFiltersDifferFromLook: request.scheduledPlan && request.scheduledPlan.filtersDifferFromLook,
-          lookerInstanceId: request.instanceId,
-          lookerQueryId: request.scheduledPlan && request.scheduledPlan.queryId,
-          lookerScheduledPlanId: request.scheduledPlan && request.scheduledPlan.scheduledPlanId,
-          lookerTitle: request.scheduledPlan && request.scheduledPlan.title,
-          lookerType: request.scheduledPlan && request.scheduledPlan.type,
-          lookerUrl: request.scheduledPlan && request.scheduledPlan.url,
-          lookerWebhookId: request.webhookId,
-        }
+        const traits: any = {}
         for (const field of fields) {
           const value = row[field.name].value
           if (!idField || field.name !== idField.name) {
@@ -94,8 +91,9 @@ export class SegmentIntegration extends D.Integration {
             traits.email = value
           }
         }
+
         segmentClient.identify({
-          anonymousId: idField ? null : anonymousId,
+          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
           context,
           traits,
           timestamp: ranAt,
