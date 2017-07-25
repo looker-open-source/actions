@@ -6,7 +6,7 @@ const segment: any = require("analytics-node")
 
 export class SegmentIntegration extends D.Integration {
 
-  allowedTags = ["email", "user_id"]
+  allowedTags = ["email", "user_id", "segment_anonymous_id"]
 
   constructor() {
     super()
@@ -56,15 +56,21 @@ export class SegmentIntegration extends D.Integration {
       }
 
       const idField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "user_id"),
+        f.tags && f.tags.some((t: string) => t === "user_id" || t === "segment_anonymous_id"),
       )[0]
 
       const emailField = identifiableFields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "email"),
       )[0]
 
-      const segmentClient = this.segmentClientFromRequest(request)
+      const sAnonymousIdField = identifiableFields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
+      )[0]
+
       const anonymousId = this.generateAnonymousId()
+
+      const segmentClient = this.segmentClientFromRequest(request)
+
       const ranAt = qr.ran_at && new Date(qr.ran_at)
 
       const context = {
@@ -88,8 +94,9 @@ export class SegmentIntegration extends D.Integration {
             traits.email = value
           }
         }
+
         segmentClient.identify({
-          anonymousId: idField ? null : anonymousId,
+          anonymousId: sAnonymousIdField ? row[sAnonymousIdField.name].value : idField ? null : anonymousId,
           context,
           traits,
           timestamp: ranAt,

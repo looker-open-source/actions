@@ -49,7 +49,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const request = new D.DataActionRequest()
       request.attachment = {dataJSON: {fields: [{}], data: []}}
       return chai.expect(integration.action(request)).to.eventually
-        .be.rejectedWith("Query requires a field tagged email or user_id.")
+        .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
     })
 
     it("errors if there is no write key", () => {
@@ -97,6 +97,48 @@ describe(`${integration.constructor.name} unit tests`, () => {
         userId: "id",
         traits: {email: "email@email.email"},
         anonymousId: null,
+      })
+    })
+
+    it("works with email, user id and anonymous id", () => {
+      const request = new D.DataActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [
+          {name: "coolemail", tags: ["email"]},
+          {name: "coolid", tags: ["user_id"]},
+          {name: "coolanonymousid", tags: ["segment_anonymous_id"]}],
+        data: [{coolemail: {value: "email@email.email"}, coolid: {value: "id"}, coolanonymousid: {value: "anon_id"}}],
+      }}
+      return expectSegmentMatch(request, {
+        userId: "id",
+        traits: {email: "email@email.email"},
+        anonymousId: "anon_id",
+      })
+    })
+
+    it("works with user id and anonymous id", () => {
+      const request = new D.DataActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [{name: "coolid", tags: ["user_id"]}, {name: "coolanonymousid", tags: ["segment_anonymous_id"]}],
+        data: [
+            {coolid: {value: "id"}, coolanonymousid: {value: "anon_id"}}],
+      }}
+      return expectSegmentMatch(request, {
+        userId: "id",
+        anonymousId: "anon_id",
+      })
+    })
+
+    it("works with anonymous id", () => {
+      const request = new D.DataActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [
+            {name: "coolanonymousid", tags: ["segment_anonymous_id"]}],
+        data: [{coolanonymousid: {value: "anon_id"}}],
+      }}
+      return expectSegmentMatch(request, {
+        userId: "anon_id",
+        anonymousId: "anon_id",
       })
     })
 
