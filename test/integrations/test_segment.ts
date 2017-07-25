@@ -49,23 +49,23 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const request = new D.DataActionRequest()
       request.attachment = {dataJSON: {fields: [{}], data: []}}
       return chai.expect(integration.action(request)).to.eventually
-        .be.rejectedWith("Query requires a field tagged email or segment_user_id.")
+        .be.rejectedWith("Query requires a field tagged email or user_id.")
     })
 
     it("errors if there is no write key", () => {
       const request = new D.DataActionRequest()
       request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["segment_user_id"]}],
+        fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [],
       }}
       return chai.expect(integration.action(request)).to.eventually
         .be.rejectedWith("You must pass your Segment project's write key.")
     })
 
-    it("works with segment_user_id", () => {
+    it("works with user_id", () => {
       const request = new D.DataActionRequest()
       request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["segment_user_id"]}],
+        fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
       return expectSegmentMatch(request, {
@@ -90,7 +90,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("works with email and user id", () => {
       const request = new D.DataActionRequest()
       request.attachment = {dataJSON: {
-        fields: [{name: "coolemail", tags: ["email"]}, {name: "coolid", tags: ["segment_user_id"]}],
+        fields: [{name: "coolemail", tags: ["email"]}, {name: "coolid", tags: ["user_id"]}],
         data: [{coolemail: {value: "email@email.email"}, coolid: {value: "id"}}],
       }}
       return expectSegmentMatch(request, {

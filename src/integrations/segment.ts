@@ -6,7 +6,7 @@ const segment: any = require("analytics-node")
 
 export class SegmentIntegration extends D.Integration {
 
-  allowedTags = ["email", "segment_user_id"]
+  allowedTags = ["email", "user_id"]
 
   constructor() {
     super()
@@ -56,7 +56,7 @@ export class SegmentIntegration extends D.Integration {
       }
 
       const idField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "segment_user_id"),
+        f.tags && f.tags.some((t: string) => t === "user_id"),
       )[0]
 
       const emailField = identifiableFields.filter((f: any) =>
