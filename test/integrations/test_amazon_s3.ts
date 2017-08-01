@@ -126,6 +126,23 @@ describe(`${integration.constructor.name} unit tests`, () => {
       })
     })
 
+    it("sends to right filename if specified", () => {
+      const request = new D.DataActionRequest()
+      request.formParams = {
+        bucket: "mybucket",
+        access_key_id: "mykey",
+        secret_access_key: "mysecret",
+        region: "us-east-1",
+        filename: "mywackyfilename",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectAmazonS3Match(request, {
+        Bucket: "mybucket",
+        Key: "mywackyfilename",
+        Body: Buffer.from("1,2,3,4", "utf8"),
+      })
+    })
+
   })
 
   describe("form", () => {

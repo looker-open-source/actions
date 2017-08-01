@@ -1,7 +1,5 @@
 import * as D from "../framework"
-import * as winston from "winston"
 
-// const AWS = require("aws-sdk")
 const S3 = require("aws-sdk/clients/s3")
 
 export class AmazonS3Integration extends D.Integration {
@@ -37,7 +35,7 @@ export class AmazonS3Integration extends D.Integration {
 
       const params = {
         Bucket: request.formParams.bucket,
-        Key: request.suggestedFilename(),
+        Key: request.formParams.filename ? request.formParams.filename : request.suggestedFilename(),
         Body: request.attachment.dataBuffer,
       }
 
@@ -51,8 +49,7 @@ export class AmazonS3Integration extends D.Integration {
     })
   }
 
-  async form(request: D.DataActionRequest) {
-    winston.info(`Form request for ${request}`)
+  async form() {
     const form = new D.DataActionForm()
     form.fields = [{
       label: "Bucket",
@@ -62,6 +59,10 @@ export class AmazonS3Integration extends D.Integration {
     }, {
       label: "Optional Path",
       name: "path",
+      type: "string",
+    }, {
+      label: "Optional Filename",
+      name: "filename",
       type: "string",
     }, {
       label: "Access Key",
