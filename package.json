@@ -33,6 +33,7 @@
     "@types/uuid": "^3.4.0",
     "@types/winston": "^2.3.2",
     "analytics-node": "^2.4.1",
+    "aws-sdk": "^2.92.0",
     "body-parser": "^1.17.1",
     "datauri": "^1.0.5",
     "dotenv": "^4.0.0",
@@ -57,11 +58,11 @@
     "@types/mocha": "^2.2.41",
     "@types/sinon": "^2.3.3",
     "@types/sinon-chai": "^2.7.28",
-    "chai": "^4.0.2",
+    "chai": "^4.1.0",
     "chai-as-promised": "^7.1.1",
     "chai-http": "^3.0.0",
-    "mocha": "^3.3.0",
-    "sinon": "^2.3.8",
+    "mocha": "^3.4.2",
+    "sinon": "^2.4.1",
     "sinon-chai": "^2.12.0",
     "tslint": "^5.4.3"
   }
