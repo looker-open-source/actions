@@ -33,6 +33,7 @@ export class Server {
         label: process.env.INTEGRATION_PROVIDER_LABEL,
       }
       res.json(response)
+      winston.debug(`response: ${JSON.stringify(response)}`)
     })
 
     this.route("/integrations/:integrationId", async (req, res) => {
