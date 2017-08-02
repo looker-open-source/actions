@@ -57,11 +57,11 @@ export class AmazonS3Integration extends D.Integration {
       required: true,
       type: "string",
     }, {
-      label: "Optional Path",
+      label: "Path",
       name: "path",
       type: "string",
     }, {
-      label: "Optional Filename",
+      label: "Filename",
       name: "filename",
       type: "string",
     }, {
@@ -74,10 +74,12 @@ export class AmazonS3Integration extends D.Integration {
       name: "secret_access_key",
       required: true,
       type: "string",
+      sensitive: true,
     }, {
       label: "Region",
       name: "region",
       default: "us-east-1",
+      // TODO find AWS API to pull up to date list.
       options: [
         {name: "us-east-1", label: "US East (N. Virginia)"},
         {name: "us-east-2", label: "US East (Ohio)"},
@@ -100,12 +102,6 @@ export class AmazonS3Integration extends D.Integration {
   }
 
   private amazonS3ClientFromRequest(request: D.DataActionRequest) {
-    // AWS.config.update({
-    //   region: request.formParams.region,
-    //   accessKeyId: request.formParams.access_key_id,
-    //   secretAccessKey: request.formParams.secret_access_key,
-    // })
-    // return new AWS.S3()
     return new S3(({
       region: request.formParams.region,
       accessKeyId: request.formParams.access_key_id,

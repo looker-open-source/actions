@@ -3,8 +3,6 @@ import * as sinon from "sinon"
 
 import * as D from "../../src/framework"
 
-// const AWS = require("aws-sdk")
-
 import { AmazonS3Integration } from "../../src/integrations/amazon_s3"
 
 const integration = new AmazonS3Integration()

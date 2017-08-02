@@ -13,4 +13,5 @@ export interface IDataActionFormField {
   type?: "string" | "textarea" | "select"
   options?: Array<{ name: string, label: string }>
   required?: boolean
+  sensitive?: boolean
 }
