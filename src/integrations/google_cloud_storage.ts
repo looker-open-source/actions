@@ -1,8 +1,8 @@
 import * as D from "../framework"
 
-const storage = require('@google-cloud/storage');
+const storage = require("@google-cloud/storage")
 
-export class GCPIntegration extends D.Integration {
+export class GoogleCloudStorageIntegration extends D.Integration {
 
   constructor() {
     super()
@@ -19,20 +19,17 @@ export class GCPIntegration extends D.Integration {
         label: "Client Email",
         required: true,
         description: "Your client email for GCS.",
-        type: "string",
       }, {
         name: "privateKey",
         label: "Private Key",
         required: true,
         sensitive: true,
         description: "Your private key for GCS.",
-        type: "string",
       }, {
         name: "projectId",
         label: "Project Id",
         required: true,
         description: "The Project Id for your GCS project.",
-        type: "string",
       },
     ]
   }
@@ -89,4 +86,4 @@ export class GCPIntegration extends D.Integration {
 
 }
 
-D.addIntegration(new GCPIntegration())
+D.addIntegration(new GoogleCloudStorageIntegration())
