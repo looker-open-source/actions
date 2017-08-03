@@ -56,14 +56,22 @@ export class GoogleCloudStorageIntegration extends D.Integration {
     })
   }
 
-  async form() {
+  async form(request: D.DataActionRequest) {
     const form = new D.DataActionForm()
+
+    const gcs = this.gcsClientFromRequest(request)
+    const buckets = await gcs.getBuckets()
+    // buckets seems to be an array in an array
+
     form.fields = [{
-      // TODO find GCP API to pull available buckets.
       label: "Bucket",
       name: "bucket",
       required: true,
-      type: "string",
+      options: buckets.map((b: any) => {
+          return {name: b[0].metadata.id, label: b[0].metadata.name}
+        }),
+      type: "select",
+      default: buckets[0][0].metadata.id,
     }, {
       label: "Filename",
       name: "filename",
@@ -74,13 +82,15 @@ export class GoogleCloudStorageIntegration extends D.Integration {
   }
 
   private gcsClientFromRequest(request: D.DataActionRequest) {
+    // TODO fix this hack. There is some error with handling of newlines.
+    const credentials = JSON.parse(`{"client_email": "${request.params.clientEmail}",
+      "private_key": "${request.params.privateKey}"}`)
+
     const config = {
-      projectId: request.formParams.projectId,
-      credentials: {
-        client_email: request.formParams.clientEmail,
-        private_key: request.formParams.privateKey,
-      },
+      projectId: request.params.projectId,
+      credentials,
     }
+
     return new storage(config)
   }
 

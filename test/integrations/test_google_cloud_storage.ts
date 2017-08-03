@@ -17,7 +17,11 @@ function expectGoogleCloudStorageMatch(request: D.DataActionRequest,
   const bucketSpy = sinon.spy(() => ({file: fileSpy}))
 
   const stubClient = sinon.stub(integration as any, "gcsClientFromRequest")
-    .callsFake(() => ({bucket: bucketSpy}))
+    .callsFake(() => ({
+      bucket: bucketSpy,
+      getBuckets: () => [[ {metadata: {id: "1", name: "A"}} ],
+          [ {metadata: {id: "2", name: "B"}} ]],
+    }))
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
