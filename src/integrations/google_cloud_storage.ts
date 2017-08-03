@@ -9,7 +9,7 @@ export class GoogleCloudStorageIntegration extends D.Integration {
 
     this.name = "google_cloud_storage"
     this.label = "Google Cloud Storage"
-    this.iconName = "google_cloud_storage.png"
+    this.iconName = "google_cloud_storage.svg"
     this.description = "Write data files to an GCS bucket."
     this.supportedActionTypes = ["query"]
     this.requiredFields = []
