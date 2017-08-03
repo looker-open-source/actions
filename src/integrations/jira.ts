@@ -11,7 +11,7 @@ export class JiraIntegration extends D.Integration {
     this.name = "jira_create_issue"
     this.label = "JIRA"
     this.iconName = "jira.svg"
-    this.description = "Create JIRA issue with body data."
+    this.description = "Create JIRA issue referencing a Look."
     this.params = [
       {
         description: "The hostname for your JIRA server.",
@@ -61,15 +61,14 @@ export class JiraIntegration extends D.Integration {
       const issue = {
         fields: {
           project: {
-            key: request.formParams.project,
+            id: request.formParams.project,
           },
           summary: request.formParams.summary,
-          description: request.formParams.description,
+          description: `${request.formParams.description}` +
+            `\nLooker URL: ${request.scheduledPlan && request.scheduledPlan.url}`,
           issuetype: {
             id: request.formParams.issueType,
           },
-          lookerUrl: request.scheduledPlan && request.scheduledPlan.url,
-          // TODO add time ran_at
         },
       }
 
@@ -121,9 +120,11 @@ export class JiraIntegration extends D.Integration {
         label: "Issue Type",
         name: "issueType",
         type: "select",
-        options: issueTypes.map((p: any) => {
-          return {name: p.id, label: p.name}
-        }),
+        options: issueTypes
+          .filter((i: any) => i.description)
+          .map((p: any) => {
+            return {name: p.id, label: p.name}
+          }),
         required: true,
       }]
     } catch (e) {
