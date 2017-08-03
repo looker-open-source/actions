@@ -7,7 +7,13 @@ export function addIntegration(integration: Integration) {
 }
 
 export async function allIntegrations() {
-  return integrations
+  const whitelistNames = process.env.INTEGRATION_WHITELIST
+  if (typeof whitelistNames === "string" && whitelistNames.length > 0) {
+    const whitelist = whitelistNames.split(",")
+    return integrations.filter((i) => whitelist.indexOf(i.name) !== -1)
+  } else {
+    return integrations
+  }
 }
 
 export async function findDestination(id: string) {
