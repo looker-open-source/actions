@@ -20,7 +20,7 @@ export async function findDestination(id: string) {
   const all = await allIntegrations()
   const integration = all.filter((i) => i.name === id)[0]
   if (!integration) {
-    throw "No destination found."
+    throw "No integration found."
   }
   return integration
 }
