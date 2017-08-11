@@ -50,14 +50,13 @@ describe(`${integration.constructor.name} unit tests`, () => {
       return expectJiraNewIssueMatch(request, {
         fields: {
           project: {
-            key: "1",
+            id: "1",
           },
           summary: "mysummary",
-          description: "mydescription",
+          description: "mydescription" + "\nLooker URL: looker_url",
           issuetype: {
             id: "10",
           },
-          lookerUrl: "looker_url",
         },
       })
     })
