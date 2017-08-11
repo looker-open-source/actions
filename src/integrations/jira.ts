@@ -18,21 +18,25 @@ export class JiraIntegration extends D.Integration {
         label: "Host",
         name: "host",
         required: true,
+        sensitive: false,
       }, {
         description: "The port your JIRA server is listening on (probably `80` or `443`)",
         label: "Port",
         name: "port",
         required: true,
+        sensitive: false,
       }, {
         description: "Typically 'http' or 'https'",
         label: "Protocol",
         name: "protocol",
         required: true,
+        sensitive: false,
       }, {
         description: "The JIRA username assigned to create issues for Looker",
         label: "Username",
         name: "username",
         required: true,
+        sensitive: false,
       }, {
         description: "The password for the JIRA user assigned to Looker",
         label: "Password",
