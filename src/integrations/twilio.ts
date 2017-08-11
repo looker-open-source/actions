@@ -1,6 +1,6 @@
 import * as D from "../framework"
 
-const twilio = require('twilio')
+const twilio = require("twilio")
 
 export class TwilioIntegration extends D.Integration {
 
@@ -33,7 +33,7 @@ export class TwilioIntegration extends D.Integration {
         required: true,
         sensitive: false,
         description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
-      }
+      },
     ]
   }
 
@@ -52,8 +52,8 @@ export class TwilioIntegration extends D.Integration {
       // body 1600 character limit
       // MediaUrl size limit 5MB
 
-      const twilio = this.twilioClientFromRequest(request)
-      twilio.messages.create({
+      const client = this.twilioClientFromRequest(request)
+      client.messages.create({
         from: request.params.from,
         to: request.formParams.to,
         body: request.attachment.dataBuffer.toString("utf8"),

@@ -10,21 +10,16 @@ const integration = new TwilioIntegration()
 function expectTwilioMatch(request: D.DataActionRequest, match: any) {
 
   const createSpy = sinon.spy(() => Promise.resolve())
-  const messageSpy = sinon.spy(() => ({create: createSpy}))
 
   const stubClient = sinon.stub(integration as any, "twilioClientFromRequest")
     .callsFake(() => ({
-      messages: messageSpy,
+      messages: {create: createSpy},
     }))
-
-  const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
-    .callsFake(() => "stubSuggestedFilename")
 
   const action = integration.action(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(createSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
-    stubSuggestedFilename.restore()
   })
 }
 
@@ -66,21 +61,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       return expectTwilioMatch(request, {
         to: "tophone",
         body: Buffer.from("1,2,3,4", "utf8").toString("utf8"),
-        from: "fromphone"
-      })
-    })
-
-    it("sends to right body if specified", () => {
-      const request = new D.DataActionRequest()
-      request.formParams = {
-        to: "myphone",
-        body: "mybody",
-      }
-      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-      return expectTwilioMatch(request,{
-        to: "tophone",
-        body: "mybody",
-        from: "fromphone"
+        from: "fromphone",
       })
     })
 
