@@ -57,10 +57,67 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.formParams = {
         to: "tophone",
       }
-      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4\n5,6,7,8\n", "utf8")}
       return expectTwilioMatch(request, {
         to: "tophone",
-        body: Buffer.from("1,2,3,4", "utf8").toString("utf8"),
+        body: "1,2,3,4\n5,6,7,8\n",
+        from: "fromphone",
+      })
+    })
+
+    it("sends right body with look title", () => {
+      const request = new D.DataActionRequest()
+      request.scheduledPlan = {
+        title: "mylook",
+      }
+      request.params = {
+        from: "fromphone",
+      }
+      request.formParams = {
+        to: "tophone",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4\n5,6,7,8\n", "utf8")}
+      return expectTwilioMatch(request, {
+        to: "tophone",
+        body: "mylook:\n1,2,3,4\n5,6,7,8\n",
+        from: "fromphone",
+      })
+    })
+
+    it("sends truncates body at 1600", () => {
+      const request = new D.DataActionRequest()
+      request.params = {
+        from: "fromphone",
+      }
+      request.formParams = {
+        to: "tophone",
+      }
+      request.attachment = {dataBuffer:
+        Buffer.from((Array.from(new Array(10), (_, i) => i).join(",") + "\n").repeat(100), "utf8")}
+      return expectTwilioMatch(request, {
+        to: "tophone",
+        body: (Array.from(new Array(10), (_, i) => i).join(",") + "\n").repeat(80),
+        from: "fromphone",
+      })
+    })
+
+    it("sends truncates body at 1600 with title on newline", () => {
+      const request = new D.DataActionRequest()
+      request.scheduledPlan = {
+        title: "mylook",
+      }
+      request.params = {
+        from: "fromphone",
+      }
+      request.formParams = {
+        to: "tophone",
+        title: "mylook",
+      }
+      request.attachment = {dataBuffer:
+        Buffer.from((Array.from(new Array(10), (_, i) => i).join(",") + "\n").repeat(100), "utf8")}
+      return expectTwilioMatch(request, {
+        to: "tophone",
+        body: "mylook:\n" + (Array.from(new Array(10), (_, i) => i).join(",") + "\n").repeat(79),
         from: "fromphone",
       })
     })

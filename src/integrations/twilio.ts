@@ -2,6 +2,8 @@ import * as D from "../framework"
 
 const twilio = require("twilio")
 
+const TWILIO_MAX_MESSAGE_BODY = 1600
+
 export class TwilioIntegration extends D.Integration {
 
   constructor() {
@@ -10,9 +12,9 @@ export class TwilioIntegration extends D.Integration {
     this.name = "twilio"
     this.label = "Twilio"
     this.iconName = "twilio.svg"
-    this.description = "Write message and data to an Twilio."
+    this.description = "Send data to an phone number through Twilio."
     this.supportedActionTypes = ["query"]
-    this.supportedFormats = ["csv", "txt", "wysiwyg_png"]
+    this.supportedFormats = ["csv", "txt"]
     this.requiredFields = []
     this.params = [
       {
@@ -49,22 +51,41 @@ export class TwilioIntegration extends D.Integration {
         throw "Need a destination phone number."
       }
 
-      // body 1600 character limit
-      // MediaUrl size limit 5MB
+      let body = request.scheduledPlan && request.scheduledPlan.title
+      if (body) {
+        body = body + ":\n"
+      } else {
+        body = ""
+      }
+
+      body = body + request.attachment.dataBuffer.toString("utf8")
+
+      if (body.length > TWILIO_MAX_MESSAGE_BODY) {
+        // truncate to max body characters
+        body = body.substring(0, TWILIO_MAX_MESSAGE_BODY)
+        // re-trim if we are in the middle of a line
+        if (body.lastIndexOf("\n") > 0) {
+          body = body.substring(0, Math.min(body.length, body.lastIndexOf("\n") + 1))
+        }
+      }
 
       const client = this.twilioClientFromRequest(request)
       client.messages.create({
         from: request.params.from,
         to: request.formParams.to,
-        body: request.attachment.dataBuffer.toString("utf8"),
-      }).then(resolve(new D.DataActionResponse())).catch(reject())
+        body,
+      }).then(() => {
+        resolve(new D.DataActionResponse())
+      }).catch((err: any) => {
+        reject(err)
+      })
     })
   }
 
   async form() {
     const form = new D.DataActionForm()
     form.fields = [{
-      label: "Destination Phone Number",
+      label: "Dest. Phone #",
       name: "to",
       required: true,
       type: "string",
