@@ -33,7 +33,7 @@
     "@types/uuid": "^3.4.0",
     "@types/winston": "^2.3.2",
     "analytics-node": "^2.4.1",
-    "aws-sdk": "^2.92.0",
+    "aws-sdk": "^2.99.0",
     "body-parser": "^1.17.1",
     "datauri": "^1.0.5",
     "dotenv": "^4.0.0",
