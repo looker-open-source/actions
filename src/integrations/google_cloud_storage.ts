@@ -18,18 +18,18 @@ export class GoogleCloudStorageIntegration extends D.Integration {
         name: "clientEmail",
         label: "Client Email",
         required: true,
-        description: "Your client email for GCS.",
+        description: "Your client email for GCS from https://console.cloud.google.com/",
       }, {
         name: "privateKey",
         label: "Private Key",
         required: true,
         sensitive: true,
-        description: "Your private key for GCS.",
+        description: "Your private key for GCS from https://console.cloud.google.com/",
       }, {
         name: "projectId",
         label: "Project Id",
         required: true,
-        description: "The Project Id for your GCS project.",
+        description: "The Project Id for your GCS project from https://console.cloud.google.com/",
       },
     ]
   }
@@ -61,14 +61,13 @@ export class GoogleCloudStorageIntegration extends D.Integration {
 
     const gcs = this.gcsClientFromRequest(request)
     const buckets = await gcs.getBuckets()
-    // buckets seems to be an array in an array
 
     form.fields = [{
       label: "Bucket",
       name: "bucket",
       required: true,
-      options: buckets.map((b: any) => {
-          return {name: b[0].metadata.id, label: b[0].metadata.name}
+      options: buckets[0].map((b: any) => {
+          return {name: b.metadata.id, label: b.metadata.name}
         }),
       type: "select",
       default: buckets[0][0].metadata.id,
@@ -82,7 +81,8 @@ export class GoogleCloudStorageIntegration extends D.Integration {
   }
 
   private gcsClientFromRequest(request: D.DataActionRequest) {
-    // TODO fix this hack. There is some error with handling of newlines.
+    // Looker double escapes newlines from the integration param settings
+    // const credentials = {client_email: request.params.clientEmail, private_key: request.params.privateKey}
     const credentials = JSON.parse(`{"client_email": "${request.params.clientEmail}",
       "private_key": "${request.params.privateKey}"}`)
 
