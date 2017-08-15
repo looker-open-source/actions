@@ -31,7 +31,7 @@ export class AmazonS3Integration extends D.Integration {
         name: "region",
         label: "Region",
         required: true,
-        description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1.",
+        description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
         default: "us-east-1",
         type: "select",
         options: [
