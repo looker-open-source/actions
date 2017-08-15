@@ -34,7 +34,6 @@ export class AmazonS3Integration extends D.Integration {
         description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1.",
         default: "us-east-1",
         type: "select",
-        // TODO find AWS API to pull up to date list.
         options: [
           {name: "us-east-1", label: "US East (N. Virginia)"},
           {name: "us-east-2", label: "US East (Ohio)"},
