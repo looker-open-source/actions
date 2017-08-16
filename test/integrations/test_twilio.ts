@@ -30,8 +30,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("errors if there is no to", () => {
       const request = new D.DataActionRequest()
       request.formParams = {}
-      request.attachment = {}
-      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4\n5,6,7,8\n", "utf8")}
 
       const action = integration.action(request)
 
@@ -43,6 +42,9 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const request = new D.DataActionRequest()
       request.formParams = {
         bucket: "mybucket",
+      }
+      request.formParams = {
+        to: "tophone",
       }
 
       return chai.expect(integration.action(request)).to.eventually
@@ -65,10 +67,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
       })
     })
 
-    it("sends right body with look title", () => {
+    it("sends right body with look title and url", () => {
       const request = new D.DataActionRequest()
       request.scheduledPlan = {
         title: "mylook",
+        url: "http://my.looker.com/looks/12345",
       }
       request.params = {
         from: "fromphone",
@@ -79,7 +82,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4\n5,6,7,8\n", "utf8")}
       return expectTwilioMatch(request, {
         to: "tophone",
-        body: "mylook:\n1,2,3,4\n5,6,7,8\n",
+        body: "mylook:\n1,2,3,4\n5,6,7,8\nhttp://my.looker.com/looks/12345",
         from: "fromphone",
       })
     })
@@ -105,6 +108,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const request = new D.DataActionRequest()
       request.scheduledPlan = {
         title: "mylook",
+        url: "http://my.looker.com/looks/12345",
       }
       request.params = {
         from: "fromphone",
@@ -117,7 +121,9 @@ describe(`${integration.constructor.name} unit tests`, () => {
         Buffer.from((Array.from(new Array(10), (_, i) => i).join(",") + "\n").repeat(100), "utf8")}
       return expectTwilioMatch(request, {
         to: "tophone",
-        body: "mylook:\n" + (Array.from(new Array(10), (_, i) => i).join(",") + "\n").repeat(79),
+        body: "mylook:\n" +
+          (Array.from(new Array(10), (_, i) => i).join(",") + "\n").repeat(78) +
+          "http://my.looker.com/looks/12345",
         from: "fromphone",
       })
     })

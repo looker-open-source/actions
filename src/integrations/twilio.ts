@@ -4,6 +4,18 @@ const twilio = require("twilio")
 
 const TWILIO_MAX_MESSAGE_BODY = 1600
 
+function truncateString(s: string, limit: number, split = "\n") {
+  if (s.length > limit) {
+    // truncate to max limit characters
+    s = s.substring(0, limit)
+    // re-trim if we are in the middle of a line
+    if (s.lastIndexOf(split) > 0) {
+      s = s.substring(0, Math.min(s.length, s.lastIndexOf(split) + 1))
+    }
+  }
+  return s
+}
+
 export class TwilioIntegration extends D.Integration {
 
   constructor() {
@@ -41,35 +53,13 @@ export class TwilioIntegration extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
-
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment"
-      }
-
-      if (!request.formParams ||
-        !request.formParams.to) {
+      if (!request.formParams || !request.formParams.to) {
         throw "Need a destination phone number."
       }
 
-      let body = request.scheduledPlan && request.scheduledPlan.title
-      if (body) {
-        body = body + ":\n"
-      } else {
-        body = ""
-      }
-
-      body = body + request.attachment.dataBuffer.toString("utf8")
-
-      if (body.length > TWILIO_MAX_MESSAGE_BODY) {
-        // truncate to max body characters
-        body = body.substring(0, TWILIO_MAX_MESSAGE_BODY)
-        // re-trim if we are in the middle of a line
-        if (body.lastIndexOf("\n") > 0) {
-          body = body.substring(0, Math.min(body.length, body.lastIndexOf("\n") + 1))
-        }
-      }
-
+      const body = this.messageFromRequest(request)
       const client = this.twilioClientFromRequest(request)
+
       client.messages.create({
         from: request.params.from,
         to: request.formParams.to,
@@ -91,6 +81,34 @@ export class TwilioIntegration extends D.Integration {
       type: "string",
     }]
     return form
+  }
+
+  private messageFromRequest(request: D.DataActionRequest) {
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment"
+    }
+
+    let title = ""
+    let urlLength = 0
+    let url = ""
+
+    if (request.scheduledPlan) {
+      if (request.scheduledPlan.title) {
+        title = `${request.scheduledPlan.title}:\n`
+      }
+      if (request.scheduledPlan.url) {
+        urlLength = request.scheduledPlan.url.length
+        url = request.scheduledPlan.url
+      }
+    }
+
+    let body = title + request.attachment.dataBuffer.toString("utf8")
+    const maxLengthLessUrl = TWILIO_MAX_MESSAGE_BODY - urlLength
+    body = truncateString(body, maxLengthLessUrl)
+
+    body = body + url
+
+    return body
   }
 
   private twilioClientFromRequest(request: D.DataActionRequest) {
