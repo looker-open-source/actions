@@ -33,7 +33,6 @@ export class Server {
         label: process.env.INTEGRATION_PROVIDER_LABEL,
       }
       res.json(response)
-      winston.debug(`response: ${JSON.stringify(response)}`)
     })
 
     this.route("/integrations/:integrationId", async (req, res) => {
@@ -66,11 +65,12 @@ export class Server {
     this.app.get("/status", (_req, res) => {
       res.sendFile(path.resolve(`${__dirname}/../status.json`))
     })
+    // winston.info(this.app._router.stack);
 
   }
 
-  private route(urlPath: string, fn: (req: express.Request, res: express.Response) => void): void {
-    this.app.post(urlPath, async (req, res) => {
+  private route(path: string, fn: (req: express.Request, res: express.Response) => void): void {
+    this.app.post(path, async (req, res) => {
       winston.info(`Starting request for ${req.url}`)
 
       const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)

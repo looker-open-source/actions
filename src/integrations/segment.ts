@@ -1,6 +1,7 @@
 import * as uuid from "uuid"
 
 import * as D from "../framework"
+import * as winston from 'winston'
 
 const segment: any = require("analytics-node")
 
@@ -34,6 +35,7 @@ export class SegmentIntegration extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
+        winston.info(JSON.stringify(request.attachment))
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
         return
@@ -46,6 +48,7 @@ export class SegmentIntegration extends D.Integration {
       }
 
       const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
+    //   winston.info(JSON.stringify(fields))
 
       const identifiableFields = fields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => this.allowedTags.indexOf(t) !== -1),
@@ -62,6 +65,8 @@ export class SegmentIntegration extends D.Integration {
       const emailField = identifiableFields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "email"),
       )[0]
+
+      winston.info(JSON.stringify(emailField))
 
       const anonymousIdField = identifiableFields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
