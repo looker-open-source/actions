@@ -6,14 +6,14 @@ const azure = require("azure-storage")
 
 export class AzureStorageIntegration extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
   constructor() {
     super()
+
     this.name = "azure_storage"
     this.label = "Azure Storage"
     this.iconName = "azure_storage.svg"
     this.description = "Write data files to an Azure container."
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = ["query", "cell"]
     this.requiredFields = []
     this.params = [
       {
@@ -31,70 +31,51 @@ export class AzureStorageIntegration extends D.Integration {
         description: "Your access key for Azure.",
       },
     ]
-    this.supportedFormats = ["json_detail"]
-    this.supportedFormattings = ["unformatted"]
-    this.requiredFields = [{any_tag: this.allowedTags}]
+    // this.supportedFormats = ["json_detail"]
+    // this.supportedFormattings = ["unformatted"]
+    // this.supportedVisualizationFormattings = ["noapply"]
   }
 
   async action(request: D.DataActionRequest) {
+    winston.info("top")
     return new Promise<D.DataActionResponse>((resolve, reject) => {
-      const containerName = "integrationscontainer"
-      winston.info(JSON.stringify(request.attachment))
+      // winston.info(JSON.stringify(request))
 
-      if (!(request.attachment && request.attachment.dataJSON)) {
-        reject("No attached json")
+      // if (!request.attachment || !request.attachment.dataBuffer) {
+      //   throw "Couldn't get data from attachment"
+      // }
+      //
+      // if (!request.formParams ||
+      //   !request.formParams.bucket) {
+      //   throw "Need Azure bucket."
+      // }
+      winston.info("top2")
+      if( ! request.params.account){
+        reject("Params not working")
       }
 
-      if (!request.attachment) {
-        throw "Couldn't get data from attachment"
+      if( ! request.params.accessKey){
+        reject("Params not working (missing key)")
       }
 
-      // winston.info("THIS IS IT 1111: ", JSON.stringify(request.attachment))
-      const qr = JSON.stringify(request.attachment)
-
-      if (!request.params.account || !request.params.accessKey){
-        reject("Missing Correct Parameters")
-      }
-
-      if (!request.params.account || !request.params.accessKey){
-        reject("Missing Correct Parameters")
-      }
-
-      // const containerName = "integrationscontainer"
-      const blobService = azure.createBlobService(request.params.account, request.params.accessKey)
-      // winston.info(blobService)
-      // blobService.createContainerIfNotExists(containerName, { publicAccessLevel: "blob"}, (error: any, result: any, response: any) => {
-      //   if (!error){
-      //     winston.info("Success")
-      //     winston.info(response)
-      //     resolve(result)
-      //   }
-      //   reject("error")
-      // })
-
-      blobService.createBlockBlobFromText(
-          containerName,
-          "qrContainer",
-          qr,
-          function(error: any){
-            if (error){
-              winston.info("Couldn't upload string")
-              winston.info(error)
-              reject()
-            } else {
-              winston.info("Uploaded Successfully")
-              resolve()
-            }
-          })
+      const tableService = azure.createTableService(request.params.account, request.params.accessKey)
+      winston.info(tableService)
+      tableService.createTableIfNotExists("integrationstest3", (error: any) => {
+        if (!error){
+          winston.info("Success")
+          resolve()
+        }
+        winston.info("Error")
+        reject("error")
+      })
       // const blobService = this.azureClientFromRequest(request)
-
+      //
       // blobService.createBlockBlobFromStream(request.formParams.container,
       //   request.formParams.filename ? request.formParams.filename : request.suggestedFilename(),
       //   )
       // file.save(request.attachment.dataBuffer)
       //   .then(() => resolve(new D.DataActionResponse()))
       //   .catch((err: any) => { reject(err) })
-
     })
   }
 
