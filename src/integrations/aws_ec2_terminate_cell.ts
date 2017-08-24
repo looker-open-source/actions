@@ -57,9 +57,7 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
         "scheduled_plan": null,
         "form_params": {},
         "data": {
-          "value": "i-044fedf274bb22a09",
-            "aws_access_key": "AKIAJ5U5GCMAMVVOFQUA",
-            "aws_secret_key": "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"
+          "value": "i-044fedf274bb22a09"
         },
         "attachment": null
       }
@@ -70,8 +68,6 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
         "formParams": {},
         "params": {
           "value": "i-044fedf274bb22a09"
-            "aws_access_key": "AKIAJ5U5GCMAMVVOFQUA",
-            "aws_secret_key": "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"
         },
         "type": "cell",
         "instanceId": "33affe795e918360fb44f4c1dd0adf6c",

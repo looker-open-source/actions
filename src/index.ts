@@ -13,15 +13,6 @@ if (!process.env.INTEGRATION_PROVIDER_LABEL) {
 if (!process.env.INTEGRATION_SERVICE_SECRET) {
   throw new Error("No INTEGRATION_SERVICE_SECRET environment variable set.")
 }
-if (process.env.INTEGRATION_SERVICE_DEBUG) {
-  winston.configure({
-    level: "debug",
-    transports: [
-      new (winston.transports.Console)(),
-    ],
-  })
-  winston.debug("Debug Mode")
-}
 
 const app = Server.bootstrap().app
 const port = process.env.PORT || 8080

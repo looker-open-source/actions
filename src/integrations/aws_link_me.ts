@@ -63,6 +63,8 @@ export class AwsLinkMeEvent extends D.Integration {
         "params": {
           "value": "arn:aws:rds:ap-northeast-1:718158619460:db:test"
             "email": "joe.rozo@productops.com"
+            "aws_access_key": "",
+            "aws_secret_key": ""
         },
         "type": "cell",
         "instanceId": "33affe795e918360fb44f4c1dd0adf6c",
