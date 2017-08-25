@@ -38,6 +38,7 @@ export class AzureStorageIntegration extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
+      // containerName must be the name of an existing blob container in Azure storage
       const containerName = "integrationscontainer"
       winston.info(JSON.stringify(request.attachment))
 
