@@ -51,7 +51,7 @@ export class AwsLinkMeEvent extends D.Integration {
         "form_params": {},
         "data": {
           "value": "arn:aws:rds:ap-northeast-1:718158619460:db:test",
-            "email": "eric.fultz@productops.com"
+            "email": "joe.rozo@productops.com"
         },
         "attachment": null
       }
@@ -62,8 +62,9 @@ export class AwsLinkMeEvent extends D.Integration {
         "formParams": {},
         "params": {
           "value": "arn:aws:rds:ap-northeast-1:718158619460:db:test"
-            "aws_access_key": "AKIAJ5U5GCMAMVVOFQUA",
-            "aws_secret_key": "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"
+            "email": "joe.rozo@productops.com"
+            "aws_access_key": "",
+            "aws_secret_key": ""
         },
         "type": "cell",
         "instanceId": "33affe795e918360fb44f4c1dd0adf6c",
@@ -99,65 +100,6 @@ export class AwsLinkMeEvent extends D.Integration {
           resolve(new D.DataActionResponse())
       }
 
-    //   const responses = [] as PromiseLike<any>[]
-    //   this.allRegions.forEach( (region) => {
-    //       const ec2 = new EC2({
-    //           region: region,
-    //           accessKeyId: request.params.aws_access_key,
-    //           secretAccessKey: request.params.aws_secret_key
-    //       })
-    //       let p: Promise<any> = ec2.describeInstances({
-    //           Filters: [
-    //               {
-    //                   Name:"instance-id",
-    //                   Values: [request.params.value]
-    //               }
-    //           ]
-    //       }).promise()
-    //       p = p.then((response) => {
-    //           winston.info(JSON.stringify(response))
-    //         if( ! response.Reservations || typeof response.Reservations.map !== 'function') {
-    //             throw "bad response from ec2.describeInstances(): no property 'Reservations'"
-    //         }
-    //         const instances: any[] = response.Reservations.map((reservation: any) => {
-    //             if( ! reservation.Instances || typeof response.Instances.map !== 'function'){
-    //                 throw "bad response from ec2.describeInstances(): no property 'Reservations.Instances'"
-    //             }
-    //             return reservation.Instances
-    //         })
-      //
-    //         let instanceIds: any[] = instances.map((instance) => {
-    //             if( ! instance.InstanceId ){
-    //                 throw "bad response from ec2.describeInstances(): no property 'Reservations.Instances.InstanceId'"
-    //             }
-    //             return instance.InstanceId
-    //         })
-    //         winston.info(JSON.stringify(instanceIds))
-      //
-    //         instanceIds = instanceIds.filter((instanceId) => {
-    //             return instanceId === request.params.value
-    //         })
-      //
-    //         return instanceIds.length > 0
-    //       })
-    //       p = p.then((instanceIdFound) => {
-    //           if(instanceIdFound){
-    //               winston.info(`this is where I terminate ${request.params.value} in region ${region}`)
-    //               return region
-    //           }
-    //       })
-      //
-    //       responses.push(p)
-      //
-    //   })
-      //
-    //   Promise.all(responses).then( (terminationResults) => {
-    //       winston.info(`terminated instances in region: ${terminationResults.join(', ')}`)
-      //
-    //       resolve(new D.DataActionResponse())
-    //   }, (errs) => {
-    //       reject(`error in at least one response: ${JSON.stringify(errs)}`)
-    //   })
     })
 
   }
