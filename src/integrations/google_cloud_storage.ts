@@ -18,6 +18,7 @@ export class GoogleCloudStorageIntegration extends D.Integration {
         name: "clientEmail",
         label: "Client Email",
         required: true,
+        sensitive: false,
         description: "Your client email for GCS from https://console.cloud.google.com/",
       }, {
         name: "privateKey",
@@ -29,6 +30,7 @@ export class GoogleCloudStorageIntegration extends D.Integration {
         name: "projectId",
         label: "Project Id",
         required: true,
+        sensitive: false,
         description: "The Project Id for your GCS project from https://console.cloud.google.com/",
       },
     ]
