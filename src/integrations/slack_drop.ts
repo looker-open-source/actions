@@ -56,19 +56,28 @@ export class SlackFileDrop extends D.Integration {
 
       const slack = new Slack(request.params.token)
 
-      // const web = new WebClient(request.params.token)
-      // winston.info("RIGHT HERE:::::::::", request.attachment)
 
-      // web.files.upload(request.attachment, function(err:any , res:any) {
-      //   if (!err) {
-      //     winston.info('Message sent: ', res)
-      //     resolve()
-      //   }
-      //   winston.info('Error:', err)
-      //   reject()
-      // })
+      /********************************************************
+       *  When running this integration (and the Azure one)
+       *  the method that creates the file (fs.writeFile)
+       *  needs to be run and then commented out for the
+       *  second one to run properly (slack.uploadFile)
+       *  I think this is a synchronicity problem --> need to
+       *  check with Eric should execute the top method and then()
+       *  execute the second one --> this might also have to
+       *  do with the fact that the first method includes
+       *  resolve and reject? should be resolved upon completion
+       *  of the second method 
+       *
+       *  Also ... this is returning type Json should be type CSV
+       *  run this integration on the server first and see what format
+       *  of attachment is automatically included by Looker
+       ************************************************************/
+
+
+      // const attached_file = "attached_file.txt"
       // const qr = JSON.stringify(request.attachment)
-      // fs.writeFile("tester123.txt", qr, function(err: any){
+      // fs.writeFile(attached_file, qr, function(err: any){
       //   if(!err){
       //     resolve()
       //     winston.info("Failure")
@@ -78,7 +87,7 @@ export class SlackFileDrop extends D.Integration {
       // })
 
       slack.uploadFile({
-        file: fs.createReadStream(path.join("./", 'Sample.txt')),
+        file: fs.createReadStream(path.join("./", "attached_file.txt")),
         filetype: 'text',
         title: 'looker_attached_file',
         initialComment: 'it worked !! ',
@@ -86,11 +95,12 @@ export class SlackFileDrop extends D.Integration {
       }, function(err:any , data:any){
         if(!err){
           winston.info('Uploaded file details: ', data)
+          fs.unlinkSync('./attached_file.txt')
           resolve(data)
         }
         winston.info("It failed", err)
         reject(err)
-          })
+      })
     })
   }
 
