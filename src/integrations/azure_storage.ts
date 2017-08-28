@@ -13,7 +13,7 @@ export class AzureStorageIntegration extends D.Integration {
     this.label = "Azure Storage"
     this.iconName = "azure_storage.svg"
     this.description = "Write data files to an Azure container."
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = ["query", "cell"]
     this.requiredFields = []
     this.params = [
       {
@@ -39,7 +39,7 @@ export class AzureStorageIntegration extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
       // containerName must be the name of an existing blob container in Azure storage
-      const containerName = "integrationscontainer"
+      // const containerName = "integrationscontainer"
       winston.info(JSON.stringify(request.attachment))
 
       if (!(request.attachment && request.attachment.dataJSON)) {
@@ -50,7 +50,6 @@ export class AzureStorageIntegration extends D.Integration {
         throw "Couldn't get data from attachment"
       }
 
-      // winston.info("THIS IS IT 1111: ", JSON.stringify(request.attachment))
       const qr = JSON.stringify(request.attachment)
 
       if (!request.params.account || !request.params.accessKey){
@@ -61,72 +60,34 @@ export class AzureStorageIntegration extends D.Integration {
         reject("Missing Correct Parameters")
       }
 
-      // const containerName = "integrationscontainer"
+      const containerName = "integrationscontainer"
       const blobService = azure.createBlobService(request.params.account, request.params.accessKey)
-      // winston.info(blobService)
-      // blobService.createContainerIfNotExists(containerName, { publicAccessLevel: "blob"}, (error: any, result: any, response: any) => {
-      //   if (!error){
-      //     winston.info("Success")
-      //     winston.info(response)
-      //     resolve(result)
-      //   }
-      //   reject("error")
-      // })
+      winston.info(blobService)
+      blobService.createContainerIfNotExists(containerName, { publicAccessLevel: "blob"}, (error: any) => {
+        if (!error){
+          blob_write()
+        }
+        winston.info("Error", error)
+      })
 
-      blobService.createBlockBlobFromText(
-          containerName,
-          "qrContainer",
-          qr,
-          function(error: any){
-            if (error){
-              winston.info("Couldn't upload string")
-              winston.info(error)
-              reject()
-            } else {
-              winston.info("Uploaded Successfully")
-              resolve()
-            }
-          })
-      // const blobService = this.azureClientFromRequest(request)
-
-      // blobService.createBlockBlobFromStream(request.formParams.container,
-      //   request.formParams.filename ? request.formParams.filename : request.suggestedFilename(),
-      //   )
-      // file.save(request.attachment.dataBuffer)
-      //   .then(() => resolve(new D.DataActionResponse()))
-      //   .catch((err: any) => { reject(err) })
-
+      let blob_write = function(){
+        blobService.createBlockBlobFromText(
+            containerName,
+            "qrBlob",
+            qr,
+            function(error: any){
+              if (error){
+                winston.info("Couldn't upload string")
+                winston.info(error)
+                reject()
+              } else {
+                winston.info("Uploaded Successfully")
+                resolve()
+              }
+            })
+      }
     })
   }
-
-  // async form(request: D.DataActionRequest) {
-  //   const form = new D.DataActionForm()
-  //   const blogService = this.azureClientFromRequest(request)
-  //   const containers = await blogService.listContainersSegmented(null)
-  //
-  //   form.fields = [{
-  //     label: "Container",
-  //     name: "container",
-  //     required: true,
-  //     options: containers.map((c: any) => {
-  //         return {name: c.id, label: c.name}
-  //       }),
-  //     type: "select",
-  //     default: containers[0].id,
-  //   }, {
-  //     label: "Filename",
-  //     name: "filename",
-  //     type: "string",
-  //   }]
-  //
-  //   return form
-  // }
-  //
-  // private azureClientFromRequest(request: D.DataActionRequest) {
-  //   return new azure.createBlobService(request.params.account, request.params.accessKey)
-  //       .withFilter(new azure.ExponentialRetryPolicyFilter());
-  // }
-
 }
 
 D.addIntegration(new AzureStorageIntegration())
