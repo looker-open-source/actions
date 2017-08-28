@@ -16,3 +16,4 @@ import "./test_smoke"
 
 import "./integrations/test_amazon_s3"
 import "./integrations/test_segment"
+import "./integrations/test_twilio"
