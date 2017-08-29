@@ -15,5 +15,6 @@ import "./test_server"
 import "./test_smoke"
 
 import "./integrations/test_amazon_s3"
+import "./integrations/test_google_cloud_storage"
 import "./integrations/test_segment"
 import "./integrations/test_twilio"
