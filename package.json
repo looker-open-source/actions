@@ -25,6 +25,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/storage": "^1.2.1",
     "@types/body-parser": "^1.16.3",
     "@types/dotenv": "^4.0.0",
     "@types/express": "^4.0.35",

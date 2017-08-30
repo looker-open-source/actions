@@ -1,4 +1,5 @@
 import "./amazon_s3"
+import "./google_cloud_storage"
 import "./segment"
 import "./aws_ec2_terminate_query.ts"
 import "./aws_ec2_terminate_cell.ts"
