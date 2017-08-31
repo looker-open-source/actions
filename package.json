@@ -44,6 +44,7 @@
     "express": "^4.15.2",
     "github": "^9.2.0",
     "mailchimp": "^1.2.0",
+    "node-slack-upload": "^1.2.1",
     "nodemailer": "^4.0.1",
     "nodemon": "^1.11.0",
     "sanitize-filename": "^1.6.1",
