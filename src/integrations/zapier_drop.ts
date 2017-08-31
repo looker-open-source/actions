@@ -20,7 +20,7 @@ export class AzureStorageIntegration extends D.Integration {
     super()
     this.name = "zapier_drop"
     this.label = "Zapier Integrations Work Flow"
-    this.iconName = "Zapier.svg"
+    this.iconName = "zapier.png"
     this.description = "Takes a data attachment and begins a Zapier workflow"
     this.supportedActionTypes = ["query", "cell"]
     this.requiredFields = []
