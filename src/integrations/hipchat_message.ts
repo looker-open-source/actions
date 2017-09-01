@@ -1,10 +1,13 @@
 import * as winston from "winston"
 import * as D from "../framework"
 
-const HipChatClient = require('hipchat-client')
+const HipChatClient = require("hipchat-client")
 // import * as azure from 'aws-sdk/clients/ec2'
 
 /********************************************************************
+ * Hipchat has a message limit length of 10,000 --> for this reason
+ * looker query type drop are way too large and wont work unless there
+ * is some way to shorten the amount of data that gets passed
 *********************************************************************/
 
 export class HipchatMessageDrop extends D.Integration {
@@ -40,6 +43,8 @@ export class HipchatMessageDrop extends D.Integration {
     this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
+
+
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
@@ -62,17 +67,55 @@ export class HipchatMessageDrop extends D.Integration {
         reject("Missing Correct Parameters")
       }
 
+      let query_level_drop = function(){
+          hipchat.api.rooms.message({
+              room_id: request.params.room,
+              from: "Integrations",
+              message: qr,
+          }, function(err: any, res: any) {
+              if (err) {
+                  reject(err)
+              }
+              resolve(res)
+              winston.info("Success")
+          })
+      }
+
+      let cell_level_drop = function(){
+          hipchat.api.rooms.message({
+              room_id: request.params.room,
+              from: "Integrations",
+              message: request.params.value,
+          }, function(err: any, res: any) {
+              if (err) {
+                  reject(err)
+              }
+              resolve(res)
+              winston.info("Success")
+          })
+      }
+
+      if(!request.params.value){
+          query_level_drop()
+      }else{
+          cell_level_drop()
+      }
+
+        winston.info("VALUE VALUE: ", request.params.value)
+        winston.info("ATTACHMENT ATTACHMENT: ", request.attachment)
       hipchat.api.rooms.message({
         room_id: request.params.room,
-        from: 'Integrations',
-        message: qr
-      }, function (err: any, res: any) {
+        from: "Integrations",
+        message: qr,
+      }, function(err: any, res: any) {
         if (err) {
           reject(err)
         }
         resolve(res)
         winston.info("Success")
       })
+
+
     })
   }
 }
