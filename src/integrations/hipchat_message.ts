@@ -55,9 +55,11 @@ export class HipchatMessageDrop extends D.Integration {
         reject("No attached json")
       }
 
-      // if (!request.attachment) {
-      //   throw "Couldn't get data from attachment"
-      // }
+      if (!request.attachment) {
+        throw "Couldn't get data from attachment"
+      }
+
+       console.log("This is the data right here:", JSON.stringify(request.attachment.dataJSON, null, 2))
 
       if (!request.params.account || !request.params.accessKey){
         reject("Missing Correct Parameters")
