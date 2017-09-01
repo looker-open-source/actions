@@ -43,8 +43,6 @@ export class HipchatMessageDrop extends D.Integration {
     this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
-
-
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
@@ -59,7 +57,11 @@ export class HipchatMessageDrop extends D.Integration {
         throw "Couldn't get data from attachment"
       }
 
-       console.log("This is the data right here:", JSON.stringify(request.attachment.dataJSON, null, 2))
+      console.log("This is the data right here:", JSON.stringify(request.attachment.dataJSON, null, 2))
+      const tester = request.attachment.dataJSON.data
+      const tester2 = tester[0]["instances.name"].links[0].params.value
+      console.log("TESTER DATA: ", tester)
+      console.log("TESTER22222 DATA: ", tester2)
 
       if (!request.params.account || !request.params.accessKey){
         reject("Missing Correct Parameters")
@@ -69,7 +71,7 @@ export class HipchatMessageDrop extends D.Integration {
         reject("Missing Correct Parameters")
       }
 
-      let query_level_drop = function(){
+      const query_level_drop = function(){
           hipchat.api.rooms.message({
               room_id: request.params.room,
               from: "Integrations",
@@ -83,7 +85,7 @@ export class HipchatMessageDrop extends D.Integration {
           })
       }
 
-      let cell_level_drop = function(){
+      const cell_level_drop = function(){
           hipchat.api.rooms.message({
               room_id: request.params.room,
               from: "Integrations",
@@ -97,14 +99,14 @@ export class HipchatMessageDrop extends D.Integration {
           })
       }
 
-      if(!request.params.value){
+      if (!request.params.value){
           query_level_drop()
       }else{
           cell_level_drop()
       }
 
-        winston.info("VALUE VALUE: ", request.params.value)
-        winston.info("ATTACHMENT ATTACHMENT: ", request.attachment)
+      winston.info("VALUE VALUE: ", request.params.value)
+      winston.info("ATTACHMENT ATTACHMENT: ", request.attachment)
       hipchat.api.rooms.message({
         room_id: request.params.room,
         from: "Integrations",
@@ -116,7 +118,6 @@ export class HipchatMessageDrop extends D.Integration {
         resolve(res)
         winston.info("Success")
       })
-
 
     })
   }
