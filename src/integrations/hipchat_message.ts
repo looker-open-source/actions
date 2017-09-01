@@ -108,18 +108,6 @@ export class HipchatMessageDrop extends D.Integration {
           cell_level_drop()
       }
 
-        hipchat.api.rooms.message({
-        room_id: request.params.room,
-        from: "Integrations",
-        message: qr,
-      }, function(err: any, res: any) {
-        if (err) {
-          reject(err)
-        }
-        resolve(res)
-        winston.info("Success")
-      })
-
     })
   }
 }
