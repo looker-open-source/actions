@@ -13,7 +13,7 @@ const req = require("request")
  *  endpoint                                                         *
 *********************************************************************/
 
-export class AzureStorageIntegration extends D.Integration {
+export class ZapierDropIntegration extends D.Integration {
 
   allowedTags = ["aws_resource_id", "aws_region"]
   constructor() {
@@ -95,4 +95,4 @@ export class AzureStorageIntegration extends D.Integration {
   }
 }
 
-D.addIntegration(new AzureStorageIntegration())
+D.addIntegration(new ZapierDropIntegration())
