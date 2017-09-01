@@ -46,7 +46,8 @@ export class HipchatMessageDrop extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      const qr = JSON.stringify(request.attachment)
+      const qr = JSON.stringify(request.attachment.dataJSON.data)
+        console.log("Data", request.attachment.dataJSON.data)
       const hipchat = new HipChatClient(request.params.api_key)
 
       if (!(request.attachment && request.params)) {
@@ -57,11 +58,11 @@ export class HipchatMessageDrop extends D.Integration {
         throw "Couldn't get data from attachment"
       }
 
-      console.log("This is the data right here:", JSON.stringify(request.attachment.dataJSON, null, 2))
-      const tester = request.attachment.dataJSON.data
-      const tester2 = tester[0]["instances.name"].links[0].params.value
-      console.log("TESTER DATA: ", tester)
-      console.log("TESTER22222 DATA: ", tester2)
+      // console.log("This is the data right here:", JSON.stringify(request.attachment.dataJSON, null, 2))
+      // const tester = request.attachment.dataJSON.data
+      // const tester2 = tester[0]["instances.name"].links[0].params.value
+      // console.log("TESTER DATA: ", tester)
+      // console.log("TESTER22222 DATA: ", tester2)
 
       if (!request.params.account || !request.params.accessKey){
         reject("Missing Correct Parameters")
@@ -105,8 +106,6 @@ export class HipchatMessageDrop extends D.Integration {
           cell_level_drop()
       }
 
-      winston.info("VALUE VALUE: ", request.params.value)
-      winston.info("ATTACHMENT ATTACHMENT: ", request.attachment)
       hipchat.api.rooms.message({
         room_id: request.params.room,
         from: "Integrations",
