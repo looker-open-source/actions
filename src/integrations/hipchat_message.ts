@@ -45,9 +45,7 @@ export class HipchatMessageDrop extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
-        const tester = request.attachment.dataJSON.data
-        const qr = JSON.stringify(tester)
-        console.log("Data", qr)
+
         const hipchat = new HipChatClient(request.params.api_key)
 
         if (!(request.attachment && request.params)) {
@@ -57,6 +55,10 @@ export class HipchatMessageDrop extends D.Integration {
         if (!request.attachment) {
         throw "Couldn't get data from attachment"
       }
+
+        const tester = request.attachment.dataJSON.data
+        const qr = JSON.stringify(tester)
+        console.log("Data", qr)
 
       // console.log("This is the data right here:", JSON.stringify(request.attachment.dataJSON, null, 2))
       // const tester = request.attachment.dataJSON.data
