@@ -51,13 +51,13 @@ export class HipchatMessageDrop extends D.Integration {
       const qr = JSON.stringify(request.attachment)
       const hipchat = new HipChatClient(request.params.api_key)
 
-      if (!(request.attachment && request.attachment.dataJSON)) {
+      if (!(request.attachment && request.params)) {
         reject("No attached json")
       }
 
-      if (!request.attachment) {
-        throw "Couldn't get data from attachment"
-      }
+      // if (!request.attachment) {
+      //   throw "Couldn't get data from attachment"
+      // }
 
       if (!request.params.account || !request.params.accessKey){
         reject("Missing Correct Parameters")
