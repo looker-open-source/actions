@@ -45,16 +45,16 @@ export class HipchatMessageDrop extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
+        const tester = request.attachment.dataJSON.data
+        const qr = JSON.stringify(tester)
+        console.log("Data", qr)
+        const hipchat = new HipChatClient(request.params.api_key)
 
-      const qr = JSON.stringify(request.attachment.dataJSON.data)
-        console.log("Data", request.attachment.dataJSON.data)
-      const hipchat = new HipChatClient(request.params.api_key)
-
-      if (!(request.attachment && request.params)) {
+        if (!(request.attachment && request.params)) {
         reject("No attached json")
       }
 
-      if (!request.attachment) {
+        if (!request.attachment) {
         throw "Couldn't get data from attachment"
       }
 
@@ -64,15 +64,15 @@ export class HipchatMessageDrop extends D.Integration {
       // console.log("TESTER DATA: ", tester)
       // console.log("TESTER22222 DATA: ", tester2)
 
-      if (!request.params.account || !request.params.accessKey){
+        if (!request.params.account || !request.params.accessKey){
         reject("Missing Correct Parameters")
       }
 
-      if (!request.params.account || !request.params.accessKey){
+        if (!request.params.account || !request.params.accessKey){
         reject("Missing Correct Parameters")
       }
 
-      const query_level_drop = function(){
+        const query_level_drop = function(){
           hipchat.api.rooms.message({
               room_id: request.params.room,
               from: "Integrations",
@@ -86,7 +86,7 @@ export class HipchatMessageDrop extends D.Integration {
           })
       }
 
-      const cell_level_drop = function(){
+        const cell_level_drop = function(){
           hipchat.api.rooms.message({
               room_id: request.params.room,
               from: "Integrations",
@@ -100,13 +100,13 @@ export class HipchatMessageDrop extends D.Integration {
           })
       }
 
-      if (!request.params.value){
+        if (!request.params.value){
           query_level_drop()
       }else{
           cell_level_drop()
       }
 
-      hipchat.api.rooms.message({
+        hipchat.api.rooms.message({
         room_id: request.params.room,
         from: "Integrations",
         message: qr,
