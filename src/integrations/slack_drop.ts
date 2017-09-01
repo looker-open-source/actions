@@ -24,7 +24,7 @@ export class SlackFileDrop extends D.Integration {
         name: "token",
         label: "Slack API Token",
         required: true,
-        description: "Personal API Token",
+        description: "https://api.slack.com/custom-integrations/legacy-tokens",
         sensitive: true,
       },
       {

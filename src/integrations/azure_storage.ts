@@ -4,6 +4,14 @@ import * as D from "../framework"
 const azure = require("azure-storage")
 // import * as azure from 'aws-sdk/clients/ec2'
 
+/********************************************************************
+ * This Integration Assumes you have an Azure account. Given an account
+ * and an access key the integration logs you in. It then creates a
+ * storage container called integrationscontainer (if one doesn't already
+ * exist) and then writes the looker attachment as a blobfile titled qrBlob
+ * to the container.
+ *********************************************************************/
+
 export class AzureStorageIntegration extends D.Integration {
 
   allowedTags = ["aws_resource_id", "aws_region"]
@@ -11,7 +19,7 @@ export class AzureStorageIntegration extends D.Integration {
     super()
     this.name = "azure_storage"
     this.label = "Azure Storage"
-    this.iconName = "azure_storage.svg"
+    this.iconName = "azure.png"
     this.description = "Write data files to an Azure container."
     this.supportedActionTypes = ["query", "cell"]
     this.requiredFields = []
