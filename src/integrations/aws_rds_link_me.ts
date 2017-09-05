@@ -9,7 +9,7 @@ import * as winston from 'winston'
 import * as nodemailer from 'nodemailer'
 
 
-export class AwsLinkMeEvent extends D.Integration {
+export class AwsRdsLinkMeEvent extends D.Integration {
 
   allowedTags = ["aws_resource_id"]
 
@@ -18,8 +18,8 @@ export class AwsLinkMeEvent extends D.Integration {
   constructor() {
     super()
 
-    this.name = "aws_link_me_event"
-    this.label = "Get a link to AWS Console from Resouce in Cell"
+    this.name = "aws_rds_link_me_event"
+    this.label = "Get a link to AWS Console from RDS Resouce in Cell"
     this.iconName = "AWS_EC2.png"
     this.description = ""
     this.params = [
@@ -87,7 +87,7 @@ export class AwsLinkMeEvent extends D.Integration {
           const resp = new D.DataActionResponse()
           resp.message = `https://${rdsMatcher[1]}.console.aws.amazon.com/rds/home?region=${rdsMatcher[1]}#dbinstances:id=${rdsMatcher[2]}`
 
-          AwsLinkMeEvent.mail(request.params.email, resp.message, (err: any)=>{
+          AwsRdsLinkMeEvent.mail(request.params.email, resp.message, (err: any)=>{
             //   winston.info("erro?")
             //   winston.info(JSON.stringify(err))
               if(err){
@@ -136,4 +136,4 @@ export class AwsLinkMeEvent extends D.Integration {
 
 }
 
-D.addIntegration(new AwsLinkMeEvent())
+D.addIntegration(new AwsRdsLinkMeEvent())

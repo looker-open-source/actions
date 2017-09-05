@@ -16,13 +16,11 @@ export class DigitalOceanStopDropletCellEvent extends D.Integration {
 
   allowedTags = ["digitalocean_droplet_id"]
 
-  allRegions = ["us-west-1", "us-west-2", "us-east-1", "us-east-2"]
-
   constructor() {
     super()
 
     this.name = "digitalocean_stop_droplet_cell_event"
-    this.label = "DigitalOcean Dtop a Droplet from Cell"
+    this.label = "DigitalOcean Stop a Droplet from Cell"
     this.iconName = "DigitalOcean.png"
     this.description = ""
     this.params = [
