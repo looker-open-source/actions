@@ -56,8 +56,6 @@ export class ZapierDropIntegration extends D.Integration {
       // const containerName = "integrationscontainer"
 
       const url_hook = request.params.url.toString()
-      winston.info("URL URL URL", url_hook)
-      winston.info(JSON.stringify(request.attachment))
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
@@ -67,13 +65,9 @@ export class ZapierDropIntegration extends D.Integration {
         throw "Couldn't get data from attachment"
       }
 
-      const qr = JSON.stringify(request.attachment)
+      const qr = JSON.stringify(request.attachment.dataJSON.data)
 
-      if (!request.params.account || !request.params.accessKey){
-        reject("Missing Correct Parameters")
-      }
-
-      if (!request.params.account || !request.params.accessKey){
+      if (!request.params.user || !request.params.password || !request.params.url){
         reject("Missing Correct Parameters")
       }
 

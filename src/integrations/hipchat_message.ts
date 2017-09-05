@@ -55,7 +55,7 @@ export class HipchatMessageDrop extends D.Integration {
 
         const tester = request.attachment.dataJSON.data
         const qr = JSON.stringify(tester)
-        const cr = String(request.params.valu)
+        const cr = String(request.params.value)
         // console.log("Data", qr)
 
         if (!request.params.api_key || !request.params.room){
