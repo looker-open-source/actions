@@ -3,12 +3,11 @@ import * as D from "../framework"
 
 const Slack = require("node-slack-upload")
 const path = require("path")
-const fs = require('fs');
+const fs = require("fs")
 // const WebClient = require('@slack/client').WebClient;
-require('dotenv').config()
+require("dotenv").config()
 
 export class SlackFileDrop extends D.Integration {
-
 
   allowedTags = ["aws_resource_id", "aws_region"]
   constructor() {
@@ -28,11 +27,10 @@ export class SlackFileDrop extends D.Integration {
         sensitive: true,
       },
       {
-        name: "webhook",
-        label: "Slack Webhook",
+        name: "channel",
+        label: "Slack Channel",
         required: true,
         sensitive: true,
-        description: "Webhook for your slack channel",
       },
     ]
     this.supportedFormats = ["json_detail"]
@@ -44,11 +42,11 @@ export class SlackFileDrop extends D.Integration {
 
     return new Promise <D.DataActionResponse>((resolve, reject) => {
 
-      if(!request.attachment){
+      if (!request.attachment){
         reject("Missing Attachment File")
       }
 
-      if(!request.params.token || request.params.webHook){
+      if (!request.params.token || !request.params.channel){
         reject("Missing parameters")
       }
 
@@ -60,20 +58,20 @@ export class SlackFileDrop extends D.Integration {
        *  of attachment is automatically included by Looker
        ************************************************************/
 
-      var file_upload = function(){
+      let file_upload = function(){
         slack.uploadFile({
           file: fs.createReadStream(path.join("./", "attached_file.txt")),
-          filetype: 'text',
-          title: 'looker_attached_file',
-          initialComment: 'File added by Looker',
-          channels: '#integrations_channel'
-        }, function(err:any , data:any){
-          if(!err){
-            winston.info('Uploaded file details: ', data)
-            fs.unlinkSync('./attached_file.txt')
+          filetype: "text",
+          title: "looker_attached_file",
+          initialComment: "File added by Looker",
+          channels: request.params.channel,
+        }, function(err: any , data: any){
+          if (!err){
+            winston.info("Uploaded file details: ", data)
+            fs.unlinkSync("./attached_file.txt")
             resolve(data)
           }
-          winston.info("Slack File Upload Failed", err)
+          winston.info(err)
           reject(err)
         })
       }
@@ -81,7 +79,7 @@ export class SlackFileDrop extends D.Integration {
       const attached_file = "attached_file.txt"
       const qr = JSON.stringify(request.attachment)
       fs.writeFile(attached_file, qr, function(err: any){
-        if(!err){
+        if (!err){
           file_upload()
         }
         winston.info("Failure")
