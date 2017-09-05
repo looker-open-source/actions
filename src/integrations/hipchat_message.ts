@@ -58,6 +58,7 @@ export class HipchatMessageDrop extends D.Integration {
 
         const tester = request.attachment.dataJSON.data
         const qr = JSON.stringify(tester)
+        const cr = String(request.params.valu)
         // console.log("Data", qr)
 
         if (!request.params.api_key || !request.params.room){
@@ -82,7 +83,7 @@ export class HipchatMessageDrop extends D.Integration {
           hipchat.api.rooms.message({
               room_id: request.params.room,
               from: "Integrations",
-              message: request.params.value,
+              message: cr,
           }, function(err: any, res: any) {
               if (err) {
                   reject(err)
