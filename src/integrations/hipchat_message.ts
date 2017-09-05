@@ -92,11 +92,11 @@ export class HipchatMessageDrop extends D.Integration {
           })
       }
 
-        if (!request.params.value){
-          query_level_drop()
-      }else{
-          cell_level_drop()
-      }
+        if (request.params.value) {
+            cell_level_drop()
+        } else {
+            query_level_drop()
+        }
 
     })
   }
