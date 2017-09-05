@@ -75,7 +75,7 @@ export class AzureStorageIntegration extends D.Integration {
       const blob_write = function(){
         blobService.createBlockBlobFromText(
             containerName,
-            "qrBlob",
+            "qrBlob2",
             qr,
             function(error: any){
               if (error){
