@@ -12,14 +12,13 @@ const azure = require("azure-storage")
 
 export class AzureStorageIntegration extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
   constructor() {
     super()
     this.name = "azure_storage"
     this.label = "Azure Storage"
     this.iconName = "azure.png"
     this.description = "Write data files to an Azure container."
-    this.supportedActionTypes = ["query", "cell"]
+    this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [
       {
@@ -39,7 +38,6 @@ export class AzureStorageIntegration extends D.Integration {
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
-    this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
   async action(request: D.DataActionRequest) {

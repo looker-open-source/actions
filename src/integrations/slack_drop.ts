@@ -9,14 +9,13 @@ require("dotenv").config()
 
 export class SlackFileDrop extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
   constructor() {
     super()
     this.name = "slack_file_drop"
     this.label = "Slack File Drop"
     this.iconName = "slack.png"
     this.description = "Drop Files to a slack channel formatted as CSV's"
-    this.supportedActionTypes = ["query", "cell"]
+    this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [
       {
@@ -35,7 +34,6 @@ export class SlackFileDrop extends D.Integration {
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
-    this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
   async action(request: D.DataActionRequest) {

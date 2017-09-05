@@ -11,14 +11,13 @@ const HipChatClient = require("hipchat-client")
 
 export class HipchatMessageDrop extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
   constructor() {
     super()
     this.name = "hipchat_message"
     this.label = "Hipchat Message Drop"
     this.iconName = "hipchat.png"
     this.description = "Send a data attachment as a message to a hipchat room"
-    this.supportedActionTypes = ["query", "cell"]
+    this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [
 
@@ -39,7 +38,6 @@ export class HipchatMessageDrop extends D.Integration {
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
-    this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
   async action(request: D.DataActionRequest) {
