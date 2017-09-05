@@ -9,7 +9,7 @@ require("dotenv").config()
 
 export class SlackFileDrop extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
+  allowedTags = []
   constructor() {
     super()
     this.name = "slack_file_drop"
