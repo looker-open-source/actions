@@ -58,19 +58,9 @@ export class HipchatMessageDrop extends D.Integration {
 
         const tester = request.attachment.dataJSON.data
         const qr = JSON.stringify(tester)
-        console.log("Data", qr)
+        // console.log("Data", qr)
 
-      // console.log("This is the data right here:", JSON.stringify(request.attachment.dataJSON, null, 2))
-      // const tester = request.attachment.dataJSON.data
-      // const tester2 = tester[0]["instances.name"].links[0].params.value
-      // console.log("TESTER DATA: ", tester)
-      // console.log("TESTER22222 DATA: ", tester2)
-
-        if (!request.params.account || !request.params.accessKey){
-        reject("Missing Correct Parameters")
-      }
-
-        if (!request.params.account || !request.params.accessKey){
+        if (!request.params.api_key || !request.params.room){
         reject("Missing Correct Parameters")
       }
 
