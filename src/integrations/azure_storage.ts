@@ -2,15 +2,13 @@ import * as winston from "winston"
 import * as D from "../framework"
 
 const azure = require("azure-storage")
-// import * as azure from 'aws-sdk/clients/ec2'
 
-/********************************************************************
+/****************************************************************************
  * This Integration Assumes you have an Azure account. Given an account
- * and an access key the integration logs you in. It then creates a
- * storage container called integrationscontainer (if one doesn't already
- * exist) and then writes the looker attachment as a blobfile titled qrBlob
- * to the container.
- *********************************************************************/
+ * and an access key the integration then creates a storage container called
+ * integrationscontainer (if one doesn't already exist) and then writes
+ * the looker attachment as a blobfile titled qrBlob to the container.
+ *****************************************************************************/
 
 export class AzureStorageIntegration extends D.Integration {
 
@@ -58,11 +56,7 @@ export class AzureStorageIntegration extends D.Integration {
         throw "Couldn't get data from attachment"
       }
 
-      const qr = JSON.stringify(request.attachment)
-
-      if (!request.params.account || !request.params.accessKey){
-        reject("Missing Correct Parameters")
-      }
+      const qr = JSON.stringify(request.attachment.dataJSON.data)
 
       if (!request.params.account || !request.params.accessKey){
         reject("Missing Correct Parameters")
@@ -70,7 +64,7 @@ export class AzureStorageIntegration extends D.Integration {
 
       const containerName = "integrationscontainer"
       const blobService = azure.createBlobService(request.params.account, request.params.accessKey)
-      winston.info(blobService)
+      // winston.info(blobService)
       blobService.createContainerIfNotExists(containerName, { publicAccessLevel: "blob"}, (error: any) => {
         if (!error){
           blob_write()
@@ -78,16 +72,15 @@ export class AzureStorageIntegration extends D.Integration {
         winston.info("Error", error)
       })
 
-      let blob_write = function(){
+      const blob_write = function(){
         blobService.createBlockBlobFromText(
             containerName,
             "qrBlob",
             qr,
             function(error: any){
               if (error){
-                winston.info("Couldn't upload string")
-                winston.info(error)
-                reject()
+                winston.info("Couldn't upload blob")
+                reject(error)
               } else {
                 winston.info("Uploaded Successfully")
                 resolve()

@@ -2,12 +2,11 @@ import * as winston from "winston"
 import * as D from "../framework"
 
 const HipChatClient = require("hipchat-client")
-// import * as azure from 'aws-sdk/clients/ec2'
 
 /********************************************************************
  * Hipchat has a message limit length of 10,000 --> for this reason
- * looker query type drop are way too large and wont work unless there
- * is some way to shorten the amount of data that gets passed
+ * looker query type data action is too large and wont work unless
+ * there is some way to shorten the amount of data that gets passed
 *********************************************************************/
 
 export class HipchatMessageDrop extends D.Integration {
