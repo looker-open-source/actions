@@ -42,7 +42,7 @@ export class AzureStorageIntegration extends D.Integration {
     this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.DataActionRequest): Promise<D.DataActionResponse> {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
       // containerName must be the name of an existing blob container in Azure storage
       // const containerName = "integrationscontainer"
@@ -107,7 +107,8 @@ export class AzureStorageIntegration extends D.Integration {
     })
   }
 
-  async form(request: D.DataActionRequest): Promise<D.DataActionForm> {
+  // async form(request: D.DataActionRequest): Promise<D.DataActionForm> {
+  async form(): Promise<D.DataActionForm> {
     const form = new D.DataActionForm()
     form.fields = [{
       label: "Container Name",
