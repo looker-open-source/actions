@@ -58,14 +58,14 @@ export class AzureStorageIntegration extends D.Integration {
 
       const qr = JSON.stringify(request.attachment.dataJSON.data)
 
-      if (!request.params.account || !request.params.accessKey){
+      if (!request.params.account || !request.params.accessKey || !request.formParams.containerName ){
         reject("Missing Correct Parameters")
       }
       // let blob_name: string
-      const containerName = "integrationscontainer"
+
       const blobService = azure.createBlobService(request.params.account, request.params.accessKey)
       // winston.info(blobService)
-      blobService.createContainerIfNotExists(containerName, { publicAccessLevel: "blob"}, (error: any) => {
+      blobService.createContainerIfNotExists(request.formParams.containerName, { publicAccessLevel: "blob"}, (error: any) => {
         if (!error){
             // const x = blob_check
             // console.log("BlobName BlobName BlobName BlobName 22222222: ", x)
@@ -91,7 +91,7 @@ export class AzureStorageIntegration extends D.Integration {
 
       const blob_write = function(){
         blobService.createBlockBlobFromText(
-            containerName,
+            request.formParams.containerName,
             "qrBlob",
             qr,
             function(error: any){
@@ -106,6 +106,18 @@ export class AzureStorageIntegration extends D.Integration {
       }
     })
   }
+
+  async form(request: D.DataActionRequest): Promise<D.DataActionForm> {
+    const form = new D.DataActionForm()
+    form.fields = [{
+      label: "Container Name",
+      name: "containerName",
+      required: true,
+      type: "string",
+    }]
+    return form
+  }
+
 }
 
 D.addIntegration(new AzureStorageIntegration())
