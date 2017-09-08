@@ -1,4 +1,3 @@
-import * as winston from "winston"
 import * as D from "../framework"
 
 const azure = require("azure-storage")
@@ -12,7 +11,7 @@ const azure = require("azure-storage")
 
 export class AzureStorageIntegration extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
+  allowedTags = ["azure_key_id"]
   constructor() {
     super()
     this.name = "azure_storage"
@@ -44,9 +43,6 @@ export class AzureStorageIntegration extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
-      // containerName must be the name of an existing blob container in Azure storage
-      // const containerName = "integrationscontainer"
-      winston.info(JSON.stringify(request.attachment))
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
@@ -64,15 +60,10 @@ export class AzureStorageIntegration extends D.Integration {
       // let blob_name: string
       const containerName = "integrationscontainer"
       const blobService = azure.createBlobService(request.params.account, request.params.accessKey)
-      // winston.info(blobService)
       blobService.createContainerIfNotExists(containerName, { publicAccessLevel: "blob"}, (error: any) => {
         if (!error){
-            // const x = blob_check
-            // console.log("BlobName BlobName BlobName BlobName 22222222: ", x)
-            // blob_check()
             blob_write()
         }
-        winston.info("Error", error)
       })
 
       // let blob_check = function(){
@@ -96,10 +87,8 @@ export class AzureStorageIntegration extends D.Integration {
             qr,
             function(error: any){
               if (error){
-                winston.info("Couldn't upload blob")
                 reject(error)
               } else {
-                winston.info("Uploaded Successfully")
                 resolve()
               }
             })

@@ -1,4 +1,3 @@
-import * as winston from "winston"
 import * as D from "../framework"
 
 const HipChatClient = require("hipchat-client")
@@ -11,7 +10,7 @@ const HipChatClient = require("hipchat-client")
 
 export class HipchatMessageDrop extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
+  allowedTags = ["hipchat_key"]
   constructor() {
     super()
     this.name = "hipchat_message"
@@ -58,7 +57,6 @@ export class HipchatMessageDrop extends D.Integration {
         const tester = request.attachment.dataJSON.data
         const qr = JSON.stringify(tester)
         const cr = String(request.params.value)
-        // console.log("Data", qr)
 
         if (!request.params.api_key || !request.params.room){
         reject("Missing Correct Parameters")
@@ -74,7 +72,6 @@ export class HipchatMessageDrop extends D.Integration {
                   reject(err)
               }
               resolve(res)
-              winston.info("Success")
           })
       }
 
@@ -88,7 +85,6 @@ export class HipchatMessageDrop extends D.Integration {
                   reject(err)
               }
               resolve(res)
-              winston.info("Success")
           })
       }
 
