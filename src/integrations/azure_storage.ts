@@ -1,7 +1,17 @@
 import * as winston from "winston"
 import * as D from "../framework"
 
-const azure = require("azure-storage")
+import * as azure from 'azure-storage'
+/*
+ * module augmentation is required here because the 'currentToken' parameter incorrectly forbids nulls
+ */
+declare module 'azure-storage' {
+  class BlobService {
+    listContainersSegmented(currentToken: common.ContinuationToken|undefined, options: BlobService.ListContainerOptions, callback: ErrorOrResult<BlobService.ListContainerResult>): void;
+    createContainerIfNotExists(container: string, options: BlobService.CreateContainerOptions, callback: ErrorOrResult<BlobService.ContainerResult>): void;
+    createBlockBlobFromText(container: string, blob: string, text: string | Buffer, callback: ErrorOrResult<BlobService.BlobResult>): void;
+  }
+}
 
 /****************************************************************************
  * This Integration Assumes you have an Azure account. Given an account
@@ -92,7 +102,7 @@ export class AzureStorageIntegration extends D.Integration {
       const blob_write = function(){
         blobService.createBlockBlobFromText(
             request.formParams.containerName,
-            "qrBlob",
+            request.formParams.blobName,
             qr,
             function(error: any){
               if (error){
@@ -107,15 +117,51 @@ export class AzureStorageIntegration extends D.Integration {
     })
   }
 
-  // async form(request: D.DataActionRequest): Promise<D.DataActionForm> {
-  async form(): Promise<D.DataActionForm> {
+  async form(request: D.DataActionRequest): Promise<D.DataActionForm> {
+
+    const blobService:azure.BlobService = azure.createBlobService(request.params.account, request.params.accessKey)
+    const containers: azure.BlobService.ContainerResult[] = [];
+    let first = 1;
+    let token:azure.common.ContinuationToken|undefined = undefined;
+    while( first || token ) {
+      first = 0;
+      const containerResponse = await new Promise<azure.BlobService.ListContainerResult>(function(resolve,reject){
+        blobService.listContainersSegmented(token, {}, function(err, result) {
+          if(err){
+            reject(err);
+          } else {
+            resolve(result)
+          }
+        })
+      })
+      containerResponse.entries.forEach((el:any) => containers.push(el))
+      token = containerResponse.continuationToken;
+
+    }
+
+    const options = containers.map(container => {
+      return {
+        name: container.name,
+        label: container.name
+      }
+    })
+
     const form = new D.DataActionForm()
-    form.fields = [{
-      label: "Container Name",
-      name: "containerName",
-      required: true,
-      type: "string",
-    }]
+    form.fields = [
+      {
+        label: "Container Name",
+        name: "containerName",
+        required: true,
+        type: "select",
+        options: options
+      },
+      {
+        label: "Blob Name",
+        name: "blobName",
+        required: true,
+        type: "string"
+      },
+    ]
     return form
   }
 
