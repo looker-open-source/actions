@@ -6,7 +6,6 @@ import { DataActionResponse } from "./data_action_response"
 
 import * as fs from "fs"
 import * as path from "path"
-import * as winston from "winston"
 const datauri = require("datauri")
 
 export interface IIntegrationParameter {
@@ -70,7 +69,6 @@ export abstract class Integration {
   }
 
   async validateAndPerformAction(request: DataActionRequest) {
-      winston.info(JSON.stringify(request))
 
     if (this.supportedActionTypes &&
       this.supportedActionTypes.indexOf(request.type) === -1
@@ -82,7 +80,6 @@ export abstract class Integration {
 
     if (requiredParams.length > 0) {
       if (request.params) {
-          winston.info(JSON.stringify(request.params) || "")
         for (const p of requiredParams) {
           const param = request.params[p.name]
           if (param === undefined || param === null) {

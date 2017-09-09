@@ -1,8 +1,6 @@
 import * as express from "express"
 import * as sanitizeFilename from "sanitize-filename"
 
-import * as winston from "winston"
-
 export interface IParamMap {
   [name: string]: string
 }
@@ -39,10 +37,7 @@ export interface IDataActionScheduledPlan {
 export class DataActionRequest {
 
   static fromRequest(request: express.Request) {
-    //   winston.info("two logs follow")
-      winston.info(JSON.stringify(request.body))
     const dataActionRequest = this.fromJSON(request.body)
-    // winston.info(JSON.stringify(dataActionRequest))
     dataActionRequest.instanceId = request.header("x-looker-instance")
     dataActionRequest.webhookId = request.header("x-looker-webhook-id")
     return dataActionRequest
