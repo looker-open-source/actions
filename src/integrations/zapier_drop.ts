@@ -74,7 +74,7 @@ export class ZapierDropIntegration extends D.Integration {
         body: qr,
       }, function(error: any, response: any){
         if (!error){
-          resolve(response)
+          resolve(new D.DataActionResponse())
         }
         reject(error)
       })

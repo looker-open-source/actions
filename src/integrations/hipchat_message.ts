@@ -61,7 +61,7 @@ export class HipchatMessageDrop extends D.Integration {
               if (err) {
                   reject(err)
               }
-              resolve(res)
+              resolve(new D.DataActionResponse())
           })
       }
 
@@ -74,7 +74,7 @@ export class HipchatMessageDrop extends D.Integration {
               if (err) {
                   reject(err)
               }
-              resolve(res)
+              resolve(new D.DataActionResponse())
           })
       }
 

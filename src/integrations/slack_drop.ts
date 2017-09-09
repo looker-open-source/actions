@@ -59,7 +59,7 @@ export class SlackFileDrop extends D.Integration {
         }, function(err: any , data: any){
           if (!err){
             fs.unlinkSync("./"+request.formParams.filename)
-            resolve(data)
+            resolve(new D.DataActionResponse())
           }
           reject(err)
         })
