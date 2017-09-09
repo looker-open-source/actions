@@ -72,7 +72,7 @@ export class ZapierDropIntegration extends D.Integration {
         url: url_hook,
         method: "POST",   // <--Very important!!!use
         body: qr,
-      }, function(error: any, response: any){
+      }, function(error: any){
         if (!error){
           resolve(new D.DataActionResponse())
         }

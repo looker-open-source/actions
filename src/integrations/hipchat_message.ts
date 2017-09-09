@@ -57,7 +57,7 @@ export class HipchatMessageDrop extends D.Integration {
               room_id: request.formParams.room,
               from: "Integrations",
               message: qr,
-          }, function(err: any, res: any) {
+          }, function(err: any) {
               if (err) {
                   reject(err)
               }
@@ -70,7 +70,7 @@ export class HipchatMessageDrop extends D.Integration {
               room_id: request.formParams.room,
               from: "Integrations",
               message: cr,
-          }, function(err: any, res: any) {
+          }, function(err: any) {
               if (err) {
                   reject(err)
               }

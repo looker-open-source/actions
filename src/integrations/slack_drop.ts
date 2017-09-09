@@ -56,7 +56,7 @@ export class SlackFileDrop extends D.Integration {
           title: request.formParams.filename,
           initialComment: "File added by Looker",
           channels: request.formParams.channel,
-        }, function(err: any , data: any){
+        }, function(err: any){
           if (!err){
             fs.unlinkSync("./"+request.formParams.filename)
             resolve(new D.DataActionResponse())
