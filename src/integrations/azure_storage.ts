@@ -74,31 +74,14 @@ export class AzureStorageIntegration extends D.Integration {
       // let blob_name: string
 
       const blobService = azure.createBlobService(request.params.account, request.params.accessKey)
-      // winston.info(blobService)
+
       blobService.createContainerIfNotExists(request.formParams.containerName, { publicAccessLevel: "blob"}, (error: any) => {
-        if (!error){
-            // const x = blob_check
-            // console.log("BlobName BlobName BlobName BlobName 22222222: ", x)
-            // blob_check()
-            blob_write()
+        if (error){
+          reject(error)
+        } else {
+          blob_write()
         }
-        winston.info("Error", error)
       })
-
-      // let blob_check = function(){
-      //      blobService.listBlobsSegmented(containerName, null, function(error: any, results: any, _callback: any) {
-      //          if (error) {
-      //              console.log(error)
-      //              winston.info("Error on listBlobsSegmented")
-      //          } else {
-      //              for (let i = 0, blob; blob = results.entries[i]; i++) {
-      //                  blob_name = blob
-      //              }
-      //          }
-      //      })
-      //      return blob_name
-      //  }
-
       const blob_write = function(){
         blobService.createBlockBlobFromText(
             request.formParams.containerName,
@@ -106,11 +89,9 @@ export class AzureStorageIntegration extends D.Integration {
             qr,
             function(error: any){
               if (error){
-                winston.info("Couldn't upload blob")
                 reject(error)
               } else {
-                winston.info("Uploaded Successfully")
-                resolve()
+                resolve(new D.DataActionResponse())
               }
             })
       }
