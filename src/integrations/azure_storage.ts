@@ -27,15 +27,15 @@ export class AzureStorageIntegration extends D.Integration {
     this.name = "azure_storage"
     this.label = "Azure Storage"
     this.iconName = "azure.png"
-    this.description = "Write data files to an Azure container."
-    this.supportedActionTypes = ["query", "cell"]
+    this.description = "Write data files to an Azure Blob Storage container."
+    this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [
       {
         name: "account",
         label: "Storage Account",
         required: true,
-        description: "Your account for Azure.",
+        description: "The globally unique name of your Azure Storage Account",
         sensitive: false,
       },
       {
@@ -43,7 +43,7 @@ export class AzureStorageIntegration extends D.Integration {
         label: "Access Key",
         required: true,
         sensitive: true,
-        description: "Your access key for Azure.",
+        description: "Your access key for Azure",
       },
     ]
     this.supportedFormats = ["json_detail"]

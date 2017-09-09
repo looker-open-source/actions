@@ -24,13 +24,7 @@ export class SlackFileDrop extends D.Integration {
         required: true,
         description: "https://api.slack.com/custom-integrations/legacy-tokens",
         sensitive: true,
-      },
-      {
-        name: "channel",
-        label: "Slack Channel",
-        required: true,
-        sensitive: true,
-      },
+      }
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
@@ -81,6 +75,23 @@ export class SlackFileDrop extends D.Integration {
         }
       })
     })
+  }
+
+  async form(){
+    const form = new D.DataActionForm()
+
+    form.fields = [
+      {
+        name: "channel",
+        label: "Slack Channel",
+        required: true,
+        sensitive: false,
+        description: "Name of the Slack channel you would like to post to",
+        type: "string",
+      },
+    ]
+
+    return form
   }
 
 }
