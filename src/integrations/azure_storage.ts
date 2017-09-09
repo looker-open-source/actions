@@ -1,4 +1,3 @@
-import * as winston from "winston"
 import * as D from "../framework"
 
 import * as azure from 'azure-storage'
@@ -22,7 +21,7 @@ declare module 'azure-storage' {
 
 export class AzureStorageIntegration extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
+  allowedTags = ["azure_key_id"]
   constructor() {
     super()
     this.name = "azure_storage"
@@ -54,9 +53,6 @@ export class AzureStorageIntegration extends D.Integration {
 
   async action(request: D.DataActionRequest): Promise<D.DataActionResponse> {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
-      // containerName must be the name of an existing blob container in Azure storage
-      // const containerName = "integrationscontainer"
-      winston.info(JSON.stringify(request.attachment))
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")

@@ -1,4 +1,3 @@
-import * as winston from "winston"
 import * as D from "../framework"
 
 const req = require("request")
@@ -15,7 +14,7 @@ const req = require("request")
 
 export class ZapierDropIntegration extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
+  allowedTags = ["zapier_webhook"]
   constructor() {
     super()
     this.name = "zapier_drop"
@@ -54,8 +53,6 @@ export class ZapierDropIntegration extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
-      // containerName must be the name of an existing blob container in Azure storage
-      // const containerName = "integrationscontainer"
 
       const url_hook = request.params.url.toString()
 
@@ -79,7 +76,6 @@ export class ZapierDropIntegration extends D.Integration {
         body: qr,
       }, function(error: any, response: any){
         if (!error){
-          winston.info("Success")
           resolve(response)
         }
         reject(error)

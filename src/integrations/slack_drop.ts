@@ -1,4 +1,3 @@
-import * as winston from "winston"
 import * as D from "../framework"
 
 const Slack = require("node-slack-upload")
@@ -9,7 +8,7 @@ require("dotenv").config()
 
 export class SlackFileDrop extends D.Integration {
 
-  allowedTags = ["aws_resource_id", "aws_region"]
+  allowedTags = ["slack_channel_name", "slack_token"]
   constructor() {
     super()
     this.name = "slack_file_drop"
@@ -67,11 +66,9 @@ export class SlackFileDrop extends D.Integration {
           channels: request.params.channel,
         }, function(err: any , data: any){
           if (!err){
-            winston.info("Uploaded file details: ", data)
             fs.unlinkSync("./attached_file.txt")
             resolve(data)
           }
-          winston.info(err)
           reject(err)
         })
       }
@@ -82,7 +79,6 @@ export class SlackFileDrop extends D.Integration {
         if (!err){
           file_upload()
         }
-        winston.info("Failure")
       })
     })
   }
