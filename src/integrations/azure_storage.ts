@@ -120,31 +120,35 @@ export class AzureStorageIntegration extends D.Integration {
   async form(request: D.DataActionRequest): Promise<D.DataActionForm> {
 
     const blobService:azure.BlobService = azure.createBlobService(request.params.account, request.params.accessKey)
-    const containers: azure.BlobService.ContainerResult[] = [];
+    const containers:Array<{ name: string, label: string }> = [];
     let first = 1;
     let token:azure.common.ContinuationToken|undefined = undefined;
     while( first || token ) {
       first = 0;
-      const containerResponse = await new Promise<azure.BlobService.ListContainerResult>(function(resolve,reject){
-        blobService.listContainersSegmented(token, {}, function(err, result) {
-          if(err){
-            reject(err);
-          } else {
-            resolve(result)
-          }
+      try {
+        const containerResponse = await new Promise<azure.BlobService.ListContainerResult>(function(resolve,reject){
+          blobService.listContainersSegmented(token, {}, function(err, result) {
+            if(err){
+              reject(err);
+            } else {
+              resolve(result)
+            }
+          })
         })
-      })
-      containerResponse.entries.forEach((el:any) => containers.push(el))
-      token = containerResponse.continuationToken;
+        containerResponse.entries.forEach((el:azure.BlobService.ContainerResult) => containers.push({
+            name: el.name,
+            label: el.name
+        }))
+        token = containerResponse.continuationToken;
+      } catch(err){
+        containers.push({
+          name: "error",
+          label: `<Failed to list "${request.params.account}">`
+        })
+        token = undefined;
+      }
 
     }
-
-    const options = containers.map(container => {
-      return {
-        name: container.name,
-        label: container.name
-      }
-    })
 
     const form = new D.DataActionForm()
     form.fields = [
@@ -153,7 +157,7 @@ export class AzureStorageIntegration extends D.Integration {
         name: "containerName",
         required: true,
         type: "select",
-        options: options
+        options: containers
       },
       {
         label: "Blob Name",
