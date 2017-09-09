@@ -14,14 +14,13 @@ const req = require("request")
 
 export class ZapierDropIntegration extends D.Integration {
 
-  allowedTags = ["zapier_webhook"]
   constructor() {
     super()
     this.name = "zapier_drop"
     this.label = "Zapier Integrations Work Flow"
     this.iconName = "zapier.png"
     this.description = "Takes a data attachment and begins a Zapier workflow"
-    this.supportedActionTypes = ["query", "cell"]
+    this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [
       {
@@ -48,7 +47,6 @@ export class ZapierDropIntegration extends D.Integration {
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
-    this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
   async action(request: D.DataActionRequest) {

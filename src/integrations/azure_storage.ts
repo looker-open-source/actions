@@ -21,7 +21,6 @@ declare module 'azure-storage' {
 
 export class AzureStorageIntegration extends D.Integration {
 
-  allowedTags = ["azure_key_id"]
   constructor() {
     super()
     this.name = "azure_storage"
@@ -48,7 +47,6 @@ export class AzureStorageIntegration extends D.Integration {
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
-    this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
   async action(request: D.DataActionRequest): Promise<D.DataActionResponse> {
