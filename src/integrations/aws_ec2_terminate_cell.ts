@@ -1,7 +1,6 @@
 // import * as uuid from "uuid"
 
 import * as D from "../framework"
-import * as winston from 'winston'
 
 import * as EC2 from 'aws-sdk/clients/ec2'
 // import * as Promise from 'bluebird'
@@ -151,9 +150,7 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
 
       })
 
-      Promise.all(responses).then( (terminationResults) => {
-          winston.info(`terminated instances in region: ${terminationResults.join(', ')}`)
-
+      Promise.all(responses).then( () => {
           resolve(new D.DataActionResponse())
       }, (errs) => {
           reject(`error in at least one response: ${JSON.stringify(errs)}`)

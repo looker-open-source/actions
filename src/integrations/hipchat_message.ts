@@ -48,13 +48,13 @@ export class HipchatMessageDrop extends D.Integration {
         const qr = JSON.stringify(tester)
         const cr = String(request.params.value)
 
-        if (!request.params.api_key || !request.params.room){
+        if (!request.params.api_key || !request.formParams.room){
         reject("Missing Correct Parameters")
       }
 
         const query_level_drop = function(){
           hipchat.api.rooms.message({
-              room_id: request.params.room,
+              room_id: request.formParams.room,
               from: "Integrations",
               message: qr,
           }, function(err: any, res: any) {
@@ -67,7 +67,7 @@ export class HipchatMessageDrop extends D.Integration {
 
         const cell_level_drop = function(){
           hipchat.api.rooms.message({
-              room_id: request.params.room,
+              room_id: request.formParams.room,
               from: "Integrations",
               message: cr,
           }, function(err: any, res: any) {
