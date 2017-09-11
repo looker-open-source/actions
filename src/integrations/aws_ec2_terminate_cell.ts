@@ -1,7 +1,6 @@
 // import * as uuid from "uuid"
 
 import * as D from "../framework"
-import * as winston from 'winston'
 
 import * as EC2 from 'aws-sdk/clients/ec2'
 // import * as Promise from 'bluebird'
@@ -11,15 +10,30 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
 
   allowedTags = ["aws_resource_id"]
 
-  allRegions = ["us-west-1", "us-west-2", "us-east-1", "us-east-2"]
+  allRegions = [
+    "ap-south-1",
+    "eu-west-2",
+    "eu-west-1",
+    "ap-northeast-2",
+    "ap-northeast-1",
+    "sa-east-1",
+    "ca-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2",
+  ]
 
   constructor() {
     super()
 
     this.name = "aws_ec2_terminate_cell_event"
-    this.label = "Aws EC2 Terminate Instance from Cell"
+    this.label = "Aws EC2 Stop Instance from Cell"
     this.iconName = "AWS_EC2.png"
-    this.description = ""
+    this.description = "Stop an EC2 instance"
     this.params = [
       {
         description: "",
@@ -27,15 +41,13 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
         name: "aws_access_key",
         required: true,
         sensitive: false,
+      }, {
+        description: "",
+        label: "AWS Secret Key",
+        name: "aws_secret_key",
+        required: true,
+        sensitive: false,
       },
-      {
-          description: "",
-          label: "AWS Secret Key",
-          name: "aws_secret_key",
-          required: true,
-          sensitive: false,
-      },
-
     ]
     this.supportedActionTypes = ["cell"]
     this.supportedFormats = ["json_detail"]
@@ -47,8 +59,6 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve , reject ) => {
 
-      winston.info("whole request: ")
-      winston.info(JSON.stringify(request))
       /*
       example request:
 
@@ -99,7 +109,6 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
               ]
           }).promise()
           p = p.then((response) => {
-            //   winston.info(JSON.stringify(response))
             if( ! response.Reservations || typeof response.Reservations.map !== 'function') {
                 throw "bad response from ec2.describeInstances(): no property 'Reservations'"
             }
@@ -128,19 +137,11 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
 
           p = p.then((instanceIdFound) => {
               if(instanceIdFound){
-
                   ec2.stopInstances({
                       InstanceIds: [
                           request.params.value
                       ]
-                  }).promise().then((s)=>{
-                      winston.info("done the deed")
-                      winston.info(JSON.stringify(s))
                   })
-
-                  // seems sensible to figure out if the command worked?
-                  // nah, not worth it
-
                   return region
               }
           })
@@ -149,9 +150,7 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
 
       })
 
-      Promise.all(responses).then( (terminationResults) => {
-          winston.info(`terminated instances in region: ${terminationResults.join(', ')}`)
-
+      Promise.all(responses).then( () => {
           resolve(new D.DataActionResponse())
       }, (errs) => {
           reject(`error in at least one response: ${JSON.stringify(errs)}`)

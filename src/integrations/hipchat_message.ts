@@ -10,17 +10,15 @@ const HipChatClient = require("hipchat-client")
 
 export class HipchatMessageDrop extends D.Integration {
 
-  allowedTags = ["hipchat_key"]
   constructor() {
     super()
     this.name = "hipchat_message"
     this.label = "Hipchat Message Drop"
     this.iconName = "hipchat.png"
     this.description = "Send a data attachment as a message to a hipchat room"
-    this.supportedActionTypes = ["query", "cell"]
+    this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [
-
       {
         name: "api_key",
         label: "Auth API Key",
@@ -28,17 +26,9 @@ export class HipchatMessageDrop extends D.Integration {
         sensitive: true,
         description: "https://www.hipchat.com/sign_in?d=%2Fadmin%2Fapi",
       },
-      {
-        name: "room",
-        label: "HipChat Room to Post To",
-        required: true,
-        sensitive: true,
-        description: "Name of the HipChat room you would like to post to",
-      },
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
-    this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
   async action(request: D.DataActionRequest) {
@@ -58,33 +48,33 @@ export class HipchatMessageDrop extends D.Integration {
         const qr = JSON.stringify(tester)
         const cr = String(request.params.value)
 
-        if (!request.params.api_key || !request.params.room){
+        if (!request.params.api_key || !request.formParams.room){
         reject("Missing Correct Parameters")
       }
 
         const query_level_drop = function(){
           hipchat.api.rooms.message({
-              room_id: request.params.room,
+              room_id: request.formParams.room,
               from: "Integrations",
               message: qr,
-          }, function(err: any, res: any) {
+          }, function(err: any) {
               if (err) {
                   reject(err)
               }
-              resolve(res)
+              resolve(new D.DataActionResponse())
           })
       }
 
         const cell_level_drop = function(){
           hipchat.api.rooms.message({
-              room_id: request.params.room,
+              room_id: request.formParams.room,
               from: "Integrations",
               message: cr,
-          }, function(err: any, res: any) {
+          }, function(err: any) {
               if (err) {
                   reject(err)
               }
-              resolve(res)
+              resolve(new D.DataActionResponse())
           })
       }
 
@@ -95,6 +85,23 @@ export class HipchatMessageDrop extends D.Integration {
         }
 
     })
+  }
+
+  async form(){
+    const form = new D.DataActionForm()
+
+    form.fields = [
+      {
+        name: "room",
+        label: "HipChat Room to Post To",
+        required: true,
+        sensitive: false,
+        description: "Name of the HipChat room you would like to post to",
+        type: "string",
+      },
+    ]
+
+    return form
   }
 }
 
