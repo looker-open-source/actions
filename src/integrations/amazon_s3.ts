@@ -13,7 +13,6 @@ export class AmazonS3Integration extends D.Integration {
     this.description = "Write data files to an S3 bucket."
     this.supportedActionTypes = ["query"]
     this.requiredFields = []
-    this.supportedFormats = ["csv"]
     this.params = [
       {
         name: "access_key_id",
