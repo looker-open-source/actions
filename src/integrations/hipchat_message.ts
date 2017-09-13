@@ -1,6 +1,6 @@
 import * as D from "../framework"
 
-const HipChatClient = require("hipchat-client")
+const hipchatClient = require("hipchat-client")
 
 /********************************************************************
  * Hipchat has a message limit length of 10,000 --> for this reason
@@ -34,7 +34,7 @@ export class HipchatMessageDrop extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-        const hipchat = new HipChatClient(request.params.api_key)
+        const hipchat = new hipchatClient(request.params.api_key)
 
         if (!(request.attachment && request.params)) {
         reject("No attached json")
@@ -48,16 +48,16 @@ export class HipchatMessageDrop extends D.Integration {
         const qr = JSON.stringify(tester)
         const cr = String(request.params.value)
 
-        if (!request.params.api_key || !request.formParams.room){
+        if (!request.params.api_key || !request.formParams.room) {
         reject("Missing Correct Parameters")
       }
 
-        const query_level_drop = function(){
+        const queryLevelDrop = () => {
           hipchat.api.rooms.message({
               room_id: request.formParams.room,
               from: "Integrations",
               message: qr,
-          }, function(err: any) {
+          }, (err: any) => {
               if (err) {
                   reject(err)
               }
@@ -65,12 +65,12 @@ export class HipchatMessageDrop extends D.Integration {
           })
       }
 
-        const cell_level_drop = function(){
+        const cellLevelDrop = () => {
           hipchat.api.rooms.message({
               room_id: request.formParams.room,
               from: "Integrations",
               message: cr,
-          }, function(err: any) {
+          }, (err: any) => {
               if (err) {
                   reject(err)
               }
@@ -79,15 +79,15 @@ export class HipchatMessageDrop extends D.Integration {
       }
 
         if (request.params.value) {
-            cell_level_drop()
+            cellLevelDrop()
         } else {
-            query_level_drop()
+            queryLevelDrop()
         }
 
     })
   }
 
-  async form(){
+  async form() {
     const form = new D.DataActionForm()
 
     form.fields = [

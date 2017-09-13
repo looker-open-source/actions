@@ -3,7 +3,7 @@ import * as D from "../framework"
 const Slack = require("node-slack-upload")
 const path = require("path")
 const fs = require("fs")
-// const WebClient = require('@slack/client').WebClient;
+
 require("dotenv").config()
 
 export class SlackFileDrop extends D.Integration {
@@ -23,7 +23,7 @@ export class SlackFileDrop extends D.Integration {
         required: true,
         description: "https://api.slack.com/custom-integrations/legacy-tokens",
         sensitive: true,
-      }
+      },
     ]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
@@ -33,11 +33,11 @@ export class SlackFileDrop extends D.Integration {
 
     return new Promise <D.DataActionResponse>((resolve, reject) => {
 
-      if (!request.attachment){
+      if (!request.attachment) {
         reject("Missing Attachment File")
       }
 
-      if (!request.params.token || !request.formParams.channel || ! request.formParams.filename){
+      if (!request.params.token || !request.formParams.channel || ! request.formParams.filename) {
         reject("Missing parameters")
       }
 
@@ -49,33 +49,29 @@ export class SlackFileDrop extends D.Integration {
        *  of attachment is automatically included by Looker
        ************************************************************/
 
-      let file_upload = function(){
-        slack.uploadFile({
-          file: fs.createReadStream(path.join("./", request.formParams.filename)),
-          filetype: "text",
-          title: request.formParams.filename,
-          initialComment: "File added by Looker",
-          channels: request.formParams.channel,
-        }, function(err: any){
-          if (!err){
-            fs.unlinkSync("./"+request.formParams.filename)
-            resolve(new D.DataActionResponse())
-          }
-          reject(err)
-        })
-      }
-
-      const attached_file = request.formParams.filename
+      const attachedFile = request.formParams.filename
       const qr = JSON.stringify(request.attachment)
-      fs.writeFile(attached_file, qr, function(err: any){
-        if (!err){
-          file_upload()
+      fs.writeFile(attachedFile, qr, (err: any) => {
+        if (!err) {
+          slack.uploadFile({
+            file: fs.createReadStream(path.join("./", request.formParams.filename)),
+            filetype: "text",
+            title: request.formParams.filename,
+            initialComment: "File added by Looker",
+            channels: request.formParams.channel,
+          }, (err2: any) => {
+            if (!err2) {
+              fs.unlinkSync("./" + request.formParams.filename)
+              resolve(new D.DataActionResponse())
+            }
+            reject(err2)
+          })
         }
       })
     })
   }
 
-  async form(){
+  async form() {
     const form = new D.DataActionForm()
 
     form.fields = [
