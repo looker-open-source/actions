@@ -52,7 +52,7 @@ export class ZapierDropIntegration extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      const url_hook = request.params.url.toString()
+      const urlHook = request.params.url.toString()
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
@@ -64,16 +64,16 @@ export class ZapierDropIntegration extends D.Integration {
 
       const qr = JSON.stringify(request.attachment.dataJSON.data)
 
-      if (!request.params.user || !request.params.password || !request.params.url){
+      if (!request.params.user || !request.params.password || !request.params.url) {
         reject("Missing Correct Parameters")
       }
 
       req({
-        url: url_hook,
+        url: urlHook,
         method: "POST",   // <--Very important!!!use
         body: qr,
-      }, function(error: any){
-        if (!error){
+      }, (error: any) => {
+        if (!error) {
           resolve(new D.DataActionResponse())
         }
         reject(error)

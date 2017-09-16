@@ -1,16 +1,15 @@
 // import * as uuid from "uuid"
 
+import * as winston from "winston"
 import * as D from "../framework"
-import * as winston from 'winston'
 
-import * as https from 'https'
-import { OutgoingHttpHeaders } from 'http'
-import { RequestOptions } from 'https'
+import { OutgoingHttpHeaders } from "http"
+import * as https from "https"
+import { RequestOptions } from "https"
 // import * as http from 'http'
 // import { RequestOptions } from '@types/node'
 
 // import * as Promise from 'bluebird'
-
 
 export class DigitalOceanStopDropletCellEvent extends D.Integration {
 
@@ -30,7 +29,7 @@ export class DigitalOceanStopDropletCellEvent extends D.Integration {
         name: "digitalocean_personal_access_token",
         required: true,
         sensitive: true,
-      }
+      },
 
     ]
     this.supportedActionTypes = ["cell"]
@@ -73,45 +72,45 @@ export class DigitalOceanStopDropletCellEvent extends D.Integration {
       }
 
       */
-      if( ! request.params ){
+      if ( ! request.params ) {
           reject("incorrect DataActionRequest: no 'params' property")
       }
 
-      if( ! request.params.value || request.params.value.length < 1){
+      if ( ! request.params.value || request.params.value.length < 1) {
           reject("incorrect DataActionRequest: property 'params.value' is empty")
       }
 
-      var options: RequestOptions = {}
+      const options: RequestOptions = {}
       options.protocol = "https:"
       options.host = "api.digitalocean.com"
       options.path = `/v2/droplets/${request.params.value}/actions`
       options.method = "POST"
-      var headers: OutgoingHttpHeaders = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${request.params.digitalocean_personal_access_token}`
+      const headers: OutgoingHttpHeaders = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${request.params.digitalocean_personal_access_token}`,
       }
       options.headers = headers
 
-      const req = https.request(options, response => {
-          var str = '';
+      const req = https.request(options, (response) => {
+          let str = ""
 
-          response.on('data', function (chunk) {
-            str += chunk;
-          });
+          response.on("data", (chunk) => {
+            str += chunk
+          })
 
-          //the whole response has been recieved, so we just print it out here
-          response.on('end', function () {
-            winston.info(str);
+          // the whole response has been recieved, so we just print it out here
+          response.on("end", () => {
+            winston.info(str)
 
             resolve(new D.DataActionResponse())
-          });
+          })
       })
 
-      req.on('error', e => {
+      req.on("error", (e) => {
           reject(e)
       })
 
-      req.write(JSON.stringify({ "type": "power_off" }))
+      req.write(JSON.stringify({ type: "power_off" }))
       req.end()
 
     })

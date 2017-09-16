@@ -1,13 +1,6 @@
-// import * as uuid from "uuid"
-
+import * as nodemailer from "nodemailer"
+import * as winston from "winston"
 import * as D from "../framework"
-import * as winston from 'winston'
-
-// import * as EC2 from 'aws-sdk/clients/ec2'
-// import * as Promise from 'bluebird'
-
-import * as nodemailer from 'nodemailer'
-
 
 export class AwsRdsLinkMeEvent extends D.Integration {
 
@@ -29,7 +22,7 @@ export class AwsRdsLinkMeEvent extends D.Integration {
         name: "email",
         required: true,
         sensitive: false,
-      }
+      },
     ]
     this.supportedActionTypes = ["cell"]
     this.supportedFormats = ["json_detail"]
@@ -40,7 +33,6 @@ export class AwsRdsLinkMeEvent extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve , reject ) => {
-
 
       /*
       example request:
@@ -72,25 +64,23 @@ export class AwsRdsLinkMeEvent extends D.Integration {
       }
 
       */
-      if( ! request.params ){
+      if ( ! request.params ) {
           reject("incorrect DataActionRequest: no 'params' property")
       }
 
-      if( ! request.params.value || request.params.value.length < 1){
+      if ( ! request.params.value || request.params.value.length < 1) {
           reject("incorrect DataActionRequest: property 'params.value' is empty")
       }
-        if( ! request.params.value || request.params.email.length < 1){
+      if ( ! request.params.value || request.params.email.length < 1) {
             reject("incorrect DataActionRequest: property 'params.email' is empty")
         }
       const rdsMatcher = /^arn:aws:rds:([^:]*):[^:]*:db:(.*)/.exec(request.params.value)
-      if( rdsMatcher ){
+      if ( rdsMatcher ) {
           const resp = new D.DataActionResponse()
           resp.message = `https://${rdsMatcher[1]}.console.aws.amazon.com/rds/home?region=${rdsMatcher[1]}#dbinstances:id=${rdsMatcher[2]}`
 
-          AwsRdsLinkMeEvent.mail(request.params.email, resp.message, (err: any)=>{
-            //   winston.info("erro?")
-            //   winston.info(JSON.stringify(err))
-              if(err){
+          this.mail(request.params.email, resp.message, (err: any) => {
+              if (err) {
                   reject(err)
               } else {
                   resolve(resp)
@@ -99,39 +89,36 @@ export class AwsRdsLinkMeEvent extends D.Integration {
       } else {
           resolve(new D.DataActionResponse())
       }
-
     })
-
   }
 
-  static mail(to: string, link: string, callback: any) {
-
-    let transporter = nodemailer.createTransport({
-        host: 'email-smtp.us-west-2.amazonaws.com',
+  mail(to: string, link: string, callback: any) {
+    const transporter = nodemailer.createTransport({
+        host: "email-smtp.us-west-2.amazonaws.com",
         port: 465,
         secure: true, // secure:true for port 465, secure:false for port 587
         auth: {
-            user: 'AKIAIFLSO4LZC7SFYHAQ',
-            pass: 'AskgLNtBWYIcMZG8a1fzbZJHspKlmZrVEv24ZsJ7kv0w'
-        }
-    });
-    let mailOptions = {
-        from: 'eric.fultz@productops.com', // sender address
-        to: to, // list of receivers
-        subject: 'Looker AWS Integration - Link Me', // Subject line
+            user: "AKIAIFLSO4LZC7SFYHAQ",
+            pass: "AskgLNtBWYIcMZG8a1fzbZJHspKlmZrVEv24ZsJ7kv0w",
+        },
+    })
+    const mailOptions = {
+        from: "eric.fultz@productops.com", // sender address
+        to, // list of receivers
+        subject: "Looker AWS Integration - Link Me", // Subject line
         text: `Here's your link:\n${link}`, // plain text body
-        html: `Here's your link:<br><a href="${link}">${link}</a>` // html body
-    };
+        html: `Here's your link:<br><a href="${link}">${link}</a>`, // html body
+    }
 
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
             // winston.error(JSON.stringify(error));
             callback(error)
         } else {
-            winston.info('Message %s sent: %s', info.messageId, info.response);
+            winston.info("Message %s sent: %s", info.messageId, info.response)
             callback()
         }
-    });
+    })
   }
 
 }

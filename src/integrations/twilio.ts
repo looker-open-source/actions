@@ -2,7 +2,8 @@ import * as D from "../framework"
 
 const twilio = require("twilio")
 
-const TWILIO_MAX_MESSAGE_BODY = 1600
+const MAX_LINES = 10
+const TWILIO_MAX_MESSAGE_BODY = 1600 - 1
 
 function truncateString(s: string, limit: number, split = "\n") {
   if (s.length > limit) {
@@ -99,14 +100,21 @@ export class TwilioIntegration extends D.Integration {
       if (request.scheduledPlan.url) {
         urlLength = request.scheduledPlan.url.length
         url = request.scheduledPlan.url
+        title = title + url + "\n"
       }
     }
 
-    let body = title + request.attachment.dataBuffer.toString("utf8")
-    const maxLengthLessUrl = TWILIO_MAX_MESSAGE_BODY - urlLength
-    body = truncateString(body, maxLengthLessUrl)
+    const truncatedLines = request.attachment.dataBuffer
+        .toString("utf8")
+        .split("\n")
+        .slice(0, MAX_LINES)
+    if (truncatedLines.length === MAX_LINES) {
+      truncatedLines.push("")
+    }
+    const newMessage = truncatedLines.join("\n")
+    let body = title + newMessage
 
-    body = body + url
+    body = truncateString(body, TWILIO_MAX_MESSAGE_BODY)
 
     return body
   }

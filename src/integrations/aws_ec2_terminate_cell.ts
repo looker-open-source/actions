@@ -1,10 +1,5 @@
-// import * as uuid from "uuid"
-
+import * as EC2 from "aws-sdk/clients/ec2"
 import * as D from "../framework"
-
-import * as EC2 from 'aws-sdk/clients/ec2'
-// import * as Promise from 'bluebird'
-
 
 export class AwsEc2TerminateCellEvent extends D.Integration {
 
@@ -85,36 +80,36 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
       }
 
       */
-      if( ! request.params ){
+      if ( ! request.params ) {
           reject("incorrect DataActionRequest: no 'params' property")
       }
 
-      if( ! request.params.value || request.params.value.length < 1){
+      if ( ! request.params.value || request.params.value.length < 1 ) {
           reject("incorrect DataActionRequest: property 'params.value' is empty")
       }
 
-      const responses = [] as PromiseLike<any>[]
+      const responses = [] as Array<PromiseLike<any>>
       this.allRegions.forEach( (region) => {
           const ec2 = new EC2({
-              region: region,
+              region,
               accessKeyId: request.params.aws_access_key,
-              secretAccessKey: request.params.aws_secret_key
+              secretAccessKey: request.params.aws_secret_key,
           })
           let p: Promise<any> = ec2.describeInstances({
               Filters: [
                   {
-                      Name:"instance-id",
-                      Values: [request.params.value]
-                  }
-              ]
+                      Name: "instance-id",
+                      Values: [request.params.value],
+                  },
+              ],
           }).promise()
           p = p.then((response) => {
-            if( ! response.Reservations || typeof response.Reservations.map !== 'function') {
+            if ( ! response.Reservations || typeof response.Reservations.map !== "function") {
                 throw "bad response from ec2.describeInstances(): no property 'Reservations'"
             }
             let instances: any[] = response.Reservations.map((reservation: any) => {
                 // map doesn't work for some ungodly reason!
-                if( ! reservation.Instances || ( typeof reservation.Instances[Symbol.iterator] ) !== 'function'){
+                if ( ! reservation.Instances || ( typeof reservation.Instances[Symbol.iterator] ) !== "function") {
                     throw "bad response from ec2.describeInstances(): no property 'Reservations.Instances'"
                 }
                 return reservation.Instances
@@ -122,7 +117,7 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
             instances = [].concat.apply([], instances)
 
             let instanceIds: any[] = instances.map((instance) => {
-                if( ! instance.InstanceId ){
+                if ( ! instance.InstanceId ) {
                     throw "bad response from ec2.describeInstances(): no property 'Reservations.Instances.InstanceId'"
                 }
                 return instance.InstanceId
@@ -136,11 +131,11 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
           })
 
           p = p.then((instanceIdFound) => {
-              if(instanceIdFound){
+              if (instanceIdFound) {
                   ec2.stopInstances({
                       InstanceIds: [
-                          request.params.value
-                      ]
+                          request.params.value,
+                      ],
                   })
                   return region
               }
