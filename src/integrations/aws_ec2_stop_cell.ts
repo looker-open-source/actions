@@ -1,7 +1,7 @@
 import * as EC2 from "aws-sdk/clients/ec2"
 import * as D from "../framework"
 
-export class AwsEc2TerminateCellEvent extends D.Integration {
+export class AwsEc2StopCellEvent extends D.Integration {
 
   allowedTags = ["aws_resource_id"]
 
@@ -25,7 +25,7 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
   constructor() {
     super()
 
-    this.name = "aws_ec2_terminate_cell_event"
+    this.name = "aws_ec2_stop_cell_event"
     this.label = "Aws EC2 Stop Instance from Cell"
     this.iconName = "AWS_EC2.png"
     this.description = "Stop an EC2 instance"
@@ -156,4 +156,4 @@ export class AwsEc2TerminateCellEvent extends D.Integration {
 
 }
 
-D.addIntegration(new AwsEc2TerminateCellEvent())
+D.addIntegration(new AwsEc2StopCellEvent())
