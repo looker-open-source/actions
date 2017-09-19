@@ -1,4 +1,5 @@
 import "./amazon_s3"
+import "./digitalocean_stop_droplet_cell"
 import "./google_cloud_storage"
 import "./segment"
 import "./twilio"
