@@ -1,4 +1,5 @@
 import "./amazon_s3"
 import "./google_cloud_storage"
 import "./segment"
+import "./slack_drop"
 import "./twilio"
