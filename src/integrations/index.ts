@@ -1,5 +1,5 @@
 import "./amazon_s3"
-import "./aws_ec2_stop_cell.ts"
+import "./aws_ec2_stop_cell"
 import "./google_cloud_storage"
 import "./segment"
 import "./twilio"
