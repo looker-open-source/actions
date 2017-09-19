@@ -1,7 +1,6 @@
 import * as D from "../framework"
 
 const req = require("request")
-// import * as azure from 'aws-sdk/clients/ec2'
 
 /********************************************************************
  *  The majority of this integration is built into the Zapier app    *
@@ -23,20 +22,6 @@ export class ZapierDropIntegration extends D.Integration {
     this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [
-      {
-        name: "user",
-        label: "User email account",
-        required: true,
-        description: "Your email login for Zapier",
-        sensitive: false,
-      },
-      {
-        name: "password",
-        label: "password",
-        required: true,
-        sensitive: true,
-        description: "Your Zapier account password",
-      },
       {
         name: "url",
         label: "Zapier URL EndPoint",
@@ -64,7 +49,7 @@ export class ZapierDropIntegration extends D.Integration {
 
       const qr = JSON.stringify(request.attachment.dataJSON.data)
 
-      if (!request.params.user || !request.params.password || !request.params.url) {
+      if ( !request.params.url) {
         reject("Missing Correct Parameters")
       }
 
