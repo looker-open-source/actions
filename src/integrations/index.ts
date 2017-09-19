@@ -1,4 +1,5 @@
 import "./amazon_s3"
+import "./azure_storage"
 import "./google_cloud_storage"
 import "./segment"
 import "./twilio"
