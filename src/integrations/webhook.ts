@@ -45,14 +45,18 @@ export class WebhookIntegration extends D.Integration {
 
     })
   }
+
   async form() {
-    const form = new D.DataActionForm()
-    form.fields = [{
-      label: "Webhook URL",
-      name: "url",
-      required: true,
-      type: "string",
-    }]
-    return form
+    return new Promise<D.DataActionForm>((resolve) => {
+
+      const form = new D.DataActionForm()
+      form.fields = [{
+        label: "Webhook URL",
+        name: "url",
+        required: true,
+        type: "string",
+      }]
+      resolve(form)
+    })
   }
 }
