@@ -15,3 +15,6 @@ import "./test_server"
 import "./test_smoke"
 
 import "./integrations/test_segment"
+import "./integrations/test_tray"
+import "./integrations/test_webhook"
+import "./integrations/test_zapier"
