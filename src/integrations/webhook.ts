@@ -59,3 +59,5 @@ export class WebhookIntegration extends D.Integration {
     })
   }
 }
+
+D.addIntegration(new WebhookIntegration())
