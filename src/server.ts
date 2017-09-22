@@ -68,8 +68,8 @@ export class Server {
 
   }
 
-  private route(p: string, fn: (req: express.Request, res: express.Response) => void): void {
-    this.app.post(p, async (req, res) => {
+  private route(urlPath: string, fn: (req: express.Request, res: express.Response) => void): void {
+    this.app.post(urlPath, async (req, res) => {
       winston.info(`Starting request for ${req.url}`)
 
       const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
