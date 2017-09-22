@@ -53,7 +53,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       }}
       return expectWebhookMatch(request, {
         url: "webhookurl",
-        body: request.attachment.dataJSON,
+        form: request.attachment.dataJSON,
       })
     })
 

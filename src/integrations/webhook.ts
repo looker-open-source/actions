@@ -6,6 +6,9 @@ export class WebhookIntegration extends D.Integration {
 
   constructor() {
     super()
+    this.name = "webhook"
+    this.label = "Webhook"
+    this.iconName = "webhook.svg"
     this.description = "Takes a data attachment and posts to a Webhook"
     this.requiredFields = []
     this.params = []
@@ -23,18 +26,14 @@ export class WebhookIntegration extends D.Integration {
         return
       }
 
-      const qr = request.attachment.dataJSON
-
       if ( !request.formParams.url) {
         reject("Missing url.")
         return
       }
 
-      const url = request.formParams.url
-
       req.post({
-        url,
-        body: qr,
+        url: request.formParams.url,
+        form: request.attachment.dataJSON,
       }, (error: any) => {
         if (error) {
           reject(error)
