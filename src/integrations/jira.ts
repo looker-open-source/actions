@@ -14,9 +14,9 @@ export class JiraIntegration extends D.Integration {
     this.description = "Create JIRA issue referencing a Look."
     this.params = [
       {
-        description: "The hostname for your JIRA server.",
-        label: "Host",
-        name: "host",
+        description: "Typically 'http' or 'https'",
+        label: "Protocol",
+        name: "protocol",
         required: true,
         sensitive: false,
       }, {
@@ -26,9 +26,9 @@ export class JiraIntegration extends D.Integration {
         required: true,
         sensitive: false,
       }, {
-        description: "Typically 'http' or 'https'",
-        label: "Protocol",
-        name: "protocol",
+        description: "The hostname for your JIRA server.",
+        label: "Host",
+        name: "host",
         required: true,
         sensitive: false,
       }, {
@@ -77,14 +77,8 @@ export class JiraIntegration extends D.Integration {
       }
 
       jira.addNewIssue(issue)
-        .then((createdIssue: any) => {
-          jira.addAttachmentOnIssue(
-            createdIssue.id,
-            request.attachment && request.attachment.dataBuffer)
-            .then(() => resolve(new D.DataActionResponse()))
-            .catch((err: any) => {
-              reject(err)
-            })
+         .then(() => {
+          resolve(new D.DataActionResponse())
         })
         .catch((err: any) => {
           reject(err)
