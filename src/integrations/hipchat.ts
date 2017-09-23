@@ -1,14 +1,17 @@
 import * as D from "../framework"
 
+// TODO is this the right hipchat client?
 const hipchatClient = require("hipchat-client")
 
-/********************************************************************
- * Hipchat has a message limit length of 10,000 --> for this reason
- * looker query type data action is too large and wont work unless
- * there is some way to shorten the amount of data that gets passed
-*********************************************************************/
+export interface IRoom {
+  id: string,
+  label: string,
+}
 
-export class HipchatMessageDrop extends D.Integration {
+const MAX_LINES = 10
+const HIPCHAT_MAX_MESSAGE_BODY = 10000
+
+export class HipchatIntegration extends D.Integration {
 
   constructor() {
     super()
@@ -20,8 +23,8 @@ export class HipchatMessageDrop extends D.Integration {
     this.requiredFields = []
     this.params = [
       {
-        name: "api_key",
-        label: "Auth API Key",
+        name: "hipchat_api_key",
+        label: "API Key",
         required: true,
         sensitive: true,
         description: "https://www.hipchat.com/sign_in?d=%2Fadmin%2Fapi",
@@ -34,75 +37,65 @@ export class HipchatMessageDrop extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-        const hipchat = new hipchatClient(request.params.api_key)
-
-        if (!(request.attachment && request.params)) {
-        reject("No attached json")
+      if (!request.attachment || !request.attachment.dataBuffer) {
+        throw "Couldn't get data from attachment."
       }
 
-        if (!request.attachment) {
-        throw "Couldn't get data from attachment"
+      if (!request.formParams || !request.formParams.room) {
+        throw "Missing room."
       }
 
-        const tester = request.attachment.dataJSON.data
-        const qr = JSON.stringify(tester)
-        const cr = String(request.params.value)
+      const hipchat = this.hipchatClientFromRequest(request)
+      const message = request.suggestedTruncatedMessage(MAX_LINES, HIPCHAT_MAX_MESSAGE_BODY)
 
-        if (!request.params.api_key || !request.formParams.room) {
-        reject("Missing Correct Parameters")
-      }
-
-        const queryLevelDrop = () => {
-          hipchat.api.rooms.message({
-              room_id: request.formParams.room,
-              from: "Integrations",
-              message: qr,
-          }, (err: any) => {
-              if (err) {
-                  reject(err)
-              }
-              resolve(new D.DataActionResponse())
-          })
-      }
-
-        const cellLevelDrop = () => {
-          hipchat.api.rooms.message({
-              room_id: request.formParams.room,
-              from: "Integrations",
-              message: cr,
-          }, (err: any) => {
-              if (err) {
-                  reject(err)
-              }
-              resolve(new D.DataActionResponse())
-          })
-      }
-
-        if (request.params.value) {
-            cellLevelDrop()
-        } else {
-            queryLevelDrop()
+      hipchat.rooms.message({
+        room_id: request.formParams.room,
+        from: "Looker",
+        message,
+      }, (err: any) => {
+        if (err) {
+          reject(err)
         }
-
+        resolve(new D.DataActionResponse())
+      })
     })
   }
 
-  async form() {
+  async form(request: D.DataActionRequest) {
     const form = new D.DataActionForm()
+    const rooms = await this.usableRooms(request)
 
-    form.fields = [
-      {
-        name: "room",
-        label: "HipChat Room to Post To",
-        required: true,
-        sensitive: false,
-        description: "Name of the HipChat room you would like to post to",
-        type: "string",
-      },
-    ]
+    form.fields = [{
+      description: "Name of the Hipchat room you would like to post to.",
+      label: "Share In",
+      name: "room",
+      options: rooms.map((room) => ({name: room.id, label: room.label})),
+      required: true,
+      type: "select",
+    }]
 
     return form
   }
+
+  usableRooms(request: D.DataActionRequest) {
+    return new Promise<IRoom[]>((resolve, reject) => {
+      const hipchat = this.hipchatClientFromRequest(request)
+      hipchat.rooms.list({}, (err: any, response: any) => {
+        if (err) {
+          reject(err)
+        } else {
+          const rooms = response.rooms.filter((r: any) => !r.is_private && !r.is_archived)
+          const reformatted: IRoom[] = rooms.map((room: any) => ({id: room.room_id, label: `#${room.name}`}))
+          resolve(reformatted)
+        }
+      })
+    })
+  }
+
+  private hipchatClientFromRequest(request: D.DataActionRequest) {
+    return new hipchatClient(request.params.hipchat_api_key).api
+  }
+
 }
 
-D.addIntegration(new HipchatMessageDrop())
+D.addIntegration(new HipchatIntegration())
