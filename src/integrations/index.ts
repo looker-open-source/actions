@@ -1,3 +1,4 @@
+import "./hipchat"
 import "./segment"
 import "./slack"
 import "./tray"
