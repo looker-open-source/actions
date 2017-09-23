@@ -1,4 +1,5 @@
 import "./segment"
+import "./slack"
 import "./tray"
 import "./webhook"
 import "./zapier"
