@@ -3,19 +3,7 @@ import * as D from "../framework"
 const twilio = require("twilio")
 
 const MAX_LINES = 10
-const TWILIO_MAX_MESSAGE_BODY = 1600 - 1
-
-function truncateString(s: string, limit: number, split = "\n") {
-  if (s.length > limit) {
-    // truncate to max limit characters
-    s = s.substring(0, limit)
-    // re-trim if we are in the middle of a line
-    if (s.lastIndexOf(split) > 0) {
-      s = s.substring(0, Math.min(s.length, s.lastIndexOf(split) + 1))
-    }
-  }
-  return s
-}
+const TWILIO_MAX_MESSAGE_BODY = 1600
 
 export class TwilioIntegration extends D.Integration {
 
@@ -54,11 +42,15 @@ export class TwilioIntegration extends D.Integration {
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
+      if (!request.attachment || !request.attachment.dataBuffer) {
+        throw "Couldn't get data from attachment."
+      }
+
       if (!request.formParams || !request.formParams.to) {
         throw "Need a destination phone number."
       }
 
-      const body = this.messageFromRequest(request)
+      const body = request.suggestedTruncatedMessage(MAX_LINES, TWILIO_MAX_MESSAGE_BODY)
       const client = this.twilioClientFromRequest(request)
 
       client.messages.create({
@@ -82,41 +74,6 @@ export class TwilioIntegration extends D.Integration {
       type: "string",
     }]
     return form
-  }
-
-  private messageFromRequest(request: D.DataActionRequest) {
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment"
-    }
-
-    let title = ""
-    let urlLength = 0
-    let url = ""
-
-    if (request.scheduledPlan) {
-      if (request.scheduledPlan.title) {
-        title = `${request.scheduledPlan.title}:\n`
-      }
-      if (request.scheduledPlan.url) {
-        urlLength = request.scheduledPlan.url.length
-        url = request.scheduledPlan.url
-        title = title + url + "\n"
-      }
-    }
-
-    const truncatedLines = request.attachment.dataBuffer
-        .toString("utf8")
-        .split("\n")
-        .slice(0, MAX_LINES)
-    if (truncatedLines.length === MAX_LINES) {
-      truncatedLines.push("")
-    }
-    const newMessage = truncatedLines.join("\n")
-    let body = title + newMessage
-
-    body = truncateString(body, TWILIO_MAX_MESSAGE_BODY)
-
-    return body
   }
 
   private twilioClientFromRequest(request: D.DataActionRequest) {
