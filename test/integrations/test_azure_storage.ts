@@ -3,24 +3,27 @@ import * as sinon from "sinon"
 
 import * as D from "../../src/framework"
 
-import { GoogleCloudStorageIntegration } from "../../src/integrations/google_cloud_storage"
+import { AzureStorageIntegration } from "../../src/integrations/azure_storage"
 
-const integration = new GoogleCloudStorageIntegration()
+const integration = new AzureStorageIntegration()
 
-function expectGoogleCloudStorageMatch(request: D.DataActionRequest,
-                                       bucketMatch: any,
-                                       fileMatch: any,
-                                       fileSaveMatch: any) {
+function expectAzureStorageMatch(
+  request: D.DataActionRequest, container: string, fileName: string, dataBuffer: Buffer) {
 
-  const fileSaveSpy = sinon.spy(() => Promise.resolve())
-  const fileSpy = sinon.spy(() => ({save: fileSaveSpy}))
-  const bucketSpy = sinon.spy(() => ({file: fileSpy}))
-
-  const stubClient = sinon.stub(integration as any, "gcsClientFromRequest")
+  const createBlockBlobFromTextSpy = sinon.spy(() => Promise.resolve())
+  const stubClient = sinon.stub(integration as any, "azureClientFromRequest")
     .callsFake(() => ({
-      bucket: bucketSpy,
-      getBuckets: () => [[ {metadata: {id: "1", name: "A"}} ],
-          [ {metadata: {id: "2", name: "B"}} ]],
+      createBlockBlobFromText: createBlockBlobFromTextSpy,
+      listContainersSegmented: (filter: any, cb: (err: any, res: any) => void) => {
+        chai.expect(filter).to.equal(null)
+        const containers = {
+          entries: [
+            {id: "1", name: "A"},
+            {id: "2", name: "B"},
+          ],
+        }
+        cb(null, containers)
+      },
     }))
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
@@ -28,9 +31,7 @@ function expectGoogleCloudStorageMatch(request: D.DataActionRequest,
 
   const action = integration.action(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
-    chai.expect(bucketSpy).to.have.been.calledWithMatch(bucketMatch)
-    chai.expect(fileSpy).to.have.been.calledWithMatch(fileMatch)
-    chai.expect(fileSaveSpy).to.have.been.calledWithMatch(fileSaveMatch)
+    chai.expect(createBlockBlobFromTextSpy).to.have.been.calledWithMatch(container, fileName, dataBuffer)
     stubClient.restore()
     stubSuggestedFilename.restore()
   })
@@ -40,7 +41,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
-    it("errors if there is no bucket", () => {
+    it("errors if there is no container", () => {
       const request = new D.DataActionRequest()
       request.formParams = {}
       request.attachment = {}
@@ -49,27 +50,27 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const action = integration.action(request)
 
       return chai.expect(action).to.eventually
-        .be.rejectedWith("Need GCS bucket.")
+        .be.rejectedWith("Need Azure container.")
     })
 
     it("errors if the input has no attachment", () => {
       const request = new D.DataActionRequest()
       request.formParams = {
-        bucket: "mybucket",
+        container: "mycontainer",
       }
 
       return chai.expect(integration.action(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment")
     })
 
-    it("sends right body to filename and bucket", () => {
+    it("sends right body to filename and container", () => {
       const request = new D.DataActionRequest()
       request.formParams = {
-        bucket: "mybucket",
+        container: "mycontainer",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-      return expectGoogleCloudStorageMatch(request,
-        "mybucket",
+      return expectAzureStorageMatch(request,
+        "mycontainer",
         "stubSuggestedFilename",
         Buffer.from("1,2,3,4", "utf8"))
     })
@@ -77,12 +78,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("sends to right filename if specified", () => {
       const request = new D.DataActionRequest()
       request.formParams = {
-        bucket: "mybucket",
+        container: "mycontainer",
         filename: "mywackyfilename",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-      return expectGoogleCloudStorageMatch(request,
-        "mybucket",
+      return expectAzureStorageMatch(request,
+        "mycontainer",
         "mywackyfilename",
         Buffer.from("1,2,3,4", "utf8"))
     })

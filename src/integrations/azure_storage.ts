@@ -1,6 +1,6 @@
 import * as D from "../framework"
 
-const azure = require('azure-storage')
+const azure = require("azure-storage")
 
 export class AzureStorageIntegration extends D.Integration {
 
@@ -18,6 +18,7 @@ export class AzureStorageIntegration extends D.Integration {
         name: "account",
         label: "Storage Account",
         required: true,
+        sensitive: false,
         description: "Your account for Azure.",
       }, {
         name: "accessKey",
@@ -36,16 +37,14 @@ export class AzureStorageIntegration extends D.Integration {
         throw "Couldn't get data from attachment"
       }
 
-      if (!request.formParams ||
-        !request.formParams.bucket) {
-        throw "Need Azure bucket."
+      if (!request.formParams || !request.formParams.container) {
+        throw "Need Azure container."
       }
 
       const blobService = this.azureClientFromRequest(request)
+      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
 
-      blobService.createBlockBlobFromStream(request.formParams.container,
-        request.formParams.filename ? request.formParams.filename : request.suggestedFilename(),
-        )
+      blobService.createBlockBlobFromText(request.formParams.container, fileName, request.attachment.dataBuffer)
         .then(() => resolve(new D.DataActionResponse()))
         .catch((err: any) => { reject(err) })
     })
@@ -55,7 +54,7 @@ export class AzureStorageIntegration extends D.Integration {
 
     const promise = new Promise<D.DataActionForm>((resolve, reject) => {
       const blogService = this.azureClientFromRequest(request)
-      blogService.listContainersSegmented(null, (err, res) => {
+      blogService.listContainersSegmented(null, (err: any, res: any) => {
         if (err) {
           reject(err)
         } else {
@@ -78,14 +77,14 @@ export class AzureStorageIntegration extends D.Integration {
 
           resolve(form)
         }
-      });
+      })
     })
     return promise
   }
 
   private azureClientFromRequest(request: D.DataActionRequest) {
     return new azure.createBlobService(request.params.account, request.params.accessKey)
-        .withFilter(new azure.ExponentialRetryPolicyFilter());
+        .withFilter(new azure.ExponentialRetryPolicyFilter())
   }
 
 }
