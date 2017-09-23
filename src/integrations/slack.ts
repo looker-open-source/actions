@@ -17,15 +17,13 @@ export class SlackIntegration extends D.Integration {
     this.description = "Write data to slack"
     this.supportedActionTypes = ["query"]
     this.requiredFields = []
-    this.params = [
-      {
-        name: "slack_api_token",
-        label: "Slack API Token",
-        required: true,
-        description: "https://api.slack.com/custom-integrations/legacy-tokens",
-        sensitive: true,
-      },
-    ]
+    this.params = [{
+      name: "slack_api_token",
+      label: "Slack API Token",
+      required: true,
+      description: "https://api.slack.com/custom-integrations/legacy-tokens",
+      sensitive: true,
+    }]
   }
 
   async action(request: D.DataActionRequest) {
@@ -35,8 +33,7 @@ export class SlackIntegration extends D.Integration {
         throw "Couldn't get data from attachment."
       }
 
-      if (!request.formParams ||
-        !request.formParams.channel) {
+      if (!request.formParams || !request.formParams.channel) {
         throw "Missing channel."
       }
 
