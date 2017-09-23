@@ -42,15 +42,16 @@ export class SlackIntegration extends D.Integration {
 
       const slack = this.slackClientFromRequest(request)
 
-      const payload = {
-        contents: request.attachment.dataBuffer,
+      const options = {
+        content: request.attachment.dataBuffer,
         channels: request.formParams.channel,
-        filename: request.formParams.filename ? request.formParams.filename : request.suggestedFilename(),
         filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       }
 
-      slack.files.upload(payload, (err: any) => {
+      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
+
+      slack.files.upload(fileName, options, (err: any) => {
         if (err) {
           reject(err)
         } else {
@@ -62,8 +63,7 @@ export class SlackIntegration extends D.Integration {
 
   async form(request: D.DataActionRequest) {
     const form = new D.DataActionForm()
-    // todo layer in direct messages
-    const channels = await this.usablePublicChannels(request)
+    const channels = await this.usableChannels(request)
 
     form.fields = [{
       description: "Name of the Slack channel you would like to post to.",
@@ -85,6 +85,12 @@ export class SlackIntegration extends D.Integration {
     return form
   }
 
+  async usableChannels(request: D.DataActionRequest) {
+    let channels = await this.usablePublicChannels(request)
+    channels = channels.concat(await this.usableDMs(request))
+    return channels
+  }
+
   usablePublicChannels(request: D.DataActionRequest) {
     return new Promise<IChannel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
@@ -97,6 +103,23 @@ export class SlackIntegration extends D.Integration {
         } else {
           const channels = response.channels.filter((c: any) => c.is_member && !c.is_archived)
           const reformatted: IChannel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
+          resolve(reformatted)
+        }
+      })
+    })
+  }
+
+  usableDMs(request: D.DataActionRequest) {
+    return new Promise<IChannel[]>((resolve, reject) => {
+      const slack = this.slackClientFromRequest(request)
+      slack.users.list({}, (err: any, response: any) => {
+        if (err || !response.ok) {
+          reject(err)
+        } else {
+          const users = response.members.filter((u: any) => {
+            return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
+          })
+          const reformatted: IChannel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
           resolve(reformatted)
         }
       })
