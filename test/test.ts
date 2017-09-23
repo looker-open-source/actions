@@ -14,6 +14,7 @@ import "../src/integrations/index"
 import "./test_server"
 import "./test_smoke"
 
+import "./integrations/test_hipchat"
 import "./integrations/test_segment"
 import "./integrations/test_slack"
 import "./integrations/test_tray"
