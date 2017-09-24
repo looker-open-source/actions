@@ -31,7 +31,8 @@ export class AmazonS3Integration extends D.Integration {
         name: "region",
         label: "Region",
         required: true,
-        description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
+        description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
+          "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
         default: "us-east-1",
         type: "select",
         options: [
@@ -85,25 +86,39 @@ export class AmazonS3Integration extends D.Integration {
     })
   }
 
-  async form() {
-    const form = new D.DataActionForm()
-    form.fields = [{
-      // TODO find AWS API to pull available buckets.
-      label: "Bucket",
-      name: "bucket",
-      required: true,
-      type: "string",
-    }, {
-      label: "Path",
-      name: "path",
-      type: "string",
-    }, {
-      label: "Filename",
-      name: "filename",
-      type: "string",
-    }]
+  async form(request: D.DataActionRequest) {
+    const promise = new Promise<D.DataActionForm>((resolve, reject) => {
+      const s3 = this.amazonS3ClientFromRequest(request)
+      s3.listBuckets(null, (err: any, res: any) => {
+        if (err) {
+          reject(err)
+        } else {
 
-    return form
+          const form = new D.DataActionForm()
+          form.fields = [{
+            label: "Bucket",
+            name: "bucket",
+            required: true,
+            options: res.Buckets.map((c: any) => {
+                return {name: c.Name, label: c.Name}
+              }),
+            type: "select",
+            default: res.Buckets[0].Name,
+          }, {
+            label: "Path",
+            name: "path",
+            type: "string",
+          }, {
+            label: "Filename",
+            name: "filename",
+            type: "string",
+          }]
+
+          resolve(form)
+        }
+      })
+    })
+    return promise
   }
 
   private amazonS3ClientFromRequest(request: D.DataActionRequest) {
