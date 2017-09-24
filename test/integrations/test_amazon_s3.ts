@@ -13,9 +13,19 @@ function expectAmazonS3Match(request: D.DataActionRequest, match: any) {
     callback(null, `successfully put item ${params} in database`)
   })
   const stubClient = sinon.stub(integration as any, "amazonS3ClientFromRequest")
-    .callsFake(() => {
-      return {putObject: putObjectSpy}
-    })
+    .callsFake(() => ({
+      putObject: putObjectSpy,
+      listBuckets: (params: any, cb: (err: any, res: any) => void) => {
+        chai.expect(params).to.equal(null)
+        const response = {
+          Buckets: [
+            {Name: "A"},
+            {Name: "B"},
+          ],
+        }
+        cb(null, response)
+      },
+    }))
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
 
@@ -100,6 +110,32 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("has form", () => {
       chai.expect(integration.hasForm).equals(true)
+    })
+
+    it("has form with correct buckets", () => {
+      const request = new D.DataActionRequest()
+      const form = integration.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.equal({
+        fields: [{
+          label: "Bucket",
+          name: "bucket",
+          required: true,
+          options: [
+            {id: "A", label: "A"},
+            {id: "B", label: "B"},
+          ],
+          type: "select",
+          default: "A",
+        }, {
+          label: "Path",
+          name: "path",
+          type: "string",
+        }, {
+          label: "Filename",
+          name: "filename",
+          type: "string",
+        }],
+      })
     })
 
   })
