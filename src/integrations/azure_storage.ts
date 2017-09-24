@@ -51,7 +51,6 @@ export class AzureStorageIntegration extends D.Integration {
   }
 
   async form(request: D.DataActionRequest) {
-
     const promise = new Promise<D.DataActionForm>((resolve, reject) => {
       const blogService = this.azureClientFromRequest(request)
       blogService.listContainersSegmented(null, (err: any, res: any) => {
