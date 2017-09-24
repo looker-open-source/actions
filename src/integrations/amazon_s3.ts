@@ -63,8 +63,7 @@ export class AmazonS3Integration extends D.Integration {
         throw "Couldn't get data from attachment"
       }
 
-      if (!request.formParams ||
-        !request.formParams.bucket) {
+      if (!request.formParams || !request.formParams.bucket) {
         throw "Need Amazon S3 bucket."
       }
 
