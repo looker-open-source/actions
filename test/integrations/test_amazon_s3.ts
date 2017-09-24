@@ -3,7 +3,7 @@ import * as sinon from "sinon"
 
 import * as D from "../../src/framework"
 
-import { AmazonS3Integration } from "../../src/integrations/amazon_s3"
+import { AmazonS3Integration } from "../../src/integrations/amazon/amazon_s3"
 
 const integration = new AmazonS3Integration()
 

@@ -1,4 +1,6 @@
-import * as D from "../framework"
+import * as D from "../../framework"
+
+import {s3Regions} from "./regions"
 
 const S3 = require("aws-sdk/clients/s3")
 
@@ -35,23 +37,7 @@ export class AmazonS3Integration extends D.Integration {
           "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
         default: "us-east-1",
         type: "select",
-        options: [
-          // http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
-          {name: "us-east-1", label: "US East (N. Virginia)"},
-          {name: "us-east-2", label: "US East (Ohio)"},
-          {name: "us-west-1", label: "US West (N. California)"},
-          {name: "us-west-2", label: "US West (Oregon)"},
-          {name: "ca-central-1", label: "Canada (Central)"},
-          {name: "ap-south-1", label: "Asia Pacific (Mumbai)"},
-          {name: "ap-northeast-2", label: "Asia Pacific (Seoul)"},
-          {name: "ap-southeast-1", label: "Asia Pacific (Singapore)"},
-          {name: "ap-southeast-2", label: "Asia Pacific (Sydney)"},
-          {name: "ap-northeast-1", label: "Asia Pacific (Tokyo)"},
-          {name: "eu-central-1", label: "EU (Frankfurt)"},
-          {name: "eu-west-1", label: "EU (Ireland)"},
-          {name: "eu-west-2", label: "EU (London)"},
-          {name: "sa-east-1", label: "South America (São Paulo)"},
-        ],
+        options: s3Regions,
       },
     ]
   }
@@ -60,11 +46,13 @@ export class AmazonS3Integration extends D.Integration {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment"
+        reject("Couldn't get data from attachment.")
+        return
       }
 
       if (!request.formParams || !request.formParams.bucket) {
-        throw "Need Amazon S3 bucket."
+        reject("Need Amazon S3 bucket.")
+        return
       }
 
       const s3 = this.amazonS3ClientFromRequest(request)
