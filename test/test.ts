@@ -1,8 +1,8 @@
 import * as chai from "chai"
+import chaiAsPromised = require("chai-as-promised")
+import ChaiHttp = require("chai-http")
 import * as sinonChai from "sinon-chai"
 import * as winston from "winston"
-import ChaiHttp = require("chai-http")
-import chaiAsPromised = require("chai-as-promised")
 
 chai.use(ChaiHttp)
 chai.use(sinonChai)
