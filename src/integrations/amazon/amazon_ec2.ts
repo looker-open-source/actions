@@ -48,22 +48,19 @@ export class AmazonEC2Integration extends D.Integration {
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve , reject ) => {
 
-      if (!(request.attachment && request.attachment.dataJSON)) {
-        reject("Couldn't get data from attachment.")
-        return
-      }
-
-      const qr = request.attachment.dataJSON
-      if (!qr.fields || !qr.data) {
-        reject("Request payload is an invalid format.")
-        return
-      }
-
-      const ec2 = this.amazonEC2ClientFromRequest(request)
-
       let instanceIds: string[] = []
       switch (request.type) {
         case "query":
+          if (!(request.attachment && request.attachment.dataJSON)) {
+            reject("Couldn't get data from attachment.")
+            return
+          }
+
+          const qr = request.attachment.dataJSON
+          if (!qr.fields || !qr.data) {
+            reject("Request payload is an invalid format.")
+            return
+          }
           const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
           const identifiableFields = fields.filter((f: any) =>
             f.tags && f.tags.some((t: string) => t === this.tag),
@@ -75,10 +72,16 @@ export class AmazonEC2Integration extends D.Integration {
           instanceIds = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
           break
         case "cell":
+          if (!request.params.value) {
+            reject("Couldn't get data from attachment.")
+            return
+          }
           instanceIds = [request.params.value]
           break
       }
       const params = {InstanceIds: instanceIds}
+
+      const ec2 = this.amazonEC2ClientFromRequest(request)
       ec2.stopInstances(params, (err: any) => {
         if (err) {
           reject(err)
@@ -86,6 +89,7 @@ export class AmazonEC2Integration extends D.Integration {
           resolve(new D.DataActionResponse())
         }
       })
+
     })
 
   }

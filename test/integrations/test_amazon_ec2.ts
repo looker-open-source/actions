@@ -27,8 +27,9 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
-    it("errors if there is no attachment", () => {
+    it("errors if there is no attachment for query", () => {
       const request = new D.DataActionRequest()
+      request.type = "query"
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -59,7 +60,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       return expectAmazonEC2Match(request, {InstanceIds: ["funvalue", "funvalue1"]})
     })
 
-    it("sends right params for cell", () => {
+    it("errors if there is no attachment for cell", () => {
       const request = new D.DataActionRequest()
       request.type = "cell"
       request.params = {
@@ -67,10 +68,22 @@ describe(`${integration.constructor.name} unit tests`, () => {
         secret_access_key: "mysecret",
         region: "us-east-1",
       }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["aws_resource_id"]}],
-        data: [{coolfield: {value: "funvalue"}}],
-      }}
+
+      const action = integration.action(request)
+
+      return chai.expect(action).to.eventually
+        .be.rejectedWith("Couldn't get data from attachment.")
+    })
+
+    it("sends right params for cell", () => {
+      const request = new D.DataActionRequest()
+      request.type = "cell"
+      request.params = {
+        access_key_id: "mykey",
+        secret_access_key: "mysecret",
+        region: "us-east-1",
+        value: "funvalue",
+      }
       return expectAmazonEC2Match(request, {InstanceIds: ["funvalue"]})
     })
 
