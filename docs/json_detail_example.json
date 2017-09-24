@@ -1,0 +1,642 @@
+{
+  "status": "complete",
+  "from_cache": true,
+  "id": "5f8a4ca7813c275decebf24905ed4e2c",
+  "result_source": "query",
+  "supports_pivot_in_db": true,
+  "null_sort_treatment": "low",
+  "expired": false,
+  "ran_at": "2017-07-28T02:25:19+00:00",
+  "runtime": "0.624",
+  "added_params": {
+    "sorts": [
+      "orders.created_month desc"
+    ]
+  },
+  "sql": "-- raw sql results do not include filled-in values for 'orders.created_month'\n\n\nSELECT \n\tDATE_FORMAT(orders.created_at ,'%Y-%m') AS `orders.created_month`,\n\tCOUNT(DISTINCT orders.id ) AS `orders.count`\nFROM orders\nLEFT JOIN users ON orders.user_id = users.id \n\nWHERE \n\t(((users.created_at ) >= ((DATE_ADD(TIMESTAMP(DATE_FORMAT(DATE(NOW()),'%Y-%m-01')),INTERVAL -12 month))) AND (users.created_at ) < ((DATE_ADD(DATE_ADD(TIMESTAMP(DATE_FORMAT(DATE(NOW()),'%Y-%m-01')),INTERVAL -12 month),INTERVAL 12 month)))))\nGROUP BY 1\nORDER BY DATE_FORMAT(orders.created_at ,'%Y-%m') DESC\nLIMIT 500",
+  "sql_explain": "EXPLAIN SELECT \n\tDATE_FORMAT(orders.created_at ,'%Y-%m') AS `orders.created_month`,\n\tCOUNT(DISTINCT orders.id ) AS `orders.count`\nFROM orders\nLEFT JOIN users ON orders.user_id = users.id \n\nWHERE \n\t(((users.created_at ) >= ((DATE_ADD(TIMESTAMP(DATE_FORMAT(DATE(NOW()),'%Y-%m-01')),INTERVAL -12 month))) AND (users.created_at ) < ((DATE_ADD(DATE_ADD(TIMESTAMP(DATE_FORMAT(DATE(NOW()),'%Y-%m-01')),INTERVAL -12 month),INTERVAL 12 month)))))\nGROUP BY 1\nORDER BY DATE_FORMAT(orders.created_at ,'%Y-%m') DESC\nLIMIT 500",
+  "fields": {
+    "measures": [
+      {
+        "name": "orders.count",
+        "label": "Orders Count",
+        "tags": [
+
+        ],
+        "label_short": "Count",
+        "view_label": "Orders",
+        "primary_key": false,
+        "type": "count_distinct",
+        "align": "right",
+        "measure": true,
+        "is_filter": false,
+        "default_filter_value": null,
+        "hidden": false,
+        "view": "orders",
+        "is_numeric": true,
+        "scope": "orders",
+        "project_id": "ecommerce_reference",
+        "file_path": "orders.view.lkml",
+        "source_file": "ecommerce_reference\/orders.view.lkml",
+        "can_filter": true,
+        "requires_refresh_on_sort": false,
+        "sortable": true,
+        "error": null,
+        "value_format": null,
+        "has_allowed_values": false,
+        "field_group_label": null,
+        "field_group_variant": "Count",
+        "lookml_link": "\/projects\/ecommerce_reference\/files\/orders.view.lkml?line=241.0",
+        "fill_style": null,
+        "user_attribute_filter_types": [
+          "number",
+          "advanced_filter_number"
+        ],
+        "fiscal_month_offset": 0,
+        "suggest_explore": "orders",
+        "suggest_dimension": "orders.count",
+        "enumerations": null,
+        "suggestable": false
+      }
+    ],
+    "dimensions": [
+      {
+        "name": "orders.created_month",
+        "label": "Orders Created Month",
+        "tags": [
+
+        ],
+        "label_short": "Created Month",
+        "view_label": "Orders",
+        "primary_key": false,
+        "type": "date_month",
+        "align": "left",
+        "measure": false,
+        "is_filter": false,
+        "default_filter_value": null,
+        "hidden": false,
+        "view": "orders",
+        "is_numeric": false,
+        "scope": "orders",
+        "project_id": "ecommerce_reference",
+        "file_path": "orders.view.lkml",
+        "source_file": "ecommerce_reference\/orders.view.lkml",
+        "can_filter": true,
+        "requires_refresh_on_sort": false,
+        "sortable": true,
+        "error": null,
+        "value_format": null,
+        "has_allowed_values": false,
+        "field_group_label": "Created Date",
+        "field_group_variant": "Month",
+        "lookml_link": "\/projects\/ecommerce_reference\/files\/orders.view.lkml?line=53.0",
+        "fill_style": "range",
+        "user_attribute_filter_types": [
+          "datetime",
+          "advanced_filter_datetime"
+        ],
+        "fiscal_month_offset": 0,
+        "suggest_explore": "orders",
+        "suggest_dimension": "orders.created_month",
+        "enumerations": null,
+        "suggestable": false,
+        "time_interval": {
+          "name": "month",
+          "count": 1
+        },
+        "is_timeframe": true,
+        "sorted": {
+          "sort_index": 0,
+          "desc": true
+        }
+      }
+    ],
+    "table_calculations": [
+
+    ],
+    "pivots": [
+
+    ]
+  },
+  "fill_fields": [
+    "orders.created_month"
+  ],
+  "has_totals": false,
+  "has_row_totals": false,
+  "applied_filters": {
+    "users.created_month": {
+      "field": {
+        "name": "users.created_month",
+        "label": "Users Created Month",
+        "tags": [
+
+        ],
+        "label_short": "Created Month",
+        "view_label": "Users",
+        "primary_key": false,
+        "type": "date_month",
+        "align": "left",
+        "measure": false,
+        "is_filter": false,
+        "default_filter_value": null,
+        "hidden": false,
+        "view": "users",
+        "is_numeric": false,
+        "scope": "users",
+        "project_id": "ecommerce_reference",
+        "file_path": "users.view.lkml",
+        "source_file": "ecommerce_reference\/users.view.lkml",
+        "can_filter": true,
+        "requires_refresh_on_sort": false,
+        "sortable": true,
+        "error": null,
+        "value_format": null,
+        "has_allowed_values": false,
+        "field_group_label": "Created Date",
+        "field_group_variant": "Month",
+        "lookml_link": "\/projects\/ecommerce_reference\/files\/users.view.lkml?line=43.0",
+        "fill_style": "range",
+        "user_attribute_filter_types": [
+          "datetime",
+          "advanced_filter_datetime"
+        ],
+        "fiscal_month_offset": 0,
+        "suggest_explore": "orders",
+        "suggest_dimension": "users.created_month",
+        "enumerations": null,
+        "suggestable": false,
+        "time_interval": {
+          "name": "month",
+          "count": 1
+        },
+        "is_timeframe": true
+      },
+      "value": "12 months ago for 12 months"
+    }
+  },
+  "applied_filter_expression": null,
+  "explore": {
+    "name": "orders",
+    "label": "Orders",
+    "description": null
+  },
+  "timezone": "UTC",
+  "data": [
+    {
+      "orders.created_month": {
+        "value": "2017-07",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-07&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-07"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-07&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-07"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-07&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-07"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 773,
+        "links": [
+          {
+            "label": "Show All 773",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2017-07&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2017-06",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-06&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-06"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-06&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-06"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-06&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-06"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 922,
+        "links": [
+          {
+            "label": "Show All 922",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2017-06&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2017-05",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-05&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-05"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-05&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-05"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-05&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-05"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 863,
+        "links": [
+          {
+            "label": "Show All 863",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2017-05&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2017-04",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-04&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-04"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-04&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-04"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-04&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-04"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 821,
+        "links": [
+          {
+            "label": "Show All 821",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2017-04&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2017-03",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-03&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-03"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-03&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-03"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-03&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-03"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 788,
+        "links": [
+          {
+            "label": "Show All 788",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2017-03&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2017-02",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-02&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-02"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-02&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-02"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-02&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-02"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 702,
+        "links": [
+          {
+            "label": "Show All 702",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2017-02&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2017-01",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-01&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-01"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-01&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-01"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2017-01&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2017-01"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 755,
+        "links": [
+          {
+            "label": "Show All 755",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2017-01&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2016-12",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-12&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-12"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-12&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-12"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-12&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-12"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 640,
+        "links": [
+          {
+            "label": "Show All 640",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2016-12&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2016-11",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-11&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-11"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-11&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-11"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-11&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-11"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 540,
+        "links": [
+          {
+            "label": "Show All 540",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2016-11&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2016-10",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-10&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-10"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-10&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-10"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-10&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-10"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 376,
+        "links": [
+          {
+            "label": "Show All 376",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2016-10&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2016-09",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-09&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-09"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-09&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-09"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-09&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-09"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 313,
+        "links": [
+          {
+            "label": "Show All 313",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2016-09&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2016-08",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-08&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-08"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-08&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-08"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-08&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-08"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 212,
+        "links": [
+          {
+            "label": "Show All 212",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2016-08&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    },
+    {
+      "orders.created_month": {
+        "value": "2016-07",
+        "links": [
+          {
+            "label": "by Created Week",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_week&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-07&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-07"
+          },
+          {
+            "label": "by Created Date",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_date&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-07&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-07"
+          },
+          {
+            "label": "by Created Time",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.count,orders.created_time&f[users.created_month]=12+months+ago+for+12+months&f[orders.created_month]=2016-07&limit=500&column_limit=50&query_timezone=UTC",
+            "type": "drill",
+            "type_label": "Drill into 2016-07"
+          }
+        ]
+      },
+      "orders.count": {
+        "value": 80,
+        "links": [
+          {
+            "label": "Show All 80",
+            "url": "\/explore\/ecommerce\/orders?fields=orders.id,orders.created_time,users.name,users.history,orders.total_cost_of_order&f[orders.created_month]=2016-07&f[users.created_month]=12+months+ago+for+12+months&query_timezone=UTC&limit=500",
+            "type": "measure_default"
+          }
+        ]
+      }
+    }
+  ],
+  "drill_menu_build_time": 0.284465
+}
