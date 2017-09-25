@@ -1,9 +1,9 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../../src/framework"
 
-import { TwilioIntegration } from "../../src/integrations/twilio"
+import { TwilioIntegration } from "../../../src/integrations/twilio/twilio"
 
 const integration = new TwilioIntegration()
 

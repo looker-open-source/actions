@@ -15,4 +15,5 @@ import "./test_server"
 import "./test_smoke"
 
 import "./integrations/test_segment"
-import "./integrations/test_twilio"
+import "./integrations/twilio/test_twilio"
+import "./integrations/twilio/test_twilio_message"
