@@ -20,6 +20,7 @@ export class AmazonEC2Integration extends D.Integration {
         name: "access_key_id",
         label: "Access Key",
         required: true,
+        sensitive: true,
         description: "Your access key for S3.",
         type: "string",
       }, {
@@ -33,6 +34,7 @@ export class AmazonEC2Integration extends D.Integration {
         name: "region",
         label: "Region",
         required: true,
+        sensitive: false,
         description: "EC2 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
           "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
         default: "us-east-1",

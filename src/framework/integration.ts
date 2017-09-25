@@ -12,7 +12,7 @@ export interface IIntegrationParameter {
   name: string
   label: string
   required: boolean
-  sensitive?: boolean
+  sensitive: boolean
   description?: string
   default?: string
   type?: "string" | "select"
