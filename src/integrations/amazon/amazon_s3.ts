@@ -110,7 +110,7 @@ export class AmazonS3Integration extends D.Integration {
     return promise
   }
 
-  private amazonS3ClientFromRequest(request: D.DataActionRequest) {
+  protected amazonS3ClientFromRequest(request: D.DataActionRequest) {
     return new S3(({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,

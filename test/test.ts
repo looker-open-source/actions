@@ -16,4 +16,5 @@ import "./test_smoke"
 
 import "./integrations/test_amazon_ec2"
 import "./integrations/test_amazon_s3"
+import "./integrations/test_digitalocean_object_storage"
 import "./integrations/test_segment"
