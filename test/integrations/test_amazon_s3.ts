@@ -15,16 +15,6 @@ function expectAmazonS3Match(request: D.DataActionRequest, match: any) {
   const stubClient = sinon.stub(integration as any, "amazonS3ClientFromRequest")
     .callsFake(() => ({
       putObject: putObjectSpy,
-      listBuckets: (params: any, cb: (err: any, res: any) => void) => {
-        chai.expect(params).to.equal(null)
-        const response = {
-          Buckets: [
-            {Name: "A"},
-            {Name: "B"},
-          ],
-        }
-        cb(null, response)
-      },
     }))
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
@@ -112,17 +102,32 @@ describe(`${integration.constructor.name} unit tests`, () => {
       chai.expect(integration.hasForm).equals(true)
     })
 
-    it("has form with correct buckets", () => {
+    it("has form with correct buckets", (done) => {
+
+      const stubClient = sinon.stub(integration as any, "amazonS3ClientFromRequest")
+        .callsFake(() => ({
+          listBuckets: (params: any, cb: (err: any, res: any) => void) => {
+            chai.expect(params).to.equal(null)
+            const response = {
+              Buckets: [
+                {Name: "A"},
+                {Name: "B"},
+              ],
+            }
+            cb(null, response)
+          },
+        }))
+
       const request = new D.DataActionRequest()
       const form = integration.validateAndFetchForm(request)
-      chai.expect(form).to.eventually.equal({
+      chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Bucket",
           name: "bucket",
           required: true,
           options: [
-            {id: "A", label: "A"},
-            {id: "B", label: "B"},
+            {name: "A", label: "A"},
+            {name: "B", label: "B"},
           ],
           type: "select",
           default: "A",
@@ -135,7 +140,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           name: "filename",
           type: "string",
         }],
-      })
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
   })
