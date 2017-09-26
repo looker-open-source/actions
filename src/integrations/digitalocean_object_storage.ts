@@ -17,6 +17,7 @@ export class DigitalOceanObjectStorageEvent extends S3Integration.AmazonS3Integr
         name: "access_key_id",
         label: "Spaces Access Key",
         required: true,
+        sensitive: false,
         description: "Your access key for DigitalOcean Spaces.",
         type: "string",
       }, {
@@ -30,6 +31,7 @@ export class DigitalOceanObjectStorageEvent extends S3Integration.AmazonS3Integr
         name: "region",
         label: "Region",
         required: true,
+        sensitive: false,
         description: "DigitalOcean Region e.g. NYC3 ",
         default: "nyc3",
         type: "select",
