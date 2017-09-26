@@ -9,6 +9,8 @@ const integration = new DigitalOceanObjectStorageEvent()
 
 describe(`${integration.constructor.name} unit tests`, () => {
 
+  /* "action" function is not functionally different from AmazonS3Integration */
+
   describe("form", () => {
 
     it("has form", () => {
@@ -32,7 +34,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         }))
 
       const request = new D.DataActionRequest()
-      request.params = {"access_key_id": "foo", "secret_access_key": "bar", "region": "nyc3"}
+      request.params = {access_key_id: "foo", secret_access_key: "bar", region: "nyc3"}
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

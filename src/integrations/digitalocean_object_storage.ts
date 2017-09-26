@@ -1,7 +1,7 @@
 import * as D from "../framework"
-import * as S3Integration from "./amazon_s3"
+import * as S3Integration from "./amazon/amazon_s3"
 
-const S3Client = require("aws-sdk/clients/s3")
+const S3 = require("aws-sdk/clients/s3")
 
 export class DigitalOceanObjectStorageEvent extends S3Integration.AmazonS3Integration {
 
@@ -43,13 +43,13 @@ export class DigitalOceanObjectStorageEvent extends S3Integration.AmazonS3Integr
   }
 
   async form(request: D.DataActionRequest) {
-    const form = await super.form(request);
-    form.fields.filter(field => field["name"] == "bucket")[0]['label'] = 'Space Name'
-    return form;
+    const form = await super.form(request)
+    form.fields.filter( (field) => field.name === "bucket")[0].label = "Space Name"
+    return form
   }
 
   protected amazonS3ClientFromRequest(request: D.DataActionRequest) {
-   return new S3Client(({
+   return new S3(({
      region: request.params.region,
      endpoint: `https://${request.params.region}.digitaloceanspaces.com`,
      accessKeyId: request.params.access_key_id,
