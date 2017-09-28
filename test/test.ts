@@ -15,3 +15,4 @@ import "./test_server"
 import "./test_smoke"
 
 import "./integrations/test_segment"
+import "./integrations/test_sftp"
