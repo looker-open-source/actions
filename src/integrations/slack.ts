@@ -15,7 +15,7 @@ export class SlackIntegration extends D.Integration {
     this.label = "Slack"
     this.iconName = "slack.png"
     this.description = "Write data to slack"
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = ["query", "dashboard"]
     this.requiredFields = []
     this.params = [{
       name: "slack_api_token",
