@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../src/framework"
 
-import { DigitalOceanObjectStorageEvent } from "../../src/integrations/digitalocean_object_storage"
+import { DigitalOceanObjectStorageIntegration } from "../../src/integrations/digitalocean_object_storage"
 
-const integration = new DigitalOceanObjectStorageEvent()
+const integration = new DigitalOceanObjectStorageIntegration()
 
 describe(`${integration.constructor.name} unit tests`, () => {
 
