@@ -39,14 +39,19 @@ export class SlackIntegration extends D.Integration {
 
       const slack = this.slackClientFromRequest(request)
 
+      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
+
       const options = {
-        content: request.attachment.dataBuffer,
+        file: {
+          value: request.attachment.dataBuffer,
+          options: {
+            filename: fileName,
+          }
+        },
         channels: request.formParams.channel,
         filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       }
-
-      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
 
       slack.files.upload(fileName, options, (err: any) => {
         if (err) {
