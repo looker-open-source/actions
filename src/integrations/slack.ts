@@ -46,7 +46,7 @@ export class SlackIntegration extends D.Integration {
           value: request.attachment.dataBuffer,
           options: {
             filename: fileName,
-          }
+          },
         },
         channels: request.formParams.channel,
         filetype: request.attachment.fileExtension,

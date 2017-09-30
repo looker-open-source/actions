@@ -96,8 +96,13 @@ describe(`${integration.constructor.name} unit tests`, () => {
         fileExtension: "csv",
       }
       return expectSlackMatch(request, request.formParams.filename, {
+        file: {
+          value: request.attachment.dataBuffer,
+          options: {
+            filename: request.formParams.filename,
+          },
+        },
         channels: request.formParams.channel,
-        content: request.attachment.dataBuffer,
         filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       })
@@ -114,8 +119,13 @@ describe(`${integration.constructor.name} unit tests`, () => {
         fileExtension: "csv",
       }
       return expectSlackMatch(request, stubFileName, {
+        file: {
+          value: request.attachment.dataBuffer,
+          options: {
+            filename: stubFileName,
+          },
+        },
         channels: request.formParams.channel,
-        content: request.attachment.dataBuffer,
         filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       })
