@@ -1,5 +1,5 @@
-import * as D from "../framework"
-import * as S3Integration from "./amazon/amazon_s3"
+import * as D from "../../framework"
+import * as S3Integration from "../amazon/amazon_s3"
 
 const S3 = require("aws-sdk/clients/s3")
 
@@ -51,12 +51,12 @@ export class DigitalOceanObjectStorageIntegration extends S3Integration.AmazonS3
   }
 
   protected amazonS3ClientFromRequest(request: D.DataActionRequest) {
-   return new S3(({
+   return new S3({
      region: request.params.region,
      endpoint: `https://${request.params.region}.digitaloceanspaces.com`,
      accessKeyId: request.params.access_key_id,
      secretAccessKey: request.params.secret_access_key,
-   }))
+   })
  }
 
 }

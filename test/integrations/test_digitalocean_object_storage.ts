@@ -3,7 +3,7 @@ import * as sinon from "sinon"
 
 import * as D from "../../src/framework"
 
-import { DigitalOceanObjectStorageIntegration } from "../../src/integrations/digitalocean_object_storage"
+import { DigitalOceanObjectStorageIntegration } from "../../src/integrations/digitalocean/digitalocean_object_storage"
 
 const integration = new DigitalOceanObjectStorageIntegration()
 
