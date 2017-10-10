@@ -83,10 +83,19 @@ Because Looker will only accept an integration server with a valid HTTPS certifi
    * `heroku config:set BASE_URL="https://my-heroku-integration-server-1234.herokuapp.com"` — use the URL for your Heroku application that was mentioned after running `git push heroku master` above
    * `heroku config:set INTEGRATION_PROVIDER_LABEL="Awesome Integration Service"
    * `heroku config:set INTEGRATION_SERVICE_SECRET="<my-secret>"`
+   
+We recommend, per best practices, that you work on features using a branch. To create and push a branch to Heroku:
+
+* `git checkout -b aryeh/my-awesome-feature` # creates a branch called `aryeh/my-awesome-feature` and switches to it
+* `git push heroku aryeh/my-awesome-feature:master` # pushes your branch to Heroku and runs it
 
 You can test that the integration server is running by going to your Heroku application URL. If you need to view logs at any time, you can run:
 
    heroku logs
+   
+If at some point you forget the URL of your Heroku server, you can run:
+
+   heroku info -s | grep web_url
 
 #### To add the integration service to a Looker
 
