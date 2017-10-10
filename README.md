@@ -73,7 +73,7 @@ You can get a development server running with `yarn dev` per the instructions be
 
 ## Running an Integration Service w/Heroku
 
-Because Looker will only accept an integration server with a valid HTTPS certificate, it is convenient to develop with Heroku Really! It's super convenient and fast! Just as snappy as running locally. Here are some instructions to get you started:
+Because Looker will only accept an integration server with a valid HTTPS certificate, it is convenient to develop with Heroku. Really! It's super convenient and fast! Just as snappy as running locally. Here are some instructions to get you started:
 
 * create an account with Heroku if you don't already have one
 * run `heroku login` and provide your Heroku credentials
