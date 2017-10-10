@@ -42,8 +42,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const request = new D.DataActionRequest()
       request.formParams = {}
       request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["user_id"]}],
-        data: [{coolfield: {value: "funvalue"}}],
+        fields: {
+          dimensions: [
+            {name: "coolview.coolfield", label_short: "cool field", tags: ["user_id"]},
+          ],
+        },
+        data: [{"coolview.coolfield": {value: "funvalue"}}],
       }}
       return chai.expect(integration.action(request)).to.eventually
         .be.rejectedWith("Missing Airtable base or table.")
@@ -56,13 +60,40 @@ describe(`${integration.constructor.name} unit tests`, () => {
         table: "mytable",
       }
       request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["user_id"]}],
-        data: [{coolfield: {value: "funvalue"}}],
+        fields: {
+          dimensions: [
+            {name: "coolview.coolfield", tags: ["user_id"]},
+          ],
+        },
+        data: [{"coolview.coolfield": {value: "funvalue"}}],
       }}
       return expectWebhookMatch(request,
         request.formParams.base,
         request.formParams.table,
-        request.attachment.dataJSON.data[0])
+        {"coolview.coolfield": "funvalue"})
+    })
+
+    it("sends right body with label_short if present", () => {
+      const request = new D.DataActionRequest()
+      request.formParams = {
+        base: "mybase",
+        table: "mytable",
+      }
+      request.attachment = {dataJSON: {
+        fields: {
+          dimensions: [{
+            name: "coolview.coolfield",
+            label_short: "cool field",
+            label: "coolview coolfield",
+            tags: ["user_id"],
+          }],
+        },
+        data: [{"coolview.coolfield": {value: "funvalue"}}],
+      }}
+      return expectWebhookMatch(request,
+        request.formParams.base,
+        request.formParams.table,
+        {"cool field": "funvalue"})
     })
 
   })

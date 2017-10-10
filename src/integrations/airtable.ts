@@ -45,11 +45,22 @@ export class AirtableIntegration extends D.Integration {
         return
       }
 
+      const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
+      const fieldMap: any = {}
+      for (const field of fields) {
+        fieldMap[field.name] = field.label_short || field.label || field.name
+      }
+
       const airtableClient = this.airtableClientFromRequest(request)
       const table = airtableClient.base(request.formParams.base)(request.formParams.table)
 
       for (const row of qr.data) {
-        table.create(row, (err: any) => {
+        // transform row to {label short: value, }
+        const record: any = {}
+        for (const field of fields) {
+          record[fieldMap[field.name]] = row[field.name].value
+        }
+        table.create(record, (err: any) => {
           if (err) {
             reject(err)
           } else {
