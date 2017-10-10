@@ -40,6 +40,7 @@ For complete testing, you'll probably want to try your integration against a rea
 ## Running a integration service:
 
 Clone and run the integration service locally
+
     git clone git@github.com:looker/integrations.git
     cd integrations
     yarn install
@@ -48,6 +49,7 @@ Clone and run the integration service locally
 #### Add a new integration:
 
 Add any dependencies
+
     yarn add my-integration-sdk
 
 Write a new integration in src/integrations/my_integration.ts
