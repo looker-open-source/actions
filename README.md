@@ -44,7 +44,7 @@ Clone and run the integration service locally
     git clone git@github.com:looker/integrations.git
     cd integrations
     yarn install
-    yarn dev
+    yarn dev   
 
 #### Add a new integration:
 
@@ -64,13 +64,29 @@ Add a test to test/integrations/test.ts
 
 To run tests `yarn test`
 
-
-You can get a development server running with `yarn dev`.
+You can get a development server running with `yarn dev` per the instructions below. Because Looker requires that your integration server has a valid SSL certificate, we highly recommend using a service like Heroku for development (helpful instructions below).
 
     export BASE_URL="https://my-integration-service.heroku.com";
     export INTEGRATION_PROVIDER_LABEL="My Company";
     export INTEGRATION_SERVICE_SECRET="my-secret";
     yarn dev
+
+## Running an Integration Service w/Heroku
+
+Because Looker will only accept an integration server with a valid HTTPS certificate, it is convenient to develop with Heroku Really! It's super convenient and fast! Just as snappy as running locally. Here are some instructions to get you started:
+
+* create an account with Heroku if you don't already have one
+* run `heroku login` and provide your Heroku credentials
+* `cd` into the `integrations` directory and run:
+   * `heroku create`
+   * `git push heroku master`
+   * `heroku config:set BASE_URL="https://my-heroku-integration-server-1234.herokuapp.com"` — use the URL for your Heroku application that was mentioned after running `git push heroku master` above
+   * `heroku config:set INTEGRATION_PROVIDER_LABEL="Awesome Integration Service"
+   * `heroku config:set INTEGRATION_SERVICE_SECRET="<my-secret>"`
+
+You can test that the integration server is running by going to your Heroku application URL. If you need to view logs at any time, you can run:
+
+   heroku logs
 
 #### To add the integration service to a Looker
 
