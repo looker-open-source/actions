@@ -7,10 +7,10 @@ export class AirtableIntegration extends D.Integration {
   constructor() {
     super()
 
-    this.name = "Airtable_event"
+    this.name = "airtable"
     this.label = "Airtable"
     this.iconName = "Airtable.png"
-    this.description = "Add traits to your users."
+    this.description = "Add records to your tables."
     this.params = [
       {
         description: "API key for Airtable from https://airtable.com/account.",
@@ -92,7 +92,7 @@ export class AirtableIntegration extends D.Integration {
   }
 
   private airtableClientFromRequest(request: D.DataActionRequest) {
-    return airtable({apiKey: request.params.airtable_api_key})
+    return new airtable({apiKey: request.params.airtable_api_key})
   }
 
 }
