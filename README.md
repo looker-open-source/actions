@@ -89,8 +89,6 @@ We recommend, per best practices, that you work on features using a branch. To c
 * `git checkout -b aryeh/my-awesome-feature` # creates a branch called `aryeh/my-awesome-feature` and switches to it
 * `git push heroku aryeh/my-awesome-feature:master` # pushes your branch to Heroku and runs it
 
-See below for instructions on how to add your integration service to a Looker instance.
-
 You can test that the integration server is running by going to your Heroku application URL. If you need to view logs at any time, you can run:
 
    heroku logs
@@ -101,13 +99,17 @@ If at some point you forget the URL of your Heroku server, you can run:
 
 #### To add the integration service to a Looker
 
-my-looker.looker.com/admin/integrations?edit=true
+Make sure your integration server is running. You will then need to run the following command on the server that is running the integration server:
 
-Add Integration Hub
+    yarn generate-api-key
 
-https://my-integration-service.heroku.com
+Note that if you are using Heroku, you can run this command on your dyno by running `heroku run yarn generate-api-key`.
+    
+Save the value that is returned and then navigate to the integrations admin page on a Looker instance or go directly to:
 
-You should see a list of integrations supported by your service.
+    `https://my-looker.looker.com/admin/integrations?edit=true`
+    
+There, add the URL for your integration server and enter the token returned by `yarn generate-api-key` above. You should see a list of integrations supported by your service.
 
 Enable my-integration
 
