@@ -62,17 +62,17 @@ export class GoogleCloudStorageIntegration extends D.Integration {
     const form = new D.DataActionForm()
 
     const gcs = this.gcsClientFromRequest(request)
-    const buckets = await gcs.getBuckets()
+    const buckets = await gcs.getBuckets()[0]
 
     form.fields = [{
       label: "Bucket",
       name: "bucket",
       required: true,
-      options: buckets[0].map((b: any) => {
+      options: buckets.map((b: any) => {
           return {name: b.metadata.id, label: b.metadata.name}
         }),
       type: "select",
-      default: buckets[0][0].metadata.id,
+      default: buckets[0].metadata.id,
     }, {
       label: "Filename",
       name: "filename",

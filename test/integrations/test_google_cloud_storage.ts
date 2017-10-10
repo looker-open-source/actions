@@ -19,8 +19,6 @@ function expectGoogleCloudStorageMatch(request: D.DataActionRequest,
   const stubClient = sinon.stub(integration as any, "gcsClientFromRequest")
     .callsFake(() => ({
       bucket: bucketSpy,
-      getBuckets: () => [[ {metadata: {id: "1", name: "A"}} ],
-          [ {metadata: {id: "2", name: "B"}} ]],
     }))
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
@@ -93,6 +91,37 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("has form", () => {
       chai.expect(integration.hasForm).equals(true)
+    })
+
+    it("has form with correct buckets", (done) => {
+
+      const stubClient = sinon.stub(integration as any, "gcsClientFromRequest")
+        .callsFake(() => ({
+          getBuckets: () => [[
+            {metadata: {id: "1", name: "A"}},
+            {metadata: {id: "2", name: "B"}},
+          ]],
+        }))
+
+      const request = new D.DataActionRequest()
+      const form = integration.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          label: "Bucket",
+          name: "bucket",
+          required: true,
+          options: [
+            {name: "1", label: "A"},
+            {name: "2", label: "B"},
+          ],
+          type: "select",
+          default: "1",
+        }, {
+          label: "Filename",
+          name: "filename",
+          type: "string",
+        }],
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
   })
