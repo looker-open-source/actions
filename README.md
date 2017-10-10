@@ -44,7 +44,7 @@ Clone and run the integration service locally
     git clone git@github.com:looker/integrations.git
     cd integrations
     yarn install
-    yarn dev   
+    yarn dev
 
 #### Add a new integration:
 
