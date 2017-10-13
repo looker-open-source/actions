@@ -14,16 +14,6 @@ function expectAzureStorageMatch(
   const stubClient = sinon.stub(integration as any, "azureClientFromRequest")
     .callsFake(() => ({
       createBlockBlobFromText: createBlockBlobFromTextSpy,
-      listContainersSegmented: (filter: any, cb: (err: any, res: any) => void) => {
-        chai.expect(filter).to.equal(null)
-        const containers = {
-          entries: [
-            {id: "1", name: "A"},
-            {id: "2", name: "B"},
-          ],
-        }
-        cb(null, containers)
-      },
     }))
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
@@ -94,6 +84,38 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("has form", () => {
       chai.expect(integration.hasForm).equals(true)
+    })
+
+    it("has form with correct containers", (done) => {
+      const stubClient = sinon.stub(integration as any, "azureClientFromRequest")
+        .callsFake(() => ({
+          listContainersSegmented: () => ({
+            entries: [
+              {id: "1", name: "A"},
+              {id: "2", name: "B"},
+            ],
+          }),
+        }))
+
+      const request = new D.DataActionRequest()
+      const form = integration.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          label: "Container",
+          name: "container",
+          required: true,
+          options: [
+            {name: "1", label: "A"},
+            {name: "2", label: "B"},
+          ],
+          type: "select",
+          default: "1",
+        }, {
+          label: "Filename",
+          name: "filename",
+          type: "string",
+        }],
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
   })
