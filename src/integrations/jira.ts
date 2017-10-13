@@ -44,40 +44,35 @@ export class JiraIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment"
+    }
 
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment"
-      }
+    if (!request.formParams) {
+      throw "Need JIRA issue fields."
+    }
 
-      if (!request.formParams) {
-        throw "Need JIRA issue fields."
-      }
+    const jira = this.jiraClientFromRequest(request)
 
-      const jira = this.jiraClientFromRequest(request)
-
-      const issue = {
-        fields: {
-          project: {
-            id: request.formParams.project,
-          },
-          summary: request.formParams.summary,
-          description: `${request.formParams.description}` +
-            `\nLooker URL: ${request.scheduledPlan && request.scheduledPlan.url}`,
-          issuetype: {
-            id: request.formParams.issueType,
-          },
+    const issue = {
+      fields: {
+        project: {
+          id: request.formParams.project,
         },
-      }
-
-      jira.addNewIssue(issue)
-         .then(() => {
-          resolve(new D.DataActionResponse())
-        })
-        .catch((err: any) => {
-          reject(err)
-        })
-    })
+        summary: request.formParams.summary,
+        description: `${request.formParams.description}` +
+          `\nLooker URL: ${request.scheduledPlan && request.scheduledPlan.url}`,
+        issuetype: {
+          id: request.formParams.issueType,
+        },
+      },
+    }
+    try {
+      const response: any = await jira.addNewIssue(issue)
+      return new D.DataActionResponse({success: true, message: response})
+    } catch (e) {
+      throw e.message
+    }
   }
 
   async form(request: D.DataActionRequest) {
@@ -119,10 +114,10 @@ export class JiraIntegration extends D.Integration {
           }),
         required: true,
       }]
+      return form
     } catch (e) {
       throw e.message
     }
-    return form
   }
 
   private jiraClientFromRequest(request: D.DataActionRequest) {
