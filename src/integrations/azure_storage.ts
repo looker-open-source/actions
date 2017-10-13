@@ -54,34 +54,28 @@ export class AzureStorageIntegration extends D.Integration {
   }
 
   async form(request: D.DataActionRequest) {
-    const promise = new Promise<D.DataActionForm>((resolve, reject) => {
-      const blogService = this.azureClientFromRequest(request)
-      blogService.listContainersSegmented(null, (err: any, res: any) => {
-        if (err) {
-          reject(err)
-        } else {
-
-          const form = new D.DataActionForm()
-          form.fields = [{
-            label: "Container",
-            name: "container",
-            required: true,
-            options: res.entries.map((c: any) => {
-                return {name: c.id, label: c.name}
-              }),
-            type: "select",
-            default: res.entries[0].id,
-          }, {
-            label: "Filename",
-            name: "filename",
-            type: "string",
-          }]
-
-          resolve(form)
-        }
-      })
-    })
-    return promise
+    const blogService = this.azureClientFromRequest(request)
+    try {
+      const response = await blogService.listContainersSegmented()
+      const form = new D.DataActionForm()
+      form.fields = [{
+        label: "Container",
+        name: "container",
+        required: true,
+        options: response.entries.map((c: any) => {
+            return {name: c.id, label: c.name}
+          }),
+        type: "select",
+        default: response.entries[0].id,
+      }, {
+        label: "Filename",
+        name: "filename",
+        type: "string",
+      }]
+      return form
+    } catch (e) {
+      throw e.message
+    }
   }
 
   private azureClientFromRequest(request: D.DataActionRequest) {
