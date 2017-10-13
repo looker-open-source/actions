@@ -31,7 +31,6 @@ export class AzureStorageIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         throw "Couldn't get data from attachment"
@@ -44,10 +43,14 @@ export class AzureStorageIntegration extends D.Integration {
       const blobService = this.azureClientFromRequest(request)
       const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
 
-      blobService.createBlockBlobFromText(request.formParams.container, fileName, request.attachment.dataBuffer)
-        .then(() => resolve(new D.DataActionResponse()))
-        .catch((err: any) => { reject(err) })
-    })
+      try {
+        const response = await blobService.createBlockBlobFromText(
+          request.formParams.container, fileName, request.attachment.dataBuffer)
+        return new D.DataActionResponse({success: true, message: response})
+      } catch (e) {
+        throw e.message
+      }
+
   }
 
   async form(request: D.DataActionRequest) {
