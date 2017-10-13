@@ -14,12 +14,6 @@ export class JiraIntegration extends D.Integration {
     this.description = "Create JIRA issue referencing a Look."
     this.params = [
       {
-        description: "Typically 'http' or 'https'",
-        label: "Protocol",
-        name: "protocol",
-        required: true,
-        sensitive: false,
-      }, {
         description: "The port your JIRA server is listening on (probably `80` or `443`)",
         label: "Port",
         name: "port",
@@ -133,7 +127,7 @@ export class JiraIntegration extends D.Integration {
 
   private jiraClientFromRequest(request: D.DataActionRequest) {
     return new jiraApi({
-      protocol: request.params.protocol,
+      protocol: "https",
       host: request.params.host,
       port: request.params.port,
       username: request.params.username,
