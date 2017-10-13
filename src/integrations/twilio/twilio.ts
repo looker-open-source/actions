@@ -1,6 +1,6 @@
 import * as D from "../../framework"
 
-const twilio = require("twilio")
+import * as twilio from "twilio"
 
 const MAX_LINES = 10
 const TWILIO_MAX_MESSAGE_BODY = 1600
@@ -57,12 +57,14 @@ export class TwilioIntegration extends D.Integration {
       body,
     }
 
+    let actionReponse
     try {
       const response: any = await client.messages.create(message)
-      return new D.DataActionResponse({success: true, message: response})
+      actionReponse = {success: true, message: response.sid}
     } catch (e) {
-      throw e.message
+      actionReponse = {success: false, message: e.message}
     }
+    return new D.DataActionResponse(actionReponse)
   }
 
   async form() {
@@ -77,7 +79,7 @@ export class TwilioIntegration extends D.Integration {
   }
 
   private twilioClientFromRequest(request: D.DataActionRequest) {
-    return new twilio(request.params.accountSid, request.params.authToken)
+    return twilio(request.params.accountSid, request.params.authToken)
   }
 
 }
