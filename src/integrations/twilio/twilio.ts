@@ -32,7 +32,7 @@ export class TwilioIntegration extends D.Integration {
         description: "Auth Token from www.twilio.com/console.",
       }, {
         name: "from",
-        label: "Twilio Verified Phone # Caller Id",
+        label: "Twilio Verified Phone Number",
         required: true,
         sensitive: false,
         description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
@@ -41,34 +41,34 @@ export class TwilioIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment."
-      }
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment."
+    }
 
-      if (!request.formParams || !request.formParams.to) {
-        throw "Need a destination phone number."
-      }
+    if (!request.formParams || !request.formParams.to) {
+      throw "Need a destination phone number."
+    }
 
-      const body = request.suggestedTruncatedMessage(MAX_LINES, TWILIO_MAX_MESSAGE_BODY)
-      const client = this.twilioClientFromRequest(request)
+    const body = request.suggestedTruncatedMessage(MAX_LINES, TWILIO_MAX_MESSAGE_BODY)
+    const client = this.twilioClientFromRequest(request)
+    const message = {
+      from: request.params.from,
+      to: request.formParams.to,
+      body,
+    }
 
-      client.messages.create({
-        from: request.params.from,
-        to: request.formParams.to,
-        body,
-      }).then(() => {
-        resolve(new D.DataActionResponse())
-      }).catch((err: any) => {
-        reject(err)
-      })
-    })
+    try {
+      const response: any = await client.messages.create(message)
+      return new D.DataActionResponse({success: true, message: response})
+    } catch (e) {
+      throw e.message
+    }
   }
 
   async form() {
     const form = new D.DataActionForm()
     form.fields = [{
-      label: "Dest. Phone #",
+      label: "Destination Phone Number",
       name: "to",
       required: true,
       type: "string",

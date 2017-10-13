@@ -96,7 +96,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const action = integration.action(request)
 
       return chai.expect(action).to.eventually
-        .be.rejectedWith("Couldn't get data from attachment.")
+        .be.rejectedWith("Couldn't get data from cell.")
     })
 
     it("sends right params for cell", () => {

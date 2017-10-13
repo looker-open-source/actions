@@ -3,10 +3,9 @@ import * as D from "../../framework"
 const twilio = require("twilio")
 
 const TWILIO_MAX_MESSAGE_BODY = 1600
+const TAG = "phone"
 
 export class TwilioMessageIntegration extends D.Integration {
-
-  tag = "phone"
 
   constructor() {
     super()
@@ -42,61 +41,57 @@ export class TwilioMessageIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
 
-      if (!request.formParams || !request.formParams.message) {
-        reject("Need a message.")
-        return
-      }
+    if (!request.formParams || !request.formParams.message) {
+      throw "Need a message."
+    }
 
-      const body = D.truncateString(request.formParams.message, TWILIO_MAX_MESSAGE_BODY)
+    const body = D.truncateString(request.formParams.message, TWILIO_MAX_MESSAGE_BODY)
 
-      let phoneNumbers: string[] = []
-      switch (request.type) {
-        case "query":
-          if (!(request.attachment && request.attachment.dataJSON)) {
-            reject("Couldn't get data from attachment.")
-            return
-          }
+    let phoneNumbers: string[] = []
+    switch (request.type) {
+      case "query":
+        if (!(request.attachment && request.attachment.dataJSON)) {
+          throw "Couldn't get data from attachment."
+        }
 
-          const qr = request.attachment.dataJSON
-          if (!qr.fields || !qr.data) {
-            reject("Request payload is an invalid format.")
-            return
-          }
-          const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
-          const identifiableFields = fields.filter((f: any) =>
-            f.tags && f.tags.some((t: string) => t === this.tag),
-          )
-          if (identifiableFields.length === 0) {
-            reject(`Query requires a field tagged ${this.tag}.`)
-            return
-          }
-          phoneNumbers = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
-          break
-        case "cell":
-          if (!request.params.value) {
-            reject("Couldn't get data from attachment.")
-            return
-          }
-          phoneNumbers = [request.params.value]
-          break
-      }
+        const qr = request.attachment.dataJSON
+        if (!qr.fields || !qr.data) {
+          throw "Request payload is an invalid format."
+        }
+        const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
+        const identifiableFields = fields.filter((f: any) =>
+          f.tags && f.tags.some((t: string) => t === TAG),
+        )
+        if (identifiableFields.length === 0) {
+          throw `Query requires a field tagged ${TAG}.`
+        }
+        phoneNumbers = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
+        break
+      case "cell":
+        if (!request.params.value) {
+          throw "Couldn't get data from cell."
+        }
+        phoneNumbers = [request.params.value]
+        break
+    }
 
-      const client = this.twilioClientFromRequest(request)
+    const client = this.twilioClientFromRequest(request)
 
-      phoneNumbers.map((to: string) => {
-        client.messages.create({
+    try {
+      for (const to of phoneNumbers) {
+        const message = {
           from: request.params.from,
           to,
           body,
-        }).then(() => {
-          resolve(new D.DataActionResponse())
-        }).catch((err: any) => {
-          reject(err)
-        })
-      })
-    })
+        }
+        await client.messages.create(message)
+      }
+    } catch (e) {
+      throw e.message
+    }
+
+    return new D.DataActionResponse({success: true})
   }
 
   async form() {
