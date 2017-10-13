@@ -37,7 +37,6 @@ export class GoogleCloudStorageIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         throw "Couldn't get data from attachment"
@@ -52,10 +51,13 @@ export class GoogleCloudStorageIntegration extends D.Integration {
       const file = gcs.bucket(request.formParams.bucket)
         .file(request.formParams.filename ? request.formParams.filename : request.suggestedFilename())
 
-      file.save(request.attachment.dataBuffer)
-        .then(() => resolve(new D.DataActionResponse()))
-        .catch((err: any) => { reject(err) })
-    })
+      try {
+        const response = await file.save(request.attachment.dataBuffer)
+        return new D.DataActionResponse({success: true, message: response})
+      } catch (e) {
+        return new D.DataActionResponse({success: false, message: e.message})
+      }
+
   }
 
   async form(request: D.DataActionRequest) {
