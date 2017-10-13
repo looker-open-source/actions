@@ -80,8 +80,11 @@ export class JiraIntegration extends D.Integration {
     const jira = this.jiraClientFromRequest(request)
     const form = new D.DataActionForm()
     try {
-      const projects = await jira.listProjects()
-      const issueTypes = await jira.listIssueTypes()
+
+      const [projects, issueTypes] = await Promise.all([
+        jira.listProjects(),
+        jira.listIssueTypes(),
+      ])
 
       form.fields = [{
         default: projects[0].id,
