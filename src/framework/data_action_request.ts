@@ -110,7 +110,12 @@ export class DataActionRequest {
     }
   }
 
-  suggestedTruncatedMessage(maxLines: number, maxMessage: number): string | undefined  {
+  /** creates a truncated message with a max number of lines and max number of characters with Title, Url,
+   * and truncated Body of payload
+   * @param {number} maxLines - maximum number of lines to truncate message
+   * @param {number} maxCharacters - maximum character to truncate
+   */
+  suggestedTruncatedMessage(maxLines: number, maxCharacters: number): string | undefined  {
     if (this.attachment && this.attachment.dataBuffer) {
       let title = ""
       let url = ""
@@ -134,7 +139,7 @@ export class DataActionRequest {
       }
       const newMessage = truncatedLines.join("\n")
       let body = title + newMessage
-      body = truncateString(body, maxMessage)
+      body = truncateString(body, maxCharacters)
 
       return body
     }
