@@ -52,8 +52,8 @@ export class GoogleCloudStorageIntegration extends D.Integration {
         .file(request.formParams.filename ? request.formParams.filename : request.suggestedFilename())
 
       try {
-        const response = await file.save(request.attachment.dataBuffer)
-        return new D.DataActionResponse({success: true, message: response})
+        await file.save(request.attachment.dataBuffer)
+        return new D.DataActionResponse({success: true})
       } catch (e) {
         return new D.DataActionResponse({success: false, message: e.message})
       }
