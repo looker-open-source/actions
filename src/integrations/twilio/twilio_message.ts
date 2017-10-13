@@ -79,14 +79,14 @@ export class TwilioMessageIntegration extends D.Integration {
     const client = this.twilioClientFromRequest(request)
 
     try {
-      for (const to of phoneNumbers) {
+      await Promise.all(phoneNumbers.map((to) => {
         const message = {
           from: request.params.from,
           to,
           body,
         }
-        await client.messages.create(message)
-      }
+        return client.messages.create(message)
+      }))
     } catch (e) {
       throw e.message
     }
