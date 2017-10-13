@@ -4,15 +4,15 @@ import {ec2Regions} from "./regions"
 
 const EC2 = require("aws-sdk/clients/ec2")
 
-export class AmazonEC2Integration extends D.Integration {
+const TAG = "aws_resource_id"
 
-  tag = "aws_resource_id"
+export class AmazonEC2Integration extends D.Integration {
 
   constructor() {
     super()
 
-    this.name = "aws_ec2"
-    this.label = "AWS EC2"
+    this.name = "aws_ec2_stop_instance"
+    this.label = "AWS EC2 Stop Instance"
     this.iconName = "amazon_ec2.png"
     this.description = "Stop an EC2 instance"
     this.params = [
@@ -21,15 +21,13 @@ export class AmazonEC2Integration extends D.Integration {
         label: "Access Key",
         required: true,
         sensitive: true,
-        description: "Your access key for S3.",
-        type: "string",
+        description: "Your access key for EC2.",
       }, {
         name: "secret_access_key",
         label: "Secret Key",
         required: true,
         sensitive: true,
-        description: "Your secret key for S3.",
-        type: "string",
+        description: "Your secret key for EC2.",
       }, {
         name: "region",
         label: "Region",
@@ -37,14 +35,11 @@ export class AmazonEC2Integration extends D.Integration {
         sensitive: false,
         description: "EC2 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
           "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
-        default: "us-east-1",
-        type: "select",
-        options: ec2Regions,
       },
     ]
     this.supportedActionTypes = ["cell", "query"]
     this.supportedFormats = ["json_detail"]
-    this.requiredFields = [{tag: this.tag}]
+    this.requiredFields = [{tag: TAG}]
   }
 
   async action(request: D.DataActionRequest) {
@@ -65,17 +60,17 @@ export class AmazonEC2Integration extends D.Integration {
           }
           const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
           const identifiableFields = fields.filter((f: any) =>
-            f.tags && f.tags.some((t: string) => t === this.tag),
+            f.tags && f.tags.some((t: string) => t === TAG),
           )
           if (identifiableFields.length === 0) {
-            reject(`Query requires a field tagged ${this.tag}.`)
+            reject(`Query requires a field tagged ${TAG}.`)
             return
           }
           instanceIds = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
           break
         case "cell":
           if (!request.params.value) {
-            reject("Couldn't get data from attachment.")
+            reject("Couldn't get data from cell.")
             return
           }
           instanceIds = [request.params.value]
