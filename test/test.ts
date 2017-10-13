@@ -14,4 +14,5 @@ import "../src/integrations/index"
 import "./test_server"
 import "./test_smoke"
 
+import "./integrations/test_airtable"
 import "./integrations/test_segment"
