@@ -15,49 +15,53 @@ export class SlackIntegration extends D.Integration {
     this.label = "Slack"
     this.iconName = "slack.png"
     this.description = "Write data to slack"
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = ["query", "dashboard"]
     this.requiredFields = []
-    this.params = [
-      {
-        name: "slack_api_token",
-        label: "Slack API Token",
-        required: true,
-        description: "https://api.slack.com/custom-integrations/legacy-tokens",
-        sensitive: true,
-      },
-    ]
+    this.params = [{
+      name: "slack_api_token",
+      label: "Slack API Token",
+      required: true,
+      description: "https://api.slack.com/custom-integrations/legacy-tokens",
+      sensitive: true,
+    }]
   }
 
   async action(request: D.DataActionRequest) {
     return new Promise <D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment."
+        reject("Couldn't get data from attachment.")
+        return
       }
 
-      if (!request.formParams ||
-        !request.formParams.channel) {
-        throw "Missing channel."
+      if (!request.formParams || !request.formParams.channel) {
+        reject("Missing channel.")
+        return
       }
 
       const slack = this.slackClientFromRequest(request)
 
+      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
+
       const options = {
-        content: request.attachment.dataBuffer,
+        file: {
+          value: request.attachment.dataBuffer,
+          options: {
+            filename: fileName,
+          },
+        },
         channels: request.formParams.channel,
         filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       }
 
-      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
-
+      let response
       slack.files.upload(fileName, options, (err: any) => {
         if (err) {
-          reject(err)
-        } else {
-          resolve(new D.DataActionResponse())
+          response = {success: true, message: err.message}
         }
       })
+      resolve(new D.DataActionResponse(response))
     })
   }
 
