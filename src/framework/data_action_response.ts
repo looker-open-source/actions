@@ -10,6 +10,18 @@ export class DataActionResponse {
   success: boolean = true
   validationErrors: IValidationError[] = []
 
+  constructor(
+    fields?: {
+        message?: string,
+        refreshQuery?: boolean,
+        success?: boolean,
+        validationErrors?: IValidationError[],
+    }) {
+    if (fields) {
+      Object.assign(this, fields)
+    }
+  }
+
   asJson(): any {
     const errs: any = {}
     for (const error of (this.validationErrors || [])) {

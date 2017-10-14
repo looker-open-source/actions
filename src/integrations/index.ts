@@ -1,3 +1,5 @@
+import "./airtable"
+import "./jira"
 import "./segment"
 import "./tray"
 import "./webhook"
