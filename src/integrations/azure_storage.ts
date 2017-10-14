@@ -54,9 +54,9 @@ export class AzureStorageIntegration extends D.Integration {
   }
 
   async form(request: D.DataActionRequest) {
-    const blogService = this.azureClientFromRequest(request)
+    const blobService = this.azureClientFromRequest(request)
     try {
-      const response = await blogService.listContainersSegmented()
+      const response = await blobService.listContainersSegmented()
       const form = new D.DataActionForm()
       form.fields = [{
         label: "Container",
