@@ -80,7 +80,6 @@ export class AzureStorageIntegration extends D.Integration {
 
   private azureClientFromRequest(request: D.DataActionRequest) {
     return new azure.createBlobService(request.params.account, request.params.accessKey)
-        .withFilter(new azure.ExponentialRetryPolicyFilter())
   }
 
 }
