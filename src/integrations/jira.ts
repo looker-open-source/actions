@@ -70,7 +70,6 @@ export class JiraIntegration extends D.Integration {
     let response
     try {
       await jira.addNewIssue(issue)
-      response = {success: true}
     } catch (e) {
       response = {success: false, message: e.message}
     }
