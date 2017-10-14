@@ -2,9 +2,10 @@ import * as D from "../../framework"
 
 const digitalOcean = require("do-wrapper")
 
+const TAG = "digitalocean_droplet_id"
+
 export class DigitalOceanDropletIntegration extends D.Integration {
 
-  tag = "digitalocean_droplet_id"
 
   constructor() {
     super()
@@ -24,7 +25,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
     ]
     this.supportedActionTypes = ["cell", "query"]
     this.supportedFormats = ["json_detail"]
-    this.requiredFields = [{tag: this.tag}]
+    this.requiredFields = [{tag: TAG}]
   }
 
   async action(request: D.DataActionRequest) {
@@ -45,10 +46,10 @@ export class DigitalOceanDropletIntegration extends D.Integration {
           }
           const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
           const identifiableFields = fields.filter((f: any) =>
-            f.tags && f.tags.some((t: string) => t === this.tag),
+            f.tags && f.tags.some((t: string) => t === TAG),
           )
           if (identifiableFields.length === 0) {
-            reject(`Query requires a field tagged ${this.tag}.`)
+            reject(`Query requires a field tagged ${TAG}.`)
             return
           }
           instanceIds = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
