@@ -62,7 +62,7 @@ export class AmazonS3Integration extends D.Integration {
         if (err) {
           reject(err)
         } else {
-          resolve(new D.DataActionResponse())
+          resolve(new D.DataActionResponse({success: true}))
         }
       })
     })

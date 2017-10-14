@@ -72,8 +72,8 @@ export class AmazonEC2Integration extends D.Integration {
 
     const ec2 = this.amazonEC2ClientFromRequest(request)
     try {
-      const response = await ec2.stopInstances(params)
-      return new D.DataActionResponse({success: true, message: response})
+      await ec2.stopInstances(params)
+      return new D.DataActionResponse({success: true})
     } catch (e) {
       return new D.DataActionResponse({success: false, message: e.message})
     }
