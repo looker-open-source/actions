@@ -107,8 +107,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
       const stubClient = sinon.stub(integration as any, "amazonS3ClientFromRequest")
         .callsFake(() => ({
-          listBuckets: (params: any, cb: (err: any, res: any) => void) => {
-            chai.expect(params).to.equal(null)
+          listBuckets: (cb: (err: any, res: any) => void) => {
             const response = {
               Buckets: [
                 {Name: "A"},

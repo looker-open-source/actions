@@ -1,7 +1,7 @@
 import * as D from "../../framework"
 import * as S3Integration from "../amazon/amazon_s3"
 
-const S3 = require("aws-sdk/clients/s3")
+import * as S3 from "aws-sdk/clients/s3"
 
 export class DigitalOceanObjectStorageIntegration extends S3Integration.AmazonS3Integration {
 
