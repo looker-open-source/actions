@@ -51,13 +51,14 @@ export class GoogleCloudStorageIntegration extends D.Integration {
       const file = gcs.bucket(request.formParams.bucket)
         .file(request.formParams.filename ? request.formParams.filename : request.suggestedFilename())
 
+      let response
       try {
         await file.save(request.attachment.dataBuffer)
-        return new D.DataActionResponse({success: true})
       } catch (e) {
-        return new D.DataActionResponse({success: false, message: e.message})
+        response = {success: false, message: e.message}
       }
 
+      return new D.DataActionResponse(response)
   }
 
   async form(request: D.DataActionRequest) {
