@@ -14,5 +14,7 @@ import "../src/integrations/index"
 import "./test_server"
 import "./test_smoke"
 
+import "./integrations/test_airtable"
 import "./integrations/test_azure_storage"
+import "./integrations/test_jira"
 import "./integrations/test_segment"
