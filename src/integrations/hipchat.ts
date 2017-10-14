@@ -37,26 +37,29 @@ export class HipchatIntegration extends D.Integration {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment."
+        reject("Couldn't get data from attachment.")
+        return
       }
 
       if (!request.formParams || !request.formParams.room) {
-        throw "Missing room."
+        reject("Missing room.")
+        return
       }
 
       const hipchatClient = this.hipchatClientFromRequest(request)
       const message = request.suggestedTruncatedMessage(MAX_LINES, HIPCHAT_MAX_MESSAGE_BODY)
 
+      let response
       hipchatClient.send_room_message(
         request.formParams.room, {
           from: "Looker",
           message,
         }, (err: any) => {
           if (err) {
-            reject(err)
+            response = {success: false, message: err.message}
           }
-          resolve(new D.DataActionResponse({success: true}))
         })
+      resolve(new D.DataActionResponse(response))
     })
   }
 
