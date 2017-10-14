@@ -66,7 +66,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
       instanceIds.forEach((dropletId) => {
         digitalOceanClient.dropletsRequestAction(+dropletId, {type: "power_off"}, (err: any) => {
           if (err) {
-            reject(err)
+            resolve(new D.DataActionResponse({success: false, message: err.message}))
           } else {
             resolve(new D.DataActionResponse())
           }
