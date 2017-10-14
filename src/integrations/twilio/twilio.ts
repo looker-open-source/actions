@@ -57,14 +57,13 @@ export class TwilioIntegration extends D.Integration {
       body,
     }
 
-    let actionReponse
+    let response
     try {
-      const response: any = await client.messages.create(message)
-      actionReponse = {success: true, message: response.sid}
+      await client.messages.create(message)
     } catch (e) {
-      actionReponse = {success: false, message: e.message}
+      response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(actionReponse)
+    return new D.DataActionResponse(response)
   }
 
   async form() {

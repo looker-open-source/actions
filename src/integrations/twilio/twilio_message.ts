@@ -78,6 +78,7 @@ export class TwilioMessageIntegration extends D.Integration {
 
     const client = this.twilioClientFromRequest(request)
 
+    let response
     try {
       await Promise.all(phoneNumbers.map((to) => {
         const message = {
@@ -88,10 +89,10 @@ export class TwilioMessageIntegration extends D.Integration {
         return client.messages.create(message)
       }))
     } catch (e) {
-      throw e.message
+      response = {success: false, message: e.message}
     }
 
-    return new D.DataActionResponse({success: true})
+    return new D.DataActionResponse(response)
   }
 
   async form() {
