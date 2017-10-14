@@ -13,16 +13,14 @@ export class TrayIntegration extends WebhookIntegration {
   }
 
   async form() {
-    return new Promise<D.DataActionForm>((resolve) => {
-      const form = new D.DataActionForm()
-      form.fields = [{
-        label: "Tray Webhook URL",
-        name: "url",
-        required: true,
-        type: "string",
-      }]
-      resolve(form)
-    })
+    const form = new D.DataActionForm()
+    form.fields = [{
+      label: "Tray Webhook URL",
+      name: "url",
+      required: true,
+      type: "string",
+    }]
+    return form
   }
 }
 

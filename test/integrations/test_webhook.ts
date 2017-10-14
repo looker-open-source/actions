@@ -65,17 +65,17 @@ describe(`${integration.constructor.name} unit tests`, () => {
       chai.expect(integration.hasForm).equals(true)
     })
 
-    it("has form with url param", () => {
+    it("has form with url param", (done) => {
       const request = new D.DataActionRequest()
       const form = integration.validateAndFetchForm(request)
-      chai.expect(form).to.eventually.equal({
+      chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Webhook URL",
           name: "url",
           required: true,
           type: "string",
         }],
-      })
+      }).and.notify(done)
     })
   })
 })
