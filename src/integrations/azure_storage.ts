@@ -43,14 +43,14 @@ export class AzureStorageIntegration extends D.Integration {
       const blobService = this.azureClientFromRequest(request)
       const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
 
+      let response
       try {
-        const response = await blobService.createBlockBlobFromText(
+        await blobService.createBlockBlobFromText(
           request.formParams.container, fileName, request.attachment.dataBuffer)
-        return new D.DataActionResponse({success: true, message: response})
       } catch (e) {
-        throw e.message
+        response = {success: false, message: e.message}
       }
-
+      return new D.DataActionResponse(response)
   }
 
   async form(request: D.DataActionRequest) {
