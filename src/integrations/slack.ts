@@ -30,11 +30,13 @@ export class SlackIntegration extends D.Integration {
     return new Promise <D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment."
+        reject("Couldn't get data from attachment.")
+        return
       }
 
       if (!request.formParams || !request.formParams.channel) {
-        throw "Missing channel."
+        reject("Missing channel.")
+        return
       }
 
       const slack = this.slackClientFromRequest(request)
@@ -53,13 +55,13 @@ export class SlackIntegration extends D.Integration {
         initial_comment: request.formParams.initial_comment,
       }
 
+      let response
       slack.files.upload(fileName, options, (err: any) => {
         if (err) {
-          reject(err)
-        } else {
-          resolve(new D.DataActionResponse())
+          response = {success: true, message: err.message}
         }
       })
+      resolve(new D.DataActionResponse(response))
     })
   }
 
