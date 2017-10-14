@@ -7,32 +7,20 @@ import { HipchatIntegration } from "../../src/integrations/hipchat"
 
 const integration = new HipchatIntegration()
 
-function expectHipchatMatch(request: D.DataActionRequest, match: any) {
+function expectHipchatMatch(request: D.DataActionRequest, ...match: any[]) {
 
-  const messageSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
-    callback(null, `successfully sent ${params}`)
+  const messageSpy = sinon.spy((room: any, message: any, callback: (err: any, data: any) => void) => {
+    callback(null, `successfully sent ${room} ${message}`)
   })
 
   const stubClient = sinon.stub(integration as any, "hipchatClientFromRequest")
     .callsFake(() => ({
-      rooms: {
-        message: messageSpy,
-        list: (filters: any, callback: (err: any, response: any) => void) => {
-          callback(null, {
-            ok: true,
-            rooms: [
-              {id: "1", name: "A"},
-              {id: "2", name: "B"},
-            ],
-            filters,
-          })
-        },
-      },
+      send_room_message: messageSpy,
     }))
 
   const action = integration.action(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
-    chai.expect(messageSpy).to.have.been.calledWithMatch(match)
+    chai.expect(messageSpy).to.have.been.calledWithMatch(...match)
     stubClient.restore()
   })
 }
@@ -71,11 +59,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.attachment = {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
       }
-      return expectHipchatMatch(request, {
-        room_id: request.formParams.room,
-        from: "Looker",
-        message: request.suggestedTruncatedMessage(10, 10000),
-      })
+      return expectHipchatMatch(request,
+        request.formParams.room, {
+          from: "Looker",
+          message: request.suggestedTruncatedMessage(10, 10000),
+        })
     })
 
   })
@@ -86,30 +74,34 @@ describe(`${integration.constructor.name} unit tests`, () => {
       chai.expect(integration.hasForm).equals(true)
     })
 
-    it("has form with correct rooms", () => {
+    it("has form with correct rooms", (done) => {
+      const stubClient = sinon.stub(integration as any, "hipchatClientFromRequest")
+      .callsFake(() => ({
+        rooms: (callback: (err: any, response: any) => void) => {
+            callback(null, [
+              {id: "1", name: "A", privacy: "public", is_archived: false},
+              {id: "2", name: "B", privacy: "public", is_archived: false},
+              {id: "3", name: "C", privacy: "private", is_archived: false},
+              {id: "4", name: "D", privacy: "public", is_archived: true},
+            ])
+          },
+      }))
+
       const request = new D.DataActionRequest()
       const form = integration.validateAndFetchForm(request)
-      chai.expect(form).to.eventually.equal({
+      chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          description: "Name of the Slack room you would like to post to.",
+          description: "Name of the Hipchat room you would like to post to.",
           label: "Share In",
           name: "room",
           options: [
-            {id: "1", label: "A"},
-            {id: "2", label: "B"},
+            {name: "1", label: "A"},
+            {name: "2", label: "B"},
           ],
           required: true,
           type: "select",
-        }, {
-          label: "Comment",
-          type: "string",
-          name: "initial_comment",
-        }, {
-          label: "Filename",
-          name: "filename",
-          type: "string",
         }],
-      })
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
   })

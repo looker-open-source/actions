@@ -1,7 +1,6 @@
 import * as D from "../framework"
 
-// TODO is this the right hipchat client?
-const hipchatClient = require("hipchat-client")
+const hipchat = require("hipchatter")
 
 export interface IRoom {
   id: string,
@@ -24,10 +23,10 @@ export class HipchatIntegration extends D.Integration {
     this.params = [
       {
         name: "hipchat_api_key",
-        label: "API Key",
+        label: "HipChat API Key",
         required: true,
         sensitive: true,
-        description: "https://www.hipchat.com/sign_in?d=%2Fadmin%2Fapi",
+        description: "API Key generated at https://hipchat.com/account/api",
       },
     ]
     this.supportedFormats = ["json_detail"]
@@ -45,19 +44,19 @@ export class HipchatIntegration extends D.Integration {
         throw "Missing room."
       }
 
-      const hipchat = this.hipchatClientFromRequest(request)
+      const hipchatClient = this.hipchatClientFromRequest(request)
       const message = request.suggestedTruncatedMessage(MAX_LINES, HIPCHAT_MAX_MESSAGE_BODY)
 
-      hipchat.rooms.message({
-        room_id: request.formParams.room,
-        from: "Looker",
-        message,
-      }, (err: any) => {
-        if (err) {
-          reject(err)
-        }
-        resolve(new D.DataActionResponse())
-      })
+      hipchatClient.send_room_message(
+        request.formParams.room, {
+          from: "Looker",
+          message,
+        }, (err: any) => {
+          if (err) {
+            reject(err)
+          }
+          resolve(new D.DataActionResponse({success: true}))
+        })
     })
   }
 
@@ -79,13 +78,13 @@ export class HipchatIntegration extends D.Integration {
 
   usableRooms(request: D.DataActionRequest) {
     return new Promise<IRoom[]>((resolve, reject) => {
-      const hipchat = this.hipchatClientFromRequest(request)
-      hipchat.rooms.list({}, (err: any, response: any) => {
+      const hipchatClient = this.hipchatClientFromRequest(request)
+      hipchatClient.rooms((err: any, response: any) => {
         if (err) {
           reject(err)
         } else {
-          const rooms = response.rooms.filter((r: any) => !r.is_private && !r.is_archived)
-          const reformatted: IRoom[] = rooms.map((room: any) => ({id: room.room_id, label: `#${room.name}`}))
+          const rooms = response.filter((r: any) => !(r.privacy === "private") && !r.is_archived)
+          const reformatted: IRoom[] = rooms.map((room: any) => ({id: room.id, label: room.name}))
           resolve(reformatted)
         }
       })
@@ -93,7 +92,7 @@ export class HipchatIntegration extends D.Integration {
   }
 
   private hipchatClientFromRequest(request: D.DataActionRequest) {
-    return new hipchatClient(request.params.hipchat_api_key).api
+    return new hipchat(request.params.hipchat_api_key)
   }
 
 }
