@@ -62,8 +62,6 @@ export class AmazonS3Integration extends D.Integration {
       s3.putObject(params, (err: any) => {
         if (err) {
           response = {success: false, message: err.message}
-        } else {
-          response = {success: true}
         }
       })
       resolve(new D.DataActionResponse(response))

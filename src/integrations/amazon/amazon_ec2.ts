@@ -74,7 +74,6 @@ export class AmazonEC2Integration extends D.Integration {
     let response
     try {
       await ec2.stopInstances(params)
-      response = {success: true}
     } catch (e) {
       response = {success: false, message: e.message}
     }
