@@ -14,9 +14,6 @@ export interface IIntegrationParameter {
   required: boolean
   sensitive: boolean
   description?: string
-  default?: string
-  type?: "string" | "select"
-  options?: Array<{ name: string, label: string }>
 }
 
 export interface IRequiredField {

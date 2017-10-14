@@ -19,27 +19,18 @@ export class DigitalOceanObjectStorageIntegration extends S3Integration.AmazonS3
         required: true,
         sensitive: false,
         description: "Your access key for DigitalOcean Spaces.",
-        type: "string",
       }, {
         name: "secret_access_key",
         label: "Spaces Secret Key",
         required: true,
         sensitive: true,
         description: "Your secret key for DigitalOcean Spaces.",
-        type: "string",
       }, {
         name: "region",
         label: "Region",
         required: true,
         sensitive: false,
         description: "DigitalOcean Region e.g. NYC3 ",
-        default: "nyc3",
-        type: "select",
-        options: [
-          // digitalocean spaces only have one region because the launch is recent
-          // https://www.digitalocean.com/community/tutorials/an-introduction-to-digitalocean-spaces#creating-new-spaces
-          {name: "nyc3", label: "NYC3"},
-        ],
       },
     ]
   }

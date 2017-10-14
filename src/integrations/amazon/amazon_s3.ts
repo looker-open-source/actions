@@ -1,7 +1,5 @@
 import * as D from "../../framework"
 
-import {s3Regions} from "./regions"
-
 const S3 = require("aws-sdk/clients/s3")
 
 export class AmazonS3Integration extends D.Integration {
@@ -22,14 +20,12 @@ export class AmazonS3Integration extends D.Integration {
         required: true,
         sensitive: true,
         description: "Your access key for S3.",
-        type: "string",
       }, {
         name: "secret_access_key",
         label: "Secret Key",
         required: true,
         sensitive: true,
         description: "Your secret key for S3.",
-        type: "string",
       }, {
         name: "region",
         label: "Region",
@@ -37,9 +33,6 @@ export class AmazonS3Integration extends D.Integration {
         sensitive: false,
         description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
           "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
-        default: "us-east-1",
-        type: "select",
-        options: s3Regions,
       },
     ]
   }
@@ -69,7 +62,7 @@ export class AmazonS3Integration extends D.Integration {
         if (err) {
           reject(err)
         } else {
-          resolve(new D.DataActionResponse())
+          resolve(new D.DataActionResponse({success: true}))
         }
       })
     })
