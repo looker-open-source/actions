@@ -62,9 +62,9 @@ export class AirtableIntegration extends D.Integration {
         }
         table.create(record, (err: any) => {
           if (err) {
-            reject(err)
+            reject(new D.DataActionResponse({success: false, message: err.message}))
           } else {
-            resolve(new D.DataActionResponse())
+            resolve(new D.DataActionResponse({success: true}))
           }
         })
       }
