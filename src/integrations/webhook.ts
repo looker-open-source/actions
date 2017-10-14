@@ -31,32 +31,30 @@ export class WebhookIntegration extends D.Integration {
         return
       }
 
+      let response
       req.post({
         url: request.formParams.url,
         form: request.attachment.dataJSON,
       }, (error: any) => {
         if (error) {
-          reject(error)
-        } else {
-          resolve(new D.DataActionResponse())
+          response = error.message
         }
       })
+
+      resolve(new D.DataActionResponse(response))
 
     })
   }
 
   async form() {
-    return new Promise<D.DataActionForm>((resolve) => {
-
-      const form = new D.DataActionForm()
-      form.fields = [{
-        label: "Webhook URL",
-        name: "url",
-        required: true,
-        type: "string",
-      }]
-      resolve(form)
-    })
+    const form = new D.DataActionForm()
+    form.fields = [{
+      label: "Webhook URL",
+      name: "url",
+      required: true,
+      type: "string",
+    }]
+    return form
   }
 }
 
