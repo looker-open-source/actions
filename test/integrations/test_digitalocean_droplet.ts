@@ -19,7 +19,7 @@ function expectDigitalOceanDropletActionMatch(request: D.DataActionRequest, ...m
     }))
   const action = integration.action(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
-    chai.expect(dropletsRequestActionSpy).to.have.been.calledWithMatch(...match)
+    chai.expect(dropletsRequestActionSpy.firstCall).to.have.been.calledWithMatch(...match)
     stubClient.restore()
   })
 }
@@ -50,11 +50,10 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.attachment = {dataJSON: {
         fields: [{name: "coolfield", tags: ["digitalocean_droplet_id"]}],
         data: [
-          {coolfield: {value: "funvalue"}},
-          {coolfield: {value: "funvalue1"}},
+          {coolfield: {value: "12345"}},
         ],
       }}
-      return expectDigitalOceanDropletActionMatch(request, "funvalue", {type: "power_off"})
+      return expectDigitalOceanDropletActionMatch(request, 12345, {type: "power_off"})
     })
 
     it("errors if there is no attachment for cell", () => {
@@ -75,9 +74,9 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.type = "cell"
       request.params = {
         digitalocean_api_key: "mykey",
-        value: "funvalue",
+        value: "12345",
       }
-      return expectDigitalOceanDropletActionMatch(request, "funvalue", {type: "power_off"})
+      return expectDigitalOceanDropletActionMatch(request, 12345, {type: "power_off"})
     })
 
   })

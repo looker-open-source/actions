@@ -1,11 +1,10 @@
 import * as D from "../../framework"
 
-const digitalOcean = require("do-wrapper")
+import digitalOcean = require("do-wrapper")
 
 const TAG = "digitalocean_droplet_id"
 
 export class DigitalOceanDropletIntegration extends D.Integration {
-
 
   constructor() {
     super()
@@ -65,7 +64,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
 
       const digitalOceanClient = this.digitalOceanClientFromRequest(request)
       instanceIds.forEach((dropletId) => {
-        digitalOceanClient.dropletsRequestAction(dropletId, {type: "power_off"}, (err: any) => {
+        digitalOceanClient.dropletsRequestAction(+dropletId, {type: "power_off"}, (err: any) => {
           if (err) {
             reject(err)
           } else {
