@@ -1,6 +1,6 @@
 import * as D from "../framework"
 
-const req: any = require("request")
+import * as req from "request"
 
 export class WebhookIntegration extends D.Integration {
 
