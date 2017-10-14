@@ -1,6 +1,6 @@
 import * as D from "../../framework"
 
-const EC2 = require("aws-sdk/clients/ec2")
+import * as EC2 from "aws-sdk/clients/ec2"
 
 const TAG = "aws_resource_id"
 
@@ -71,13 +71,14 @@ export class AmazonEC2Integration extends D.Integration {
     const params = {InstanceIds: instanceIds}
 
     const ec2 = this.amazonEC2ClientFromRequest(request)
+    let response
     try {
       await ec2.stopInstances(params)
-      return new D.DataActionResponse({success: true})
+      response = {success: true}
     } catch (e) {
-      return new D.DataActionResponse({success: false, message: e.message})
+      response = {success: false, message: e.message}
     }
-
+    return new D.DataActionResponse(response)
   }
 
   private amazonEC2ClientFromRequest(request: D.DataActionRequest) {

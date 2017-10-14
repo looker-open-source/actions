@@ -1,6 +1,6 @@
 import * as D from "../../framework"
 
-const S3 = require("aws-sdk/clients/s3")
+import * as S3 from "aws-sdk/clients/s3"
 
 export class AmazonS3Integration extends D.Integration {
 
@@ -54,24 +54,26 @@ export class AmazonS3Integration extends D.Integration {
 
       const params = {
         Bucket: request.formParams.bucket,
-        Key: request.formParams.filename ? request.formParams.filename : request.suggestedFilename(),
+        Key: request.formParams.filename || request.suggestedFilename() as string,
         Body: request.attachment.dataBuffer,
       }
 
+      let response
       s3.putObject(params, (err: any) => {
         if (err) {
-          reject(err)
+          response = {success: false, message: err.message}
         } else {
-          resolve(new D.DataActionResponse({success: true}))
+          response = {success: true}
         }
       })
+      resolve(new D.DataActionResponse(response))
     })
   }
 
   async form(request: D.DataActionRequest) {
     const promise = new Promise<D.DataActionForm>((resolve, reject) => {
       const s3 = this.amazonS3ClientFromRequest(request)
-      s3.listBuckets(null, (err: any, res: any) => {
+      s3.listBuckets((err: any, res: any) => {
         if (err) {
           reject(err)
         } else {
