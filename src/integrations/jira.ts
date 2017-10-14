@@ -67,12 +67,14 @@ export class JiraIntegration extends D.Integration {
         },
       },
     }
+    let response
     try {
-      const response: any = await jira.addNewIssue(issue)
-      return new D.DataActionResponse({success: true, message: response})
+      await jira.addNewIssue(issue)
+      response = {success: true}
     } catch (e) {
-      throw e.message
+      response = {success: false, message: e.message}
     }
+    return new D.DataActionResponse(response)
   }
 
   async form(request: D.DataActionRequest) {
