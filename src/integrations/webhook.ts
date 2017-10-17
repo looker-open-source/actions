@@ -1,8 +1,11 @@
 import * as D from "../framework"
 
 import * as req from "request"
+import * as url from "url"
 
-export class WebhookIntegration extends D.Integration {
+export abstract class WebhookIntegration extends D.Integration {
+
+  hostname: string
 
   constructor() {
     super()
@@ -18,6 +21,10 @@ export class WebhookIntegration extends D.Integration {
     this.supportedVisualizationFormattings = ["noapply"]
   }
 
+  get hasHostname() {
+    return !!this.hostname
+  }
+
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
@@ -26,8 +33,20 @@ export class WebhookIntegration extends D.Integration {
         return
       }
 
-      if ( !request.formParams.url) {
+      if (!request.formParams.url) {
         reject("Missing url.")
+        return
+      }
+
+      if (!this.hasHostname) {
+        reject("Integration requires a hostname.")
+        return
+      }
+
+      const parsedUrl = url.parse(request.formParams.url)
+      if (!parsedUrl.hostname ||
+        !(parsedUrl.hostname === this.hostname)) {
+        reject("Incorrect hostname for url.")
         return
       }
 

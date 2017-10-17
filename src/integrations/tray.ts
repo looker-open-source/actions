@@ -10,6 +10,7 @@ export class TrayIntegration extends WebhookIntegration {
     this.label = "Tray"
     this.iconName = "tray.svg"
     this.description = "Takes a data attachment and begins a Tray workflow"
+    this.hostname = "trayapp.io"
   }
 
   async form() {
