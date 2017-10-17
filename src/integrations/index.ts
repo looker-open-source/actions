@@ -1,6 +1,8 @@
+
 import "./airtable"
 import "./amazon/amazon_ec2"
 import "./amazon/amazon_s3"
+import "./azure_storage"
 import "./digitalocean_object_storage"
 import "./jira"
 import "./segment"
