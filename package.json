@@ -65,15 +65,7 @@
     "node": "8.1.4"
   },
   "devDependencies": {
-    "@types/chai": "^4.0.0",
-    "@types/chai-as-promised": "^0.0.31",
-    "@types/chai-http": "^3.0.0",
-    "@types/mocha": "^2.2.41",
-    "@types/request": "^2.0.5",
-    "@types/sinon": "^2.3.3",
-    "@types/sinon-chai": "^2.7.28",
-    "@types/twilio": "^0.0.9",
-    "chai": "^4.1.2",
+    "chai": "^4.1.0",
     "chai-as-promised": "^7.1.1",
     "chai-http": "^3.0.0",
     "mocha": "^3.4.2",

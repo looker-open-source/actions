@@ -52,12 +52,6 @@
     "@types/express-serve-static-core" "*"
     "@types/serve-static" "*"
 
-"@types/form-data@*":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@types/form-data/-/form-data-2.2.0.tgz#a98aac91dc99857b6af24caef7ca6df302f31565"
-  dependencies:
-    "@types/node" "*"
-
 "@types/mime@*":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@types/mime/-/mime-2.0.0.tgz#5a7306e367c539b9f6543499de8dd519fac37a8b"
@@ -73,13 +67,6 @@
 "@types/q@^0":
   version "0.0.37"
   resolved "https://registry.yarnpkg.com/@types/q/-/q-0.0.37.tgz#7d6a934b35ee2f0ed0646d286eba559599021c9e"
-
-"@types/request@^2.0.5":
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/@types/request/-/request-2.0.6.tgz#fe05b206f8ef6378da236698421e904685fcc001"
-  dependencies:
-    "@types/form-data" "*"
-    "@types/node" "*"
 
 "@types/sanitize-filename@^1.1.28":
   version "1.1.28"
@@ -496,7 +483,7 @@ chai-http@^3.0.0:
     qs "^6.2.0"
     superagent "^2.0.0"
 
-chai@^4.1.2:
+chai@^4.1.0:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/chai/-/chai-4.1.2.tgz#0f64584ba642f0f2ace2806279f4f06ca23ad73c"
   dependencies:
