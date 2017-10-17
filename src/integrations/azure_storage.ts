@@ -1,6 +1,6 @@
 import * as D from "../framework"
 
-const azure = require("azure-storage")
+import * as azure from "azure-storage"
 
 export class AzureStorageIntegration extends D.Integration {
 
@@ -30,56 +30,69 @@ export class AzureStorageIntegration extends D.Integration {
     ]
   }
 
-  async action(request: D.DataActionRequest) {
+  action(request: D.DataActionRequest) {
+    return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment"
+        reject("Couldn't get data from attachment")
+        return
       }
 
       if (!request.formParams || !request.formParams.container) {
-        throw "Need Azure container."
+        reject("Need Azure container.")
+        return
       }
 
       const blobService = this.azureClientFromRequest(request)
-      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
-
-      let response
-      try {
-        await blobService.createBlockBlobFromText(
-          request.formParams.container, fileName, request.attachment.dataBuffer)
-      } catch (e) {
-        response = {success: false, message: e.message}
-      }
-      return new D.DataActionResponse(response)
+      const fileName = request.formParams.filename || request.suggestedFilename() as string
+      blobService.createBlockBlobFromText(
+        request.formParams.container,
+        fileName,
+        request.attachment.dataBuffer,
+        (e): void => {
+          let response
+          if (e) {
+            response = {success: false, message: e.message}
+          }
+          resolve(new D.DataActionResponse(response))
+        })
+    })
   }
 
-  async form(request: D.DataActionRequest) {
-    const blobService = this.azureClientFromRequest(request)
-    try {
-      const response = await blobService.listContainersSegmented()
-      const form = new D.DataActionForm()
-      form.fields = [{
-        label: "Container",
-        name: "container",
-        required: true,
-        options: response.entries.map((c: any) => {
-            return {name: c.id, label: c.name}
-          }),
-        type: "select",
-        default: response.entries[0].id,
-      }, {
-        label: "Filename",
-        name: "filename",
-        type: "string",
-      }]
-      return form
-    } catch (e) {
-      throw e.message
-    }
+  form(request: D.DataActionRequest) {
+    const promise = new Promise<D.DataActionForm>((resolve, reject) => {
+      // error in type definition for listContainersSegmented currentToken?
+      // https://github.com/Azure/azure-storage-node/issues/352
+      const blogService: any = this.azureClientFromRequest(request)
+      blogService.listContainersSegmented(null, (err: any, res: any) => {
+        if (err) {
+          reject(err)
+        } else {
+          const form = new D.DataActionForm()
+          form.fields = [{
+            label: "Container",
+            name: "container",
+            required: true,
+            options: res.entries.map((c: any) => {
+                return {name: c.id, label: c.name}
+              }),
+            type: "select",
+            default: res.entries[0].id,
+          }, {
+            label: "Filename",
+            name: "filename",
+            type: "string",
+          }]
+
+          resolve(form)
+        }
+      })
+    })
+    return promise
   }
 
   private azureClientFromRequest(request: D.DataActionRequest) {
-    return new azure.createBlobService(request.params.account, request.params.accessKey)
+    return azure.createBlobService(request.params.account, request.params.accessKey)
   }
 
 }

@@ -10,7 +10,13 @@ const integration = new AzureStorageIntegration()
 function expectAzureStorageMatch(
   request: D.DataActionRequest, container: string, fileName: string, dataBuffer: Buffer) {
 
-  const createBlockBlobFromTextSpy = sinon.spy(() => Promise.resolve())
+  const createBlockBlobFromTextSpy = sinon.spy((c: string, f: string, b: Buffer, cb: (err: any, res: any) => void) => {
+    chai.expect(c).to.not.equal(null)
+    chai.expect(f).to.not.equal(null)
+    chai.expect(b).to.not.equal(null)
+    cb(null, null)
+  })
+
   const stubClient = sinon.stub(integration as any, "azureClientFromRequest")
     .callsFake(() => ({
       createBlockBlobFromText: createBlockBlobFromTextSpy,
@@ -89,12 +95,16 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("has form with correct containers", (done) => {
       const stubClient = sinon.stub(integration as any, "azureClientFromRequest")
         .callsFake(() => ({
-          listContainersSegmented: () => ({
-            entries: [
-              {id: "1", name: "A"},
-              {id: "2", name: "B"},
-            ],
-          }),
+          listContainersSegmented: (filter: any, cb: (err: any, res: any) => void) => {
+            chai.expect(filter).to.equal(null)
+            const containers = {
+              entries: [
+                {id: "1", name: "A"},
+                {id: "2", name: "B"},
+              ],
+            }
+            cb(null, containers)
+          },
         }))
 
       const request = new D.DataActionRequest()
