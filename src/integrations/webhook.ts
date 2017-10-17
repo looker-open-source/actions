@@ -9,20 +9,12 @@ export abstract class WebhookIntegration extends D.Integration {
 
   constructor() {
     super()
-    this.name = "webhook"
-    this.label = "Webhook"
-    this.iconName = "webhook.svg"
-    this.description = "Takes a data attachment and posts to a Webhook"
     this.requiredFields = []
     this.params = []
     this.supportedActionTypes = ["query"]
     this.supportedFormats = ["json_detail"]
     this.supportedFormattings = ["unformatted"]
     this.supportedVisualizationFormattings = ["noapply"]
-  }
-
-  get hasHostname() {
-    return !!this.hostname
   }
 
   async action(request: D.DataActionRequest) {
@@ -38,7 +30,7 @@ export abstract class WebhookIntegration extends D.Integration {
         return
       }
 
-      if (!this.hasHostname) {
+      if (!this.hostname) {
         reject("Integration requires a hostname.")
         return
       }
