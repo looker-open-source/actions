@@ -72,7 +72,7 @@ export class AirtableIntegration extends D.Integration {
       if (errors) {
         response = {
           success: false,
-          message: errors.map((e: any) => e.message).join(", "),
+          message: errors.map((e: {message: string}) => e.message).join(", "),
         }
       }
       resolve(new D.DataActionResponse(response))
