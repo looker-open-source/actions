@@ -112,5 +112,3 @@ export class AmazonS3Integration extends D.Integration {
   }
 
 }
-
-D.addIntegration(new AmazonS3Integration())
