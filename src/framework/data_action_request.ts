@@ -1,5 +1,6 @@
 import * as express from "express"
 import * as sanitizeFilename from "sanitize-filename"
+import { truncateString } from "./utils"
 
 export interface IParamMap {
   [name: string]: string
@@ -106,6 +107,41 @@ export class DataActionRequest {
       } else {
         return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
       }
+    }
+  }
+
+  /** creates a truncated message with a max number of lines and max number of characters with Title, Url,
+   * and truncated Body of payload
+   * @param {number} maxLines - maximum number of lines to truncate message
+   * @param {number} maxCharacters - maximum character to truncate
+   */
+  suggestedTruncatedMessage(maxLines: number, maxCharacters: number): string | undefined  {
+    if (this.attachment && this.attachment.dataBuffer) {
+      let title = ""
+      let url = ""
+
+      if (this.scheduledPlan) {
+        if (this.scheduledPlan.title) {
+          title = `${this.scheduledPlan.title}:\n`
+        }
+        if (this.scheduledPlan.url) {
+          url = this.scheduledPlan.url
+          title = title + url + "\n"
+        }
+      }
+
+      const truncatedLines = this.attachment.dataBuffer
+          .toString("utf8")
+          .split("\n")
+          .slice(0, maxLines)
+      if (truncatedLines.length === maxLines) {
+        truncatedLines.push("")
+      }
+      const newMessage = truncatedLines.join("\n")
+      let body = title + newMessage
+      body = truncateString(body, maxCharacters)
+
+      return body
     }
   }
 
