@@ -1,8 +1,8 @@
 import * as D from "../framework"
 
-const client = require("ssh2-sftp-client")
-const path = require("path")
-const { URL } = require("url")
+import * as Path from "path"
+import * as Client from "ssh2-sftp-client"
+import * as URL from "url"
 
 export class SFTPIntegration extends D.Integration {
 
@@ -15,18 +15,6 @@ export class SFTPIntegration extends D.Integration {
     this.description = "Send files to an SFTP server."
     this.supportedActionTypes = ["query"]
   }
-
-  let stream = sftp.createWriteStream(remotePath, {encoding: "utf-8", useCompression: undefined});
-            let data;
-
-            stream.on('error', reject);
-            stream.on('close', resolve);
-
-            if (input instanceof Buffer) {
-                data = stream.end(input);
-                return false;
-            }
-            data = input.pipe(stream);
 
   async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
@@ -41,26 +29,18 @@ export class SFTPIntegration extends D.Integration {
         return
       }
 
-      const sftp = this.sftpClientFromRequest(request)
-
-      const data = request.attachment.dataBuffer
-      const url = new URL(request.formParams.address)
-
-      if (!url.pathname) {
-        reject("Needs a valid SFTP address.")
-        return
+      const client = this.sftpClientFromRequest(request)
+      const parsedUrl = URL.parse(request.formParams.address)
+      if (!parsedUrl.pathname) {
+        throw "Needs a valid SFTP address."
       }
+      const data = request.attachment.dataBuffer
+      const fileName = request.formParams.filename || request.suggestedFilename() as string
+      const remotePath = Path.join(parsedUrl.pathname, fileName)
 
-      const remotePath = path.join(url.pathname, request.suggestedFilename())
-
-      sftp.connect({
-        host: url.hostname,
-        username: request.formParams.username,
-        password: request.formParams.password,
-      }).then(() => {
-        return sftp.put(data, remotePath)
-      }).then(() => resolve(new D.DataActionResponse()))
-        .catch((err: any) => reject(err))
+      client.put(data, remotePath)
+        .then(() => resolve(new D.DataActionResponse()))
+        .catch((err: any) => resolve(new D.DataActionResponse({success: false, message: err.message})))
     })
   }
 
@@ -82,14 +62,28 @@ export class SFTPIntegration extends D.Integration {
       label: "Password",
       type: "string",
       required: true,
-      sensitive: true,
+    }, {
+      label: "Filename",
+      name: "filename",
+      type: "string",
     }]
     return form
   }
 
   private sftpClientFromRequest(request: D.DataActionRequest) {
-    const url = new URL(request.formParams.address)
-    return new client()
+
+    const client = new Client()
+    const parsedUrl = URL.parse(request.formParams.address)
+    if (!parsedUrl.hostname) {
+      throw "Needs a valid SFTP address."
+    }
+
+    client.connect({
+      host: parsedUrl.hostname,
+      username: request.formParams.username,
+      password: request.formParams.password,
+    }).then(() => null)
+    return client
   }
 
 }

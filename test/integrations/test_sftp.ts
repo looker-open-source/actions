@@ -13,7 +13,6 @@ function expectSFTPMatch(request: D.DataActionRequest, dataMatch: any, pathMatch
 
   const stubClient = sinon.stub(integration as any, "sftpClientFromRequest")
     .callsFake(() => ({
-      connect: () => Promise.resolve(),
       put: putSpy,
     }))
 
@@ -61,7 +60,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectSFTPMatch(request,
-        request.attachment.dataBuffer, "host/path/stubSuggestedFilename")
+        request.attachment.dataBuffer, "path/stubSuggestedFilename")
     })
 
     it("sends to right filename if specified", () => {
@@ -72,7 +71,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectSFTPMatch(request,
-        request.attachment.dataBuffer, "host/path/mywackyfilename")
+        request.attachment.dataBuffer, "path/mywackyfilename")
     })
 
   })

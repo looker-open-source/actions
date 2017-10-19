@@ -90,6 +90,25 @@
   version "2.3.4"
   resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-2.3.4.tgz#2b3aa82dfc791eeff1d970b657a77eafff2899ff"
 
+"@types/ssh2-sftp-client@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@types/ssh2-sftp-client/-/ssh2-sftp-client-1.1.0.tgz#56eef8e9927fb65f664e1956ccda2c0823f0daf1"
+  dependencies:
+    "@types/ssh2" "*"
+
+"@types/ssh2-streams@*":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@types/ssh2-streams/-/ssh2-streams-0.1.2.tgz#7aa18b8c2450f17699e9ea18a76efc838188d58d"
+  dependencies:
+    "@types/node" "*"
+
+"@types/ssh2@*":
+  version "0.5.35"
+  resolved "https://registry.yarnpkg.com/@types/ssh2/-/ssh2-0.5.35.tgz#d6e60d59b7fc22db10abf4730aa7448babde7e3b"
+  dependencies:
+    "@types/node" "*"
+    "@types/ssh2-streams" "*"
+
 "@types/twilio@^0.0.9":
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/@types/twilio/-/twilio-0.0.9.tgz#dac8236bf714a85955cb6bc63273b2c56c9c484b"

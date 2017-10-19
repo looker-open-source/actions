@@ -36,6 +36,7 @@
     "@types/sanitize-filename": "^1.1.28",
     "@types/sinon": "^2.3.3",
     "@types/sinon-chai": "^2.7.28",
+    "@types/ssh2-sftp-client": "^1.1.0",
     "@types/twilio": "^0.0.9",
     "@types/uuid": "^3.4.0",
     "@types/winston": "^2.3.2",
