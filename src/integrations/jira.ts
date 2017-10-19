@@ -11,7 +11,7 @@ export class JiraIntegration extends D.Integration {
     this.name = "jira_create_issue"
     this.label = "JIRA"
     this.iconName = "jira.svg"
-    this.description = "Create JIRA issue referencing a Look."
+    this.description = "Create a JIRA issue referencing a Look."
     this.params = [
       {
         description: "The port your JIRA server is listening on (probably `80` or `443`)",

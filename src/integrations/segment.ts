@@ -14,7 +14,7 @@ export class SegmentIntegration extends D.Integration {
     this.name = "segment_event"
     this.label = "Segment"
     this.iconName = "segment.png"
-    this.description = "Add traits to your users."
+    this.description = "Add traits to your Segment users."
     this.params = [
       {
         description: "A write key for Segment.",

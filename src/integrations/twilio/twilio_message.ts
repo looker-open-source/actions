@@ -16,7 +16,7 @@ export class TwilioMessageIntegration extends D.Integration {
     this.description = "Send a message to phone numbers through Twilio."
     this.supportedActionTypes = ["cell", "query"]
     this.supportedFormats = ["csv", "txt"]
-    this.requiredFields = []
+    this.requiredFields = [{tag: TAG}]
     this.params = [
       {
         name: "accountSid",
