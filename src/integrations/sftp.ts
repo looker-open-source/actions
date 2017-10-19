@@ -82,7 +82,7 @@ export class SFTPIntegration extends D.Integration {
       host: parsedUrl.hostname,
       username: request.formParams.username,
       password: request.formParams.password,
-    }).then(() => null)
+    })
     return client
   }
 
