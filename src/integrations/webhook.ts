@@ -5,7 +5,7 @@ import * as url from "url"
 
 export abstract class WebhookIntegration extends D.Integration {
 
-  hostname: string
+  domain: string
 
   constructor() {
     super()
@@ -18,43 +18,38 @@ export abstract class WebhookIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+    if (!(request.attachment && request.attachment.dataJSON)) {
+      throw "No attached json."
+    }
 
-      if (!(request.attachment && request.attachment.dataJSON)) {
-        reject("No attached json.")
-        return
-      }
+    if (!request.formParams.url) {
+      throw "Missing url."
+    }
 
-      if (!request.formParams.url) {
-        reject("Missing url.")
-        return
-      }
+    if (!this.domain) {
+      throw "Integration requires a domain."
+    }
 
-      if (!this.hostname) {
-        reject("Integration requires a hostname.")
-        return
-      }
+    const parsedUrl = url.parse(request.formParams.url)
+    if (!parsedUrl.hostname) {
+      throw "Incorrect domain for url."
+    }
+    // don't enforce sub-domain, just domain and tld
+    const domain = parsedUrl.hostname.split(".").slice(-2).join(".")
+    if (!(domain === this.domain)) {
+      throw "Incorrect domain for url."
+    }
 
-      const parsedUrl = url.parse(request.formParams.url)
-      if (!parsedUrl.hostname ||
-        !(parsedUrl.hostname === this.hostname)) {
-        reject("Incorrect hostname for url.")
-        return
-      }
-
-      let response
-      req.post({
+    let response
+    try {
+      await req.post({
         url: request.formParams.url,
         form: request.attachment.dataJSON,
-      }, (error: any) => {
-        if (error) {
-          response = error.message
-        }
       })
-
-      resolve(new D.DataActionResponse(response))
-
-    })
+    } catch (e) {
+      response = {success: false, message: e.message}
+    }
+    return new D.DataActionResponse(response)
   }
 
   async form() {
