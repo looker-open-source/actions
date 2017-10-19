@@ -1,15 +1,14 @@
 import * as D from "../framework"
 
 import * as req from "request"
+import * as url from "url"
 
-export class WebhookIntegration extends D.Integration {
+export abstract class WebhookIntegration extends D.Integration {
+
+  domain: string
 
   constructor() {
     super()
-    this.name = "webhook"
-    this.label = "Webhook"
-    this.iconName = "webhook.svg"
-    this.description = "Takes a data attachment and posts to a Webhook"
     this.requiredFields = []
     this.params = []
     this.supportedActionTypes = ["query"]
@@ -19,31 +18,38 @@ export class WebhookIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+    if (!(request.attachment && request.attachment.dataJSON)) {
+      throw "No attached json."
+    }
 
-      if (!(request.attachment && request.attachment.dataJSON)) {
-        reject("No attached json.")
-        return
-      }
+    if (!request.formParams.url) {
+      throw "Missing url."
+    }
 
-      if ( !request.formParams.url) {
-        reject("Missing url.")
-        return
-      }
+    if (!this.domain) {
+      throw "Integration requires a domain."
+    }
 
-      let response
-      req.post({
+    const parsedUrl = url.parse(request.formParams.url)
+    if (!parsedUrl.hostname) {
+      throw "Incorrect domain for url."
+    }
+    // don't enforce sub-domain, just domain and tld
+    const domain = parsedUrl.hostname.split(".").slice(-2).join(".")
+    if (!(domain === this.domain)) {
+      throw "Incorrect domain for url."
+    }
+
+    let response
+    try {
+      await req.post({
         url: request.formParams.url,
         form: request.attachment.dataJSON,
-      }, (error: any) => {
-        if (error) {
-          response = error.message
-        }
       })
-
-      resolve(new D.DataActionResponse(response))
-
-    })
+    } catch (e) {
+      response = {success: false, message: e.message}
+    }
+    return new D.DataActionResponse(response)
   }
 
   async form() {
@@ -57,5 +63,3 @@ export class WebhookIntegration extends D.Integration {
     return form
   }
 }
-
-D.addIntegration(new WebhookIntegration())

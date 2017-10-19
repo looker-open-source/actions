@@ -7,7 +7,26 @@ import { WebhookIntegration } from "../../src/integrations/webhook"
 
 const req: any = require("request")
 
-const integration = new WebhookIntegration()
+class GoodWebhookIntegration extends WebhookIntegration {
+
+  constructor() {
+    super()
+    this.domain = "example.com"
+  }
+
+  async form() {
+    const form = new D.DataActionForm()
+    form.fields = [{
+      label: "Webhook URL",
+      name: "url",
+      required: true,
+      type: "string",
+    }]
+    return form
+  }
+}
+
+const integration = new GoodWebhookIntegration()
 
 function expectWebhookMatch(request: D.DataActionRequest, match: any) {
   const postSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
@@ -42,17 +61,30 @@ describe(`${integration.constructor.name} unit tests`, () => {
         .be.rejectedWith("Missing url.")
     })
 
+    it("errors if there is wrong domain for url", () => {
+      const request = new D.DataActionRequest()
+      request.formParams = {
+        url: "http://abc.com/",
+      }
+      request.attachment = {dataJSON: {
+        fields: [{name: "coolfield", tags: ["user_id"]}],
+        data: [{coolfield: {value: "funvalue"}}],
+      }}
+      return chai.expect(integration.action(request)).to.eventually
+        .be.rejectedWith("Incorrect domain for url.")
+    })
+
     it("sends right body", () => {
       const request = new D.DataActionRequest()
       request.formParams = {
-        url: "webhookurl",
+        url: "http://abc.example.com/",
       }
       request.attachment = {dataJSON: {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
       return expectWebhookMatch(request, {
-        url: "webhookurl",
+        url: "http://abc.example.com/",
         form: request.attachment.dataJSON,
       })
     })
