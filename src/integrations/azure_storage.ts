@@ -9,7 +9,7 @@ export class AzureStorageIntegration extends D.Integration {
 
     this.name = "azure_storage"
     this.label = "Azure Storage"
-    this.iconName = "azure_storage.svg"
+    this.iconName = "azure_storage.png"
     this.description = "Write data files to an Azure container."
     this.supportedActionTypes = ["query", "dashboard"]
     this.requiredFields = []
