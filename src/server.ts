@@ -25,8 +25,12 @@ export class Server {
     this.app = express()
     this.app.use(bodyParser.json({limit: "250mb"}))
     this.app.use(express.static("public"))
+    this.app.use(new RegExp("\/((?!status).)*"), this.authorization)
+    this.app.use(this.authorization)
+    this.app.use(this.errorHandler)
+    this.app.use(this.requestLogger)
 
-    this.route("/", async (_req, res) => {
+    this.app.post("/", async (_req, res) => {
       const integrations = await D.allIntegrations()
       const response = {
         integrations: integrations.map((d) => d.asJson()),
@@ -36,12 +40,12 @@ export class Server {
       winston.debug(`response: ${JSON.stringify(response)}`)
     })
 
-    this.route("/integrations/:integrationId", async (req, res) => {
+    this.app.post("/integrations/:integrationId", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       res.json(destination.asJson())
     })
 
-    this.route("/integrations/:integrationId/action", async (req, res) => {
+    this.app.post("/integrations/:integrationId/action", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       if (destination.hasAction) {
          const actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromRequest(req))
@@ -51,7 +55,7 @@ export class Server {
       }
     })
 
-    this.route("/integrations/:integrationId/form", async (req, res) => {
+    this.app.post("/integrations/:integrationId/form", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       if (destination.hasForm) {
          const form = await destination.validateAndFetchForm(D.DataActionRequest.fromRequest(req))
@@ -66,37 +70,37 @@ export class Server {
     this.app.get("/status", (_req, res) => {
       res.sendFile(path.resolve(`${__dirname}/../status.json`))
     })
-
   }
 
-  private route(urlPath: string, fn: (req: express.Request, res: express.Response) => void): void {
-    this.app.post(urlPath, async (req, res) => {
-      winston.info(`Starting request for ${req.url}`)
+  private authorization(req: express.Request, res: express.Response, next: express.NextFunction) {
+    const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
+    if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
+      res.status(403)
+      res.json({success: false, error: "Invalid 'Authorization' header."})
+      res.end()
+      winston.info(`Unauthorized request for ${req.url}`)
+      return
+    }
 
-      const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
-      if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
-        res.status(403)
-        res.json({success: false, error: "Invalid 'Authorization' header."})
-        winston.info(`Unauthorized request for ${req.url}`)
-        return
-      }
-
-      try {
-        await fn(req, res)
-        winston.info(`Completed request for ${req.url}`)
-      } catch (e) {
-        winston.error(`Error on request for ${req.url}:`)
-        if (typeof(e) === "string") {
-          res.status(404)
-          res.json({success: false, error: e})
-          winston.error(e)
-        } else {
-          res.status(500)
-          res.json({success: false, error: "Internal server error."})
-          winston.error(e)
-        }
-      }
-    })
+    next()
   }
 
+  private errorHandler(err: any, req: express.Request, res: express.Response, _next: express.NextFunction) {
+    winston.error(`Error on request for ${req.url}:`)
+    if (typeof(err) === "string") {
+      res.status(404)
+      res.json({success: false, error: err})
+      winston.error(err)
+    } else {
+      res.status(500)
+      res.json({success: false, error: "Internal server error."})
+      winston.error(err)
+    }
+  }
+
+  private requestLogger(req: express.Request, _res: express.Response, next: express.NextFunction) {
+    winston.info(`Starting request for ${req.url}`)
+    next()
+    winston.info(`Completed request for ${req.url}`)
+  }
 }

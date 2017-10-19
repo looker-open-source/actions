@@ -22,11 +22,6 @@ export interface IRequiredField {
   all_tags?: string[]
 }
 
-export interface Integration {
-  action(request: DataActionRequest): Promise<DataActionResponse>
-  form?(request: DataActionRequest): Promise<DataActionForm>
-}
-
 export abstract class Integration {
 
   name: string
@@ -42,13 +37,14 @@ export abstract class Integration {
 
   params: IIntegrationParameter[]
 
+  action?(request: DataActionRequest): Promise<DataActionResponse>
+  streamingAction?(request: DataActionRequest): Promise<DataActionResponse>
+  form?(request: DataActionRequest): Promise<DataActionForm>
+
   asJson(): any {
     return {
       description: this.description,
-      form_url: this.form ?
-          Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/form`)
-        :
-          null,
+      form_url: this.formUri,
       label: this.label,
       name: this.name,
       params: this.params,
@@ -57,16 +53,12 @@ export abstract class Integration {
       supported_formats: this.supportedFormats,
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
-      icon_data_uri: this.getImageDataUri(),
-      url: this.action ?
-          Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/action`)
-        :
-          null,
+      icon_data_uri: this.imageDataUri,
+      url: this.actionUri,
     }
   }
 
-  async validateAndPerformAction(request: DataActionRequest) {
-
+  async validateAndPerformAction(request: DataActionRequest): Promise<DataActionResponse> {
     if (this.supportedActionTypes &&
       this.supportedActionTypes.indexOf(request.type) === -1
     ) {
@@ -88,23 +80,49 @@ export abstract class Integration {
       }
     }
 
-    return this.action(request)
+    if (this.hasAction) { return this.action!(request) }
+    if (this.hasStreamingAction) { return this.action!(request) }
 
+    throw `Action is not implemeted`
   }
 
-  async validateAndFetchForm(request: DataActionRequest) {
+  async validateAndFetchForm(request: DataActionRequest): Promise<DataActionForm> {
     return this.form!(request)
   }
 
-  get hasAction() {
+  get hasAction(): boolean {
     return !!this.action
   }
 
-  get hasForm() {
+  get hasStreamingAction(): boolean {
+    return !!this.streamingAction
+  }
+
+  get hasForm(): boolean {
     return !!this.form
   }
 
-  private getImageDataUri() {
+  private get formUri(): (string|null) {
+    if (this.form) {
+      return Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/form`)
+    }
+
+    return null
+  }
+
+  private get actionUri(): (string|null) {
+    if (this.hasAction) {
+      return Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/action`)
+    }
+
+    if (this.hasStreamingAction) {
+      return Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/streamingAction`)
+    }
+
+    return null
+  }
+
+  private get imageDataUri(): (string|null) {
     if (!this.iconName) {
       return null
     }
