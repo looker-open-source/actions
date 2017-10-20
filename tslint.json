@@ -8,6 +8,7 @@
       "object-literal-sort-keys": false,
       "no-var-requires": false,
       "no-string-throw": false,
+      "no-inferrable-types": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },
