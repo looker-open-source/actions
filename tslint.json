@@ -17,6 +17,7 @@
       "strict-type-predicates": true,
       "use-default-type-parameter": true,
       "deprecation": true,
+      "array-type": [true, "array"],
       "no-for-in-array": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]

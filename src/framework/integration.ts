@@ -36,8 +36,8 @@ export abstract class Integration {
 
   supportedActionTypes: DataActionType[]
   supportedFormats?: DataActionFormat[]
-  supportedFormattings?: Array<"formatted" | "unformatted">
-  supportedVisualizationFormattings?: Array<"apply" | "noapply">
+  supportedFormattings?: ("formatted" | "unformatted")[]
+  supportedVisualizationFormattings?: ("apply" | "noapply")[]
   requiredFields?: IRequiredField[] = []
 
   params: IIntegrationParameter[]
