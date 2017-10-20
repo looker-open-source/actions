@@ -11,6 +11,7 @@
       "no-inferrable-types": true,
       "promise-function-async": true,
       "no-unnecessary-type-assertion": true,
+      "await-promise": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },

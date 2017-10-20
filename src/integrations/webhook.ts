@@ -1,6 +1,6 @@
 import * as D from "../framework"
 
-import * as req from "request"
+import * as req from "request-promise-native"
 import * as url from "url"
 
 export abstract class WebhookIntegration extends D.Integration {
