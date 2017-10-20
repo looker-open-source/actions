@@ -95,7 +95,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
         fileExtension: "csv",
       }
-      return expectSlackMatch(request, request.formParams.filename, {
+      return expectSlackMatch(request, request.formParams.filename!, {
         file: {
           value: request.attachment.dataBuffer,
           options: {
