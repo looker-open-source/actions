@@ -69,7 +69,7 @@ export class Server {
 
   }
 
-  private route(urlPath: string, fn: (req: express.Request, res: express.Response) => void): void {
+  private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {
     this.app.post(urlPath, async (req, res) => {
       winston.info(`Starting request for ${req.url}`)
 

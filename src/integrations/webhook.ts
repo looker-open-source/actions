@@ -1,6 +1,6 @@
 import * as D from "../framework"
 
-import * as req from "request"
+import * as req from "request-promise-native"
 import * as url from "url"
 
 export abstract class WebhookIntegration extends D.Integration {
@@ -30,7 +30,8 @@ export abstract class WebhookIntegration extends D.Integration {
       throw "Integration requires a domain."
     }
 
-    const parsedUrl = url.parse(request.formParams.url)
+    const providedUrl = request.formParams.url!
+    const parsedUrl = url.parse(providedUrl)
     if (!parsedUrl.hostname) {
       throw "Incorrect domain for url."
     }
@@ -43,7 +44,7 @@ export abstract class WebhookIntegration extends D.Integration {
     let response
     try {
       await req.post({
-        url: request.formParams.url,
+        url: providedUrl,
         form: request.attachment.dataJSON,
       })
     } catch (e) {
