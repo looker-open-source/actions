@@ -79,7 +79,7 @@ export abstract class Integration {
       if (request.params) {
         for (const p of requiredParams) {
           const param = request.params[p.name]
-          if (param === undefined || param === null) {
+          if (!param) {
             throw `Required parameter "${p.name}" not provided.`
           }
         }

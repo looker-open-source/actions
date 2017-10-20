@@ -44,12 +44,18 @@ export class AzureStorageIntegration extends D.Integration {
       }
 
       const blobService = this.azureClientFromRequest(request)
-      const fileName = request.formParams.filename || request.suggestedFilename() as string
+      const fileName = request.formParams.filename || request.suggestedFilename()
+
+      if (!fileName) {
+        reject("Cannot determine a filename.")
+        return
+      }
+
       blobService.createBlockBlobFromText(
-        request.formParams.container,
+        request.formParams.container!,
         fileName,
         request.attachment.dataBuffer,
-        (e): void => {
+        (e) => {
           let response
           if (e) {
             response = {success: false, message: e.message}
@@ -92,7 +98,7 @@ export class AzureStorageIntegration extends D.Integration {
   }
 
   private azureClientFromRequest(request: D.DataActionRequest) {
-    return azure.createBlobService(request.params.account, request.params.accessKey)
+    return azure.createBlobService(request.params.account!, request.params.accessKey!)
   }
 
 }

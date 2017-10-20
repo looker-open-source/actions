@@ -65,7 +65,7 @@ export class AmazonEC2Integration extends D.Integration {
         if (!request.params.value) {
           throw "Couldn't get data from cell."
         }
-        instanceIds = [request.params.value]
+        instanceIds = [request.params.value!]
         break
     }
     const params = {InstanceIds: instanceIds}
