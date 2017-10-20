@@ -95,7 +95,7 @@ export class SlackIntegration extends D.Integration {
     return channels
   }
 
-  usablePublicChannels(request: D.DataActionRequest) {
+  async usablePublicChannels(request: D.DataActionRequest) {
     return new Promise<IChannel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.channels.list({
@@ -113,7 +113,7 @@ export class SlackIntegration extends D.Integration {
     })
   }
 
-  usableDMs(request: D.DataActionRequest) {
+  async usableDMs(request: D.DataActionRequest) {
     return new Promise<IChannel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.users.list({}, (err: any, response: any) => {
@@ -131,7 +131,7 @@ export class SlackIntegration extends D.Integration {
   }
 
   private slackClientFromRequest(request: D.DataActionRequest) {
-    return new WebClient(request.params.slack_api_token)
+    return new WebClient(request.params.slack_api_token!)
   }
 
 }
