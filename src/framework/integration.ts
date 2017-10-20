@@ -36,8 +36,8 @@ export abstract class Integration {
 
   supportedActionTypes: DataActionType[]
   supportedFormats?: DataActionFormat[]
-  supportedFormattings?: Array<"formatted" | "unformatted">
-  supportedVisualizationFormattings?: Array<"apply" | "noapply">
+  supportedFormattings?: ("formatted" | "unformatted")[]
+  supportedVisualizationFormattings?: ("apply" | "noapply")[]
   requiredFields?: IRequiredField[] = []
 
   params: IIntegrationParameter[]
@@ -79,7 +79,7 @@ export abstract class Integration {
       if (request.params) {
         for (const p of requiredParams) {
           const param = request.params[p.name]
-          if (param === undefined || param === null) {
+          if (!param) {
             throw `Required parameter "${p.name}" not provided.`
           }
         }

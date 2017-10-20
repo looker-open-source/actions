@@ -7,7 +7,12 @@ import { AirtableIntegration } from "../../src/integrations/airtable"
 
 const integration = new AirtableIntegration()
 
-function expectWebhookMatch(request: D.DataActionRequest, base: string, table: string, match: any) {
+function expectWebhookMatch(
+  request: D.DataActionRequest,
+  base: any,
+  table: any,
+  match: any,
+) {
   const createSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully sent ${params}`)
   })

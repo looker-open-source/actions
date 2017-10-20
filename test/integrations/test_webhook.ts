@@ -1,11 +1,10 @@
 import * as chai from "chai"
+import * as req from "request-promise-native"
 import * as sinon from "sinon"
 
 import * as D from "../../src/framework"
 
 import { WebhookIntegration } from "../../src/integrations/webhook"
-
-const req: any = require("request")
 
 class GoodWebhookIntegration extends WebhookIntegration {
 
@@ -29,9 +28,7 @@ class GoodWebhookIntegration extends WebhookIntegration {
 const integration = new GoodWebhookIntegration()
 
 function expectWebhookMatch(request: D.DataActionRequest, match: any) {
-  const postSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
-    callback(null, `successfully sent ${params}`)
-  })
+  const postSpy = sinon.spy(async () => null)
   const stubPost = sinon.stub(req, "post").callsFake(postSpy)
   const action = integration.action(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
