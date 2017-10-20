@@ -14,6 +14,7 @@
       "await-promise": true,
       "no-floating-promises": true,
       "no-inferred-empty-object-type": true,
+      "no-for-in-array": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },
