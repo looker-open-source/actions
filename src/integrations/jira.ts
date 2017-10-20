@@ -121,7 +121,6 @@ export class JiraIntegration extends D.Integration {
   }
 
   private jiraClientFromRequest(request: D.DataActionRequest) {
-    // https://looker-dev.atlassian.net
     const parsedUrl = URL.parse(request.params.address)
     if (!parsedUrl.host) {
       throw "Invalid JIRA server address."
