@@ -10,6 +10,7 @@
       "no-string-throw": false,
       "no-inferrable-types": true,
       "promise-function-async": true,
+      "no-unnecessary-type-assertion": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },
