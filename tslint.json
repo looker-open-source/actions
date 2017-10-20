@@ -12,6 +12,7 @@
       "promise-function-async": true,
       "no-unnecessary-type-assertion": true,
       "await-promise": true,
+      "no-floating-promises": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },
