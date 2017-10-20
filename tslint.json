@@ -13,6 +13,7 @@
       "no-unnecessary-type-assertion": true,
       "await-promise": true,
       "no-floating-promises": true,
+      "no-inferred-empty-object-type": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },
