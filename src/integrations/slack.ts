@@ -41,7 +41,7 @@ export class SlackIntegration extends D.Integration {
 
       const slack = this.slackClientFromRequest(request)
 
-      const fileName = request.formParams.filename ? request.formParams.filename : request.suggestedFilename()
+      const fileName = request.formParams.filename || request.suggestedFilename()
 
       const options = {
         file: {
