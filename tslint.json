@@ -9,6 +9,7 @@
       "no-var-requires": false,
       "no-string-throw": false,
       "no-inferrable-types": true,
+      "promise-function-async": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },

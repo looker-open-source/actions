@@ -9,7 +9,7 @@ const integration = new TwilioIntegration()
 
 function expectTwilioMatch(request: D.DataActionRequest, match: any) {
 
-  const createSpy = sinon.spy(() => Promise.resolve())
+  const createSpy = sinon.spy(async () => Promise.resolve())
 
   const stubClient = sinon.stub(integration as any, "twilioClientFromRequest")
     .callsFake(() => ({

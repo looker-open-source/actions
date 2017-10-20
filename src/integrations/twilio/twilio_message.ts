@@ -80,7 +80,7 @@ export class TwilioMessageIntegration extends D.Integration {
 
     let response
     try {
-      await Promise.all(phoneNumbers.map((to) => {
+      await Promise.all(phoneNumbers.map(async (to) => {
         const message = {
           from: request.params.from,
           to,

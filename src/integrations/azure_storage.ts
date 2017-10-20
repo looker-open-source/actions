@@ -30,7 +30,7 @@ export class AzureStorageIntegration extends D.Integration {
     ]
   }
 
-  action(request: D.DataActionRequest) {
+  async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
@@ -59,7 +59,7 @@ export class AzureStorageIntegration extends D.Integration {
     })
   }
 
-  form(request: D.DataActionRequest) {
+  async form(request: D.DataActionRequest) {
     const promise = new Promise<D.DataActionForm>((resolve, reject) => {
       // error in type definition for listContainersSegmented currentToken?
       // https://github.com/Azure/azure-storage-node/issues/352

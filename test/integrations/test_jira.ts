@@ -9,8 +9,8 @@ const integration = new JiraIntegration()
 
 function expectJiraNewIssueMatch(request: D.DataActionRequest, match: any) {
 
-  const addNewIssueSpy = sinon.spy(() => Promise.resolve(1))
-  const addAttachmentonIssueSpy = sinon.spy(() => Promise.resolve(10))
+  const addNewIssueSpy = sinon.spy(async () => Promise.resolve(1))
+  const addAttachmentonIssueSpy = sinon.spy(async () => Promise.resolve(10))
 
   const stubClient = sinon.stub(integration as any, "jiraClientFromRequest")
     .callsFake(() => {
