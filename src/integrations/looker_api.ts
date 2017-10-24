@@ -12,6 +12,10 @@ export class LookerAPIIntegration extends D.Integration {
 
   constructor() {
     super()
+    this.name = "looker_api"
+    this.label = "Looker API"
+    this.iconName = "looker.svg"
+    this.description = "Send a result set to pull from Looker API and send to email via SendGrid."
     this.requiredFields = [{tag: TAG}]
     this.params = [
       {
