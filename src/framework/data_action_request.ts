@@ -1,5 +1,6 @@
 import * as express from "express"
 import * as sanitizeFilename from "sanitize-filename"
+import * as winston from "winston"
 import { truncateString } from "./utils"
 
 export interface IParamMap {
@@ -21,6 +22,7 @@ export type DataActionFormat =
 
 export interface IDataActionAttachment {
   dataBuffer?: Buffer
+  encoding?: string
   dataJSON?: any
   mime?: string
   fileExtension?: string
@@ -38,6 +40,7 @@ export interface IDataActionScheduledPlan {
 export class DataActionRequest {
 
   static fromRequest(request: express.Request) {
+    winston.debug(`request.body: ${JSON.stringify(request.body)}`)
     const dataActionRequest = this.fromJSON(request.body)
     dataActionRequest.instanceId = request.header("x-looker-instance")
     dataActionRequest.webhookId = request.header("x-looker-webhook-id")
@@ -60,8 +63,8 @@ export class DataActionRequest {
       request.attachment.fileExtension = json.attachment.extension
       if (request.attachment.mime && json.attachment.data) {
         if (json.attachment.data) {
-          const encoding = request.attachment.mime.endsWith(";base64") ? "base64" : "utf8"
-          request.attachment.dataBuffer = Buffer.from(json.attachment.data, encoding)
+          request.attachment.encoding = request.attachment.mime.endsWith(";base64") ? "base64" : "utf8"
+          request.attachment.dataBuffer = Buffer.from(json.attachment.data, request.attachment.encoding)
 
           if (request.attachment.mime === "application/json") {
             request.attachment.dataJSON = JSON.parse(json.attachment.data)
