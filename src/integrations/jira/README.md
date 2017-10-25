@@ -1,3 +1,5 @@
+# Jira
+
 Create a lookerbot user in your JIRA user administration console https://MYJIRA.atlassian.net/admin/users
 take note of the username and password you give to the lookerbot.
 
