@@ -12,7 +12,7 @@ export class TwilioMessageIntegration extends D.Integration {
 
     this.name = "twilio_message"
     this.label = "Twilio"
-    this.iconName = "twilio.svg"
+    this.iconName = "twilio/twilio.svg"
     this.description = "Send a message to phone numbers through Twilio."
     this.supportedActionTypes = ["cell", "query"]
     this.supportedFormats = ["csv", "txt"]

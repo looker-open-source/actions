@@ -11,7 +11,7 @@ export class AmazonEC2Integration extends D.Integration {
 
     this.name = "aws_ec2_stop_instance"
     this.label = "AWS EC2 Stop Instance"
-    this.iconName = "amazon_ec2.png"
+    this.iconName = "amazon/amazon_ec2.png"
     this.description = "Stop an EC2 instance."
     this.params = [
       {

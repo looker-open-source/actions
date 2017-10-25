@@ -10,7 +10,7 @@ export class DigitalOceanObjectStorageIntegration extends S3Integration.AmazonS3
 
     this.name = "digitalocean_object_storage"
     this.label = "DigitalOcean Spaces"
-    this.iconName = "DigitalOcean.png"
+    this.iconName = "digitalocean/DigitalOcean.png"
     this.description = "Write data files to DigitalOcean's Spaces storage."
     this.params = [
       {

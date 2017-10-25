@@ -10,7 +10,7 @@ export class JiraIntegration extends D.Integration {
     super()
     this.name = "jira_create_issue"
     this.label = "JIRA"
-    this.iconName = "jira.svg"
+    this.iconName = "jira/jira.svg"
     this.description = "Create a JIRA issue referencing a Look."
     this.params = [
       {

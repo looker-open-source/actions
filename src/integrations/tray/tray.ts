@@ -8,7 +8,7 @@ export class TrayIntegration extends WebhookIntegration {
     super()
     this.name = "tray"
     this.label = "Tray"
-    this.iconName = "tray.svg"
+    this.iconName = "tray/tray.svg"
     this.description = "Takes a data attachment and begins a Tray workflow"
     this.domain = "trayapp.io"
   }

@@ -8,7 +8,7 @@ export class ZapierIntegration extends WebhookIntegration {
     super()
     this.name = "zapier"
     this.label = "Zapier"
-    this.iconName = "zapier.png"
+    this.iconName = "zapier/zapier.png"
     this.description = "Takes a data attachment and begins a Zapier workflow"
     this.domain = "zapier.com"
   }

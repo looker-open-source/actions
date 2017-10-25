@@ -108,8 +108,7 @@ export abstract class Integration {
     if (!this.iconName) {
       return null
     }
-    // todo jamie fix iconPath
-    const iconPath = path.resolve(__dirname, "..", "integrations", "icons", this.iconName)
+    const iconPath = path.resolve(__dirname, "..", "integrations", this.iconName)
     if (fs.existsSync(iconPath)) {
       return new datauri(iconPath).content
     }
