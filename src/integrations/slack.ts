@@ -7,14 +7,14 @@ export interface IChannel {
   label: string,
 }
 
-export class SlackIntegration extends D.Integration {
+export class SlackAttachmentIntegration extends D.Integration {
 
   constructor() {
     super()
     this.name = "slack"
-    this.label = "Slack"
+    this.label = "Slack Attachment"
     this.iconName = "slack.png"
-    this.description = "Write data to slack"
+    this.description = "Write a data file to slack"
     this.supportedActionTypes = ["query", "dashboard"]
     this.requiredFields = []
     this.params = [{
@@ -136,4 +136,4 @@ export class SlackIntegration extends D.Integration {
 
 }
 
-D.addIntegration(new SlackIntegration())
+D.addIntegration(new SlackAttachmentIntegration())
