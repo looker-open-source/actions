@@ -25,6 +25,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@slack/client": "^3.14.0",
     "@types/body-parser": "^1.16.5",
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "^7.1.0",
