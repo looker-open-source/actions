@@ -1,4 +1,4 @@
-import * as D from "../framework"
+import * as D from "../../framework"
 
 const jiraApi = require("jira-client")
 

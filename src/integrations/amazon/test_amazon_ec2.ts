@@ -1,9 +1,9 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { AmazonEC2Integration } from "../../src/integrations/amazon/amazon_ec2"
+import { AmazonEC2Integration } from "./amazon_ec2"
 
 const integration = new AmazonEC2Integration()
 

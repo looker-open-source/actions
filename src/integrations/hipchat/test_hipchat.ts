@@ -1,9 +1,9 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { HipchatIntegration } from "../../src/integrations/hipchat"
+import { HipchatIntegration } from "./hipchat"
 
 const integration = new HipchatIntegration()
 

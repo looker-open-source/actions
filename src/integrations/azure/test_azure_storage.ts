@@ -1,9 +1,9 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { AzureStorageIntegration } from "../../src/integrations/azure_storage"
+import { AzureStorageIntegration } from "./azure_storage"
 
 const integration = new AzureStorageIntegration()
 

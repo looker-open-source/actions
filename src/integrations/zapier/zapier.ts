@@ -1,6 +1,6 @@
-import * as D from "../framework"
+import * as D from "../../framework"
 
-import {WebhookIntegration} from "./webhook"
+import {WebhookIntegration} from "../webhook/webhook"
 
 export class ZapierIntegration extends WebhookIntegration {
 

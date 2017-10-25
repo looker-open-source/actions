@@ -1,6 +1,6 @@
 import * as uuid from "uuid"
 
-import * as D from "../framework"
+import * as D from "../../framework"
 
 const segment: any = require("analytics-node")
 

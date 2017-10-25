@@ -1,9 +1,9 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { JiraIntegration } from "../../src/integrations/jira"
+import { JiraIntegration } from "./jira"
 
 const integration = new JiraIntegration()
 

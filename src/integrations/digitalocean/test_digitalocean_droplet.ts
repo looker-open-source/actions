@@ -1,9 +1,9 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { DigitalOceanDropletIntegration } from "../../src/integrations/digitalocean/digitalocean_droplet"
+import { DigitalOceanDropletIntegration } from "./digitalocean_droplet"
 
 const integration = new DigitalOceanDropletIntegration()
 

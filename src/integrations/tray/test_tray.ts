@@ -1,10 +1,10 @@
 import * as chai from "chai"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { ZapierIntegration } from "../../src/integrations/zapier"
+import { TrayIntegration } from "./tray"
 
-const integration = new ZapierIntegration()
+const integration = new TrayIntegration()
 
 describe(`${integration.constructor.name} unit tests`, () => {
 
@@ -19,7 +19,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          label: "Zapier Webhook URL",
+          label: "Tray Webhook URL",
           name: "url",
           required: true,
           type: "string",

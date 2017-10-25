@@ -1,4 +1,4 @@
-import * as D from "../framework"
+import * as D from "../../framework"
 
 import * as req from "request"
 import * as url from "url"

@@ -1,8 +1,8 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
-import { SegmentIntegration } from "../../src/integrations/segment"
+import * as D from "../../framework"
+import { SegmentIntegration } from "./segment"
 
 const integration = new SegmentIntegration()
 

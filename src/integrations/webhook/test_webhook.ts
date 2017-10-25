@@ -1,9 +1,9 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { WebhookIntegration } from "../../src/integrations/webhook"
+import { WebhookIntegration } from "./webhook"
 
 const req: any = require("request")
 
