@@ -46,7 +46,7 @@ export class TwilioMessageIntegration extends D.Integration {
       throw "Need a message."
     }
 
-    const body = D.truncateString(request.formParams.message, TWILIO_MAX_MESSAGE_BODY)
+    const body = D.truncateString(request.formParams.message!, TWILIO_MAX_MESSAGE_BODY)
 
     let phoneNumbers: string[] = []
     switch (request.type) {
@@ -69,10 +69,11 @@ export class TwilioMessageIntegration extends D.Integration {
         phoneNumbers = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
         break
       case "cell":
-        if (!request.params.value) {
+        const value = request.params.value
+        if (!value) {
           throw "Couldn't get data from cell."
         }
-        phoneNumbers = [request.params.value]
+        phoneNumbers = [value]
         break
     }
 
@@ -80,7 +81,7 @@ export class TwilioMessageIntegration extends D.Integration {
 
     let response
     try {
-      await Promise.all(phoneNumbers.map((to) => {
+      await Promise.all(phoneNumbers.map(async (to) => {
         const message = {
           from: request.params.from,
           to,

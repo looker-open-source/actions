@@ -65,7 +65,7 @@ export class AmazonEC2Integration extends D.Integration {
         if (!request.params.value) {
           throw "Couldn't get data from cell."
         }
-        instanceIds = [request.params.value]
+        instanceIds = [request.params.value!]
         break
     }
     const params = {InstanceIds: instanceIds}
@@ -73,7 +73,7 @@ export class AmazonEC2Integration extends D.Integration {
     const ec2 = this.amazonEC2ClientFromRequest(request)
     let response
     try {
-      await ec2.stopInstances(params)
+      await ec2.stopInstances(params).promise()
     } catch (e) {
       response = {success: false, message: e.message}
     }

@@ -79,7 +79,7 @@ export class HipchatIntegration extends D.Integration {
     return form
   }
 
-  usableRooms(request: D.DataActionRequest) {
+  async usableRooms(request: D.DataActionRequest) {
     return new Promise<IRoom[]>((resolve, reject) => {
       const hipchatClient = this.hipchatClientFromRequest(request)
       hipchatClient.rooms((err: any, response: any) => {

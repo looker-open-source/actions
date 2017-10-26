@@ -1,5 +1,7 @@
 import * as D from "../../framework"
 
+import * as URL from "url"
+
 const jiraApi = require("jira-client")
 
 const apiVersion = "2"
@@ -14,25 +16,19 @@ export class JiraIntegration extends D.Integration {
     this.description = "Create a JIRA issue referencing a Look."
     this.params = [
       {
-        description: "The port your JIRA server is listening on (probably `80` or `443`)",
-        label: "Port",
-        name: "port",
+        description: "The address of your JIRA server ex. https://myjira.atlassian.net.",
+        label: "Address",
+        name: "address",
         required: true,
         sensitive: false,
       }, {
-        description: "The hostname for your JIRA server.",
-        label: "Host",
-        name: "host",
-        required: true,
-        sensitive: false,
-      }, {
-        description: "The JIRA username assigned to create issues for Looker",
+        description: "The JIRA username assigned to create issues for Looker.",
         label: "Username",
         name: "username",
         required: true,
         sensitive: false,
       }, {
-        description: "The password for the JIRA user assigned to Looker",
+        description: "The password for the JIRA user assigned to Looker.",
         label: "Password",
         name: "password",
         required: true,
@@ -125,10 +121,14 @@ export class JiraIntegration extends D.Integration {
   }
 
   private jiraClientFromRequest(request: D.DataActionRequest) {
+    const parsedUrl = URL.parse(request.params.address!)
+    if (!parsedUrl.host) {
+      throw "Invalid JIRA server address."
+    }
     return new jiraApi({
-      protocol: "https",
-      host: request.params.host,
-      port: request.params.port,
+      protocol: parsedUrl.protocol || "https",
+      host: parsedUrl.host,
+      port: parsedUrl.port || "443",
       username: request.params.username,
       password: request.params.password,
       apiVersion,

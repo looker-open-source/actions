@@ -54,11 +54,12 @@ export class DigitalOceanDropletIntegration extends D.Integration {
           instanceIds = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
           break
         case "cell":
-          if (!request.params.value) {
+          const value = request.params.value
+          if (!value) {
             reject("Couldn't get data from attachment.")
             return
           }
-          instanceIds = [request.params.value]
+          instanceIds = [value]
           break
       }
 
@@ -78,7 +79,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
   }
 
   private digitalOceanClientFromRequest(request: D.DataActionRequest) {
-    return new digitalOcean(request.params.digitalocean_api_key)
+    return new digitalOcean(request.params.digitalocean_api_key!)
   }
 
 }

@@ -10,8 +10,8 @@
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && yarn lint",
     "test-ts": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register test/**/test.ts",
-    "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json --type-check",
-    "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json --type-check"
+    "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
+    "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json"
   },
   "keywords": [
     "looker",
@@ -25,6 +25,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@slack/client": "^3.14.0",
     "@types/body-parser": "^1.16.5",
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "^7.1.0",
@@ -34,6 +35,7 @@
     "@types/mocha": "^2.2.43",
     "@types/node": "^8.0.45",
     "@types/request": "^2.0.6",
+    "@types/request-promise-native": "^1.0.8",
     "@types/sanitize-filename": "^1.1.28",
     "@types/sinon": "^2.3.6",
     "@types/sinon-chai": "^2.7.29",
@@ -54,7 +56,7 @@
     "jira-client": "^6.4.0",
     "mailchimp": "^1.2.0",
     "nodemon": "^1.12.1",
-    "request": "^2.83.0",
+    "request-promise-native": "^1.0.5",
     "sanitize-filename": "^1.6.1",
     "ts-node": "^3.0.2",
     "twilio": "^3.8.0",
@@ -73,6 +75,6 @@
     "mocha": "^3.4.2",
     "sinon": "^2.4.1",
     "sinon-chai": "^2.12.0",
-    "tslint": "^5.4.3"
+    "tslint": "^5.8.0"
   }
 }

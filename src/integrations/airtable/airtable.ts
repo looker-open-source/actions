@@ -54,7 +54,7 @@ export class AirtableIntegration extends D.Integration {
       const airtableClient = this.airtableClientFromRequest(request)
       const table = airtableClient.base(request.formParams.base)(request.formParams.table)
 
-      const errors: Array<{message: string}> = []
+      const errors: {message: string}[] = []
       for (const row of qr.data) {
         // transform row to {label short: value, }
         const record: any = {}

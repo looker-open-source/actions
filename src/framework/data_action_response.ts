@@ -6,8 +6,8 @@ export interface IValidationError {
 export class DataActionResponse {
 
   message: string
-  refreshQuery: boolean = false
-  success: boolean = true
+  refreshQuery = false
+  success = true
   validationErrors: IValidationError[] = []
 
   constructor(

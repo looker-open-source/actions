@@ -30,7 +30,7 @@ export class AzureStorageIntegration extends D.Integration {
     ]
   }
 
-  action(request: D.DataActionRequest) {
+  async action(request: D.DataActionRequest) {
     return new Promise<D.DataActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
@@ -44,12 +44,18 @@ export class AzureStorageIntegration extends D.Integration {
       }
 
       const blobService = this.azureClientFromRequest(request)
-      const fileName = request.formParams.filename || request.suggestedFilename() as string
+      const fileName = request.formParams.filename || request.suggestedFilename()
+
+      if (!fileName) {
+        reject("Cannot determine a filename.")
+        return
+      }
+
       blobService.createBlockBlobFromText(
-        request.formParams.container,
+        request.formParams.container!,
         fileName,
         request.attachment.dataBuffer,
-        (e): void => {
+        (e) => {
           let response
           if (e) {
             response = {success: false, message: e.message}
@@ -59,7 +65,7 @@ export class AzureStorageIntegration extends D.Integration {
     })
   }
 
-  form(request: D.DataActionRequest) {
+  async form(request: D.DataActionRequest) {
     const promise = new Promise<D.DataActionForm>((resolve, reject) => {
       // error in type definition for listContainersSegmented currentToken?
       // https://github.com/Azure/azure-storage-node/issues/352
@@ -92,7 +98,7 @@ export class AzureStorageIntegration extends D.Integration {
   }
 
   private azureClientFromRequest(request: D.DataActionRequest) {
-    return azure.createBlobService(request.params.account, request.params.accessKey)
+    return azure.createBlobService(request.params.account!, request.params.accessKey!)
   }
 
 }
