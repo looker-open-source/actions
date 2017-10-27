@@ -20,7 +20,7 @@ export class SendGridIntegration extends D.Integration {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = ["query", "dashboard"]
   }
 
   async action(request: D.DataActionRequest) {
@@ -37,9 +37,10 @@ export class SendGridIntegration extends D.Integration {
 
     const msg = {
       to: request.formParams.email!,
-      subject: "Hello attachment",
+      subject: request.scheduledPlan!.title,
       from: "Looker <noreply@lookermail.com>",
-      html: "<p>Here’s an attachment for you!</p>",
+      html: `<p><a href="request.scheduledPlan!.url">View this data in Looker</a></p>
+      <p>Results are attached</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename: fileName,
@@ -77,3 +78,5 @@ export class SendGridIntegration extends D.Integration {
   }
 
 }
+
+D.addIntegration(new SendGridIntegration())
