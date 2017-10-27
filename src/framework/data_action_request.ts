@@ -1,6 +1,5 @@
 import * as express from "express"
 import * as sanitizeFilename from "sanitize-filename"
-import * as winston from "winston"
 import { truncateString } from "./utils"
 
 export interface IParamMap {
@@ -40,7 +39,6 @@ export interface IDataActionScheduledPlan {
 export class DataActionRequest {
 
   static fromRequest(request: express.Request) {
-    winston.debug(`request.body: ${JSON.stringify(request.body)}`)
     const dataActionRequest = this.fromJSON(request.body)
     dataActionRequest.instanceId = request.header("x-looker-instance")
     dataActionRequest.webhookId = request.header("x-looker-webhook-id")
