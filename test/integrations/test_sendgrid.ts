@@ -57,6 +57,10 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("sends right body to filename and address", () => {
       const request = new D.DataActionRequest()
+      request.scheduledPlan = {
+        title: "Hello attachment",
+        url: "https://mycompany.looker.com/look/1",
+      }
       request.formParams = {
         email: "test@example.com",
       }
@@ -64,9 +68,9 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
       const msg = {
         to: request.formParams.email!,
-        subject: "Hello attachment",
+        subject: request.scheduledPlan.title,
         from: "Looker <noreply@lookermail.com>",
-        html: "<p>Here’s an attachment for you!</p>",
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: stubFilename,
@@ -78,6 +82,10 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("sends to right filename if specified", () => {
       const request = new D.DataActionRequest()
+      request.scheduledPlan = {
+        title: "Hello attachment",
+        url: "https://mycompany.looker.com/look/1",
+      }
       request.formParams = {
         email: "test@example.com",
         filename: "mywackyfilename",
@@ -88,7 +96,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.email!,
         subject: "Hello attachment",
         from: "Looker <noreply@lookermail.com>",
-        html: "<p>Here’s an attachment for you!</p>",
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: request.formParams.filename!,

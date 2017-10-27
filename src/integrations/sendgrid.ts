@@ -2,6 +2,14 @@ import * as D from "../framework"
 
 import SGMail = require("@sendgrid/mail")
 
+export interface ISendGridEmail {
+  to: string
+  subject: string
+  from: string
+  html: string
+  attachments: {content: string, filename: string}[]
+}
+
 export class SendGridIntegration extends D.Integration {
 
   constructor() {
@@ -31,28 +39,30 @@ export class SendGridIntegration extends D.Integration {
     if (!request.formParams || !request.formParams.email) {
       throw "Needs a valid email address."
     }
-
-    const client = this.sgMailClientFromRequest(request)
     const fileName = request.formParams.filename || request.suggestedFilename() as string
-
-    const msg = {
+    const msg: ISendGridEmail = {
       to: request.formParams.email!,
-      subject: request.scheduledPlan!.title,
+      subject: request.scheduledPlan!.title!,
       from: "Looker <noreply@lookermail.com>",
-      html: `<p><a href="request.scheduledPlan!.url">View this data in Looker</a></p>
-      <p>Results are attached</p>`,
+      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker</a></p><p>Results are attached</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename: fileName,
       }],
     }
+    const response = await this.sendEmail(request, msg)
+    return new D.DataActionResponse(response)
+  }
+
+  async sendEmail(request: D.DataActionRequest, msg: ISendGridEmail) {
+    const client = this.sgMailClientFromRequest(request)
     let response
     try {
       await client.send(msg)
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return response
   }
 
   async form(request: D.DataActionRequest) {
