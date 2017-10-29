@@ -7,6 +7,9 @@ import {ISendGridEmail, SendGridIntegration} from "./sendgrid"
 
 const TAG = "looker_dashboard_url"
 
+/** Returns promise of NodeJS.Timer with a delay of ms milliseconds
+ * @param {number} ms - milliseconds to wait
+ */
 async function delay(ms: number) {
   return new Promise<NodeJS.Timer>((resolve) => setTimeout((resolve), ms))
 }
@@ -49,21 +52,25 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     this.supportedVisualizationFormattings = ["noapply"]
   }
 
-  // create render task to make pdf
-  // response = /api/3.0/render_tasks/dashboards/2/pdf?width=1280&height=1
-  // check status
-  // /api/3.0/render_tasks/${response.id}
-  // when status: "success"
-  // request pdf
-  // response.body /api/3.0/render_tasks/${response.id}/results
-
+  /** Returns PDF content for a looker dashboard.
+   *
+   * 1. create render task to make pdf
+   * response = /api/3.0/render_tasks/dashboards/2/pdf?width=1280&height=1
+   * 2. check status on render task and wait if not yet sucess
+   * task = /api/3.0/render_tasks/${response.id}
+   * when status: "success"
+   * 3. request pdf
+   * response.body /api/3.0/render_tasks/${response.id}/results
+   *
+   * @param {DataActionRequest} request - request
+   * @param {string} lookerUrl - dashboard url e.g. https://instancename.looker.com:19999/dashboards/2?User%20Name=test
+   */
   async generatePDFDashboard(request: D.DataActionRequest, lookerUrl: string) {
     const lookerClient = this.lookerClientFromRequest(request)
 
     let body = {
       dashboard_style: "tiled",
     }
-    // /dashboards/google_adwords::campaign_performance?Campaign%20Name=test
     const parsedLookerUrl = new URL.URL(lookerUrl)
     if (parsedLookerUrl.search) {
       body = Object.assign(body, {dashboard_filters: parsedLookerUrl.searchParams.toString()})
@@ -82,7 +89,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       if (renderTaskStatus.status === "success") {
         break
       }
-      await delay(300)
+      await delay(3000)
       i++
     }
     // get PDF
