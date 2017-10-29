@@ -65,7 +65,13 @@ export class SendGridIntegration extends D.Integration {
     return response
   }
 
-  async form(request: D.DataActionRequest) {
+  async sendEmailAsync(request: D.DataActionRequest, msg: ISendGridEmail): Promise<any> {
+    return new Promise<any>((resolve) => {
+      resolve(this.sendEmail(request, msg))
+    })
+  }
+
+  async form() {
     const form = new D.DataActionForm()
     form.fields = [{
       name: "email",
@@ -73,7 +79,6 @@ export class SendGridIntegration extends D.Integration {
       description: "e.g. test@example.com",
       type: "string",
       required: true,
-      default: request.type,
     }, {
       label: "Filename",
       name: "filename",
