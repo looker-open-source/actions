@@ -44,8 +44,10 @@ export class Server {
     this.route("/integrations/:integrationId/action", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       if (destination.hasAction) {
-         const actionResponse = await destination.validateAndPerformAction(D.DataActionRequest.fromRequest(req))
-         res.json(actionResponse.asJson())
+        const request = D.DataActionRequest.fromRequest(req)
+        winston.debug(`request: ${JSON.stringify(request)}`)
+        const actionResponse = await destination.validateAndPerformAction(request)
+        res.json(actionResponse.asJson())
       } else {
         throw "No action defined for destination."
       }
