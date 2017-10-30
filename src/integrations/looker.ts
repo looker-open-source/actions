@@ -84,9 +84,7 @@ export class LookerAPIClient {
 
   }
 
-  async requestAsync(
-    requestConfig: ILookerRequestConfig,
-  ) {
+  async requestAsync(requestConfig: ILookerRequestConfig) {
     return new Promise<any>((resolve, reject) => {
       this.request(requestConfig, resolve, reject)
     })
@@ -96,18 +94,13 @@ export class LookerAPIClient {
     this.request(_.extend({method: "GET", path}, options || {}), successCallback, errorCallback)
   }
 
-  async getAsync(
-    path: string,
-    options?: ILookerRequestOptions,
-  ): Promise<any> {
+  async getAsync(path: string, options?: ILookerRequestOptions): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       this.get(path, resolve, reject, options)
     })
   }
 
-  async getBinaryAsync(
-    path: string,
-  ): Promise<Buffer> {
+  async getBinaryAsync(path: string): Promise<Buffer> {
     return this.getAsync(path, {encoding: null})
   }
 
@@ -126,10 +119,7 @@ export class LookerAPIClient {
     )
   }
 
-  async postAsync(
-    path: string,
-    body: any,
-  ): Promise<any> {
+  async postAsync(path: string, body: any): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       this.post(path, body, resolve, reject)
     })
