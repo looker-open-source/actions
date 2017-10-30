@@ -8,18 +8,33 @@ import {ISendGridEmail} from "../../src/integrations/sendgrid"
 
 const integration = new LookerDashboardAPIIntegration()
 
-function expectLookerAPIActionMatch(request: D.DataActionRequest, lookerUrl: string, msg: ISendGridEmail) {
+async function expectLookerAPIActionMatch(request: D.DataActionRequest, lookerUrl: string, msg: ISendGridEmail) {
 
   const stubGeneratePDFDashboard = sinon.stub(integration as any, "generatePDFDashboard")
-    .returns("pdf content")
-  const stubSendEmail = sinon.stub(integration as any, "sendEmail")
-    .returns(true)
+    .returns(Promise.resolve("pdf content"))
+  const stubSendEmail = sinon.stub(integration as any, "sendEmailAsync")
+    .returns(Promise.resolve(true))
+
+  const postAsyncSpy = sinon.spy(async () => Promise.resolve({
+    id: "render_id",
+  }))
+  const getAsyncSpy = sinon.spy(async () => Promise.resolve({
+    status: "success",
+    body: "pdf content",
+  }))
+  const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
+  .callsFake(() => ({
+    postAsync: postAsyncSpy,
+    getAsync: getAsyncSpy,
+  }))
   const action = integration.action(request)
+  const client = await integration.lookerClientFromRequest(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
-    chai.expect(stubGeneratePDFDashboard).to.have.been.calledWithMatch(request, lookerUrl)
+    chai.expect(stubGeneratePDFDashboard).to.have.been.calledWithMatch(client, lookerUrl)
     chai.expect(stubSendEmail).to.have.been.calledWithMatch(request, msg)
     stubGeneratePDFDashboard.restore()
     stubSendEmail.restore()
+    stubClient.restore()
   })
 }
 
@@ -37,7 +52,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 
-    it("calls render, waits and returns response.body", () => {
+    it("calls render, waits and returns response.body", async () => {
       const postAsyncSpy = sinon.spy(async () => Promise.resolve({
         id: "render_id",
       }))
@@ -53,28 +68,28 @@ describe(`${integration.constructor.name} unit tests`, () => {
         }))
 
       const request = new D.DataActionRequest()
-      const dashboard = integration.generatePDFDashboard(request,
-        "https://mycompany.looker.com:19999/dashboards/1?myfield=Yes")
+      const client = await integration.lookerClientFromRequest(request)
+      const dashboard = integration.generatePDFDashboard(client, "/dashboards/1?myfield=Yes")
       return chai.expect(dashboard).to.be.fulfilled.then(() => {
         chai.expect(postAsyncSpy).to.have.been.calledWithMatch(
-          "/api/3.0/render_tasks/dashboards/1/pdf?width=1280&height=1",
+          "/render_tasks/dashboards/1/pdf?width=1280&height=1",
           {
             dashboard_style: "tiled",
             dashboard_filters: "myfield=Yes",
           },
         )
-        chai.expect(getAsyncSpy.firstCall).to.have.been.calledWithMatch("/api/3.0/render_tasks/render_id")
-        chai.expect(getAsyncSpy.secondCall).to.have.been.calledWithMatch("/api/3.0/render_tasks/render_id/results")
+        chai.expect(getAsyncSpy.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
+        chai.expect(getAsyncSpy.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
 
         stubClient.restore()
       })
     })
 
-    it("sends right params for query", () => {
+    it("sends right params for query", async () => {
       const request = new D.DataActionRequest()
       request.type = "query"
       request.params = {
-        base_url: "https://mycompany.looker.com:19999",
+        base_url: "https://mycompany.looker.com:19999/api/3.0",
       }
       request.scheduledPlan = {
         title: "Hello attachment",
@@ -101,10 +116,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         }],
       }
 
-      return expectLookerAPIActionMatch(
-        request,
-        "https://mycompany.looker.com:19999/dashboards/1?myfield=Yes",
-        msg)
+      return expectLookerAPIActionMatch(request, "/dashboards/1?myfield=Yes", msg)
     })
 
     it("errors if there is no attachment for cell", () => {
@@ -117,11 +129,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 
-    it("sends right params for cell", () => {
+    it("sends right params for cell", async () => {
       const request = new D.DataActionRequest()
       request.type = "cell"
       request.params = {
-        base_url: "https://mycompany.looker.com:19999",
+        base_url: "https://mycompany.looker.com:19999/api/3.0",
         value: "/dashboards/1?myfield=Yes",
       }
       request.scheduledPlan = {
@@ -142,10 +154,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           filename: "Hello attachment_0.pdf",
         }],
       }
-      return expectLookerAPIActionMatch(
-        request,
-        "https://mycompany.looker.com:19999/dashboards/1?myfield=Yes",
-        msg)
+      return expectLookerAPIActionMatch(request, "/dashboards/1?myfield=Yes", msg)
     })
 
   })

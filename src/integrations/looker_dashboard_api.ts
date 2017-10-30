@@ -29,7 +29,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         label: "Looker API Url",
         required: true,
         sensitive: false,
-        description: "e.g. https://instancename.looker.com:19999",
+        description: "e.g. https://instancename.looker.com:19999/api/3.0",
       },
       {
         name: "looker_api_client",
@@ -62,39 +62,41 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
    * 3. request pdf
    * response.body /api/3.0/render_tasks/${response.id}/results
    *
-   * @param {DataActionRequest} request - request
-   * @param {string} lookerUrl - dashboard url e.g. https://instancename.looker.com:19999/dashboards/2?User%20Name=test
+   * @param {LookerAPIClient} client - LookerAPIClient
+   * @param {string} lookerUrl - relative dashboard url e.g. /dashboards/2?User%20Name=test
    */
-  async generatePDFDashboard(request: D.DataActionRequest, lookerUrl: string) {
-    const lookerClient = this.lookerClientFromRequest(request)
-
+  async generatePDFDashboard(client: LookerAPIClient, lookerUrl: string) {
     let body = {
       dashboard_style: "tiled",
     }
-    const parsedLookerUrl = new URL.URL(lookerUrl)
-    if (parsedLookerUrl.search) {
-      body = Object.assign(body, {dashboard_filters: parsedLookerUrl.searchParams.toString()})
+    const parsedUrl = URL.parse(lookerUrl)
+    if (parsedUrl.query) {
+      body = Object.assign(body, {dashboard_filters: parsedUrl.query})
     }
 
-    if (!parsedLookerUrl.pathname) {
+    if (!parsedUrl.pathname) {
       throw "Invalid Looker URL."
     }
-    const lookerPath = `/api/3.0/render_tasks${parsedLookerUrl.pathname}/pdf?width=1280&height=1`
-    // create pdf render task
-    const renderTask = await lookerClient.postAsync(lookerPath, body)
-    // wait for success
-    let i = 0
-    while (i < 5) {
-      const renderTaskStatus = await lookerClient.getAsync(`/api/3.0/render_tasks/${renderTask.id}`)
-      if (renderTaskStatus.status === "success") {
-        break
+
+    try {
+      // create pdf render task
+      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1`, body)
+      // wait for success
+      let i = 0
+      while (i < 5) {
+        const taskStatus = await client.getAsync(`/render_tasks/${task.id}`)
+        if (taskStatus.status === "success") {
+          break
+        }
+        await delay(3000)
+        i++
       }
-      await delay(3000)
-      i++
+      // get PDF
+      const taskResponse = await client.getAsync(`/render_tasks/${task.id}/results`)
+      return taskResponse.body
+    } catch (e) {
+      throw `Failed to generate PDF: ${e.message}`
     }
-    // get PDF
-    const renderTaskResponse = await lookerClient.getAsync(`/api/3.0/render_tasks/${renderTask.id}/results`)
-    return renderTaskResponse.body
   }
 
   async action(request: D.DataActionRequest) {
@@ -127,23 +129,33 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         break
     }
 
+    const client = await this.lookerClientFromRequest(request)
+    const parsedUrl = new URL.URL(request.params.base_url!)
+
     let response
     try {
       await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
-        const fullLookerUrl = new URL.URL(request.params.base_url + lookerUrl)
-        const pdf = await this.generatePDFDashboard(request, fullLookerUrl.href)
-        fullLookerUrl.port = ""
+        const pdf = await this.generatePDFDashboard(client, lookerUrl)
+
+        const parsedLookerUrl = URL.parse(lookerUrl)
+        if (!parsedLookerUrl.pathname) {
+          throw `Malformed ${TAG} URL`
+        }
+        parsedUrl.port = ""
+        parsedUrl.pathname = parsedLookerUrl.pathname
+        parsedUrl.search = parsedLookerUrl.search || ""
         const msg: ISendGridEmail = {
           to: request.formParams.email!,
           subject: request.scheduledPlan!.title!,
           from: "Looker <noreply@lookermail.com>",
-          html: `<p><a href="${fullLookerUrl.href}">View this data in Looker</a></p><p>Results are attached</p>`,
+          html: `<p><a href="${parsedUrl.href}">View this data in Looker</a></p><p>Results are attached</p>`,
           attachments: [{
             content: pdf,
             filename: sanitizeFilename(`${request.scheduledPlan!.title}_${i}.pdf`),
           }],
         }
-        return this.sendEmailAsync(request, msg)
+        const email = this.sendEmailAsync(request, msg)
+        return email
       }))
     } catch (e) {
       response = {success: false, message: e.message}
@@ -164,12 +176,18 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     return form
   }
 
-  private lookerClientFromRequest(request: D.DataActionRequest) {
-    return new LookerAPIClient({
+  async lookerClientFromRequest(request: D.DataActionRequest) {
+    const lookerClient = new LookerAPIClient({
       baseUrl: request.params.base_url!,
       clientId: request.params.looker_api_client!,
       clientSecret: request.params.looker_api_secret!,
     })
+    try {
+      await lookerClient.fetchAccessToken()
+      return lookerClient
+    } catch (e) {
+      throw e
+    }
   }
 }
 

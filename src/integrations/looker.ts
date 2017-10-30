@@ -1,6 +1,17 @@
 import * as request from "request"
 import * as _ from "underscore"
 
+async function requestAsync(options: request.CoreOptions & request.UrlOptions): Promise<any> {
+  return new Promise<any>((resolve, reject) => {
+    request(options, (error: any, response: request.RequestResponse) => {
+      if (error) {
+        reject(error)
+      }
+      resolve(response)
+    })
+  })
+}
+
 export interface ILookerRequestConfig {
   method: string
   path: string
@@ -23,7 +34,7 @@ export class LookerAPIClient {
     clientSecret: string,
   }) {
     this.options = options
-    this.fetchAccessToken()
+
   }
 
   request(
@@ -125,7 +136,7 @@ export class LookerAPIClient {
     })
   }
 
-  fetchAccessToken() {
+  async fetchAccessToken() {
 
     const options = {
       form: {
@@ -135,20 +146,16 @@ export class LookerAPIClient {
       method: "POST",
       url: `${this.options.baseUrl}/login`,
     }
-
-    request(options, (error, response, body) => {
-      this.tokenError = undefined
-      if (error) {
-        this.tokenError = error
-        this.token = undefined
-      } else if (response.statusCode === 200) {
-        const json = JSON.parse(body)
+    try {
+      const response = await requestAsync(options)
+      if (response.statusCode === 200) {
+        const json = JSON.parse(response.body)
         this.token = json.access_token
-      } else {
-        this.token = undefined
       }
-
-    })
+    } catch (e) {
+      this.tokenError = e
+      this.token = undefined
+    }
   }
 
   private reachable() {
