@@ -9,15 +9,16 @@ export class SFTPIntegration extends D.Integration {
   constructor() {
     super()
 
-    this.name = "sftp"
-    this.label = "SFTP"
+    this.name = "sftp_action"
+    this.label = "SFTP Action"
     this.iconName = "sftp.png"
     this.description = "Send files to an SFTP server."
     this.supportedActionTypes = ["query"]
+    this.params = []
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+    return new Promise<D.DataActionResponse>(async (resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -29,8 +30,8 @@ export class SFTPIntegration extends D.Integration {
         return
       }
 
-      const client = this.sftpClientFromRequest(request)
-      const parsedUrl = URL.parse(request.formParams.address)
+      const client = await this.sftpClientFromRequest(request)
+      const parsedUrl = URL.parse(request.formParams.address!)
       if (!parsedUrl.pathname) {
         throw "Needs a valid SFTP address."
       }
@@ -70,22 +71,24 @@ export class SFTPIntegration extends D.Integration {
     return form
   }
 
-  private sftpClientFromRequest(request: D.DataActionRequest) {
+  private async sftpClientFromRequest(request: D.DataActionRequest) {
 
     const client = new Client()
-    const parsedUrl = URL.parse(request.formParams.address)
+    const parsedUrl = URL.parse(request.formParams.address!)
     if (!parsedUrl.hostname) {
       throw "Needs a valid SFTP address."
     }
-
-    client.connect({
-      host: parsedUrl.hostname,
-      username: request.formParams.username,
-      password: request.formParams.password,
-    })
+    try {
+      await client.connect({
+        host: parsedUrl.hostname,
+        username: request.formParams.username,
+        password: request.formParams.password,
+        port: +(parsedUrl.port || 22),
+      })
+    } catch (e) {
+      throw e
+    }
     return client
   }
 
 }
-
-D.addIntegration(new SFTPIntegration())

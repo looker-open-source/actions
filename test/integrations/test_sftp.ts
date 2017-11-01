@@ -9,7 +9,7 @@ const integration = new SFTPIntegration()
 
 function expectSFTPMatch(request: D.DataActionRequest, dataMatch: any, pathMatch: any) {
 
-  const putSpy = sinon.spy(() => Promise.resolve())
+  const putSpy = sinon.spy(async () => Promise.resolve())
 
   const stubClient = sinon.stub(integration as any, "sftpClientFromRequest")
     .callsFake(() => ({
