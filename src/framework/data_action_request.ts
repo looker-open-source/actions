@@ -3,7 +3,7 @@ import * as sanitizeFilename from "sanitize-filename"
 import { truncateString } from "./utils"
 
 export interface IParamMap {
-  [name: string]: string
+  [name: string]: string | undefined
 }
 
 export type DataActionType = "cell" | "query" | "dashboard"
@@ -100,7 +100,7 @@ export class DataActionRequest {
   instanceId?: string
   webhookId?: string
 
-  suggestedFilename(): string | undefined {
+  suggestedFilename() {
     if (this.attachment) {
       if (this.scheduledPlan && this.scheduledPlan.title) {
         return sanitizeFilename(`${this.scheduledPlan.title}.${this.attachment.fileExtension}`)
@@ -115,7 +115,7 @@ export class DataActionRequest {
    * @param {number} maxLines - maximum number of lines to truncate message
    * @param {number} maxCharacters - maximum character to truncate
    */
-  suggestedTruncatedMessage(maxLines: number, maxCharacters: number): string | undefined  {
+  suggestedTruncatedMessage(maxLines: number, maxCharacters: number)  {
     if (this.attachment && this.attachment.dataBuffer) {
       let title = ""
       let url = ""

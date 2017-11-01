@@ -11,7 +11,7 @@ export interface IDataActionFormField {
   description?: string
   default?: string
   type?: "string" | "textarea" | "select"
-  options?: Array<{ name: string, label: string }>
+  options?: { name: string, label: string }[]
   required?: boolean
   sensitive?: boolean
 }

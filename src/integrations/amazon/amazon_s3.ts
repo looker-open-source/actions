@@ -52,9 +52,16 @@ export class AmazonS3Integration extends D.Integration {
 
       const s3 = this.amazonS3ClientFromRequest(request)
 
+      const filename = request.formParams.filename || request.suggestedFilename()
+
+      if (!filename) {
+        reject("Couldn't determine filename.")
+        return
+      }
+
       const params = {
-        Bucket: request.formParams.bucket,
-        Key: request.formParams.filename || request.suggestedFilename() as string,
+        Bucket: request.formParams.bucket!,
+        Key: filename,
         Body: request.attachment.dataBuffer,
       }
 
