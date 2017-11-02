@@ -36,15 +36,16 @@ export class SendGridIntegration extends D.Integration {
       throw "Couldn't get data from attachment."
     }
 
-    if (!request.formParams || !request.formParams.email) {
+    if (!request.formParams || !request.formParams.to) {
       throw "Needs a valid email address."
     }
     const filename = request.formParams.filename || request.suggestedFilename() as string
     const subject = request.formParams.subject || request.scheduledPlan!.title!
+    const from = request.formParams.from || "Looker <noreply@lookermail.com>"
     const msg: ISendGridEmail = {
-      to: request.formParams.email!,
+      to: request.formParams.to!,
       subject,
-      from: "Looker <noreply@lookermail.com>",
+      from,
       html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker</a></p><p>Results are attached</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
@@ -66,15 +67,19 @@ export class SendGridIntegration extends D.Integration {
     return response
   }
 
-  async form(request: D.DataActionRequest) {
+  async form() {
     const form = new D.DataActionForm()
     form.fields = [{
-      name: "email",
-      label: "Email Address",
+      name: "to",
+      label: "To Email Address",
       description: "e.g. test@example.com",
       type: "string",
       required: true,
-      default: request.type,
+    }, {
+      name: "from",
+      label: "From Email Address",
+      description: "e.g. test@example.com",
+      type: "string",
     }, {
       label: "Filename",
       name: "filename",

@@ -48,7 +48,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("errors if the input has no attachment", () => {
       const request = new D.DataActionRequest()
       request.formParams = {
-        email: "test@example.com",
+        to: "test@example.com",
       }
 
       return chai.expect(integration.action(request)).to.eventually
@@ -62,12 +62,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
         url: "https://mycompany.looker.com/look/1",
       }
       request.formParams = {
-        email: "test@example.com",
+        to: "test@example.com",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
 
       const msg = {
-        to: request.formParams.email!,
+        to: request.formParams.to,
         subject: request.scheduledPlan.title,
         from: "Looker <noreply@lookermail.com>",
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
@@ -87,14 +87,41 @@ describe(`${integration.constructor.name} unit tests`, () => {
         url: "https://mycompany.looker.com/look/1",
       }
       request.formParams = {
-        email: "test@example.com",
+        to: "test@example.com",
         filename: "mywackyfilename",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
 
       const msg = {
-        to: request.formParams.email!,
+        to: request.formParams.to,
         subject: "Hello attachment",
+        from: "Looker <noreply@lookermail.com>",
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        attachments: [{
+          content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
+          filename: request.formParams.filename!,
+        }],
+      }
+
+      return expectSendGridMatch(request, msg)
+    })
+
+    it("sends from right email if specified", () => {
+      const request = new D.DataActionRequest()
+      request.scheduledPlan = {
+        title: "Hello attachment",
+        url: "https://mycompany.looker.com/look/1",
+      }
+      request.formParams = {
+        to: "test@example.com",
+        filename: "mywackyfilename",
+        subject: "mysubject",
+      }
+      request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
+
+      const msg = {
+        to: request.formParams.to,
+        subject: request.formParams.subject,
         from: "Looker <noreply@lookermail.com>",
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
         attachments: [{
@@ -113,16 +140,17 @@ describe(`${integration.constructor.name} unit tests`, () => {
         url: "https://mycompany.looker.com/look/1",
       }
       request.formParams = {
-        email: "test@example.com",
+        to: "test@example.com",
+        from: "from@example.com",
         filename: "mywackyfilename",
         subject: "mysubject",
       }
       request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
 
       const msg = {
-        to: request.formParams.email!,
+        to: request.formParams.to,
         subject: request.formParams.subject,
-        from: "Looker <noreply@lookermail.com>",
+        from: request.formParams.from,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
