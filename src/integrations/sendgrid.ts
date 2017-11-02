@@ -39,15 +39,16 @@ export class SendGridIntegration extends D.Integration {
     if (!request.formParams || !request.formParams.email) {
       throw "Needs a valid email address."
     }
-    const fileName = request.formParams.filename || request.suggestedFilename() as string
+    const filename = request.formParams.filename || request.suggestedFilename() as string
+    const subject = request.formParams.subject || request.scheduledPlan!.title!
     const msg: ISendGridEmail = {
       to: request.formParams.email!,
-      subject: request.scheduledPlan!.title!,
+      subject,
       from: "Looker <noreply@lookermail.com>",
       html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker</a></p><p>Results are attached</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
-        filename: fileName,
+        filename,
       }],
     }
     const response = await this.sendEmail(request, msg)
@@ -77,6 +78,10 @@ export class SendGridIntegration extends D.Integration {
     }, {
       label: "Filename",
       name: "filename",
+      type: "string",
+    }, {
+      label: "Subject",
+      name: "subject",
       type: "string",
     }]
     return form

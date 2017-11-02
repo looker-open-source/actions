@@ -106,6 +106,33 @@ describe(`${integration.constructor.name} unit tests`, () => {
       return expectSendGridMatch(request, msg)
     })
 
+    it("sends with right subject if specified", () => {
+      const request = new D.DataActionRequest()
+      request.scheduledPlan = {
+        title: "Hello attachment",
+        url: "https://mycompany.looker.com/look/1",
+      }
+      request.formParams = {
+        email: "test@example.com",
+        filename: "mywackyfilename",
+        subject: "mysubject",
+      }
+      request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
+
+      const msg = {
+        to: request.formParams.email!,
+        subject: request.formParams.subject,
+        from: "Looker <noreply@lookermail.com>",
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        attachments: [{
+          content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
+          filename: request.formParams.filename!,
+        }],
+      }
+
+      return expectSendGridMatch(request, msg)
+    })
+
   })
 
   describe("form", () => {
