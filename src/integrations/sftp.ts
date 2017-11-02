@@ -9,8 +9,8 @@ export class SFTPIntegration extends D.Integration {
   constructor() {
     super()
 
-    this.name = "sftp_action"
-    this.label = "SFTP Action"
+    this.name = "sftp"
+    this.label = "SFTP"
     this.iconName = "sftp.png"
     this.description = "Send files to an SFTP server."
     this.supportedActionTypes = ["query"]
