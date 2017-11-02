@@ -61,16 +61,14 @@ describe(`${integration.constructor.name} unit tests`, () => {
         "sftp/host/path/",
         "/host/path/",
       ]
-      let status = true
-      for (const address of bumAddresses) {
+
+      return Promise.all(bumAddresses.map((address) => {
         const request = new D.DataActionRequest()
         request.formParams = {
           address,
         }
-        status = status && await chai.expect(integration.action(request)).to.eventually
-          .be.rejected
-      }
-      return status
+        return chai.expect(integration.action(request)).to.eventually.be.rejected
+      }))
     })
 
     it("sends right body to filename and address", () => {
