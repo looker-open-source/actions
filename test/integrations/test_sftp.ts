@@ -53,6 +53,26 @@ describe(`${integration.constructor.name} unit tests`, () => {
         .be.rejectedWith("Couldn't get data from attachment")
     })
 
+    it("errors with bad paths", async () => {
+      const bumAddresses = [
+        "sftp:/host/path/",
+        "ftp://host/path/",
+        "http://host/path/",
+        "sftp/host/path/",
+        "/host/path/",
+      ]
+      let status = true
+      for (const address of bumAddresses) {
+        const request = new D.DataActionRequest()
+        request.formParams = {
+          address,
+        }
+        status = status && await chai.expect(integration.action(request)).to.eventually
+          .be.rejected
+      }
+      return status
+    })
+
     it("sends right body to filename and address", () => {
       const request = new D.DataActionRequest()
       request.formParams = {
