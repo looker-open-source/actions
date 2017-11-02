@@ -154,6 +154,25 @@
   version "2.3.6"
   resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-2.3.6.tgz#ff600951c756286e38ce14d0b0e2924e38a91006"
 
+"@types/ssh2-sftp-client@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@types/ssh2-sftp-client/-/ssh2-sftp-client-1.1.0.tgz#56eef8e9927fb65f664e1956ccda2c0823f0daf1"
+  dependencies:
+    "@types/ssh2" "*"
+
+"@types/ssh2-streams@*":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@types/ssh2-streams/-/ssh2-streams-0.1.2.tgz#7aa18b8c2450f17699e9ea18a76efc838188d58d"
+  dependencies:
+    "@types/node" "*"
+
+"@types/ssh2@*":
+  version "0.5.35"
+  resolved "https://registry.yarnpkg.com/@types/ssh2/-/ssh2-0.5.35.tgz#d6e60d59b7fc22db10abf4730aa7448babde7e3b"
+  dependencies:
+    "@types/node" "*"
+    "@types/ssh2-streams" "*"
+
 "@types/twilio@^0.0.9":
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/@types/twilio/-/twilio-0.0.9.tgz#dac8236bf714a85955cb6bc63273b2c56c9c484b"
@@ -302,7 +321,7 @@ asap@^2.0.0:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/asap/-/asap-2.0.6.tgz#e50347611d7e690943208bbdafebcbc2fb866d46"
 
-asn1@~0.2.3:
+asn1@~0.2.0, asn1@~0.2.3:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/asn1/-/asn1-0.2.3.tgz#dac8787713c9966849fc8180777ebe9c1ddf3b86"
 
@@ -2673,6 +2692,26 @@ split@0.3:
   dependencies:
     through "2"
 
+ssh2-sftp-client@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/ssh2-sftp-client/-/ssh2-sftp-client-2.0.1.tgz#a2a7273d224797b9c0d58928fd6c66b962cef954"
+  dependencies:
+    ssh2 "^0.5.5"
+
+ssh2-streams@~0.1.18:
+  version "0.1.20"
+  resolved "https://registry.yarnpkg.com/ssh2-streams/-/ssh2-streams-0.1.20.tgz#51118d154555df5469ee1f67e0cf1e7e8a2c0e3a"
+  dependencies:
+    asn1 "~0.2.0"
+    semver "^5.1.0"
+    streamsearch "~0.1.2"
+
+ssh2@^0.5.5:
+  version "0.5.5"
+  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-0.5.5.tgz#c7781ecd2ece7304a253cf620fab5a5c22bb2235"
+  dependencies:
+    ssh2-streams "~0.1.18"
+
 sshpk@^1.7.0:
   version "1.13.1"
   resolved "https://registry.yarnpkg.com/sshpk/-/sshpk-1.13.1.tgz#512df6da6287144316dc4c18fe1cf1d940739be3"
@@ -2708,6 +2747,10 @@ stream-combiner@~0.0.4:
 stream-consume@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/stream-consume/-/stream-consume-0.1.0.tgz#a41ead1a6d6081ceb79f65b061901b6d8f3d1d0f"
+
+streamsearch@~0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/streamsearch/-/streamsearch-0.1.2.tgz#808b9d0e56fc273d809ba57338e929919a1a9f1a"
 
 string-width@^1.0.1, string-width@^1.0.2:
   version "1.0.2"
