@@ -14,7 +14,7 @@ export class SlackAttachmentIntegration extends D.Integration {
     this.name = "slack"
     this.label = "Slack Attachment"
     this.iconName = "slack/slack.png"
-    this.description = "Write a data file to slack"
+    this.description = "Write a data file to slack."
     this.supportedActionTypes = ["query", "dashboard"]
     this.requiredFields = []
     this.params = [{

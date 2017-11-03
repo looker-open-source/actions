@@ -13,7 +13,7 @@ export class JiraIntegration extends D.Integration {
     this.name = "jira_create_issue"
     this.label = "JIRA"
     this.iconName = "jira/jira.svg"
-    this.description = "Create a JIRA issue referencing a Look."
+    this.description = "Create a JIRA issue referencing data."
     this.params = [
       {
         description: "The address of your JIRA server ex. https://myjira.atlassian.net.",
