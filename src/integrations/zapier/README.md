@@ -4,15 +4,15 @@ This integration allows you to send data directly to a Zapier Zap. The data form
 
 1. Go to your Zapier [home page](https://zapier.com/app/explore).
 
-![](zapier\ home.png)
+![](zapier&#32;home.png)
 
 2. Create Zap.
 
-![](zapier\ webhook.png)
+![](zapier&#32;webhook.png)
 
 3. Select Webhook Trigger and select Catch Hook.
 
-![](zapier\ webhook\ url.png)
+![](zapier&#32;webhook&#32;url.png)
 
 4. Copy Webhook URL.
 

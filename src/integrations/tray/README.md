@@ -4,15 +4,15 @@ This integration allows you to send data directly to a Tray workflow. The data f
 
 1. Go to your Tray [home page](https://tray.io/dashboard).
 
-![](tray home.png)
+![](tray&#32;home.png)
 
 2. Select Create Workflow.
 
-![](tray webhook.png)
+![](tray&#32;webhook.png)
 
 3. Select Add Webhook Connector.
 
-![](tray webhook url.png)
+![](tray&#32;webhook&#32;url.png)
 
 4. Select the Far right Settings Gear -> Copy Workflow Public URL.
 

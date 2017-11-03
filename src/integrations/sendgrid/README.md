@@ -4,11 +4,11 @@ The SendGrid integration allow you to either send data from a Look or schedule r
 
 1. Go to your Sendgrid [API key page](https://app.sendgrid.com/guide/integrate/langs/nodejs#settings/api_keys).
 
-![](Sendgrid\ API.png)
+![](Sendgrid&#32;API.png)
 
 3. Select Create Key
 
-![](Sendgrid\ Key.png)
+![](Sendgrid&#32;Key.png)
 
 4. Copy Key
 

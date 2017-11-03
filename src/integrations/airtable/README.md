@@ -1,16 +1,16 @@
 # Airtable
 
 1. Visit [Airtable's Account API Page](https://airtable.com/account).
-![](Airtable\ Generate\ API\ Key.png)
+![](Airtable&#32;Generate&#32;API&#32;Key.png)
 
 2. Select Generate Key.
 
-![](Airtable\ Grab\ API\ Key.png)
+![](Airtable&#32;Grab&#32;API&#32;Key.png)
 
 3. Go to https://airtable.com/api and select the table you want to add to.
 `https://airtable.com/[BASE]/api/docs#nodejs/authentication`
 
-![](Airtable\ Authenticate\ Base.png)
+![](Airtable&#32;Authenticate&#32;Base.png)
 
 4. Navigate to authentication and copy the Base
 

@@ -2,11 +2,11 @@
 
 1. Navigate to the [Digital Ocean API settings](https://cloud.digitalocean.com/settings/api/tokens).
 
-![](digital\ ocean\ storage\ home.png)
+![](digital&#32;ocean&#32;storage&#32;home.png)
 
 2. Generate New Token
 
-![](digital\ ocean\ storage\ home\ token.png)
+![](digital&#32;ocean&#32;storage&#32;home&#32;token.png)
 
 3. Copy Token and Space Access key
 

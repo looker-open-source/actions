@@ -4,7 +4,7 @@ The Twilio integration allow you to either send data from a Look or schedule res
 
 1. Visit your [Twilio console](https://www.twilio.com/console).
 
-![](Twilio Console.png)
+![](Twilio&#32;Console.png)
 
 2. Copy Account SID and Token
 
