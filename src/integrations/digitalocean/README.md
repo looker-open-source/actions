@@ -1,14 +1,13 @@
 # Digital Ocean Droplet and Storage
 
-https://cloud.digitalocean.com/settings/api/tokens
+1. Navigate to the [Digital Ocean API settings](https://cloud.digitalocean.com/settings/api/tokens).
 
-![](digital ocean storage home.png)
+![](digital\ ocean\ storage\ home.png)
 
-Generate New Token
+2. Generate New Token
 
-![](digital ocean storage home token.png)
+![](digital\ ocean\ storage\ home\ token.png)
 
-Copy Token
-Copy Space Access key
+3. Copy Token and Space Access key
 
-Enable Digital Ocean Storage in your /admin/integrations
+4. Enable Digital Ocean Storage in your looker Administration page for integrations (/admin/integrations).

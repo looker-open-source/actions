@@ -1,13 +1,15 @@
 # Sendgrid
 
-Go to your Sendgrid [API key page](https://app.sendgrid.com/guide/integrate/langs/nodejs#settings/api_keys).
+The SendGrid integration allow you to either send data from a Look or schedule results to send to a email address via SendGrid's API.
 
-![](Sendgrid API.png)
+1. Go to your Sendgrid [API key page](https://app.sendgrid.com/guide/integrate/langs/nodejs#settings/api_keys).
 
-Select Create Key
+![](Sendgrid\ API.png)
 
-![](Sendgrid Key.png)
+3. Select Create Key
 
-Copy Key
+![](Sendgrid\ Key.png)
 
-Enable Sendgrid in your /admin/integrations
+4. Copy Key
+
+5. Enable Sendgrid in your looker Administration page for integrations (/admin/integrations).
