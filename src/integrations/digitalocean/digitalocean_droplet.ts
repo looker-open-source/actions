@@ -11,8 +11,8 @@ export class DigitalOceanDropletIntegration extends D.Integration {
 
     this.name = "digitalocean_droplet"
     this.label = "DigitalOcean Droplet"
-    this.iconName = "DigitalOcean.png"
-    this.description = "Stop an DigitalOcean droplet"
+    this.iconName = "digitalocean/DigitalOcean.png"
+    this.description = "Stop an DigitalOcean droplet."
     this.params = [
       {
         name: "digitalocean_api_key",
@@ -28,7 +28,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
   }
 
   async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve , reject ) => {
+    return new Promise<D.DataActionResponse>((resolve , reject) => {
 
       let instanceIds: string[] = []
       switch (request.type) {
