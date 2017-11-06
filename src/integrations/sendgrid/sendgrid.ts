@@ -1,6 +1,6 @@
 import * as D from "../../framework"
 
-import SGMail = require("@sendgrid/mail")
+const SGMail = require("@sendgrid/mail")
 
 export interface ISendGridEmail {
   to: string
