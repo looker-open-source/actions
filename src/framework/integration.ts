@@ -1,11 +1,10 @@
-import { Server } from "../server"
+import * as fs from "fs"
+import * as path from "path"
 
 import { DataActionForm } from "./data_action_form"
 import { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request"
 import { DataActionResponse } from "./data_action_response"
 
-import * as fs from "fs"
-import * as path from "path"
 const datauri = require("datauri")
 
 export interface IIntegrationParameter {
@@ -27,6 +26,11 @@ export interface Integration {
   form?(request: DataActionRequest): Promise<DataActionForm>
 }
 
+export interface IRouteBuilder {
+  actionUrl(integration: Integration): string
+  formUrl(integration: Integration): string
+}
+
 export abstract class Integration {
 
   name: string
@@ -42,13 +46,10 @@ export abstract class Integration {
 
   params: IIntegrationParameter[]
 
-  asJson(): any {
+  asJson(router: IRouteBuilder) {
     return {
       description: this.description,
-      form_url: this.form ?
-          Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/form`)
-        :
-          null,
+      form_url: this.form ? router.formUrl(this) : null,
       label: this.label,
       name: this.name,
       params: this.params,
@@ -58,10 +59,7 @@ export abstract class Integration {
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       icon_data_uri: this.getImageDataUri(),
-      url: this.action ?
-          Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/action`)
-        :
-          null,
+      url: this.action ? router.actionUrl(this) : null,
     }
   }
 
