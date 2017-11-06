@@ -6,6 +6,7 @@ export interface ISendGridEmail {
   to: string
   subject: string
   from: string
+  text: string
   html: string
   attachments: {content: string, filename: string}[]
 }
@@ -46,7 +47,8 @@ export class SendGridIntegration extends D.Integration {
       to: request.formParams.to!,
       subject,
       from,
-      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+      text: `View this data in Looker. ${request.scheduledPlan!.url}\n Results are attached.`,
+      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
