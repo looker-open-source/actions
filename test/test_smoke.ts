@@ -15,7 +15,14 @@ before(async () => {
         })
 
         it("should properly create json", () => {
-          const json = integration.asJson()
+          const json = integration.asJson({
+            actionUrl(i) {
+              return `baseurl/${i.name}`
+            },
+            formUrl(i) {
+              return `baseurl/${i.name}`
+            },
+          })
           chai.assert.typeOf(json.url, "string")
         })
 
