@@ -27,8 +27,8 @@ export class DigitalOceanDropletIntegration extends D.Integration {
     this.requiredFields = [{tag: TAG}]
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve , reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise<D.ActionResponse>((resolve , reject) => {
 
       let instanceIds: string[] = []
       switch (request.type) {
@@ -67,9 +67,9 @@ export class DigitalOceanDropletIntegration extends D.Integration {
       instanceIds.forEach((dropletId) => {
         digitalOceanClient.dropletsRequestAction(+dropletId, {type: "power_off"}, (err: any) => {
           if (err) {
-            resolve(new D.DataActionResponse({success: false, message: err.message}))
+            resolve(new D.ActionResponse({success: false, message: err.message}))
           } else {
-            resolve(new D.DataActionResponse())
+            resolve(new D.ActionResponse())
           }
         })
       })
@@ -78,7 +78,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
 
   }
 
-  private digitalOceanClientFromRequest(request: D.DataActionRequest) {
+  private digitalOceanClientFromRequest(request: D.ActionRequest) {
     return new digitalOcean(request.params.digitalocean_api_key!)
   }
 

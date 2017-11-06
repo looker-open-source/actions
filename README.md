@@ -33,7 +33,7 @@ To pass information about Looker users to the integration, you should specify [a
 
 A design requirement for our integration server is being completely stateless, so storing any information in the integration application is not allowed. Any information needed to fulfill the integration must be provided along with the action payload. Params (optionally fulfilled by [user attributes](https://discourse.looker.com/t/user-attributes/3979)) should let us do pretty much whatever we need while keeping all the state and credentials in Looker.
 
-Regarding the format of the data payload, the [DataActionRequest class](https://github.com/looker/integrations/blob/fd4ce4e63f44554c7257584df380f8a4e4adfc03/src/framework/data_action_request.ts#L37) defines everything that's available for the integration to work with. For `query` type integrations, the request will contain an `attachment` that can be in [many formats](https://github.com/looker/integrations/blob/fd4ce4e63f44554c7257584df380f8a4e4adfc03/src/framework/data_action_request.ts#L9-L19). The integration can specify particular `supportedFormats` (including just a single one) and work with that data how it pleases. The most useful one, which the Segment integration uses, is the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/integrations/docs/json_detail_example.json)). But remember, you can also pick CSV or Excel or let the user decide the format.)
+Regarding the format of the data payload, the [ActionRequest class](https://github.com/looker/integrations/blob/fd4ce4e63f44554c7257584df380f8a4e4adfc03/src/framework/data_action_request.ts#L37) defines everything that's available for the integration to work with. For `query` type integrations, the request will contain an `attachment` that can be in [many formats](https://github.com/looker/integrations/blob/fd4ce4e63f44554c7257584df380f8a4e4adfc03/src/framework/data_action_request.ts#L9-L19). The integration can specify particular `supportedFormats` (including just a single one) and work with that data how it pleases. The most useful one, which the Segment integration uses, is the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/integrations/docs/json_detail_example.json)). But remember, you can also pick CSV or Excel or let the user decide the format.)
 
 For complete testing, you'll probably want to try your integration against a real Looker instance. For this pre-release phase, the way to do that is to go to the Looker instance route `/admin/integrations?edit=true` and add a new "Integration Hub" URL representing your development server. (This server will need to be on the public internet with a valid SSL certificate, so deploying to Heroku is the easiest choice since you get that out of the box there.)
 
@@ -83,7 +83,7 @@ Because Looker will only accept an integration server with a valid HTTPS certifi
    * `heroku config:set BASE_URL="https://my-heroku-integration-server-1234.herokuapp.com"` — use the URL for your Heroku application that was mentioned after running `git push heroku master` above
    * `heroku config:set INTEGRATION_PROVIDER_LABEL="Awesome Integration Service"
    * `heroku config:set INTEGRATION_SERVICE_SECRET="<my-secret>"`
-   
+
 We recommend, per best practices, that you work on features using a branch. To create and push a branch to Heroku:
 
 * `git checkout -b aryeh/my-awesome-feature` # creates a branch called `aryeh/my-awesome-feature` and switches to it
@@ -92,7 +92,7 @@ We recommend, per best practices, that you work on features using a branch. To c
 You can test that the integration server is running by going to your Heroku application URL. If you need to view logs at any time, you can run:
 
    heroku logs
-   
+
 If at some point you forget the URL of your Heroku server, you can run:
 
    heroku info -s | grep web_url
@@ -104,11 +104,11 @@ Make sure your integration server is running. You will then need to run the foll
     yarn generate-api-key
 
 Note that if you are using Heroku, you can run this command on your dyno by running `heroku run yarn generate-api-key`.
-    
+
 Save the value that is returned and then navigate to the integrations admin page on a Looker instance or go directly to:
 
     `https://my-looker.looker.com/admin/integrations?edit=true`
-    
+
 There, add the URL for your integration server and enter the token returned by `yarn generate-api-key` above. You should see a list of integrations supported by your service.
 
 Enable my-integration

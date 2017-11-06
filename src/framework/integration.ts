@@ -1,11 +1,14 @@
-import { Server } from "../server"
-
-import { DataActionForm } from "./data_action_form"
-import { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request"
-import { DataActionResponse } from "./data_action_response"
-
 import * as fs from "fs"
 import * as path from "path"
+
+import {
+  ActionForm,
+  ActionFormat,
+  ActionRequest,
+  ActionResponse,
+  ActionType,
+} from "."
+
 const datauri = require("datauri")
 
 export interface IIntegrationParameter {
@@ -23,8 +26,13 @@ export interface IRequiredField {
 }
 
 export interface Integration {
-  action(request: DataActionRequest): Promise<DataActionResponse>
-  form?(request: DataActionRequest): Promise<DataActionForm>
+  action(request: ActionRequest): Promise<ActionResponse>
+  form?(request: ActionRequest): Promise<ActionForm>
+}
+
+export interface IRouteBuilder {
+  actionUrl(integration: Integration): string
+  formUrl(integration: Integration): string
 }
 
 export abstract class Integration {
@@ -34,21 +42,18 @@ export abstract class Integration {
   description: string
   iconName?: string
 
-  supportedActionTypes: DataActionType[]
-  supportedFormats?: DataActionFormat[]
+  supportedActionTypes: ActionType[]
+  supportedFormats?: ActionFormat[]
   supportedFormattings?: ("formatted" | "unformatted")[]
   supportedVisualizationFormattings?: ("apply" | "noapply")[]
   requiredFields?: IRequiredField[] = []
 
   params: IIntegrationParameter[]
 
-  asJson(): any {
+  asJson(router: IRouteBuilder) {
     return {
       description: this.description,
-      form_url: this.form ?
-          Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/form`)
-        :
-          null,
+      form_url: this.form ? router.formUrl(this) : null,
       label: this.label,
       name: this.name,
       params: this.params,
@@ -58,14 +63,11 @@ export abstract class Integration {
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       icon_data_uri: this.getImageDataUri(),
-      url: this.action ?
-          Server.absUrl(`/integrations/${encodeURIComponent(this.name)}/action`)
-        :
-          null,
+      url: this.action ? router.actionUrl(this) : null,
     }
   }
 
-  async validateAndPerformAction(request: DataActionRequest) {
+  async validateAndPerformAction(request: ActionRequest) {
 
     if (this.supportedActionTypes &&
       this.supportedActionTypes.indexOf(request.type) === -1
@@ -92,7 +94,7 @@ export abstract class Integration {
 
   }
 
-  async validateAndFetchForm(request: DataActionRequest) {
+  async validateAndFetchForm(request: ActionRequest) {
     return this.form!(request)
   }
 

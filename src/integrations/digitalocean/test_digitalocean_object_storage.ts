@@ -7,7 +7,7 @@ import { DigitalOceanObjectStorageIntegration } from "./digitalocean_object_stor
 
 const integration = new DigitalOceanObjectStorageIntegration()
 
-function expectAmazonS3Match(request: D.DataActionRequest, match: any) {
+function expectAmazonS3Match(request: D.ActionRequest, match: any) {
 
     const putObjectSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
       callback(null, `successfully put item ${params} in database`)
@@ -33,7 +33,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
         it("errors if there is no bucket", () => {
-          const request = new D.DataActionRequest()
+          const request = new D.ActionRequest()
           request.params = {
             access_key_id: "mykey",
             secret_access_key: "mysecret",
@@ -50,7 +50,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         })
 
         it("errors if the input has no attachment", () => {
-          const request = new D.DataActionRequest()
+          const request = new D.ActionRequest()
           request.formParams = {
             bucket: "mybucket",
             access_key_id: "mykey",
@@ -63,7 +63,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         })
 
         it("sends right body to key and bucket", () => {
-          const request = new D.DataActionRequest()
+          const request = new D.ActionRequest()
           request.formParams = {
             bucket: "mybucket",
             access_key_id: "mykey",
@@ -79,7 +79,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         })
 
         it("sends to right filename if specified", () => {
-          const request = new D.DataActionRequest()
+          const request = new D.ActionRequest()
           request.formParams = {
             bucket: "mybucket",
             access_key_id: "mykey",
@@ -118,7 +118,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           },
         }))
 
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.params = {access_key_id: "foo", secret_access_key: "bar", region: "nyc3"}
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({

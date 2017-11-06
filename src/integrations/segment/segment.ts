@@ -31,8 +31,8 @@ export class SegmentIntegration extends D.Integration {
     this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise<D.ActionResponse>((resolve, reject) => {
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
@@ -106,14 +106,14 @@ export class SegmentIntegration extends D.Integration {
         if (err) {
           reject(err)
         } else {
-          resolve(new D.DataActionResponse())
+          resolve(new D.ActionResponse())
         }
       })
 
     })
   }
 
-  private segmentClientFromRequest(request: D.DataActionRequest) {
+  private segmentClientFromRequest(request: D.ActionRequest) {
     return new segment(request.params.segment_write_key)
   }
 
