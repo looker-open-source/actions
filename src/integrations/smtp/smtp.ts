@@ -15,7 +15,7 @@ export class SMTPIntegration extends D.Integration {
     this.params = []
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -32,8 +32,8 @@ export class SMTPIntegration extends D.Integration {
       to: request.formParams.to!,
       subject,
       from,
-      text: `View this data in Looker. ${request.scheduledPlan!.url} Results are attached`,
-      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+      text: `View this data in Looker. ${request.scheduledPlan!.url}\n Results are attached.`,
+      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
       attachments: [{
         filename,
         content: request.attachment.dataBuffer,
@@ -46,11 +46,11 @@ export class SMTPIntegration extends D.Integration {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     // TODO verify connection in dynamic form
     form.fields = [{
       name: "address",
@@ -81,7 +81,7 @@ export class SMTPIntegration extends D.Integration {
     return form
   }
 
-  private async SMTPClientFromRequest(request: D.DataActionRequest) {
+  private async SMTPClientFromRequest(request: D.ActionRequest) {
     return createTransport(request.formParams.address!)
   }
 
