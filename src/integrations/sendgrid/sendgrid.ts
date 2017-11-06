@@ -55,7 +55,7 @@ export class SendGridIntegration extends D.Integration {
       }],
     }
     const response = await this.sendEmail(request, msg)
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
   async sendEmail(request: D.ActionRequest, msg: ISendGridEmail) {
@@ -70,7 +70,7 @@ export class SendGridIntegration extends D.Integration {
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       name: "to",
       label: "To Email Address",
