@@ -1,6 +1,6 @@
 import * as D from "../../framework"
 
-const SGMail = require("@sendgrid/mail")
+const sendgridMail = require("@sendgrid/mail")
 
 export interface ISendGridEmail {
   to: string
@@ -93,8 +93,8 @@ export class SendGridIntegration extends D.Integration {
   }
 
   private sgMailClientFromRequest(request: D.ActionRequest) {
-    SGMail.setApiKey(request.params.sendgrid_api_key!)
-    return SGMail
+    sendgridMail.setApiKey(request.params.sendgrid_api_key!)
+    return sendgridMail
   }
 
 }
