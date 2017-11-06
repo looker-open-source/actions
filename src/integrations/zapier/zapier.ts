@@ -14,7 +14,7 @@ export class ZapierIntegration extends WebhookIntegration {
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       label: "Zapier Webhook URL",
       name: "url",

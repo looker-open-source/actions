@@ -17,7 +17,7 @@ export abstract class WebhookIntegration extends D.Integration {
     this.supportedVisualizationFormattings = ["noapply"]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
       throw "No attached json."
     }
@@ -50,11 +50,11 @@ export abstract class WebhookIntegration extends D.Integration {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       label: "Webhook URL",
       name: "url",

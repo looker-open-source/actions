@@ -40,7 +40,7 @@ export class TwilioMessageIntegration extends D.Integration {
     ]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
 
     if (!request.formParams || !request.formParams.message) {
       throw "Need a message."
@@ -93,11 +93,11 @@ export class TwilioMessageIntegration extends D.Integration {
       response = {success: false, message: e.message}
     }
 
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       label: "Message",
       name: "message",
@@ -107,7 +107,7 @@ export class TwilioMessageIntegration extends D.Integration {
     return form
   }
 
-  private twilioClientFromRequest(request: D.DataActionRequest) {
+  private twilioClientFromRequest(request: D.ActionRequest) {
     return twilio(request.params.accountSid, request.params.authToken)
   }
 

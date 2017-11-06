@@ -7,7 +7,7 @@ import { HipchatIntegration } from "./hipchat"
 
 const integration = new HipchatIntegration()
 
-function expectHipchatMatch(request: D.DataActionRequest, ...match: any[]) {
+function expectHipchatMatch(request: D.ActionRequest, ...match: any[]) {
 
   const messageSpy = sinon.spy((room: any, message: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully sent ${room} ${message}`)
@@ -30,7 +30,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no room", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {}
       request.attachment = {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
@@ -42,7 +42,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         room: "myroom",
       }
@@ -52,7 +52,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body and room", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         room: "myroom",
       }
@@ -87,7 +87,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           },
       }))
 
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

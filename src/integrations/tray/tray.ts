@@ -14,7 +14,7 @@ export class TrayIntegration extends WebhookIntegration {
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       label: "Tray Webhook URL",
       name: "url",

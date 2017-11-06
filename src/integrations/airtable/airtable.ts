@@ -26,8 +26,8 @@ export class AirtableIntegration extends D.Integration {
     this.supportedVisualizationFormattings = ["noapply"]
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise<D.ActionResponse>((resolve, reject) => {
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json.")
@@ -75,15 +75,15 @@ export class AirtableIntegration extends D.Integration {
           message: errors.map((e) => e.message).join(", "),
         }
       }
-      resolve(new D.DataActionResponse(response))
+      resolve(new D.ActionResponse(response))
 
     })
   }
 
   async form() {
-    return new Promise<D.DataActionForm>((resolve) => {
+    return new Promise<D.ActionForm>((resolve) => {
 
-      const form = new D.DataActionForm()
+      const form = new D.ActionForm()
       form.fields = [{
         label: "Airtable Base",
         name: "base",
@@ -99,7 +99,7 @@ export class AirtableIntegration extends D.Integration {
     })
   }
 
-  private airtableClientFromRequest(request: D.DataActionRequest) {
+  private airtableClientFromRequest(request: D.ActionRequest) {
     return new airtable({apiKey: request.params.airtable_api_key})
   }
 

@@ -31,7 +31,7 @@ export class SendGridIntegration extends D.Integration {
     this.supportedActionTypes = ["query", "dashboard"]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -53,10 +53,10 @@ export class SendGridIntegration extends D.Integration {
       }],
     }
     const response = await this.sendEmail(request, msg)
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
-  async sendEmail(request: D.DataActionRequest, msg: ISendGridEmail) {
+  async sendEmail(request: D.ActionRequest, msg: ISendGridEmail) {
     const client = this.sgMailClientFromRequest(request)
     let response
     try {
@@ -68,7 +68,7 @@ export class SendGridIntegration extends D.Integration {
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       name: "to",
       label: "To Email Address",
@@ -92,7 +92,7 @@ export class SendGridIntegration extends D.Integration {
     return form
   }
 
-  private sgMailClientFromRequest(request: D.DataActionRequest) {
+  private sgMailClientFromRequest(request: D.ActionRequest) {
     SGMail.setApiKey(request.params.sendgrid_api_key!)
     return SGMail
   }

@@ -39,7 +39,7 @@ export class JiraIntegration extends D.Integration {
     this.requiredFields = []
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment"
     }
@@ -69,13 +69,13 @@ export class JiraIntegration extends D.Integration {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
-  async form(request: D.DataActionRequest) {
+  async form(request: D.ActionRequest) {
 
     const jira = this.jiraClientFromRequest(request)
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     try {
 
       const [projects, issueTypes] = await Promise.all([
@@ -120,7 +120,7 @@ export class JiraIntegration extends D.Integration {
     }
   }
 
-  private jiraClientFromRequest(request: D.DataActionRequest) {
+  private jiraClientFromRequest(request: D.ActionRequest) {
     const parsedUrl = URL.parse(request.params.address!)
     if (!parsedUrl.host) {
       throw "Invalid JIRA server address."

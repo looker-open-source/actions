@@ -1,9 +1,9 @@
 import * as fs from "fs"
 import * as path from "path"
 
-import { DataActionForm } from "./data_action_form"
-import { DataActionFormat, DataActionRequest, DataActionType } from "./data_action_request"
-import { DataActionResponse } from "./data_action_response"
+import { ActionForm } from "./data_action_form"
+import { ActionFormat, ActionRequest, ActionType } from "./data_action_request"
+import { ActionResponse } from "./data_action_response"
 
 const datauri = require("datauri")
 
@@ -22,8 +22,8 @@ export interface IRequiredField {
 }
 
 export interface Integration {
-  action(request: DataActionRequest): Promise<DataActionResponse>
-  form?(request: DataActionRequest): Promise<DataActionForm>
+  action(request: ActionRequest): Promise<ActionResponse>
+  form?(request: ActionRequest): Promise<ActionForm>
 }
 
 export interface IRouteBuilder {
@@ -38,8 +38,8 @@ export abstract class Integration {
   description: string
   iconName?: string
 
-  supportedActionTypes: DataActionType[]
-  supportedFormats?: DataActionFormat[]
+  supportedActionTypes: ActionType[]
+  supportedFormats?: ActionFormat[]
   supportedFormattings?: ("formatted" | "unformatted")[]
   supportedVisualizationFormattings?: ("apply" | "noapply")[]
   requiredFields?: IRequiredField[] = []
@@ -63,7 +63,7 @@ export abstract class Integration {
     }
   }
 
-  async validateAndPerformAction(request: DataActionRequest) {
+  async validateAndPerformAction(request: ActionRequest) {
 
     if (this.supportedActionTypes &&
       this.supportedActionTypes.indexOf(request.type) === -1
@@ -90,7 +90,7 @@ export abstract class Integration {
 
   }
 
-  async validateAndFetchForm(request: DataActionRequest) {
+  async validateAndFetchForm(request: ActionRequest) {
     return this.form!(request)
   }
 

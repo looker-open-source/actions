@@ -9,7 +9,7 @@ const integration = new SlackAttachmentIntegration()
 
 const stubFileName = "stubSuggestedFilename"
 
-function expectSlackMatch(request: D.DataActionRequest, fileNameMatch: string, optionsMatch: any) {
+function expectSlackMatch(request: D.ActionRequest, fileNameMatch: string, optionsMatch: any) {
 
   const fileUploadSpy = sinon.spy((filename: string, params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully sent ${filename} ${params}`)
@@ -62,7 +62,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no channel", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {}
       request.attachment = {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
@@ -75,7 +75,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         channel: "mychannel",
       }
@@ -85,7 +85,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends to right body, channel and filename if specified", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         channel: "mychannel",
         filename: "mywackyfilename",
@@ -109,7 +109,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body and channel", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         channel: "mychannel",
         initial_comment: "mycomment",
@@ -140,7 +140,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("has form with correct channels", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.equal({
         fields: [{
