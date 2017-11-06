@@ -7,7 +7,7 @@ import { DigitalOceanDropletIntegration } from "./digitalocean_droplet"
 
 const integration = new DigitalOceanDropletIntegration()
 
-function expectDigitalOceanDropletActionMatch(request: D.DataActionRequest, ...match: any[]) {
+function expectDigitalOceanDropletActionMatch(request: D.ActionRequest, ...match: any[]) {
 
   const dropletsRequestActionSpy = sinon.spy(
     (dropletId: string, params: any, callback: (err: any, data: any) => void) => {
@@ -29,7 +29,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no attachment for query", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
       request.params = {
         digitalocean_api_key: "mykey",
@@ -42,7 +42,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for query", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
       request.params = {
         digitalocean_api_key: "mykey",
@@ -57,7 +57,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is no attachment for cell", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
       request.params = {
         digitalocean_api_key: "mykey",
@@ -70,7 +70,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for cell", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
       request.params = {
         digitalocean_api_key: "mykey",

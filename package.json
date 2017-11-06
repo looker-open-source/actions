@@ -4,9 +4,9 @@
   "description": "",
   "main": "lib/index",
   "scripts": {
-    "start": "./node_modules/.bin/ts-node ./src/index.ts",
+    "start": "./node_modules/.bin/ts-node ./src/hub.ts",
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
-    "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/index.ts",
+    "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/hub.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && yarn lint",
     "test-ts": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register test/**/test.ts",
@@ -67,7 +67,7 @@
     "ssh2-sftp-client": "^2.0.1",
     "ts-node": "^3.0.2",
     "twilio": "^3.8.0",
-    "typescript": "^2.5.2",
+    "typescript": "^2.6.1",
     "underscore": "^1.8.3",
     "uuid": "^3.1.0",
     "winston": "^2.3.1"

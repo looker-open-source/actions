@@ -3,7 +3,7 @@ export interface IValidationError {
   message: string
 }
 
-export class DataActionResponse {
+export class ActionResponse {
 
   message: string
   refreshQuery = false

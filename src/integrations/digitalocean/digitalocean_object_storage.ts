@@ -35,13 +35,13 @@ export class DigitalOceanObjectStorageIntegration extends S3Integration.AmazonS3
     ]
   }
 
-  async form(request: D.DataActionRequest) {
+  async form(request: D.ActionRequest) {
     const form = await super.form(request)
     form.fields.filter( (field) => field.name === "bucket")[0].label = "Space Name"
     return form
   }
 
-  protected amazonS3ClientFromRequest(request: D.DataActionRequest) {
+  protected amazonS3ClientFromRequest(request: D.ActionRequest) {
    return new S3({
      region: request.params.region,
      endpoint: `https://${request.params.region}.digitaloceanspaces.com`,

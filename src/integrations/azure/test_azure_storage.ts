@@ -8,7 +8,7 @@ import { AzureStorageIntegration } from "./azure_storage"
 const integration = new AzureStorageIntegration()
 
 function expectAzureStorageMatch(
-  request: D.DataActionRequest, container: string, fileName: string, dataBuffer: Buffer) {
+  request: D.ActionRequest, container: string, fileName: string, dataBuffer: Buffer) {
 
   const createBlockBlobFromTextSpy = sinon.spy((c: string, f: string, b: Buffer, cb: (err: any, res: any) => void) => {
     chai.expect(c).to.not.equal(null)
@@ -38,7 +38,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no container", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
@@ -50,7 +50,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         container: "mycontainer",
       }
@@ -60,7 +60,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body to filename and container", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         container: "mycontainer",
       }
@@ -72,7 +72,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends to right filename if specified", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         container: "mycontainer",
         filename: "mywackyfilename",
@@ -107,7 +107,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           },
         }))
 
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

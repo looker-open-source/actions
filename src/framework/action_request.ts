@@ -6,8 +6,8 @@ export interface IParamMap {
   [name: string]: string | undefined
 }
 
-export type DataActionType = "cell" | "query" | "dashboard"
-export type DataActionFormat =
+export type ActionType = "cell" | "query" | "dashboard"
+export type ActionFormat =
   "assembled_pdf" |
   "csv" |
   "html" |
@@ -19,7 +19,7 @@ export type DataActionFormat =
   "wysiwyg_png" |
   "xlsx"
 
-export interface IDataActionAttachment {
+export interface IActionAttachment {
   dataBuffer?: Buffer
   encoding?: string
   dataJSON?: any
@@ -27,7 +27,7 @@ export interface IDataActionAttachment {
   fileExtension?: string
 }
 
-export interface IDataActionScheduledPlan {
+export interface IActionScheduledPlan {
   filtersDifferFromLook?: boolean
   queryId?: number
   scheduledPlanId?: number
@@ -36,13 +36,13 @@ export interface IDataActionScheduledPlan {
   url?: string
 }
 
-export class DataActionRequest {
+export class ActionRequest {
 
   static fromRequest(request: express.Request) {
-    const dataActionRequest = this.fromJSON(request.body)
-    dataActionRequest.instanceId = request.header("x-looker-instance")
-    dataActionRequest.webhookId = request.header("x-looker-webhook-id")
-    return dataActionRequest
+    const actionRequest = this.fromJSON(request.body)
+    actionRequest.instanceId = request.header("x-looker-instance")
+    actionRequest.webhookId = request.header("x-looker-webhook-id")
+    return actionRequest
   }
 
   static fromJSON(json: any) {
@@ -51,7 +51,7 @@ export class DataActionRequest {
       throw "Request body must be valid JSON."
     }
 
-    const request = new DataActionRequest()
+    const request = new ActionRequest()
 
     request.type = json.type
 
@@ -93,11 +93,11 @@ export class DataActionRequest {
     return request
   }
 
-  attachment?: IDataActionAttachment
+  attachment?: IActionAttachment
   formParams: IParamMap = {}
   params: IParamMap = {}
-  scheduledPlan?: IDataActionScheduledPlan
-  type: DataActionType
+  scheduledPlan?: IActionScheduledPlan
+  type: ActionType
   instanceId?: string
   webhookId?: string
 

@@ -26,8 +26,8 @@ export class SlackAttachmentIntegration extends D.Integration {
     }]
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise <D.DataActionResponse>((resolve, reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise <D.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -61,12 +61,12 @@ export class SlackAttachmentIntegration extends D.Integration {
           response = {success: true, message: err.message}
         }
       })
-      resolve(new D.DataActionResponse(response))
+      resolve(new D.ActionResponse(response))
     })
   }
 
-  async form(request: D.DataActionRequest) {
-    const form = new D.DataActionForm()
+  async form(request: D.ActionRequest) {
+    const form = new D.ActionForm()
     const channels = await this.usableChannels(request)
 
     form.fields = [{
@@ -89,13 +89,13 @@ export class SlackAttachmentIntegration extends D.Integration {
     return form
   }
 
-  async usableChannels(request: D.DataActionRequest) {
+  async usableChannels(request: D.ActionRequest) {
     let channels = await this.usablePublicChannels(request)
     channels = channels.concat(await this.usableDMs(request))
     return channels
   }
 
-  async usablePublicChannels(request: D.DataActionRequest) {
+  async usablePublicChannels(request: D.ActionRequest) {
     return new Promise<IChannel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.channels.list({
@@ -113,7 +113,7 @@ export class SlackAttachmentIntegration extends D.Integration {
     })
   }
 
-  async usableDMs(request: D.DataActionRequest) {
+  async usableDMs(request: D.ActionRequest) {
     return new Promise<IChannel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.users.list({}, (err: any, response: any) => {
@@ -130,7 +130,7 @@ export class SlackAttachmentIntegration extends D.Integration {
     })
   }
 
-  private slackClientFromRequest(request: D.DataActionRequest) {
+  private slackClientFromRequest(request: D.ActionRequest) {
     return new WebClient(request.params.slack_api_token!)
   }
 
