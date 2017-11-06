@@ -70,7 +70,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.to,
         subject: request.scheduledPlan.title,
         from: "Looker <noreply@lookermail.com>",
-        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: stubFilename,
@@ -96,7 +97,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.to,
         subject: "Hello attachment",
         from: "Looker <noreply@lookermail.com>",
-        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: request.formParams.filename!,
@@ -123,7 +125,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.to,
         subject: request.formParams.subject,
         from: "Looker <noreply@lookermail.com>",
-        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: request.formParams.filename!,
@@ -151,7 +154,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.to,
         subject: request.formParams.subject,
         from: request.formParams.from,
-        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
+        html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: request.formParams.filename!,

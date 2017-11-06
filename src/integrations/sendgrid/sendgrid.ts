@@ -6,6 +6,7 @@ export interface ISendGridEmail {
   to: string
   subject: string
   from: string
+  text: string
   html: string
   attachments: {content: string, filename: string}[]
 }
@@ -46,14 +47,15 @@ export class SendGridIntegration extends D.Integration {
       to: request.formParams.to!,
       subject,
       from,
-      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+      text: `View this data in Looker. ${request.scheduledPlan!.url}\n Results are attached.`,
+      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
     }
     const response = await this.sendEmail(request, msg)
-    return new D.ActionResponse(response)
+    return new D.DataActionResponse(response)
   }
 
   async sendEmail(request: D.ActionRequest, msg: ISendGridEmail) {
@@ -68,7 +70,7 @@ export class SendGridIntegration extends D.Integration {
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new D.DataActionForm()
     form.fields = [{
       name: "to",
       label: "To Email Address",
