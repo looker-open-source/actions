@@ -1,9 +1,13 @@
 import * as fs from "fs"
 import * as path from "path"
 
-import { ActionForm } from "./data_action_form"
-import { ActionFormat, ActionRequest, ActionType } from "./data_action_request"
-import { ActionResponse } from "./data_action_response"
+import {
+  ActionForm,
+  ActionFormat,
+  ActionRequest,
+  ActionResponse,
+  ActionType,
+} from "."
 
 const datauri = require("datauri")
 
