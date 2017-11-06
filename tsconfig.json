@@ -10,9 +10,5 @@
       "sourceMap": false,
       "strict": true,
       "target": "ES6"
-    },
-    "include": [
-      "src/framework/**/*.ts",
-      "src/server/**/*.ts"
-    ]
+    }
 }
