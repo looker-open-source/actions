@@ -65,32 +65,31 @@ export class AmazonS3Integration extends D.Integration {
         Body: request.attachment.dataBuffer,
       }
 
-      let response
-      s3.putObject(params, (err: any) => {
+      s3.putObject(params, (err) => {
         if (err) {
-          response = {success: false, message: err.message}
+          resolve(new D.ActionResponse({ success: false, message: err.message }))
+        } else {
+          resolve(new D.ActionResponse({ success: true }))
         }
       })
-      resolve(new D.ActionResponse(response))
     })
   }
 
   async form(request: D.ActionRequest) {
     const promise = new Promise<D.ActionForm>((resolve, reject) => {
       const s3 = this.amazonS3ClientFromRequest(request)
-      s3.listBuckets((err: any, res: any) => {
-        if (err) {
+      s3.listBuckets((err, res) => {
+        if (err || !res.Buckets) {
           reject(err)
         } else {
-
           const form = new D.ActionForm()
           form.fields = [{
             label: "Bucket",
             name: "bucket",
             required: true,
-            options: res.Buckets.map((c: any) => {
-                return {name: c.Name, label: c.Name}
-              }),
+            options: res.Buckets.map((c) => {
+              return {name: c.Name!, label: c.Name!}
+            }),
             type: "select",
             default: res.Buckets[0].Name,
           }, {
