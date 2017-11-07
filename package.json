@@ -1,5 +1,5 @@
 {
-  "name": "destinations",
+  "name": "looker-action-hub",
   "version": "1.0.0",
   "description": "",
   "main": "lib/index",
@@ -11,7 +11,8 @@
     "test": "yarn test-ts && yarn lint",
     "test-ts": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register test/**/test.ts",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
-    "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json"
+    "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
+    "prepare": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
   },
   "keywords": [
     "looker",

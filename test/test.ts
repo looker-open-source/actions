@@ -1,10 +1,11 @@
 import * as chai from "chai"
-import chaiAsPromised = require("chai-as-promised")
-import ChaiHttp = require("chai-http")
 import * as sinonChai from "sinon-chai"
 import * as winston from "winston"
 
-chai.use(ChaiHttp)
+const chaiAsPromised = require("chai-as-promised")
+const chaiHttp = require("chai-http")
+
+chai.use(chaiHttp)
 chai.use(sinonChai)
 chai.use(chaiAsPromised) // should be last
 winston.remove(winston.transports.Console)
