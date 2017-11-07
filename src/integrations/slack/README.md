@@ -12,4 +12,4 @@ This integration will send a data file to a slack channel using the credentials 
 
 3. Copy Token
 
-4. Enable Slack in your looker Administration page for integrations (/admin/integrations).
+4. Enable Slack in your looker Administration page for integrations (/admin/actions).

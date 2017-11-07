@@ -8,4 +8,4 @@ The Twilio integration allow you to either send data from a Look or schedule res
 
 2. Copy Account SID and Token
 
-4. Enable Twilio  in your in your looker Administration page for integrations (/admin/integrations).
+4. Enable Twilio  in your in your looker Administration page for integrations (/admin/actions).

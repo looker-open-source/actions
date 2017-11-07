@@ -34,7 +34,7 @@ Note that if you are using Heroku, you can run this command on your dyno by runn
 
 Save the value that is returned and then navigate to the integrations admin page on a Looker instance or go directly to:
 
-    `https://my-looker.looker.com/admin/integrations?edit=true`
+    `https://my-looker.looker.com/admin/actions?edit=true`
 
 There, add the URL for your integration server and enter the token returned by `yarn generate-api-key` above. You should see a list of integrations supported by your service.
 
