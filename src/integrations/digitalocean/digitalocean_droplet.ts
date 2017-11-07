@@ -12,7 +12,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
     this.name = "digitalocean_droplet"
     this.label = "DigitalOcean - Stop Droplet"
     this.iconName = "digitalocean/DigitalOcean.png"
-    this.description = "Stop an DigitalOcean droplet."
+    this.description = "Stop a DigitalOcean droplet."
     this.params = [
       {
         name: "digitalocean_api_key",
