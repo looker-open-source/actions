@@ -1,6 +1,6 @@
 import * as D from "../../framework"
 
-import digitalOcean = require("do-wrapper")
+const digitalOcean = require("do-wrapper")
 
 const TAG = "digitalocean_droplet_id"
 
