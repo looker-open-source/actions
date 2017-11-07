@@ -12,4 +12,4 @@ The SendGrid integration allow you to either send data from a Look or schedule r
 
 4. Copy Key
 
-5. Enable Sendgrid in your looker Administration page for integrations (/admin/integrations).
+5. Enable Sendgrid in your looker Administration page for integrations (/admin/actions).

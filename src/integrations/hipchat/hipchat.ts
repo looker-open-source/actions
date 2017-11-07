@@ -17,7 +17,7 @@ export class HipchatIntegration extends D.Integration {
     this.name = "hipchat"
     this.label = "Hipchat"
     this.iconName = "hipchat/hipchat.png"
-    this.description = "Send a data attachment as a message to a hipchat room."
+    this.description = "Send a message to a hipchat room referencing data."
     this.supportedActionTypes = ["query"]
     this.requiredFields = []
     this.params = [

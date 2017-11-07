@@ -39,4 +39,4 @@ Select Create user
 Copy Access key ID and Secret access key
 ![](AWS&#32;S3&#32;Full&#32;Access&#32;Credentials.png)
 
-# Enable Amazon S3 or Amazon EC2 in your looker Administration page for integrations (/admin/integrations).
+# Enable Amazon S3 or Amazon EC2 in your looker Administration page for integrations (/admin/actions).

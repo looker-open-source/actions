@@ -8,7 +8,7 @@ Because Looker will only accept an integration server with a valid HTTPS certifi
    * `heroku create`
    * `git push heroku master`
    * `heroku config:set BASE_URL="https://my-heroku-integration-server-1234.herokuapp.com"` — use the URL for your Heroku application that was mentioned after running `git push heroku master` above
-   * `heroku config:set INTEGRATION_PROVIDER_LABEL="Awesome Integration Service"
+   * `heroku config:set INTEGRATION_PROVIDER_LABEL="Awesome Integration Service`
    * `heroku config:set INTEGRATION_SERVICE_SECRET="<my-secret>"`
 
 We recommend, per best practices, that you work on features using a branch. To create and push a branch to Heroku:
@@ -34,7 +34,7 @@ Note that if you are using Heroku, you can run this command on your dyno by runn
 
 Save the value that is returned and then navigate to the integrations admin page on a Looker instance or go directly to:
 
-    `https://my-looker.looker.com/admin/integrations?edit=true`
+    https://my-looker.looker.com/admin/actions?edit=true
 
 There, add the URL for your integration server and enter the token returned by `yarn generate-api-key` above. You should see a list of integrations supported by your service.
 
