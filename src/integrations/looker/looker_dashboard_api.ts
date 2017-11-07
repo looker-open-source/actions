@@ -21,7 +21,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     this.name = "looker_dashboard_api"
     this.label = "Looker Dashboard API"
     this.iconName = "looker/looker.svg"
-    this.description = "Send a result set to pull a pdf dashbord from the Looker API and send to an email via SendGrid."
+    this.description = "Send a list of Looker dashboards to email pdfs via SendGrid."
     this.requiredFields = [{tag: TAG}]
     this.params = this.params.concat([
       {
