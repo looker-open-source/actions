@@ -16,6 +16,6 @@ This integration allows you to send data directly to a Tray workflow. The data f
 
 4. Select the Far right Settings Gear -> Copy Workflow Public URL.
 
-5. Enable Tray in your in your looker Administration page for integrations (/admin/integrations).
+5. Enable Tray in your in your looker Administration page for integrations (/admin/actions).
 
 6. Use the copied webhook URL in Send or Schedule to Tray.
