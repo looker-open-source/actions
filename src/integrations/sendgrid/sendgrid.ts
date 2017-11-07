@@ -19,7 +19,7 @@ export class SendGridIntegration extends D.Integration {
     this.name = "sendgrid"
     this.label = "SendGrid"
     this.iconName = "sendgrid/sendgrid.png"
-    this.description = "Send files to an email address via SendGrid."
+    this.description = "Send data files to an email via SendGrid."
     this.params = [
       {
         description: "API key for SendGrid from https://app.sendgrid.com/settings/api_keys.",
