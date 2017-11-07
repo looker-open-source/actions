@@ -10,7 +10,7 @@ export class DigitalOceanDropletIntegration extends D.Integration {
     super()
 
     this.name = "digitalocean_droplet"
-    this.label = "DigitalOcean Droplet"
+    this.label = "DigitalOcean - Stop Droplet"
     this.iconName = "digitalocean/DigitalOcean.png"
     this.description = "Stop an DigitalOcean droplet."
     this.params = [
