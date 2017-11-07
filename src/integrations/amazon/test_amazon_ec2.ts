@@ -7,7 +7,7 @@ import { AmazonEC2Integration } from "./amazon_ec2"
 
 const integration = new AmazonEC2Integration()
 
-function expectAmazonEC2Match(request: D.DataActionRequest, match: any) {
+function expectAmazonEC2Match(request: D.ActionRequest, match: any) {
 
   const stopInstancesSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully called with ${params}`)
@@ -28,7 +28,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no attachment for query", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
       request.params = {
         access_key_id: "mykey",
@@ -43,7 +43,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for query", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
       request.params = {
         access_key_id: "mykey",
@@ -61,7 +61,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is no attachment for cell", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
       request.params = {
         access_key_id: "mykey",
@@ -76,7 +76,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for cell", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
       request.params = {
         access_key_id: "mykey",

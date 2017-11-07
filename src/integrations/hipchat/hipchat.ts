@@ -33,8 +33,8 @@ export class HipchatIntegration extends D.Integration {
     this.supportedFormattings = ["unformatted"]
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise<D.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -59,12 +59,12 @@ export class HipchatIntegration extends D.Integration {
             response = {success: false, message: err.message}
           }
         })
-      resolve(new D.DataActionResponse(response))
+      resolve(new D.ActionResponse(response))
     })
   }
 
-  async form(request: D.DataActionRequest) {
-    const form = new D.DataActionForm()
+  async form(request: D.ActionRequest) {
+    const form = new D.ActionForm()
     const rooms = await this.usableRooms(request)
 
     form.fields = [{
@@ -79,7 +79,7 @@ export class HipchatIntegration extends D.Integration {
     return form
   }
 
-  async usableRooms(request: D.DataActionRequest) {
+  async usableRooms(request: D.ActionRequest) {
     return new Promise<IRoom[]>((resolve, reject) => {
       const hipchatClient = this.hipchatClientFromRequest(request)
       hipchatClient.rooms((err: any, response: any) => {
@@ -94,7 +94,7 @@ export class HipchatIntegration extends D.Integration {
     })
   }
 
-  private hipchatClientFromRequest(request: D.DataActionRequest) {
+  private hipchatClientFromRequest(request: D.ActionRequest) {
     return new hipchat(request.params.hipchat_api_key)
   }
 

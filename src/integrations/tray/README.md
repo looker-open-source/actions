@@ -1,19 +1,21 @@
 # Tray
 
-Go to your Tray [home page](https://tray.io/dashboard).
+This integration allows you to send data directly to a Tray workflow. The data format received by Tray will be the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/integrations/docs/json_detail_example.json)). Build out your Workflow using Looker data!
 
-![](tray home.png)
+1. Go to your Tray [home page](https://tray.io/dashboard).
 
-Select Create Workflow
+![](tray&#32;home.png)
 
-![](tray webhook.png)
+2. Select Create Workflow.
 
-Add Webhook Connector
+![](tray&#32;webhook.png)
 
-![](tray webhook url.png)
+3. Select Add Webhook Connector.
 
-Far right Settings Gear -> Copy Workflow Public URL
+![](tray&#32;webhook&#32;url.png)
 
-Enable Tray in your /admin/integrations
-Use the copied webhook URL in Send or Schedule to Tray
-Build out your Workflow using Looker data!
+4. Select the Far right Settings Gear -> Copy Workflow Public URL.
+
+5. Enable Tray in your in your looker Administration page for integrations (/admin/actions).
+
+6. Use the copied webhook URL in Send or Schedule to Tray.

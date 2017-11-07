@@ -7,7 +7,7 @@ import { JiraIntegration } from "./jira"
 
 const integration = new JiraIntegration()
 
-function expectJiraNewIssueMatch(request: D.DataActionRequest, match: any) {
+function expectJiraNewIssueMatch(request: D.ActionRequest, match: any) {
 
   const addNewIssueSpy = sinon.spy(async () => 1)
   const addAttachmentonIssueSpy = sinon.spy(async () => 10)
@@ -32,7 +32,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("sends correct jira new issue", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.scheduledPlan = {url: "looker_url"}
       request.formParams = {
         project: "1",
@@ -75,7 +75,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
               {id: "2", name: "Request"}],
           }
         })
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

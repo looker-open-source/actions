@@ -99,17 +99,17 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     }
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(req: D.ActionRequest) {
     let lookerUrls: string[] = []
-    switch (request.type) {
+    switch (req.type) {
       case "query":
-        if (!(request.attachment && request.attachment.dataJSON)) {
+        if (!(req.attachment && req.attachment.dataJSON)) {
           throw "Couldn't get data from attachment."
         }
 
-        const qr = request.attachment.dataJSON
+        const qr = req.attachment.dataJSON
         if (!qr.fields || !qr.data) {
-          throw "Request payload is an invalid format."
+          throw "req payload is an invalid format."
         }
         const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
         const identifiableFields = fields.filter((f: any) =>
@@ -121,7 +121,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         lookerUrls = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
         break
       case "cell":
-        const value = request.params.value
+        const value = req.params.value
         if (!value) {
           throw "Couldn't get data from attachment."
         }
@@ -129,8 +129,8 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         break
     }
 
-    const client = await this.lookerClientFromRequest(request)
-    const parsedUrl = new URL.URL(request.params.base_url!)
+    const client = await this.lookerClientFromRequest(req)
+    const parsedUrl = new URL.URL(req.params.base_url!)
 
     let response
     try {
@@ -145,27 +145,28 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         parsedUrl.pathname = parsedLookerUrl.pathname
         parsedUrl.search = parsedLookerUrl.search || ""
         const msg: ISendGridEmail = {
-          to: request.formParams.email!,
-          subject: request.scheduledPlan!.title!,
+          to: req.formParams.email!,
+          subject: req.scheduledPlan!.title!,
           from: "Looker <noreply@lookermail.com>",
-          html: `<p><a href="${parsedUrl.href}">View this data in Looker</a></p><p>Results are attached</p>`,
+          text: `View this data in Looker. ${parsedUrl.href}\n Results are attached.`,
+          html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
           attachments: [{
             content: pdf,
-            filename: sanitizeFilename(`${request.scheduledPlan!.title}_${i}.pdf`),
+            filename: sanitizeFilename(`${req.scheduledPlan!.title}_${i}.pdf`),
           }],
         }
-        const email = this.sendEmailAsync(request, msg)
+        const email = this.sendEmailAsync(req, msg)
         return email
       }))
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
 
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       name: "email",
       label: "Email Address",
@@ -176,11 +177,11 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     return form
   }
 
-  async lookerClientFromRequest(request: D.DataActionRequest) {
+  async lookerClientFromRequest(req: D.ActionRequest) {
     const lookerClient = new LookerAPIClient({
-      baseUrl: request.params.base_url!,
-      clientId: request.params.looker_api_client!,
-      clientSecret: request.params.looker_api_secret!,
+      baseUrl: req.params.base_url!,
+      clientId: req.params.looker_api_client!,
+      clientSecret: req.params.looker_api_secret!,
     })
     try {
       await lookerClient.fetchAccessToken()

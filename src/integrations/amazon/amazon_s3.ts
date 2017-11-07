@@ -37,8 +37,8 @@ export class AmazonS3Integration extends D.Integration {
     ]
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise<D.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -65,32 +65,31 @@ export class AmazonS3Integration extends D.Integration {
         Body: request.attachment.dataBuffer,
       }
 
-      let response
-      s3.putObject(params, (err: any) => {
+      s3.putObject(params, (err) => {
         if (err) {
-          response = {success: false, message: err.message}
+          resolve(new D.ActionResponse({ success: false, message: err.message }))
+        } else {
+          resolve(new D.ActionResponse({ success: true }))
         }
       })
-      resolve(new D.DataActionResponse(response))
     })
   }
 
-  async form(request: D.DataActionRequest) {
-    const promise = new Promise<D.DataActionForm>((resolve, reject) => {
+  async form(request: D.ActionRequest) {
+    const promise = new Promise<D.ActionForm>((resolve, reject) => {
       const s3 = this.amazonS3ClientFromRequest(request)
-      s3.listBuckets((err: any, res: any) => {
-        if (err) {
+      s3.listBuckets((err, res) => {
+        if (err || !res.Buckets) {
           reject(err)
         } else {
-
-          const form = new D.DataActionForm()
+          const form = new D.ActionForm()
           form.fields = [{
             label: "Bucket",
             name: "bucket",
             required: true,
-            options: res.Buckets.map((c: any) => {
-                return {name: c.Name, label: c.Name}
-              }),
+            options: res.Buckets.map((c) => {
+              return {name: c.Name!, label: c.Name!}
+            }),
             type: "select",
             default: res.Buckets[0].Name,
           }, {
@@ -110,7 +109,7 @@ export class AmazonS3Integration extends D.Integration {
     return promise
   }
 
-  protected amazonS3ClientFromRequest(request: D.DataActionRequest) {
+  protected amazonS3ClientFromRequest(request: D.ActionRequest) {
     return new S3(({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,

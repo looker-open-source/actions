@@ -30,8 +30,8 @@ export class AzureStorageIntegration extends D.Integration {
     ]
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>((resolve, reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise<D.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment")
@@ -60,13 +60,13 @@ export class AzureStorageIntegration extends D.Integration {
           if (e) {
             response = {success: false, message: e.message}
           }
-          resolve(new D.DataActionResponse(response))
+          resolve(new D.ActionResponse(response))
         })
     })
   }
 
-  async form(request: D.DataActionRequest) {
-    const promise = new Promise<D.DataActionForm>((resolve, reject) => {
+  async form(request: D.ActionRequest) {
+    const promise = new Promise<D.ActionForm>((resolve, reject) => {
       // error in type definition for listContainersSegmented currentToken?
       // https://github.com/Azure/azure-storage-node/issues/352
       const blogService: any = this.azureClientFromRequest(request)
@@ -74,7 +74,7 @@ export class AzureStorageIntegration extends D.Integration {
         if (err) {
           reject(err)
         } else {
-          const form = new D.DataActionForm()
+          const form = new D.ActionForm()
           form.fields = [{
             label: "Container",
             name: "container",
@@ -97,7 +97,7 @@ export class AzureStorageIntegration extends D.Integration {
     return promise
   }
 
-  private azureClientFromRequest(request: D.DataActionRequest) {
+  private azureClientFromRequest(request: D.ActionRequest) {
     return azure.createBlobService(request.params.account!, request.params.accessKey!)
   }
 

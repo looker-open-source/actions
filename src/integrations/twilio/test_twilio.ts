@@ -7,7 +7,7 @@ import { TwilioIntegration } from "../../../src/integrations/twilio/twilio"
 
 const integration = new TwilioIntegration()
 
-function expectTwilioMatch(request: D.DataActionRequest, match: any) {
+function expectTwilioMatch(request: D.ActionRequest, match: any) {
 
   const createSpy = sinon.spy(async () => Promise.resolve())
 
@@ -28,7 +28,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no to", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {}
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4\n5,6,7,8\n", "utf8")}
 
@@ -39,7 +39,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         bucket: "mybucket",
       }
@@ -52,7 +52,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.params = {
         from: "fromphone",
       }
@@ -68,7 +68,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body with look title and url", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.scheduledPlan = {
         title: "mylook",
         url: "http://my.looker.com/looks/12345",
@@ -88,7 +88,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends truncates body at 10 lines", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.params = {
         from: "fromphone",
       }
@@ -105,7 +105,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends truncates body at 10 lines with title and url", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.scheduledPlan = {
         title: "mylook",
         url: "http://my.looker.com/looks/12345",
@@ -129,7 +129,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends truncates body at 1600 with title on newline", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.scheduledPlan = {
         title: "mylook",
         url: "http://my.looker.com/looks/12345",

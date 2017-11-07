@@ -8,7 +8,7 @@ import { LookerDashboardAPIIntegration } from "./looker_dashboard_api"
 
 const integration = new LookerDashboardAPIIntegration()
 
-async function expectLookerAPIActionMatch(request: D.DataActionRequest, lookerUrl: string, msg: ISendGridEmail) {
+async function expectLookerAPIActionMatch(request: D.ActionRequest, lookerUrl: string, msg: ISendGridEmail) {
 
   const stubGeneratePDFDashboard = sinon.stub(integration as any, "generatePDFDashboard")
     .returns(Promise.resolve("pdf content"))
@@ -43,7 +43,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no attachment for query", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
 
       const action = integration.action(request)
@@ -67,7 +67,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           getAsync: getAsyncSpy,
         }))
 
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const client = await integration.lookerClientFromRequest(request)
       const dashboard = integration.generatePDFDashboard(client, "/dashboards/1?myfield=Yes")
       return chai.expect(dashboard).to.be.fulfilled.then(() => {
@@ -86,7 +86,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for query", async () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
       request.params = {
         base_url: "https://mycompany.looker.com:19999/api/3.0",
@@ -109,7 +109,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.email!,
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
-        html: `<p><a href="${url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        text: `View this data in Looker. ${url}\n Results are attached.`,
+        html: `<p><a href="${url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: "pdf content",
           filename: "Hello attachment_0.pdf",
@@ -120,7 +121,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is no attachment for cell", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
 
       const action = integration.action(request)
@@ -130,7 +131,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for cell", async () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
       request.params = {
         base_url: "https://mycompany.looker.com:19999/api/3.0",
@@ -148,7 +149,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.email!,
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
-        html: `<p><a href="${url}">View this data in Looker</a></p><p>Results are attached</p>`,
+        text: `View this data in Looker. ${url}\n Results are attached.`,
+        html: `<p><a href="${url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: "pdf content",
           filename: "Hello attachment_0.pdf",

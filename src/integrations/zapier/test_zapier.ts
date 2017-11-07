@@ -15,7 +15,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("has form with url param", (done) => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

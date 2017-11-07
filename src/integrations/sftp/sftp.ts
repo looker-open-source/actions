@@ -17,8 +17,8 @@ export class SFTPIntegration extends D.Integration {
     this.params = []
   }
 
-  async action(request: D.DataActionRequest) {
-    return new Promise<D.DataActionResponse>(async (resolve, reject) => {
+  async action(request: D.ActionRequest) {
+    return new Promise<D.ActionResponse>(async (resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -40,13 +40,13 @@ export class SFTPIntegration extends D.Integration {
       const remotePath = Path.join(parsedUrl.pathname, fileName)
 
       client.put(data, remotePath)
-        .then(() => resolve(new D.DataActionResponse()))
-        .catch((err: any) => resolve(new D.DataActionResponse({success: false, message: err.message})))
+        .then(() => resolve(new D.ActionResponse()))
+        .catch((err: any) => resolve(new D.ActionResponse({success: false, message: err.message})))
     })
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       name: "address",
       label: "Address",
@@ -71,7 +71,7 @@ export class SFTPIntegration extends D.Integration {
     return form
   }
 
-  private async sftpClientFromRequest(request: D.DataActionRequest) {
+  private async sftpClientFromRequest(request: D.ActionRequest) {
 
     const client = new Client()
     const parsedUrl = URL.parse(request.formParams.address!)

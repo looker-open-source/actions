@@ -1,11 +1,12 @@
 import * as D from "../../framework"
 
-import SGMail = require("@sendgrid/mail")
+const sendgridMail = require("@sendgrid/mail")
 
 export interface ISendGridEmail {
   to: string
   subject: string
   from: string
+  text: string
   html: string
   attachments: {content: string, filename: string}[]
 }
@@ -31,7 +32,7 @@ export class SendGridIntegration extends D.Integration {
     this.supportedActionTypes = ["query", "dashboard"]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -46,17 +47,18 @@ export class SendGridIntegration extends D.Integration {
       to: request.formParams.to!,
       subject,
       from,
-      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker</a></p><p>Results are attached</p>`,
+      text: `View this data in Looker. ${request.scheduledPlan!.url}\n Results are attached.`,
+      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
     }
     const response = await this.sendEmail(request, msg)
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
-  async sendEmail(request: D.DataActionRequest, msg: ISendGridEmail) {
+  async sendEmail(request: D.ActionRequest, msg: ISendGridEmail) {
     const client = this.sgMailClientFromRequest(request)
     let response
     try {
@@ -67,14 +69,14 @@ export class SendGridIntegration extends D.Integration {
     return response
   }
 
-  async sendEmailAsync(request: D.DataActionRequest, msg: ISendGridEmail): Promise<any> {
+  async sendEmailAsync(request: D.ActionRequest, msg: ISendGridEmail): Promise<any> {
    return new Promise<any>((resolve) => {
      resolve(this.sendEmail(request, msg))
     })
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       name: "to",
       label: "To Email Address",
@@ -98,9 +100,9 @@ export class SendGridIntegration extends D.Integration {
     return form
   }
 
-  private sgMailClientFromRequest(request: D.DataActionRequest) {
-    SGMail.setApiKey(request.params.sendgrid_api_key!)
-    return SGMail
+  private sgMailClientFromRequest(request: D.ActionRequest) {
+    sendgridMail.setApiKey(request.params.sendgrid_api_key!)
+    return sendgridMail
   }
 
 }

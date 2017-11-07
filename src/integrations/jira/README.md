@@ -1,11 +1,11 @@
-# Jira
+# JIRA
 
-Create a lookerbot user in your JIRA user administration console https://MYJIRA.atlassian.net/admin/users
-take note of the username and password you give to the lookerbot.
+This integration will create a JIRA Issue referencing data from a Look. You will first create a LookerBot user so that the creator of an issue is clear. You will then be able to create issues in any JIRA project that the LookerBot has access to referencing a Look.
 
-Enable JIRA in your /admin/integrations
-Address is the url of your JIRA server: e.g. https://MYJIRA.atlassian.net
-username of the lookerbot user
-password of the lookerbot user
+1. Create a lookerbot user in your JIRA user [administration console](https://MYJIRA.atlassian.net/admin/users). Take note of the username and password you give to the lookerbot.
 
-you can now automatically create issues in any jira project that the lookerbot has access to referencing a look or a dashboard.
+2. Enable JIRA in your looker Administration page for integrations (/admin/actions).
+
+* Address is the url of your JIRA server: e.g. https://MYJIRA.atlassian.net
+* username of the lookerbot user
+* password of the lookerbot user

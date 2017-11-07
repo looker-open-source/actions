@@ -8,7 +8,7 @@ import { AirtableIntegration } from "./airtable"
 const integration = new AirtableIntegration()
 
 function expectWebhookMatch(
-  request: D.DataActionRequest,
+  request: D.ActionRequest,
   base: any,
   table: any,
   match: any,
@@ -38,13 +38,13 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if the input has no attachment", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       return chai.expect(integration.action(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
     it("errors if there is no url", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {}
       request.attachment = {dataJSON: {
         fields: {
@@ -59,7 +59,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -79,7 +79,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body with label_short if present", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -110,7 +110,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("has form with base and table param", (done) => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

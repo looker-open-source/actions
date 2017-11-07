@@ -40,7 +40,7 @@ export class AmazonEC2Integration extends D.Integration {
     this.requiredFields = [{tag: TAG}]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     let instanceIds: string[] = []
     switch (request.type) {
       case "query":
@@ -77,10 +77,10 @@ export class AmazonEC2Integration extends D.Integration {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
-  private amazonEC2ClientFromRequest(request: D.DataActionRequest) {
+  private amazonEC2ClientFromRequest(request: D.ActionRequest) {
     return new EC2(({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,

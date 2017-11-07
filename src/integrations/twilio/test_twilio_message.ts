@@ -7,7 +7,7 @@ import { TwilioMessageIntegration } from "../../../src/integrations/twilio/twili
 
 const integration = new TwilioMessageIntegration()
 
-function expectTwilioMatch(request: D.DataActionRequest, match: any) {
+function expectTwilioMatch(request: D.ActionRequest, match: any) {
 
   const createSpy = sinon.spy(async () => Promise.resolve())
 
@@ -28,7 +28,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no phone tag", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
       request.formParams = {
         message: "My Message",
@@ -48,7 +48,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no message", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {}
       request.attachment = {dataJSON: {
         fields: [{name: "coolfield", tags: ["phone"]}],
@@ -63,7 +63,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "query"
       request.params = {
         from: "fromphone",
@@ -85,7 +85,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is no attachment for cell", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
       request.params = {
         from: "fromphone",
@@ -100,7 +100,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for cell", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.type = "cell"
       request.params = {
         from: "fromphone",

@@ -1,21 +1,46 @@
 import * as bodyParser from "body-parser"
+import * as dotenv from "dotenv"
 import * as express from "express"
 import * as path from "path"
 import * as winston from "winston"
+
+import * as D from "../framework"
 import * as apiKey from "./api_key"
-import * as D from "./framework"
-import "./integrations/index"
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 
-export class Server {
+export default class Server implements D.IRouteBuilder {
 
-  static bootstrap() {
-    return new Server()
+  static run() {
+    dotenv.config()
+
+    if (!process.env.BASE_URL) {
+      throw new Error("No BASE_URL environment variable set.")
+    }
+    if (!process.env.INTEGRATION_PROVIDER_LABEL) {
+      throw new Error("No INTEGRATION_PROVIDER_LABEL environment variable set.")
+    }
+    if (!process.env.INTEGRATION_SERVICE_SECRET) {
+      throw new Error("No INTEGRATION_SERVICE_SECRET environment variable set.")
+    }
+    if (process.env.INTEGRATION_SERVICE_DEBUG) {
+      winston.configure({
+        level: "debug",
+        transports: [
+          new (winston.transports.Console)(),
+        ],
+      })
+      winston.debug("Debug Mode")
+    }
+
+    Server.listen()
   }
 
-  static absUrl(rootRelativeUrl: string) {
-    return `${process.env.BASE_URL}${rootRelativeUrl}`
+  static listen(port = process.env.PORT || 8080) {
+    const app = new Server().app
+    app.listen(port, () => {
+      winston.info(`Integration Server listening on port ${port}!`)
+    })
   }
 
   app: express.Application
@@ -29,7 +54,7 @@ export class Server {
     this.route("/", async (_req, res) => {
       const integrations = await D.allIntegrations()
       const response = {
-        integrations: integrations.map((d) => d.asJson()),
+        integrations: integrations.map((d) => d.asJson(this)),
         label: process.env.INTEGRATION_PROVIDER_LABEL,
       }
       res.json(response)
@@ -38,16 +63,14 @@ export class Server {
 
     this.route("/integrations/:integrationId", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
-      res.json(destination.asJson())
+      res.json(destination.asJson(this))
     })
 
     this.route("/integrations/:integrationId/action", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       if (destination.hasAction) {
-        const request = D.DataActionRequest.fromRequest(req)
-        winston.debug(`request: ${JSON.stringify(request)}`)
-        const actionResponse = await destination.validateAndPerformAction(request)
-        res.json(actionResponse.asJson())
+         const actionResponse = await destination.validateAndPerformAction(D.ActionRequest.fromRequest(req))
+         res.json(actionResponse.asJson())
       } else {
         throw "No action defined for destination."
       }
@@ -56,7 +79,7 @@ export class Server {
     this.route("/integrations/:integrationId/form", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       if (destination.hasForm) {
-         const form = await destination.validateAndFetchForm(D.DataActionRequest.fromRequest(req))
+         const form = await destination.validateAndFetchForm(D.ActionRequest.fromRequest(req))
          res.json(form.asJson())
       } else {
         throw "No form defined for destination."
@@ -69,6 +92,14 @@ export class Server {
       res.sendFile(path.resolve(`${__dirname}/../status.json`))
     })
 
+  }
+
+  actionUrl(integration: D.Integration) {
+    return this.absUrl(`/integrations/${encodeURIComponent(integration.name)}/action`)
+  }
+
+  formUrl(integration: D.Integration) {
+    return this.absUrl(`/integrations/${encodeURIComponent(integration.name)}/form`)
   }
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {
@@ -99,6 +130,10 @@ export class Server {
         }
       }
     })
+  }
+
+  private absUrl(rootRelativeUrl: string) {
+    return `${process.env.BASE_URL}${rootRelativeUrl}`
   }
 
 }

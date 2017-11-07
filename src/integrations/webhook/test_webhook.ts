@@ -14,7 +14,7 @@ class GoodWebhookIntegration extends WebhookIntegration {
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       label: "Webhook URL",
       name: "url",
@@ -27,7 +27,7 @@ class GoodWebhookIntegration extends WebhookIntegration {
 
 const integration = new GoodWebhookIntegration()
 
-function expectWebhookMatch(request: D.DataActionRequest, match: any) {
+function expectWebhookMatch(request: D.ActionRequest, match: any) {
   const postSpy = sinon.spy(async () => null)
   const stubPost = sinon.stub(req, "post").callsFake(postSpy)
   const action = integration.action(request)
@@ -42,13 +42,13 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if the input has no attachment", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       return chai.expect(integration.action(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
     it("errors if there is no url", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {}
       request.attachment = {dataJSON: {
         fields: [{name: "coolfield", tags: ["user_id"]}],
@@ -59,7 +59,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is wrong domain for url", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         url: "http://abc.com/",
       }
@@ -72,7 +72,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("sends right body", () => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       request.formParams = {
         url: "http://abc.example.com/",
       }
@@ -95,7 +95,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("has form with url param", (done) => {
-      const request = new D.DataActionRequest()
+      const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
