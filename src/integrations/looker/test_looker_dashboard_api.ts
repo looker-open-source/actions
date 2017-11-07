@@ -85,7 +85,40 @@ describe(`${integration.constructor.name} unit tests`, () => {
       })
     })
 
-    it("sends right params for query", async () => {
+    it("calls render, waits and returns response.body for LookML dashboards", async () => {
+      const postAsyncSpy = sinon.spy(async () => Promise.resolve({
+        id: "render_id",
+      }))
+      const getAsyncSpy = sinon.spy(async () => Promise.resolve({
+        status: "success",
+        body: "pdf content",
+      }))
+
+      const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
+        .callsFake(() => ({
+          postAsync: postAsyncSpy,
+          getAsync: getAsyncSpy,
+        }))
+
+      const request = new D.ActionRequest()
+      const client = await integration.lookerClientFromRequest(request)
+      const dashboard = integration.generatePDFDashboard(client, "/dashboards/adwords::campaign?myfield=Yes")
+      return chai.expect(dashboard).to.be.fulfilled.then(() => {
+        chai.expect(postAsyncSpy).to.have.been.calledWithMatch(
+          "/render_tasks/lookml_dashboards/adwords::campaign/pdf?width=1280&height=1",
+          {
+            dashboard_style: "tiled",
+            dashboard_filters: "myfield=Yes",
+          },
+        )
+        chai.expect(getAsyncSpy.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
+        chai.expect(getAsyncSpy.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
+
+        stubClient.restore()
+      })
+    })
+
+    it("sends right params for query with dashboards", async () => {
       const request = new D.ActionRequest()
       request.type = "query"
       request.params = {

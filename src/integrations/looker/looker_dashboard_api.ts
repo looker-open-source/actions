@@ -78,6 +78,11 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       throw "Invalid Looker URL."
     }
 
+    const dashboard = parsedUrl.pathname.split("/")[2]
+    if (isNaN(+dashboard)) {
+      parsedUrl.pathname = parsedUrl.pathname.replace("dashboards", "lookml_dashboards")
+    }
+
     try {
       // create pdf render task
       const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1`, body)
