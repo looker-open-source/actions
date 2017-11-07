@@ -65,9 +65,9 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
    * @param {LookerAPIClient} client - LookerAPIClient
    * @param {string} lookerUrl - relative dashboard url e.g. /dashboards/2?User%20Name=test
    */
-  async generatePDFDashboard(client: LookerAPIClient, lookerUrl: string) {
+  async generatePDFDashboard(client: LookerAPIClient, lookerUrl: string, style = "tiled") {
     let body = {
-      dashboard_style: "tiled",
+      dashboard_style: style,
     }
     const parsedUrl = URL.parse(lookerUrl)
     if (parsedUrl.query) {
@@ -140,7 +140,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     let response
     try {
       await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
-        const pdf = await this.generatePDFDashboard(client, lookerUrl)
+        const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
 
         const parsedLookerUrl = URL.parse(lookerUrl)
         if (!parsedLookerUrl.pathname) {
@@ -178,6 +178,15 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       description: "e.g. test@example.com",
       type: "string",
       required: true,
+    }, {
+      name: "format",
+      label: "Format",
+      type: "select",
+      default: "tiled",
+      options: [
+        { name: "tiled", label: "PDF (Tiled)" },
+        { name: "single_column", label: "PDF (Single Column)" },
+      ],
     }]
     return form
   }
