@@ -90,5 +90,3 @@ export class SMTPIntegration extends D.Integration {
   }
 
 }
-
-D.addIntegration(new SMTPIntegration())
