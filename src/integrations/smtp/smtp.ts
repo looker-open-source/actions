@@ -10,7 +10,7 @@ export class SMTPIntegration extends D.Integration {
     this.name = "smtp"
     this.label = "SMTP"
     this.iconName = "smtp/smtp.svg"
-    this.description = "Send data files to an email via SMTP server."
+    this.description = "Send data files to an email via a SMTP server."
     this.supportedActionTypes = ["query", "dashboard"]
     this.params = []
   }
