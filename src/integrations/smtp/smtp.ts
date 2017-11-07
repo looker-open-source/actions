@@ -1,6 +1,6 @@
 import * as D from "../../framework"
 
-import { createTransport } from "nodemailer"
+import { createTransport, SendMailOptions} from "nodemailer"
 
 export class SMTPIntegration extends D.Integration {
 
@@ -24,11 +24,10 @@ export class SMTPIntegration extends D.Integration {
       throw "Needs a valid SMTP address."
     }
 
-    const client = await this.SMTPClientFromRequest(request)
     const filename = request.formParams.filename || request.suggestedFilename() as string
     const subject = request.formParams.subject || request.scheduledPlan!.title!
     const from = request.formParams.from || "Looker <noreply@lookermail.com>"
-    const message = {
+    const msg = {
       to: request.formParams.to!,
       subject,
       from,
@@ -40,13 +39,19 @@ export class SMTPIntegration extends D.Integration {
       }],
     }
 
+    const response = await this.sendEmail(request, msg)
+    return new D.ActionResponse(response)
+  }
+
+  async sendEmail(request: D.ActionRequest, msg: SendMailOptions) {
+    const client = this.transportFromRequest(request)
     let response
     try {
-      await client.sendMail(message)
+      await client.sendMail(msg)
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.ActionResponse(response)
+    return response
   }
 
   async form() {
@@ -81,8 +86,10 @@ export class SMTPIntegration extends D.Integration {
     return form
   }
 
-  private async SMTPClientFromRequest(request: D.ActionRequest) {
+  private transportFromRequest(request: D.ActionRequest) {
     return createTransport(request.formParams.address!)
   }
 
 }
+
+D.addIntegration(new SMTPIntegration())
