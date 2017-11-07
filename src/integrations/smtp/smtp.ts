@@ -56,7 +56,6 @@ export class SMTPIntegration extends D.Integration {
 
   async form() {
     const form = new D.ActionForm()
-    // TODO verify connection in dynamic form
     form.fields = [{
       name: "address",
       label: "Address",
