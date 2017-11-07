@@ -22,7 +22,7 @@ There are a couple of ways to contribute integrations for Looker:
 
    You'll then deploy your internal hub on your own server or using a cloud-based application platform like [Heroku](https://www.heroku.com/).
 
-  [Copy and deploy our template Node application &rarr;](https://github.com/looker/custom-action-hub-example)
+   [Copy and deploy our template Node application &rarr;](https://github.com/looker/custom-action-hub-example)
 
 3. Implement Looker's RESTful Integration API into any web server
 
