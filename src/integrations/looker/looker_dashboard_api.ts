@@ -85,7 +85,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
 
     try {
       // create pdf render task
-      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1`, body)
+      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280`, body)
       // wait for success
       let i = 0
       while (i < 5) {
