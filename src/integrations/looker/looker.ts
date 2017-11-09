@@ -1,5 +1,8 @@
 import * as request from "request"
 import * as _ from "underscore"
+import * as winston from "winston"
+
+const version = "0.1"
 
 async function requestAsync(options: request.CoreOptions & request.UrlOptions): Promise<any> {
   return new Promise<any>((resolve, reject) => {
@@ -55,11 +58,13 @@ export class LookerAPIClient {
       successCallback = () => { return }
     }
 
+    winston.info(`looker request: ${JSON.stringify(requestConfig)}`)
+
     const newConfig: request.CoreOptions & request.UrlOptions = {
       body: requestConfig.body,
       headers: {
         "Authorization": `token ${this.token}`,
-        "User-Agent": `looker-integrations`, // /${config.version}
+        "User-Agent": `looker-integrations-${version}`,
       },
       method: requestConfig.method,
       url: `${this.options.baseUrl}/${requestConfig.path}`,
