@@ -58,7 +58,7 @@ export class LookerAPIClient {
       successCallback = () => { return }
     }
 
-    winston.info(`looker request: ${JSON.stringify(requestConfig)}`)
+    winston.info(`looker api request: ${JSON.stringify(requestConfig)}`)
 
     const newConfig: request.CoreOptions & request.UrlOptions = {
       body: requestConfig.body,

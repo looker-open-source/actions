@@ -2,6 +2,7 @@ import * as D from "../../framework"
 
 import * as sanitizeFilename from "sanitize-filename"
 import * as URL from "url"
+import * as winston from "winston"
 import { ISendGridEmail, SendGridIntegration } from "../sendgrid/sendgrid"
 import {LookerAPIClient} from "./looker"
 
@@ -86,10 +87,14 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     try {
       // create pdf render task
       const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280`, body)
+      winston.info(`looker_dashboard_api task: ${JSON.stringify(task)}`)
+
       // wait for success
       let i = 0
       while (i < 8) {
         const taskStatus = await client.getAsync(`/render_tasks/${task.id}`)
+        winston.info(`looker_dashboard_api taskStatus: ${JSON.stringify(taskStatus)}`)
+
         if (taskStatus.status === "success") {
           break
         }
@@ -98,6 +103,8 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       }
       // get PDF
       const taskResponse = await client.getAsync(`/render_tasks/${task.id}/results`)
+      winston.info(`looker_dashboard_api taskResponse: ${JSON.stringify(taskResponse)}`)
+
       return taskResponse.body
     } catch (e) {
       throw `Failed to generate PDF: ${e.message}`
