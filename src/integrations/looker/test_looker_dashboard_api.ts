@@ -118,6 +118,23 @@ describe(`${integration.constructor.name} unit tests`, () => {
       })
     })
 
+    it("calls render handles post error", async () => {
+      const postAsyncSpy = sinon.spy(async () => Promise.reject({
+        message: "render error",
+      }))
+      const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
+        .callsFake(() => ({
+          postAsync: postAsyncSpy,
+        }))
+
+      const request = new D.ActionRequest()
+      const client = await integration.lookerClientFromRequest(request)
+      const dashboard = integration.generatePDFDashboard(client, "/dashboards/adwords::campaign?myfield=Yes")
+      return chai.expect(dashboard).to.be.rejectedWith("Failed to generate PDF: render error").then(() => {
+        stubClient.restore()
+      })
+    })
+
     it("sends right params for query with dashboards", async () => {
       const request = new D.ActionRequest()
       request.type = "query"
