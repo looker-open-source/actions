@@ -72,7 +72,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const dashboard = integration.generatePDFDashboard(client, "/dashboards/1?myfield=Yes")
       return chai.expect(dashboard).to.be.fulfilled.then(() => {
         chai.expect(postAsyncSpy).to.have.been.calledWithMatch(
-          "/render_tasks/dashboards/1/pdf?width=1280&height=1",
+          "/render_tasks/dashboards/1/pdf?width=1280",
           {
             dashboard_style: "tiled",
             dashboard_filters: "myfield=Yes",
@@ -105,7 +105,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const dashboard = integration.generatePDFDashboard(client, "/dashboards/adwords::campaign?myfield=Yes")
       return chai.expect(dashboard).to.be.fulfilled.then(() => {
         chai.expect(postAsyncSpy).to.have.been.calledWithMatch(
-          "/render_tasks/lookml_dashboards/adwords::campaign/pdf?width=1280&height=1",
+          "/render_tasks/lookml_dashboards/adwords::campaign/pdf?width=1280",
           {
             dashboard_style: "tiled",
             dashboard_filters: "myfield=Yes",

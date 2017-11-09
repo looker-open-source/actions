@@ -160,7 +160,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
             filename: sanitizeFilename(`${req.scheduledPlan!.title}_${i}.pdf`),
           }],
         }
-        const email = this.sendEmailAsync(req, msg)
+        const email = await this.sendEmailAsync(req, msg)
         return email
       }))
     } catch (e) {
