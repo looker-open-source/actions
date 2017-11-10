@@ -144,8 +144,6 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     try {
       await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
         const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
-        /* tslint:disable no-console */
-        console.log(`typeof pdf ${typeof pdf}`)
 
         const parsedLookerUrl = URL.parse(lookerUrl)
         if (!parsedLookerUrl.pathname) {
@@ -155,7 +153,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         parsedUrl.pathname = parsedLookerUrl.pathname
         parsedUrl.search = parsedLookerUrl.search || ""
 
-        const subject = req.formParams.subject || req.scheduledPlan!.title!
+        const subject = req.formParams.subject || (req.scheduledPlan ? req.scheduledPlan.title : "Looker")
         const from = req.formParams.from || "Looker <noreply@lookermail.com>"
 
         const msg = new helpers.classes.Mail({
@@ -166,15 +164,13 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
           html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
           attachments: [{
             content: pdf,
-            filename: sanitizeFilename(`${req.scheduledPlan!.title}_${i}.pdf`),
+            filename: sanitizeFilename(`${subject}_${i}.pdf`),
             type: "application/pdf",
           }],
         })
-        console.log("msg:", msg)
         return this.sendEmail(req, msg)
       }))
     } catch (e) {
-      console.log("e:", e)
       response = {success: false, message: `Failed to generate PDF: ${e.message}`}
     }
     return new D.ActionResponse(response)
