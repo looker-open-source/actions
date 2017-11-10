@@ -144,8 +144,9 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     try {
       await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
         const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
-
         /* tslint:disable no-console */
+        console.log(`typeof pdf ${typeof pdf}`)
+
         const parsedLookerUrl = URL.parse(lookerUrl)
         if (!parsedLookerUrl.pathname) {
           throw `Malformed ${TAG} URL`
@@ -170,11 +171,10 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
           }],
         })
 
-        return await this.sendEmail(req, msg)
+        return this.sendEmail(req, msg)
       }))
     } catch (e) {
-      console.log(`e: ${JSON.stringify(e)}`)
-      response = {success: false, message: e.message}
+      response = {success: false, message: `Failed to generate PDF: ${e.message}`}
     }
     return new D.ActionResponse(response)
 
