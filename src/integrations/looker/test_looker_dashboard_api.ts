@@ -3,30 +3,20 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { ISendGridEmail } from "../sendgrid/sendgrid"
+import * as helpers from "@sendgrid/helpers"
+
+import * as sanitizeFilename from "sanitize-filename"
 import { LookerDashboardAPIIntegration } from "./looker_dashboard_api"
 
 const integration = new LookerDashboardAPIIntegration()
 
-async function expectLookerAPIActionMatch(request: D.ActionRequest, lookerUrl: string, msg: ISendGridEmail) {
+async function expectLookerAPIActionMatch(request: D.ActionRequest, lookerUrl: string, msg: helpers.classes.Mail) {
 
   const stubGeneratePDFDashboard = sinon.stub(integration as any, "generatePDFDashboard")
-    .returns(Promise.resolve("pdf content"))
-  const stubSendEmail = sinon.stub(integration as any, "sendEmailAsync")
-    .returns(Promise.resolve(true))
+    .callsFake(() => "pdf content")
+  const stubSendEmail = sinon.stub(integration as any, "sendEmail")
+    .callsFake(() => true)
 
-  const postAsyncSpy = sinon.spy(async () => Promise.resolve({
-    id: "render_id",
-  }))
-  const getAsyncSpy = sinon.spy(async () => Promise.resolve({
-    status: "success",
-    body: "pdf content",
-  }))
-  const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
-  .callsFake(() => ({
-    postAsync: postAsyncSpy,
-    getAsync: getAsyncSpy,
-  }))
   const action = integration.action(request)
   const client = await integration.lookerClientFromRequest(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
@@ -34,7 +24,6 @@ async function expectLookerAPIActionMatch(request: D.ActionRequest, lookerUrl: s
     chai.expect(stubSendEmail).to.have.been.calledWithMatch(request, msg)
     stubGeneratePDFDashboard.restore()
     stubSendEmail.restore()
-    stubClient.restore()
   })
 }
 
@@ -53,18 +42,15 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("calls render, waits and returns response.body", async () => {
-      const postAsyncSpy = sinon.spy(async () => Promise.resolve({
-        id: "render_id",
-      }))
-      const getAsyncSpy = sinon.spy(async () => Promise.resolve({
-        status: "success",
-        body: "pdf content",
-      }))
+      const postAsyncSpy = sinon.spy(async () => ({id: "render_id"}))
+      const getAsyncStub = sinon.stub()
+      getAsyncStub.onCall(0).returns({status: "success"})
+      getAsyncStub.onCall(1).returns("pdf content")
 
       const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
         .callsFake(() => ({
           postAsync: postAsyncSpy,
-          getAsync: getAsyncSpy,
+          getAsync: getAsyncStub,
         }))
 
       const request = new D.ActionRequest()
@@ -72,32 +58,31 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const dashboard = integration.generatePDFDashboard(client, "/dashboards/1?myfield=Yes")
       return chai.expect(dashboard).to.be.fulfilled.then(() => {
         chai.expect(postAsyncSpy).to.have.been.calledWithMatch(
-          "/render_tasks/dashboards/1/pdf?width=1280",
+          "/render_tasks/dashboards/1/pdf?width=1280&height=1",
           {
             dashboard_style: "tiled",
             dashboard_filters: "myfield=Yes",
           },
         )
-        chai.expect(getAsyncSpy.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
-        chai.expect(getAsyncSpy.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
+        chai.expect(getAsyncStub.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
+        chai.expect(getAsyncStub.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
 
         stubClient.restore()
       })
     })
 
-    it("calls render, waits and returns response.body for LookML dashboards", async () => {
+    it("calls render, waits and returns response for LookML dashboards", async () => {
       const postAsyncSpy = sinon.spy(async () => Promise.resolve({
         id: "render_id",
       }))
-      const getAsyncSpy = sinon.spy(async () => Promise.resolve({
-        status: "success",
-        body: "pdf content",
-      }))
+      const getAsyncStub = sinon.stub()
+      getAsyncStub.onCall(0).returns({status: "success"})
+      getAsyncStub.onCall(1).returns("pdf content")
 
       const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
         .callsFake(() => ({
           postAsync: postAsyncSpy,
-          getAsync: getAsyncSpy,
+          getAsync: getAsyncStub,
         }))
 
       const request = new D.ActionRequest()
@@ -105,14 +90,14 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const dashboard = integration.generatePDFDashboard(client, "/dashboards/adwords::campaign?myfield=Yes")
       return chai.expect(dashboard).to.be.fulfilled.then(() => {
         chai.expect(postAsyncSpy).to.have.been.calledWithMatch(
-          "/render_tasks/lookml_dashboards/adwords::campaign/pdf?width=1280",
+          "/render_tasks/lookml_dashboards/adwords::campaign/pdf?width=1280&height=1",
           {
             dashboard_style: "tiled",
             dashboard_filters: "myfield=Yes",
           },
         )
-        chai.expect(getAsyncSpy.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
-        chai.expect(getAsyncSpy.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
+        chai.expect(getAsyncStub.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
+        chai.expect(getAsyncStub.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
 
         stubClient.restore()
       })
@@ -146,7 +131,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         url: "https://mycompany.looker.com/look/1",
       }
       request.formParams = {
-        email: "test@example.com",
+        to: "test@example.com",
       }
       request.attachment = {dataJSON: {
         fields: [{name: "coolfield", tags: ["looker_dashboard_url"]}],
@@ -155,17 +140,18 @@ describe(`${integration.constructor.name} unit tests`, () => {
         ],
       }}
       const url = "https://mycompany.looker.com/dashboards/1?myfield=Yes"
-      const msg = {
-        to: request.formParams.email!,
+      const msg = new helpers.classes.Mail({
+        to: request.formParams.to!,
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${url}\n Results are attached.`,
         html: `<p><a href="${url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: "pdf content",
-          filename: "Hello attachment_0.pdf",
+          filename: sanitizeFilename("Hello attachment_0.pdf"),
+          type: "application/pdf",
         }],
-      }
+      })
 
       return expectLookerAPIActionMatch(request, "/dashboards/1?myfield=Yes", msg)
     })
@@ -192,20 +178,22 @@ describe(`${integration.constructor.name} unit tests`, () => {
         url: "https://mycompany.looker.com/look/1",
       }
       request.formParams = {
-        email: "test@example.com",
+        to: "test@example.com",
       }
       const url = "https://mycompany.looker.com/dashboards/1?myfield=Yes"
-      const msg = {
-        to: request.formParams.email!,
+      const msg = new helpers.classes.Mail({
+        to: request.formParams.to!,
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${url}\n Results are attached.`,
         html: `<p><a href="${url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: "pdf content",
-          filename: "Hello attachment_0.pdf",
+          filename: sanitizeFilename("Hello attachment_0.pdf"),
+          type: "application/pdf",
         }],
-      }
+      })
+
       return expectLookerAPIActionMatch(request, "/dashboards/1?myfield=Yes", msg)
     })
 

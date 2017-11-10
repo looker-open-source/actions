@@ -2,9 +2,10 @@ import * as D from "../../framework"
 
 import * as sanitizeFilename from "sanitize-filename"
 import * as URL from "url"
-import * as winston from "winston"
-import { ISendGridEmail, SendGridIntegration } from "../sendgrid/sendgrid"
+import { SendGridIntegration } from "../sendgrid/sendgrid"
 import {LookerAPIClient} from "./looker"
+
+import * as helpers from "@sendgrid/helpers"
 
 const TAG = "looker_dashboard_url"
 
@@ -86,26 +87,21 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
 
     try {
       // create pdf render task
-      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280`, body)
-      winston.info(`looker_dashboard_api task: ${JSON.stringify(task)}`)
+      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1`, body)
 
       // wait for success
       let i = 0
       while (i < 8) {
         const taskStatus = await client.getAsync(`/render_tasks/${task.id}`)
-        winston.info(`looker_dashboard_api taskStatus: ${JSON.stringify(taskStatus)}`)
-
         if (taskStatus.status === "success") {
           break
         }
-        await delay(2000)
+        await delay(3000)
         i += 1
       }
-      // get PDF
-      const taskResponse = await client.getAsync(`/render_tasks/${task.id}/results`)
-      winston.info(`looker_dashboard_api taskResponse: ${JSON.stringify(taskResponse)}`)
 
-      return taskResponse.body
+      // get PDF
+      return await client.getAsync(`/render_tasks/${task.id}/results`)
     } catch (e) {
       throw `Failed to generate PDF: ${e.message}`
     }
@@ -149,6 +145,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
         const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
 
+        /* tslint:disable no-console */
         const parsedLookerUrl = URL.parse(lookerUrl)
         if (!parsedLookerUrl.pathname) {
           throw `Malformed ${TAG} URL`
@@ -156,21 +153,27 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         parsedUrl.port = ""
         parsedUrl.pathname = parsedLookerUrl.pathname
         parsedUrl.search = parsedLookerUrl.search || ""
-        const msg: ISendGridEmail = {
-          to: req.formParams.email!,
-          subject: req.scheduledPlan!.title!,
-          from: "Looker <noreply@lookermail.com>",
+
+        const subject = req.formParams.subject || req.scheduledPlan!.title!
+        const from = req.formParams.from || "Looker <noreply@lookermail.com>"
+
+        const msg = new helpers.classes.Mail({
+          to: req.formParams.to!,
+          subject,
+          from,
           text: `View this data in Looker. ${parsedUrl.href}\n Results are attached.`,
           html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
           attachments: [{
             content: pdf,
             filename: sanitizeFilename(`${req.scheduledPlan!.title}_${i}.pdf`),
+            type: "application/pdf",
           }],
-        }
-        const email = await this.sendEmailAsync(req, msg)
-        return email
+        })
+
+        return await this.sendEmail(req, msg)
       }))
     } catch (e) {
+      console.log(`e: ${JSON.stringify(e)}`)
       response = {success: false, message: e.message}
     }
     return new D.ActionResponse(response)
@@ -180,11 +183,20 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
   async form() {
     const form = new D.ActionForm()
     form.fields = [{
-      name: "email",
-      label: "Email Address",
+      name: "to",
+      label: "To Email Address",
       description: "e.g. test@example.com",
       type: "string",
       required: true,
+    }, {
+      name: "from",
+      label: "From Email Address",
+      description: "e.g. test@example.com",
+      type: "string",
+    }, {
+      label: "Subject",
+      name: "subject",
+      type: "string",
     }, {
       name: "format",
       label: "Format",
