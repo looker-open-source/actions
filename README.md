@@ -8,7 +8,7 @@ Our service is open source so you can contribute additional integrations or host
 
 There are a couple of ways to contribute integrations for Looker:
 
-1. Add an action to Looker's official hub
+1. Add an action to Looker's official Hub
 
    This is the easiest approach and is perfect for any action that you'd like to make available to everyone. It requires some familiarity with Node.js programming.
 
@@ -36,6 +36,6 @@ Head over to [the issue tracker](https://github.com/looker/integrations/issues) 
 
 ## On-Premise Deployment
 
-Most users should use our official action hub cloud service running on (https://integrations.looker.com/). By default, that's what Looker will use to provide actions. The action hub works whether your Looker instance is hosted by us or on-premise. If you'd like to deploy a copy of the same integrations within your own infrastructure, you can do so by deploying this repository yourself, and adding it to Looker as a new hub.
+Most users should use our official action hub cloud service running on (https://actions.looker.com/). By default, that's what Looker will use to provide actions. The action hub works whether your Looker instance is hosted by us or on-premise. If you'd like to deploy a copy of the same integrations within your own infrastructure, you can do so by deploying this repository yourself, and adding it to Looker as a new hub.
 
 [Deployment instructions &rarr;](docs/deploying.md)
