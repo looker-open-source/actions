@@ -1,6 +1,7 @@
 import * as request from "request"
 import * as _ from "underscore"
 import * as winston from "winston"
+import * as zlib from "zlib"
 
 const version = "0.1"
 
@@ -80,7 +81,11 @@ export class LookerAPIClient {
       if (error) {
         errorCallback(error)
       } else if (response.statusCode === 200) {
-        if (response.headers["content-type"].indexOf("application/json") !== -1) {
+        if (response.headers["content-encoding"] === "gzip") {
+          zlib.gunzip(body, (_err, dezipped) => {
+            successCallback(dezipped.toString())
+          })
+        } else if (response.headers["content-type"].indexOf("application/json") !== -1) {
           successCallback(JSON.parse(body as string))
         } else {
           successCallback(body)
