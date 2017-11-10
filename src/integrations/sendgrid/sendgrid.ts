@@ -1,15 +1,8 @@
 import * as D from "../../framework"
 
-const sendgridMail = require("@sendgrid/mail")
+import * as helpers from "@sendgrid/helpers"
 
-export interface ISendGridEmail {
-  to: string
-  subject: string
-  from: string
-  text: string
-  html: string
-  attachments: {content: string, filename: string}[]
-}
+const sendgridMail = require("@sendgrid/mail")
 
 export class SendGridIntegration extends D.Integration {
 
@@ -43,7 +36,7 @@ export class SendGridIntegration extends D.Integration {
     const filename = request.formParams.filename || request.suggestedFilename() as string
     const subject = request.formParams.subject || request.scheduledPlan!.title!
     const from = request.formParams.from || "Looker <noreply@lookermail.com>"
-    const msg: ISendGridEmail = {
+    const msg = new helpers.classes.Mail({
       to: request.formParams.to!,
       subject,
       from,
@@ -53,12 +46,12 @@ export class SendGridIntegration extends D.Integration {
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
-    }
+    })
     const response = await this.sendEmail(request, msg)
     return new D.ActionResponse(response)
   }
 
-  async sendEmail(request: D.ActionRequest, msg: ISendGridEmail) {
+  async sendEmail(request: D.ActionRequest, msg: helpers.classes.Mail) {
     const client = this.sgMailClientFromRequest(request)
     let response
     try {
@@ -67,12 +60,6 @@ export class SendGridIntegration extends D.Integration {
       response = {success: false, message: e.message}
     }
     return response
-  }
-
-  async sendEmailAsync(request: D.ActionRequest, msg: ISendGridEmail): Promise<any> {
-   return new Promise<any>((resolve) => {
-     resolve(this.sendEmail(request, msg))
-    })
   }
 
   async form() {
