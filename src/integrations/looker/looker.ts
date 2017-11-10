@@ -82,8 +82,12 @@ export class LookerAPIClient {
         errorCallback(error)
       } else if (response.statusCode === 200) {
         if (response.headers["content-encoding"] === "gzip") {
-          zlib.gunzip(body, (_err, dezipped) => {
-            successCallback(dezipped.toString())
+          zlib.gunzip(body, (err, dezipped) => {
+            if (err) {
+              errorCallback({error: "Failed to unzip."})
+            } else {
+              successCallback(dezipped.toString())
+            }
           })
         } else if (response.headers["content-type"].indexOf("application/json") !== -1) {
           successCallback(JSON.parse(body as string))
