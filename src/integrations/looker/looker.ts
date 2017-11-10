@@ -3,7 +3,7 @@ import * as _ from "underscore"
 import * as winston from "winston"
 import * as zlib from "zlib"
 
-const version = require("../../package.json").version
+const version = require("../../../package.json").version
 
 async function requestAsync(options: request.CoreOptions & request.UrlOptions): Promise<any> {
   return new Promise<any>((resolve, reject) => {
