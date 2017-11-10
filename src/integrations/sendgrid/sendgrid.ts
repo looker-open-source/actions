@@ -34,8 +34,9 @@ export class SendGridIntegration extends D.Integration {
       throw "Needs a valid email address."
     }
     const filename = request.formParams.filename || request.suggestedFilename() as string
-    const subject = request.formParams.subject || request.scheduledPlan!.title!
+    const subject = request.formParams.subject || (request.scheduledPlan ? request.scheduledPlan.title : "Looker")
     const from = request.formParams.from || "Looker <noreply@lookermail.com>"
+
     const msg = new helpers.classes.Mail({
       to: request.formParams.to!,
       subject,
