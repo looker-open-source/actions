@@ -57,7 +57,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
   /** Returns PDF content for a looker dashboard.
    *
    * 1. create render task to make pdf
-   * response = /api/3.0/render_tasks/dashboards/2/pdf?width=1280&height=1
+   * response = /api/3.0/render_tasks/dashboards/2/pdf?width=1280&height=1000
    * 2. check status on render task and wait if not yet sucess
    * task = /api/3.0/render_tasks/${response.id}
    * when status: "success"
@@ -87,7 +87,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
 
     try {
       // create pdf render task
-      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1`, body)
+      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1000`, body)
 
       // wait for success
       let i = 0
