@@ -1,14 +1,14 @@
 # Looker Integration Service
 
-This service provides a stateless server that implements Looker's Integration API and exposes popular integrations.
+Looker hosts and provides a stateless server that implements Looker's Integration API and exposes popular actions. A full list of actions provided by default within the Looker App can be referenced on our [Docs Page](https://docs.looker.com/r/admin/action-hub).
 
-Looker hosts a version of this service for you, but it's open source so you can contribute additional integrations or host an instance of the service within your own infrastructure.
+Our service is open source so you can contribute additional integrations or host an instance of the service within your own infrastructure.
 
 ## 3 Ways to Build Integrations
 
 There are a couple of ways to contribute integrations for Looker:
 
-1. Add an action to Looker's official hub
+1. Add an action to Looker's official Hub
 
    This is the easiest approach and is perfect for any action that you'd like to make available to everyone. It requires some familiarity with Node.js programming.
 
@@ -36,6 +36,6 @@ Head over to [the issue tracker](https://github.com/looker/integrations/issues) 
 
 ## On-Premise Deployment
 
-Most users should our official action hub cloud service. By default, that's what Looker will use to provide actions. The action hub works whether your Looker instance is hosted by us or on-premise. If you'd like to deploy a copy of the same integrations within your own infrastructure, you can do so by deploying this repository yourself, and adding it to Looker as a new hub.
+Most users should use our official action hub cloud service running on (https://actions.looker.com/). By default, that's what Looker will use to provide actions. The action hub works whether your Looker instance is hosted by us or on-premise. If you'd like to deploy a copy of the same integrations within your own infrastructure, you can do so by deploying this repository yourself, and adding it to Looker as a new hub.
 
 [Deployment instructions &rarr;](docs/deploying.md)
