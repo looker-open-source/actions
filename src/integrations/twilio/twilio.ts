@@ -11,9 +11,9 @@ export class TwilioIntegration extends D.Integration {
     super()
 
     this.name = "twilio"
-    this.label = "Twilio"
-    this.iconName = "twilio.svg"
-    this.description = "Send data to an phone number through Twilio."
+    this.label = "Twilio - Send Data"
+    this.iconName = "twilio/twilio.svg"
+    this.description = "Send data from a Look to a phone number via Twilio."
     this.supportedActionTypes = ["query"]
     this.supportedFormats = ["csv", "txt"]
     this.requiredFields = []
@@ -40,7 +40,7 @@ export class TwilioIntegration extends D.Integration {
     ]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -63,11 +63,11 @@ export class TwilioIntegration extends D.Integration {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       label: "Destination Phone Number",
       name: "to",
@@ -77,7 +77,7 @@ export class TwilioIntegration extends D.Integration {
     return form
   }
 
-  private twilioClientFromRequest(request: D.DataActionRequest) {
+  private twilioClientFromRequest(request: D.ActionRequest) {
     return twilio(request.params.accountSid, request.params.authToken)
   }
 

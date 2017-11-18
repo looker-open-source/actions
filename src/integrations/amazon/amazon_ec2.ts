@@ -10,9 +10,9 @@ export class AmazonEC2Integration extends D.Integration {
     super()
 
     this.name = "aws_ec2_stop_instance"
-    this.label = "AWS EC2 Stop Instance"
-    this.iconName = "amazon_ec2.png"
-    this.description = "Stop an EC2 instance"
+    this.label = "AWS EC2 - Stop Instance"
+    this.iconName = "amazon/amazon_ec2.png"
+    this.description = "Stop an EC2 instance."
     this.params = [
       {
         name: "access_key_id",
@@ -40,7 +40,7 @@ export class AmazonEC2Integration extends D.Integration {
     this.requiredFields = [{tag: TAG}]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
     let instanceIds: string[] = []
     switch (request.type) {
       case "query":
@@ -65,7 +65,7 @@ export class AmazonEC2Integration extends D.Integration {
         if (!request.params.value) {
           throw "Couldn't get data from cell."
         }
-        instanceIds = [request.params.value]
+        instanceIds = [request.params.value!]
         break
     }
     const params = {InstanceIds: instanceIds}
@@ -73,14 +73,14 @@ export class AmazonEC2Integration extends D.Integration {
     const ec2 = this.amazonEC2ClientFromRequest(request)
     let response
     try {
-      await ec2.stopInstances(params)
+      await ec2.stopInstances(params).promise()
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
-  private amazonEC2ClientFromRequest(request: D.DataActionRequest) {
+  private amazonEC2ClientFromRequest(request: D.ActionRequest) {
     return new EC2(({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,

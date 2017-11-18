@@ -1,4 +1,4 @@
-export function truncateString(s: string, limit: number, split = "\n"): string {
+export function truncateString(s: string, limit: number, split = "\n") {
   if (s.length > limit) {
     // truncate to max limit characters
     s = s.substring(0, limit)

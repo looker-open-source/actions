@@ -11,12 +11,12 @@ export class TwilioMessageIntegration extends D.Integration {
     super()
 
     this.name = "twilio_message"
-    this.label = "Twilio"
-    this.iconName = "twilio.svg"
-    this.description = "Send a message to phone numbers through Twilio."
+    this.label = "Twilio - Send Message"
+    this.iconName = "twilio/twilio.svg"
+    this.description = "Send a message to phone numbers via Twilio."
     this.supportedActionTypes = ["cell", "query"]
     this.supportedFormats = ["csv", "txt"]
-    this.requiredFields = []
+    this.requiredFields = [{tag: TAG}]
     this.params = [
       {
         name: "accountSid",
@@ -40,13 +40,13 @@ export class TwilioMessageIntegration extends D.Integration {
     ]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
 
     if (!request.formParams || !request.formParams.message) {
       throw "Need a message."
     }
 
-    const body = D.truncateString(request.formParams.message, TWILIO_MAX_MESSAGE_BODY)
+    const body = D.truncateString(request.formParams.message!, TWILIO_MAX_MESSAGE_BODY)
 
     let phoneNumbers: string[] = []
     switch (request.type) {
@@ -69,10 +69,11 @@ export class TwilioMessageIntegration extends D.Integration {
         phoneNumbers = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
         break
       case "cell":
-        if (!request.params.value) {
+        const value = request.params.value
+        if (!value) {
           throw "Couldn't get data from cell."
         }
-        phoneNumbers = [request.params.value]
+        phoneNumbers = [value]
         break
     }
 
@@ -80,7 +81,7 @@ export class TwilioMessageIntegration extends D.Integration {
 
     let response
     try {
-      await Promise.all(phoneNumbers.map((to) => {
+      await Promise.all(phoneNumbers.map(async (to) => {
         const message = {
           from: request.params.from,
           to,
@@ -92,11 +93,11 @@ export class TwilioMessageIntegration extends D.Integration {
       response = {success: false, message: e.message}
     }
 
-    return new D.DataActionResponse(response)
+    return new D.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.DataActionForm()
+    const form = new D.ActionForm()
     form.fields = [{
       label: "Message",
       name: "message",
@@ -106,7 +107,7 @@ export class TwilioMessageIntegration extends D.Integration {
     return form
   }
 
-  private twilioClientFromRequest(request: D.DataActionRequest) {
+  private twilioClientFromRequest(request: D.ActionRequest) {
     return twilio(request.params.accountSid, request.params.authToken)
   }
 
