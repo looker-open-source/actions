@@ -1,4 +1,4 @@
-import * as D from "../framework"
+import * as D from "../../framework"
 
 const storage = require("@google-cloud/storage")
 
@@ -9,7 +9,7 @@ export class GoogleCloudStorageIntegration extends D.Integration {
 
     this.name = "google_cloud_storage"
     this.label = "Google Cloud Storage"
-    this.iconName = "google_cloud_storage.svg"
+    this.iconName = "google/google_cloud_storage.svg"
     this.description = "Write data files to an GCS bucket."
     this.supportedActionTypes = ["query", "dashboard"]
     this.requiredFields = []
@@ -36,7 +36,7 @@ export class GoogleCloudStorageIntegration extends D.Integration {
     ]
   }
 
-  async action(request: D.DataActionRequest) {
+  async action(request: D.ActionRequest) {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         throw "Couldn't get data from attachment"
@@ -58,11 +58,11 @@ export class GoogleCloudStorageIntegration extends D.Integration {
         response = {success: false, message: e.message}
       }
 
-      return new D.DataActionResponse(response)
+      return new D.ActionResponse(response)
   }
 
-  async form(request: D.DataActionRequest) {
-    const form = new D.DataActionForm()
+  async form(request: D.ActionRequest) {
+    const form = new D.ActionForm()
 
     const gcs = this.gcsClientFromRequest(request)
     const buckets = await gcs.getBuckets()[0]
@@ -85,7 +85,7 @@ export class GoogleCloudStorageIntegration extends D.Integration {
     return form
   }
 
-  private gcsClientFromRequest(request: D.DataActionRequest) {
+  private gcsClientFromRequest(request: D.ActionRequest) {
     // Looker double escapes newlines from the integration param settings
     // const credentials = {client_email: request.params.clientEmail, private_key: request.params.privateKey}
     const credentials = JSON.parse(`{"client_email": "${request.params.clientEmail}",

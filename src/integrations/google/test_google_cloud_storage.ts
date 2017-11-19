@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../src/framework"
+import * as D from "../../framework"
 
-import { GoogleCloudStorageIntegration } from "../../src/integrations/google_cloud_storage"
+import { GoogleCloudStorageIntegration } from "./google_cloud_storage"
 
 const integration = new GoogleCloudStorageIntegration()
 
-function expectGoogleCloudStorageMatch(request: D.DataActionRequest,
+function expectGoogleCloudStorageMatch(request: D.ActionRequest,
                                        bucketMatch: any,
                                        fileMatch: any,
                                        fileSaveMatch: any) {
