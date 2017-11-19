@@ -58,7 +58,7 @@
     "express": "^4.16.2",
     "github": "^11.0.0",
     "hipchatter": "^1.0.0",
-    "jira-client": "^6.4.0",
+    "jira-client": "^6.4.1",
     "mailchimp": "^1.2.0",
     "nodemon": "^1.12.1",
     "request-promise-native": "^1.0.5",
