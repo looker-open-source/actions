@@ -15,19 +15,19 @@ export class GoogleCloudStorageIntegration extends D.Integration {
     this.requiredFields = []
     this.params = [
       {
-        name: "clientEmail",
+        name: "client_email",
         label: "Client Email",
         required: true,
         sensitive: false,
         description: "Your client email for GCS from https://console.cloud.google.com/",
       }, {
-        name: "privateKey",
+        name: "private_key",
         label: "Private Key",
         required: true,
         sensitive: true,
         description: "Your private key for GCS from https://console.cloud.google.com/",
       }, {
-        name: "projectId",
+        name: "project_id",
         label: "Project Id",
         required: true,
         sensitive: false,
@@ -86,13 +86,12 @@ export class GoogleCloudStorageIntegration extends D.Integration {
   }
 
   private gcsClientFromRequest(request: D.ActionRequest) {
-    // Looker double escapes newlines from the integration param settings
-    // const credentials = {client_email: request.params.clientEmail, private_key: request.params.privateKey}
-    const credentials = JSON.parse(`{"client_email": "${request.params.clientEmail}",
-      "private_key": "${request.params.privateKey}"}`)
-
+    const credentials = {
+      client_email: request.params.client_email,
+      private_key: request.params.private_key,
+    }
     const config = {
-      projectId: request.params.projectId,
+      projectId: request.params.project_id,
       credentials,
     }
 
