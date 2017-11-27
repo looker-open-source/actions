@@ -142,6 +142,28 @@ describe(`${integration.constructor.name} unit tests`, () => {
       })
     })
 
+    it("doesn't send hidden fields", () => {
+      const request = new D.ActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [{name: "coolfield", tags: ["email"]}],
+        data: [{coolfield: {value: "funvalue"}, hiddenfield: {value: "hiddenvalue"}}],
+      }}
+      request.scheduledPlan = {
+        query: {
+          vis_config: {
+            hidden_fields: [
+              "hiddenfield",
+            ],
+          },
+        },
+      }
+      return expectSegmentMatch(request, {
+        anonymousId: "stubanon",
+        userId: null,
+        traits: {email: "funvalue"},
+       })
+    })
+
   })
 
   describe("form", () => {
