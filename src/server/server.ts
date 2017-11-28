@@ -61,6 +61,12 @@ export default class Server implements D.IRouteBuilder {
       winston.debug(`response: ${JSON.stringify(response)}`)
     })
 
+    this.route("/integrations/streaming/:integrationId", async(req, res) => {
+      console.log("/integrations/streaming/:integrationId")
+      console.log(req)
+      console.log(res)
+    })
+
     this.route("/integrations/:integrationId", async (req, res) => {
       const destination = await D.findDestination(req.params.integrationId)
       res.json(destination.asJson(this))
