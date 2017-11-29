@@ -101,7 +101,8 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       }
 
       // get PDF
-      return await client.getAsync(`/render_tasks/${task.id}/results`)
+      const pdf = await client.getAsync(`/render_tasks/${task.id}/results`)
+      return new Buffer(pdf, "utf-8").toString("base64")
     } catch (e) {
       throw `Failed to generate PDF: ${e.message}`
     }
