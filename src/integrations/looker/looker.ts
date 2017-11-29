@@ -125,7 +125,7 @@ export class LookerAPIClient {
     })
   }
 
-  async getBinaryAsync(path: string): Promise<Buffer> {
+  async getBinaryAsync(path: string): Promise<any> {
     return this.getAsync(path, {encoding: null})
   }
 

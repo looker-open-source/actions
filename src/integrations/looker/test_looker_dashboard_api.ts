@@ -42,15 +42,15 @@ describe(`${integration.constructor.name} unit tests`, () => {
     })
 
     it("calls render, waits and returns response.body", async () => {
-      const postAsyncSpy = sinon.spy(async () => ({id: "render_id"}))
-      const getAsyncStub = sinon.stub()
-      getAsyncStub.onCall(0).returns({status: "success"})
-      getAsyncStub.onCall(1).returns("pdf content")
+      const postAsyncSpy = sinon.spy(async () => Promise.resolve({id: "render_id"}))
+      const getAsyncSpy = sinon.spy(async () => Promise.resolve({status: "success"}))
+      const getBinaryAsyncSpy = sinon.spy(async () => Promise.resolve("pdf content"))
 
       const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
         .callsFake(() => ({
           postAsync: postAsyncSpy,
-          getAsync: getAsyncStub,
+          getAsync: getAsyncSpy,
+          getBinaryAsync: getBinaryAsyncSpy,
         }))
 
       const request = new D.ActionRequest()
@@ -64,25 +64,23 @@ describe(`${integration.constructor.name} unit tests`, () => {
             dashboard_filters: "myfield=Yes",
           },
         )
-        chai.expect(getAsyncStub.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
-        chai.expect(getAsyncStub.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
+        chai.expect(getAsyncSpy).to.have.been.calledWithMatch("/render_tasks/render_id")
+        chai.expect(getBinaryAsyncSpy).to.have.been.calledWithMatch("/render_tasks/render_id/results")
 
         stubClient.restore()
       })
     })
 
     it("calls render, waits and returns response for LookML dashboards", async () => {
-      const postAsyncSpy = sinon.spy(async () => Promise.resolve({
-        id: "render_id",
-      }))
-      const getAsyncStub = sinon.stub()
-      getAsyncStub.onCall(0).returns({status: "success"})
-      getAsyncStub.onCall(1).returns("pdf content")
+      const postAsyncSpy = sinon.spy(async () => Promise.resolve({id: "render_id"}))
+      const getAsyncSpy = sinon.spy(async () => Promise.resolve({status: "success"}))
+      const getBinaryAsyncSpy = sinon.spy(async () => Promise.resolve("pdf content"))
 
       const stubClient = sinon.stub(integration as any, "lookerClientFromRequest")
         .callsFake(() => ({
           postAsync: postAsyncSpy,
-          getAsync: getAsyncStub,
+          getAsync: getAsyncSpy,
+          getBinaryAsync: getBinaryAsyncSpy,
         }))
 
       const request = new D.ActionRequest()
@@ -96,8 +94,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
             dashboard_filters: "myfield=Yes",
           },
         )
-        chai.expect(getAsyncStub.firstCall).to.have.been.calledWithMatch("/render_tasks/render_id")
-        chai.expect(getAsyncStub.secondCall).to.have.been.calledWithMatch("/render_tasks/render_id/results")
+        chai.expect(getAsyncSpy).to.have.been.calledWithMatch("/render_tasks/render_id")
+        chai.expect(getBinaryAsyncSpy).to.have.been.calledWithMatch("/render_tasks/render_id/results")
 
         stubClient.restore()
       })
