@@ -20,30 +20,6 @@ function expectSlackMatch(request: D.ActionRequest, fileNameMatch: string, optio
       files: {
         upload: fileUploadSpy,
       },
-      channels: {
-        list: (filters: any, callback: (err: any, response: any) => void) => {
-          callback(null, {
-            ok: true,
-            channels: [
-              {id: "1", name: "A", is_member: true},
-              {id: "2", name: "B", is_member: true},
-            ],
-            filters,
-          })
-        },
-      },
-      users: {
-        list: (filters: any, callback: (err: any, response: any) => void) => {
-          callback(null, {
-            ok: true,
-            channels: [
-              {id: "10", name: "Z"},
-              {id: "20", name: "Y"},
-            ],
-            filters,
-          })
-        },
-      },
     }))
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
@@ -139,19 +115,46 @@ describe(`${integration.constructor.name} unit tests`, () => {
       chai.expect(integration.hasForm).equals(true)
     })
 
-    it("has form with correct channels", () => {
+    it("has form with correct channels", (done) => {
+      const stubClient = sinon.stub(integration as any, "slackClientFromRequest")
+        .callsFake(() => ({
+          channels: {
+            list: (filters: any, callback: (err: any, response: any) => void) => {
+              callback(null, {
+                ok: true,
+                channels: [
+                  {id: "1", name: "A", is_member: true},
+                  {id: "2", name: "B", is_member: true},
+                ],
+                filters,
+              })
+            },
+          },
+          users: {
+            list: (filters: any, callback: (err: any, response: any) => void) => {
+              callback(null, {
+                ok: true,
+                members: [
+                  {id: "10", name: "Z"},
+                  {id: "20", name: "Y"},
+                ],
+                filters,
+              })
+            },
+          },
+        }))
       const request = new D.ActionRequest()
       const form = integration.validateAndFetchForm(request)
-      chai.expect(form).to.eventually.equal({
+      chai.expect(form).to.eventually.deep.equal({
         fields: [{
           description: "Name of the Slack channel you would like to post to.",
           label: "Share In",
           name: "channel",
           options: [
-            {id: "1", label: "A"},
-            {id: "2", label: "B"},
-            {id: "10", label: "Z"},
-            {id: "20", label: "Y"}],
+            {name: "1", label: "#A"},
+            {name: "2", label: "#B"},
+            {name: "10", label: "@Z"},
+            {name: "20", label: "@Y"}],
           required: true,
           type: "select",
         }, {
@@ -163,7 +166,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           name: "filename",
           type: "string",
         }],
-      })
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
   })

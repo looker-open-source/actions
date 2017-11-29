@@ -27,13 +27,79 @@ export interface IActionAttachment {
   fileExtension?: string
 }
 
-export interface IActionScheduledPlan {
-  filtersDifferFromLook?: boolean
-  queryId?: number
-  scheduledPlanId?: number
-  title?: string
-  type?: string
+export interface IWireResponseQuery {
+  /** Unique Id */
+  id?: number
+  /** Model */
+  model?: string
+  /** View */
+  view?: string
+  /** Fields */
+  fields?: string[]
+  /** Pivots */
+  pivots?: string[]
+  /** Fill Fields */
+  fill_fields?: string[]
+  /** Filters */
+  filters?: {[key: string]: string}
+  /** Filter Expression */
+  filter_expression?: string
+  /** Sorts */
+  sorts?: string[]
+  /** Limit */
+  limit?: string
+  /** Column Limit */
+  column_limit?: string
+  /** Total */
+  total?: boolean
+  /** Raw Total */
+  row_total?: string
+  /** Runtime */
+  runtime?: number
+  /** Visualization configuration properties. */
+  vis_config?: {[key: string]: any}
+  /** The filter_config represents the state of the filter UI. */
+  filter_config?: {[key: string]: any}
+  /** Visible UI Sections */
+  visible_ui_sections?: string
+  /** Slug */
+  slug?: string
+  /** Dynamic Fields */
+  dynamic_fields?: any[]
+  /** Client Id */
+  client_id?: string
+  /** Share Url */
+  share_url?: string
+  /** Expanded Share Url */
+  expanded_share_url?: string
+  /** Expanded Url */
   url?: string
+  /** Query Timezone */
+  query_timezone?: string
+  /** Has Table Calculations */
+  has_table_calculations?: boolean
+}
+
+export enum DataWebhookPayloadScheduledPlanType {
+  Look = "Look",
+  Dashboard = "Dashboard",
+}
+
+export interface IActionScheduledPlan {
+  /** ID of the scheduled plan */
+  scheduledPlanId?: number
+  /** Title of the scheduled plan. */
+  title?: string
+  /** Type of content of the scheduled plan. Valid values are: "Look", "Dashboard". */
+  type?: DataWebhookPayloadScheduledPlanType
+  /** URL of the content item in Looker. */
+  url?: string
+  /** ID of the query that the data payload represents. */
+  queryId?: number
+  /** Query that was run (not available for dashboards) */
+  query?: IWireResponseQuery
+  /** A boolean representing whether this schedule payload has customized the filter values. */
+  filtersDifferFromLook?: boolean
 }
 
 export class ActionRequest {
@@ -75,6 +141,7 @@ export class ActionRequest {
       request.scheduledPlan = {
         filtersDifferFromLook: json.scheduled_plan.filters_differ_from_look,
         queryId: json.scheduled_plan.query_id,
+        query: json.scheduled_plan.query,
         scheduledPlanId: json.scheduled_plan_id,
         title: json.scheduled_plan.title,
         type: json.scheduled_plan.type,
