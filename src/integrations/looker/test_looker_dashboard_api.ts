@@ -142,15 +142,14 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.to!,
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
-        text: `View this data in Looker. ${url}\n Results are attached.`,
-        html: `<p><a href="${url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
-        attachments: [{
-          content: "pdf content",
-          filename: sanitizeFilename("Hello attachment_0.pdf"),
-          type: "application/pdf",
-        }],
+        text: `View this data in Looker. ${url}\nResults are attached.`,
+        html: `<p>View this data in Looker.</p><p><a href="${url}">0</a></p><p>Results are attached.</p>`,
       })
-
+      msg.addAttachment({
+        content: "pdf content",
+        filename: sanitizeFilename("Hello attachment_0.pdf"),
+        type: "application/pdf",
+      })
       return expectLookerAPIActionMatch(request, "/dashboards/1?myfield=Yes", msg)
     })
 
@@ -183,15 +182,14 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: request.formParams.to!,
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
-        text: `View this data in Looker. ${url}\n Results are attached.`,
-        html: `<p><a href="${url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
-        attachments: [{
-          content: "pdf content",
-          filename: sanitizeFilename("Hello attachment_0.pdf"),
-          type: "application/pdf",
-        }],
+        text: `View this data in Looker. ${url}\nResults are attached.`,
+        html: `<p>View this data in Looker.</p><p><a href="${url}">0</a></p><p>Results are attached.</p>`,
       })
-
+      msg.addAttachment({
+        content: "pdf content",
+        filename: sanitizeFilename("Hello attachment_0.pdf"),
+        type: "application/pdf",
+      })
       return expectLookerAPIActionMatch(request, "/dashboards/1?myfield=Yes", msg)
     })
 
