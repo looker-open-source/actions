@@ -165,7 +165,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
             type: "application/pdf",
           }],
         })
-        this.sendEmail(req, msg)
+        await this.sendEmail(req, msg)
       }))
     } catch (e) {
       response = {success: false, message: `Failed to generate PDF: ${e.message}`}

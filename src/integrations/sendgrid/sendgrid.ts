@@ -50,7 +50,7 @@ export class SendGridIntegration extends D.Integration {
     })
     let response
     try {
-      this.sendEmail(request, msg)
+      await this.sendEmail(request, msg)
     } catch (e) {
       response = {success: false, message: e.message}
     }
