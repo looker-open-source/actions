@@ -153,7 +153,9 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     })
 
     const displayUrlsText = displayUrls.map((lookerUrl) => (`${lookerUrl}\n`)).join("")
-    const displayUrlsHTML = displayUrls.map((lookerUrl, i) => (`<p><a href="${lookerUrl}">${i}</a></p>`)).join("")
+    const displayUrlsHTML = displayUrls.map((lookerUrl, i) => (
+      `<p><a href="${lookerUrl}">${subject} ${i}</a></p>`
+    )).join("")
 
     const msg = new helpers.classes.Mail({
       to: req.formParams.to!,

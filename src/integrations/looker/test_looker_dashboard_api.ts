@@ -138,12 +138,13 @@ describe(`${integration.constructor.name} unit tests`, () => {
         ],
       }}
       const url = "https://mycompany.looker.com/dashboards/1?myfield=Yes"
+      /* tslint:disable max-line-length */
       const msg = new helpers.classes.Mail({
         to: request.formParams.to!,
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${url}\nResults are attached.`,
-        html: `<p>View this data in Looker.</p><p><a href="${url}">0</a></p><p>Results are attached.</p>`,
+        html: `<p>View this data in Looker.</p><p><a href="${url}">${request.scheduledPlan.title!} 0</a></p><p>Results are attached.</p>`,
       })
       msg.addAttachment({
         content: "pdf content",
@@ -183,7 +184,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${url}\nResults are attached.`,
-        html: `<p>View this data in Looker.</p><p><a href="${url}">0</a></p><p>Results are attached.</p>`,
+        html: `<p>View this data in Looker.</p><p><a href="${url}">${request.scheduledPlan.title!} 0</a></p><p>Results are attached.</p>`,
       })
       msg.addAttachment({
         content: "pdf content",
