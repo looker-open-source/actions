@@ -137,40 +137,35 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
     const client = await this.lookerClientFromRequest(req)
     const parsedUrl = new URL.URL(req.params.base_url!)
 
-    let response
-    try {
-      await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
-        const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
+    await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
+      const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
 
-        const parsedLookerUrl = URL.parse(lookerUrl)
-        if (!parsedLookerUrl.pathname) {
-          throw `Malformed ${TAG} URL`
-        }
-        parsedUrl.port = ""
-        parsedUrl.pathname = parsedLookerUrl.pathname
-        parsedUrl.search = parsedLookerUrl.search || ""
+      const parsedLookerUrl = URL.parse(lookerUrl)
+      if (!parsedLookerUrl.pathname) {
+        throw `Malformed ${TAG} URL`
+      }
+      parsedUrl.port = ""
+      parsedUrl.pathname = parsedLookerUrl.pathname
+      parsedUrl.search = parsedLookerUrl.search || ""
 
-        const subject = req.formParams.subject || (req.scheduledPlan ? req.scheduledPlan.title : "Looker")
-        const from = req.formParams.from || "Looker <noreply@lookermail.com>"
+      const subject = req.formParams.subject || (req.scheduledPlan ? req.scheduledPlan.title : "Looker")
+      const from = req.formParams.from || "Looker <noreply@lookermail.com>"
 
-        const msg = new helpers.classes.Mail({
-          to: req.formParams.to!,
-          subject,
-          from,
-          text: `View this data in Looker. ${parsedUrl.href}\n Results are attached.`,
-          html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
-          attachments: [{
-            content: pdf.toString("base64"),
-            filename: sanitizeFilename(`${subject}_${i}.pdf`),
-            type: "application/pdf",
-          }],
-        })
-        await this.sendEmail(req, msg)
-      }))
-    } catch (e) {
-      response = {success: false, message: `Failed to generate PDF: ${e.message}`}
-    }
-    return new D.ActionResponse(response)
+      const msg = new helpers.classes.Mail({
+        to: req.formParams.to!,
+        subject,
+        from,
+        text: `View this data in Looker. ${parsedUrl.href}\n Results are attached.`,
+        html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
+        attachments: [{
+          content: pdf.toString("base64"),
+          filename: sanitizeFilename(`${subject}_${i}.pdf`),
+          type: "application/pdf",
+        }],
+      })
+      await this.sendEmail(req, msg)
+    }))
+    return new D.ActionResponse()
 
   }
 
