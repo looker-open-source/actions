@@ -160,7 +160,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
           text: `View this data in Looker. ${parsedUrl.href}\n Results are attached.`,
           html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
           attachments: [{
-            content: pdf,
+            content: pdf.toString("base64"),
             filename: sanitizeFilename(`${subject}_${i}.pdf`),
             type: "application/pdf",
           }],
