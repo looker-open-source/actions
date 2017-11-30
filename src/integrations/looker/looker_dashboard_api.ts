@@ -85,29 +85,26 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       parsedUrl.pathname = parsedUrl.pathname.replace("dashboards", "lookml_dashboards")
     }
 
-    try {
-      // create pdf render task
-      const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1000`, body)
+    // create pdf render task
+    const task = await client.postAsync(`/render_tasks${parsedUrl.pathname}/pdf?width=1280&height=1000`, body)
 
-      // wait for success
-      let i = 0
-      while (i < 8) {
-        const taskStatus = await client.getAsync(`/render_tasks/${task.id}`)
-        if (taskStatus.status === "success") {
-          break
-        }
-        await delay(3000)
-        i += 1
+    // wait for success
+    let i = 0
+    while (i < 8) {
+      const taskStatus = await client.getAsync(`/render_tasks/${task.id}`)
+      if (taskStatus.status === "success") {
+        break
       }
-
-      // get PDF
-      return await client.getBinaryAsync(`/render_tasks/${task.id}/results`)
-    } catch (e) {
-      throw `Failed to generate PDF: ${e.message}`
+      await delay(3000)
+      i += 1
     }
+
+    // get PDF
+    return await client.getBinaryAsync(`/render_tasks/${task.id}/results`)
   }
 
   async action(req: D.ActionRequest) {
+
     let lookerUrls: string[] = []
     switch (req.type) {
       case "query":
@@ -168,7 +165,7 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
             type: "application/pdf",
           }],
         })
-        return this.sendEmail(req, msg)
+        this.sendEmail(req, msg)
       }))
     } catch (e) {
       response = {success: false, message: `Failed to generate PDF: ${e.message}`}

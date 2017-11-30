@@ -113,7 +113,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const request = new D.ActionRequest()
       const client = await integration.lookerClientFromRequest(request)
       const dashboard = integration.generatePDFDashboard(client, "/dashboards/adwords::campaign?myfield=Yes")
-      return chai.expect(dashboard).to.be.rejectedWith("Failed to generate PDF: render error").then(() => {
+      return chai.expect(dashboard).to.be.rejectedWith("render error").then(() => {
         stubClient.restore()
       })
     })

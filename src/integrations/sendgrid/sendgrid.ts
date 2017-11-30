@@ -48,19 +48,18 @@ export class SendGridIntegration extends D.Integration {
         filename,
       }],
     })
-    const response = await this.sendEmail(request, msg)
+    let response
+    try {
+      this.sendEmail(request, msg)
+    } catch (e) {
+      response = {success: false, message: e.message}
+    }
     return new D.ActionResponse(response)
   }
 
   async sendEmail(request: D.ActionRequest, msg: helpers.classes.Mail) {
     const client = this.sgMailClientFromRequest(request)
-    let response
-    try {
-      await client.send(msg)
-    } catch (e) {
-      response = {success: false, message: e.message}
-    }
-    return response
+    return await client.send(msg)
   }
 
   async form() {
