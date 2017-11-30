@@ -8,7 +8,6 @@ import {LookerAPIClient} from "./looker"
 import * as helpers from "@sendgrid/helpers"
 
 const TAG = "looker_dashboard_url"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 /** Returns promise of NodeJS.Timer with a delay of ms milliseconds
  * @param {number} ms - milliseconds to wait
@@ -218,12 +217,8 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
       clientId: req.params.looker_api_client!,
       clientSecret: req.params.looker_api_secret!,
     })
-    try {
-      await lookerClient.fetchAccessToken()
-      return lookerClient
-    } catch (e) {
-      throw e
-    }
+    await lookerClient.fetchAccessToken()
+    return lookerClient
   }
 }
 
