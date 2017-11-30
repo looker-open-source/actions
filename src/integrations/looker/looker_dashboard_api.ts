@@ -6,10 +6,8 @@ import { SendGridIntegration } from "../sendgrid/sendgrid"
 import {LookerAPIClient} from "./looker"
 
 import * as helpers from "@sendgrid/helpers"
-import * as winston from "winston"
 
 const TAG = "looker_dashboard_url"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 /** Returns promise of NodeJS.Timer with a delay of ms milliseconds
  * @param {number} ms - milliseconds to wait
@@ -108,7 +106,6 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
   async action(req: D.ActionRequest) {
 
     let lookerUrls: string[] = []
-    winston.debug(`request.type: ${req.type}`)
     switch (req.type) {
       case "query":
         if (!(req.attachment && req.attachment.dataJSON)) {
@@ -136,47 +133,44 @@ export class LookerDashboardAPIIntegration extends SendGridIntegration {
         lookerUrls = [value]
         break
     }
-    winston.debug(`lookerUrls: ${lookerUrls}`)
 
     const client = await this.lookerClientFromRequest(req)
     const parsedUrl = new URL.URL(req.params.base_url!)
 
-    // try {
-    await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
-      winston.debug(`Generating PDF for ${lookerUrl}`)
-      const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
+    let response
+    try {
+      await Promise.all(lookerUrls.map(async (lookerUrl, i) => {
+        const pdf = await this.generatePDFDashboard(client, lookerUrl, req.formParams.format)
 
-      const parsedLookerUrl = URL.parse(lookerUrl)
-      if (!parsedLookerUrl.pathname) {
-        throw `Malformed ${TAG} URL`
-      }
-      parsedUrl.port = ""
-      parsedUrl.pathname = parsedLookerUrl.pathname
-      parsedUrl.search = parsedLookerUrl.search || ""
+        const parsedLookerUrl = URL.parse(lookerUrl)
+        if (!parsedLookerUrl.pathname) {
+          throw `Malformed ${TAG} URL`
+        }
+        parsedUrl.port = ""
+        parsedUrl.pathname = parsedLookerUrl.pathname
+        parsedUrl.search = parsedLookerUrl.search || ""
 
-      const subject = req.formParams.subject || (req.scheduledPlan ? req.scheduledPlan.title : "Looker")
-      const from = req.formParams.from || "Looker <noreply@lookermail.com>"
+        const subject = req.formParams.subject || (req.scheduledPlan ? req.scheduledPlan.title : "Looker")
+        const from = req.formParams.from || "Looker <noreply@lookermail.com>"
 
-      const msg = new helpers.classes.Mail({
-        to: req.formParams.to!,
-        subject,
-        from,
-        text: `View this data in Looker. ${parsedUrl.href}\n Results are attached.`,
-        html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
-        attachments: [{
-          content: pdf.toString("base64"),
-          filename: sanitizeFilename(`${subject}_${i}.pdf`),
-          type: "application/pdf",
-        }],
-      })
-
-      winston.debug(`Sending email for ${lookerUrl}`)
-      await this.sendEmail(req, msg)
-    }))
-    // } catch (e) {
-    //   response = {success: false, message: `Failed to generate PDF: ${e.message}`}
-    // }
-    return new D.ActionResponse()
+        const msg = new helpers.classes.Mail({
+          to: req.formParams.to!,
+          subject,
+          from,
+          text: `View this data in Looker. ${parsedUrl.href}\n Results are attached.`,
+          html: `<p><a href="${parsedUrl.href}">View this data in Looker.</a></p><p>Results are attached.</p>`,
+          attachments: [{
+            content: pdf.toString("base64"),
+            filename: sanitizeFilename(`${subject}_${i}.pdf`),
+            type: "application/pdf",
+          }],
+        })
+        await this.sendEmail(req, msg)
+      }))
+    } catch (e) {
+      response = {success: false, message: `Failed to generate PDF: ${e.message}`}
+    }
+    return new D.ActionResponse(response)
 
   }
 
