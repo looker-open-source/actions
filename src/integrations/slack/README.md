@@ -1,4 +1,5 @@
-# Slack
+# Slack Attachment
+## Write a data file to Slack.
 
 This integration will send a data file to a slack channel using the credentials of the user account that enables a token. We recommend creating a LookerBot Slack user so that the source of a file is clear but the integration can work with any user.
 

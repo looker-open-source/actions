@@ -1,4 +1,5 @@
 # AWS S3, EC2
+## Write data files to an S3 bucket or Stop an EC2 instance.
 
 The Amazon S3 integrations enables you to send and store a data file on S3 via the Amazon S3 API. The Amazon EC2 Stop Instance integration allows you to stop an EC2 (from a dimension tagged with `aws_resource_id` in LookML) via the Amazon EC2 API.
 
