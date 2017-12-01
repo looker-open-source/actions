@@ -1,4 +1,5 @@
 # Zapier
+## Send data and begin a Zapier zap.
 
 This integration allows you to send data directly to a Zapier Zap. The data format received by Zapier will be the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/integrations/docs/json_detail_example.json)). Build out your Zap using Looker data!
 

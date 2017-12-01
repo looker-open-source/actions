@@ -1,4 +1,5 @@
 # Hipchat
+## Send a message to a Hipchat room referencing data.
 
 This integration will send a data file to a Hipchat room using the credentials of the user account that enables an API Key. We recommend creating a LookerBot Hipchat user so that the source of a file is clear but the integration can work with any user.
 
