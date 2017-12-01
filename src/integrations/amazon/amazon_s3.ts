@@ -66,11 +66,11 @@ export class AmazonS3Integration extends D.Integration {
       }
 
       s3.putObject(params, (err) => {
+        let response
         if (err) {
-          resolve(new D.ActionResponse({ success: false, message: err.message }))
-        } else {
-          resolve(new D.ActionResponse({ success: true }))
+          response = { success: false, message: err.message }
         }
+        resolve(new D.ActionResponse(response))
       })
     })
   }

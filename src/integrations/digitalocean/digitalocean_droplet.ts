@@ -66,11 +66,11 @@ export class DigitalOceanDropletIntegration extends D.Integration {
       const digitalOceanClient = this.digitalOceanClientFromRequest(request)
       instanceIds.forEach((dropletId) => {
         digitalOceanClient.dropletsRequestAction(+dropletId, {type: "power_off"}, (err: any) => {
+          let response
           if (err) {
-            resolve(new D.ActionResponse({success: false, message: err.message}))
-          } else {
-            resolve(new D.ActionResponse())
+            response = {success: false, message: err.message}
           }
+          resolve(new D.ActionResponse(response))
         })
       })
 
