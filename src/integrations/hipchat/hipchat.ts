@@ -49,17 +49,17 @@ export class HipchatIntegration extends D.Integration {
       const hipchatClient = this.hipchatClientFromRequest(request)
       const message = request.suggestedTruncatedMessage(MAX_LINES, HIPCHAT_MAX_MESSAGE_BODY)
 
-      let response
       hipchatClient.send_room_message(
         request.formParams.room, {
           from: "Looker",
           message,
         }, (err: any) => {
+          let response
           if (err) {
             response = {success: false, message: err.message}
           }
+          resolve(new D.ActionResponse(response))
         })
-      resolve(new D.ActionResponse(response))
     })
   }
 
