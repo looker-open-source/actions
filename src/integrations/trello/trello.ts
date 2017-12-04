@@ -13,7 +13,7 @@ export class TrelloIntegration extends D.Integration {
     super()
     this.name = "trello_create_card"
     this.label = "Trello"
-    this.iconName = "trello.svg"
+    this.iconName = "trello/trello.svg"
     this.description = "Create Trello card referencing a Look."
     this.params = [
       {
