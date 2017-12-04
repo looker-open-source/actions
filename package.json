@@ -8,7 +8,7 @@
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/hub.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
-    "test": "yarn test-ts && yarn lint",
+    "test": "yarn test-ts && ./node_modules/.bin/tsc --noEmit && yarn lint",
     "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
