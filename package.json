@@ -9,7 +9,7 @@
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/hub.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && yarn lint",
-    "test-ts": "./node_modules/.bin/mocha -r ./node_modules/ts-node/register test/**/test.ts",
+    "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "prepare": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
@@ -73,14 +73,14 @@
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "^7.1.0",
     "@types/chai-http": "^3.0.3",
-    "@types/mocha": "^2.2.43",
-    "@types/sinon": "^2.3.6",
+    "@types/mocha": "^2.2.44",
+    "@types/sinon": "^4.0.0",
     "@types/sinon-chai": "^2.7.29",
     "chai": "^4.1.0",
     "chai-as-promised": "^7.1.1",
     "chai-http": "^3.0.0",
-    "mocha": "^3.4.2",
-    "sinon": "^2.4.1",
+    "mocha": "^4.0.1",
+    "sinon": "^4.1.2",
     "sinon-chai": "^2.12.0",
     "tslint": "^5.8.0"
   }
