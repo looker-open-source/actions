@@ -12,7 +12,7 @@
     "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
-    "prepare": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
+    "prepack": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
   },
   "keywords": [
     "looker",
