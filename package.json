@@ -13,7 +13,7 @@
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-dependencies": "./node_modules/.bin/depcheck . --ignores '@types/*,depcheck'",
-    "prepack": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
+    "postinstall": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
   },
   "keywords": [
     "looker",
