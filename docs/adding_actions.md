@@ -1,7 +1,6 @@
+## Adding Actions
 
-## Contributing
-
-We're hoping that this project makes it really easy to contribute new integrations.
+We've tried to make it as simple as possible to add a new action to Looker's official Action Hub.
 
 The service is a [Node.js](https://nodejs.org/) server written in [TypeScript](https://www.typescriptlang.org/).
 
@@ -16,11 +15,12 @@ To get started contributing a service you'll need to install:
 - [Node.js](https://nodejs.org/)
 
    The project is set up to use [NVM](https://github.com/creationix/nvm) to select the proper Node.js version.
+
 - [Yarn](https://yarnpkg.com/en/)
 
 When you've got those installed on your machine, run `yarn install` to install all the dependencies.
 
-## Developing a new Integration
+## Developing a new Action
 
 Currently there are three places (`types`) of integrations – `query`, `cell` and `dashboard` level. The [Segment integration](https://github.com/looker/integrations/blob/master/src/integrations/segment/segment.ts) is query level, which means it will attach to the scheduler. In the future, these will be able to attach to queries in Looker in other ways, but the integration shouldn't need to do anything differently to support that. The [Twilio Message integration](https://github.com/looker/integrations/blob/master/src/integrations/twilio/twilio_message.ts) is a `cell` level integration and appears in Looker by adding a "..." to the end of each cell's data in the result table. Cell level integrations are essentially the same as our [existing "data actions"](https://discourse.looker.com/t/data-actions/3573), but provided via the integration API. These integrations will need to specify tag information in `requiredFields` and the relevant fields need to be tagged in some way via the [LookML `tags` parameter](https://docs.looker.com/reference/field-params/tags). The [SendGrid integration](https://github.com/looker/integrations/blob/master/src/integrations/sendgrid/sendgrid.ts) is a dashboard level integration. These integrations support receiving an full dashboard image. An integration can also choose to hook into multiple types of actions if need be.
 
