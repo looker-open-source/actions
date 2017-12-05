@@ -35,7 +35,7 @@
     "@types/request": "^2.0.6",
     "@types/request-promise-native": "^1.0.8",
     "@types/sanitize-filename": "^1.1.28",
-    "@types/ssh2-sftp-client": "^1.1.0",
+    "@types/ssh2-sftp-client": "^2.0.0",
     "@types/twilio": "^0.0.9",
     "@types/underscore": "^1.8.3",
     "@types/uuid": "^3.4.3",
