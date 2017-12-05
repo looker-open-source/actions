@@ -6,6 +6,7 @@
   "scripts": {
     "start": "./node_modules/.bin/ts-node ./src/hub.ts",
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
+    "copy-api-types": "./node_modules/.bin/ts-node ./bin/copy_api_types.ts",
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache -- ./src/hub.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && ./node_modules/.bin/tsc --noEmit && yarn lint && yarn lint-dependencies",

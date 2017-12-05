@@ -156,7 +156,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
             ],
           },
         },
-      }
+      } as any
       return expectSegmentMatch(request, {
         anonymousId: "stubanon",
         userId: null,
