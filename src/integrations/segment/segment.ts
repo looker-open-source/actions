@@ -110,7 +110,6 @@ export class SegmentIntegration extends D.Integration {
         })
       }
 
-      // TODO: does this batching have global state that could be a security problem
       segmentClient.flush((err: any) => {
         if (err) {
           reject(err)
