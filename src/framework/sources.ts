@@ -1,4 +1,4 @@
-import { Action } from "./integration"
+import { Action } from "./action"
 
 const integrations: Action[] = []
 
