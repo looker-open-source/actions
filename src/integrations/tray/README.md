@@ -1,4 +1,5 @@
 # Tray
+## Send data and begin a Tray workflow.
 
 This integration allows you to send data directly to a Tray workflow. The data format received by Tray will be the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/integrations/docs/json_detail_example.json)). Build out your Workflow using Looker data!
 

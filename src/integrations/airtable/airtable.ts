@@ -9,8 +9,8 @@ export class AirtableIntegration extends D.Integration {
 
     this.name = "airtable"
     this.label = "Airtable"
-    this.iconName = "airtable/Airtable.png"
-    this.description = "Add records to an airtable tables."
+    this.iconName = "airtable/airtable.png"
+    this.description = "Add records to an Airtable table."
     this.params = [
       {
         description: "API key for Airtable from https://airtable.com/account.",

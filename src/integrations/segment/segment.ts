@@ -46,6 +46,13 @@ export class SegmentIntegration extends D.Integration {
       }
 
       const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
+      let hiddenFields = []
+      if (request.scheduledPlan &&
+          request.scheduledPlan.query &&
+          request.scheduledPlan.query.vis_config &&
+          request.scheduledPlan.query.vis_config.hidden_fields) {
+        hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
+      }
 
       const identifiableFields = fields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => this.allowedTags.indexOf(t) !== -1),
@@ -85,7 +92,9 @@ export class SegmentIntegration extends D.Integration {
         for (const field of fields) {
           const value = row[field.name].value
           if (!idField || field.name !== idField.name) {
-            traits[field.name] = value
+            if (!hiddenFields.includes(field.name)) {
+              traits[field.name] = value
+            }
           }
           if (emailField && field.name === emailField.name) {
             traits.email = value
@@ -101,7 +110,6 @@ export class SegmentIntegration extends D.Integration {
         })
       }
 
-      // TODO: does this batching have global state that could be a security problem
       segmentClient.flush((err: any) => {
         if (err) {
           reject(err)

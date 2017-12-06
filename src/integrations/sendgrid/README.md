@@ -1,4 +1,5 @@
 # Sendgrid
+## Send data files to an email via SendGrid.
 
 The SendGrid integration allow you to either send data from a Look or schedule results to send to a email address via SendGrid's API.
 
