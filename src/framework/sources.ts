@@ -7,7 +7,7 @@ export function addIntegration(integration: Action) {
 }
 
 export async function allIntegrations() {
-  const whitelistNames = process.env.INTEGRATION_WHITELIST
+  const whitelistNames = process.env.ACTION_WHITELIST
   if (typeof whitelistNames === "string" && whitelistNames.length > 0) {
     const whitelist = whitelistNames.split(",")
     return integrations.filter((i) => whitelist.indexOf(i.name) !== -1)

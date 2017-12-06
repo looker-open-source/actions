@@ -14,16 +14,16 @@ export default class Server implements D.RouteBuilder {
   static run() {
     dotenv.config()
 
-    if (!process.env.BASE_URL) {
-      throw new Error("No BASE_URL environment variable set.")
+    if (!process.env.ACTION_HUB_BASE_URL) {
+      throw new Error("No ACTION_HUB_BASE_URL environment variable set.")
     }
-    if (!process.env.INTEGRATION_PROVIDER_LABEL) {
-      throw new Error("No INTEGRATION_PROVIDER_LABEL environment variable set.")
+    if (!process.env.ACTION_HUB_LABEL) {
+      throw new Error("No ACTION_HUB_LABEL environment variable set.")
     }
-    if (!process.env.INTEGRATION_SERVICE_SECRET) {
-      throw new Error("No INTEGRATION_SERVICE_SECRET environment variable set.")
+    if (!process.env.ACTION_HUB_SECRET) {
+      throw new Error("No ACTION_HUB_SECRET environment variable set.")
     }
-    if (process.env.INTEGRATION_SERVICE_DEBUG) {
+    if (process.env.ACTION_HUB_DEBUG) {
       winston.configure({
         level: "debug",
         transports: [
@@ -55,7 +55,7 @@ export default class Server implements D.RouteBuilder {
       const integrations = await D.allIntegrations()
       const response = {
         integrations: integrations.map((d) => d.asJson(this)),
-        label: process.env.INTEGRATION_PROVIDER_LABEL,
+        label: process.env.ACTION_HUB_LABEL,
       }
       res.json(response)
       winston.debug(`response: ${JSON.stringify(response)}`)
@@ -133,7 +133,7 @@ export default class Server implements D.RouteBuilder {
   }
 
   private absUrl(rootRelativeUrl: string) {
-    return `${process.env.BASE_URL}${rootRelativeUrl}`
+    return `${process.env.ACTION_HUB_BASE_URL}${rootRelativeUrl}`
   }
 
 }
