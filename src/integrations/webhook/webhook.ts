@@ -11,10 +11,10 @@ export abstract class WebhookIntegration extends D.Integration {
     super()
     this.requiredFields = []
     this.params = []
-    this.supportedActionTypes = ["query"]
-    this.supportedFormats = ["json_detail"]
-    this.supportedFormattings = ["unformatted"]
-    this.supportedVisualizationFormattings = ["noapply"]
+    this.supportedActionTypes = [D.ActionType.Query]
+    this.supportedFormats = [D.ActionFormat.JsonDetail]
+    this.supportedFormattings = [D.ActionFormatting.Unformatted]
+    this.supportedVisualizationFormattings = [D.ActionVisualizationFormatting.Noapply]
   }
 
   async action(request: D.ActionRequest) {

@@ -7,6 +7,9 @@ const requiredTypings = [
   "data_webhook_payload_attachment",
   "data_webhook_payload_scheduled_plan",
   "query",
+  "integration",
+  "integration_param",
+  "integration_required_field",
 ]
 
 requiredTypings.forEach((t) => {

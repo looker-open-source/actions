@@ -29,7 +29,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("errors if there is no attachment for query", () => {
       const request = new D.ActionRequest()
-      request.type = "query"
+      request.type = D.ActionType.Query
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -44,7 +44,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("sends right params for query", () => {
       const request = new D.ActionRequest()
-      request.type = "query"
+      request.type = D.ActionType.Query
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -62,7 +62,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("errors if there is no attachment for cell", () => {
       const request = new D.ActionRequest()
-      request.type = "cell"
+      request.type = D.ActionType.Cell
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -77,7 +77,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("sends right params for cell", () => {
       const request = new D.ActionRequest()
-      request.type = "cell"
+      request.type = D.ActionType.Cell
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",

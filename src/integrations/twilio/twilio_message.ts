@@ -14,8 +14,8 @@ export class TwilioMessageIntegration extends D.Integration {
     this.label = "Twilio - Send Message"
     this.iconName = "twilio/twilio.svg"
     this.description = "Send a message to phone numbers via Twilio."
-    this.supportedActionTypes = ["cell", "query"]
-    this.supportedFormats = ["csv", "txt"]
+    this.supportedActionTypes = [D.ActionType.Cell, D.ActionType.Query]
+    this.supportedFormats = [D.ActionFormat.Csv, D.ActionFormat.Txt]
     this.requiredFields = [{tag: TAG}]
     this.params = [
       {

@@ -2,26 +2,23 @@ import * as express from "express"
 import * as sanitizeFilename from "sanitize-filename"
 import { truncateString } from "./utils"
 
-import { WireResponseDataWebhookPayload } from "../api_types/data_webhook_payload"
+import {
+  DataWebhookPayloadType as ActionType,
+  WireResponseDataWebhookPayload,
+} from "../api_types/data_webhook_payload"
 import { DataWebhookPayloadScheduledPlanType } from "../api_types/data_webhook_payload_scheduled_plan"
+import {
+  IntegrationSupportedFormats as ActionFormat,
+  IntegrationSupportedFormattings as ActionFormatting,
+  IntegrationSupportedVisualizationFormattings as ActionVisualizationFormatting,
+} from "../api_types/integration"
 import { WireResponseQuery } from "../api_types/query"
+
+export { ActionType, ActionFormat, ActionFormatting, ActionVisualizationFormatting }
 
 export interface IParamMap {
   [name: string]: string | undefined
 }
-
-export type ActionType = "cell" | "query" | "dashboard"
-export type ActionFormat =
-  "assembled_pdf" |
-  "csv" |
-  "html" |
-  "json" |
-  "json_detail" |
-  "inline_json" |
-  "txt" |
-  "wysiwyg_pdf" |
-  "wysiwyg_png" |
-  "xlsx"
 
 export interface IActionAttachment {
   dataBuffer?: Buffer

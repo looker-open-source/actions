@@ -29,7 +29,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("errors if there is no phone tag", () => {
       const request = new D.ActionRequest()
-      request.type = "query"
+      request.type = D.ActionType.Query
       request.formParams = {
         message: "My Message",
       }
@@ -64,7 +64,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("sends right body", () => {
       const request = new D.ActionRequest()
-      request.type = "query"
+      request.type = D.ActionType.Query
       request.params = {
         from: "fromphone",
       }
@@ -86,7 +86,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("errors if there is no attachment for cell", () => {
       const request = new D.ActionRequest()
-      request.type = "cell"
+      request.type = D.ActionType.Cell
       request.params = {
         from: "fromphone",
       }
@@ -101,7 +101,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("sends right params for cell", () => {
       const request = new D.ActionRequest()
-      request.type = "cell"
+      request.type = D.ActionType.Cell
       request.params = {
         from: "fromphone",
         value: "12122222222",

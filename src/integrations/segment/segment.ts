@@ -24,10 +24,10 @@ export class SegmentIntegration extends D.Integration {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = ["query"]
-    this.supportedFormats = ["json_detail"]
-    this.supportedFormattings = ["unformatted"]
-    this.supportedVisualizationFormattings = ["noapply"]
+    this.supportedActionTypes = [D.ActionType.Query]
+    this.supportedFormats = [D.ActionFormat.JsonDetail]
+    this.supportedFormattings = [D.ActionFormatting.Unformatted]
+    this.supportedVisualizationFormattings = [D.ActionVisualizationFormatting.Noapply]
     this.requiredFields = [{any_tag: this.allowedTags}]
   }
 

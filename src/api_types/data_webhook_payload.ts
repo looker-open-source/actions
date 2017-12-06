@@ -18,8 +18,9 @@ export const RESPONSE_DATA_WEBHOOK_PAYLOAD_FIELDS = [
 ]
 
 export enum DataWebhookPayloadType {
+  Cell = 'cell',
   Query = 'query',
-  Cell = 'cell'
+  Dashboard = 'dashboard'
 }
 
 export class RequestDataWebhookPayload {
@@ -27,7 +28,7 @@ export class RequestDataWebhookPayload {
 }
 
 export class ResponseDataWebhookPayload {
-  /** The type of data payload. Valid values are: "query", "cell". */
+  /** The type of data payload. Valid values are: "cell", "query", "dashboard". */
   type: DataWebhookPayloadType | null
   /** The associated scheduled plan, if this payload is on a schedule. */
   scheduledPlan: ResponseDataWebhookPayloadScheduledPlan | null
@@ -47,7 +48,7 @@ export class WireRequestDataWebhookPayload {
 
 /* tslint:disable:variable-name */
 export class WireResponseDataWebhookPayload {
-  /** The type of data payload. Valid values are: "query", "cell". */
+  /** The type of data payload. Valid values are: "cell", "query", "dashboard". */
   type: DataWebhookPayloadType | null
   /** The associated scheduled plan, if this payload is on a schedule. */
   scheduled_plan: WireResponseDataWebhookPayloadScheduledPlan | null

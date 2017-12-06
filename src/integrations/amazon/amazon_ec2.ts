@@ -35,8 +35,8 @@ export class AmazonEC2Integration extends D.Integration {
           "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
       },
     ]
-    this.supportedActionTypes = ["cell", "query"]
-    this.supportedFormats = ["json_detail"]
+    this.supportedActionTypes = [D.ActionType.Cell, D.ActionType.Query]
+    this.supportedFormats = [D.ActionFormat.JsonDetail]
     this.requiredFields = [{tag: TAG}]
   }
 
