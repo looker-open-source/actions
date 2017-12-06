@@ -2,7 +2,7 @@ import * as D from "../../framework"
 
 import * as S3 from "aws-sdk/clients/s3"
 
-export class AmazonS3Integration extends D.Integration {
+export class AmazonS3Integration extends D.Action {
 
   constructor() {
     super()

@@ -4,7 +4,7 @@ import * as D from "../../framework"
 
 const segment: any = require("analytics-node")
 
-export class SegmentIntegration extends D.Integration {
+export class SegmentIntegration extends D.Action {
 
   allowedTags = ["email", "user_id", "segment_anonymous_id"]
 

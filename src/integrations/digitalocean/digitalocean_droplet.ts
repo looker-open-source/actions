@@ -4,7 +4,7 @@ const digitalOcean = require("do-wrapper")
 
 const TAG = "digitalocean_droplet_id"
 
-export class DigitalOceanDropletIntegration extends D.Integration {
+export class DigitalOceanDropletIntegration extends D.Action {
 
   constructor() {
     super()

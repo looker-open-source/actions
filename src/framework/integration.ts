@@ -13,7 +13,7 @@ import {
 
 const datauri = require("datauri")
 
-export interface IIntegrationParameter {
+export interface IntegrationParameter {
   name: string
   label: string
   required: boolean
@@ -21,23 +21,23 @@ export interface IIntegrationParameter {
   description?: string
 }
 
-export interface IRequiredField {
+export interface RequiredField {
   tag?: string
   any_tag?: string[]
   all_tags?: string[]
 }
 
-export interface Integration {
+export interface Action {
   action(request: ActionRequest): Promise<ActionResponse>
   form?(request: ActionRequest): Promise<ActionForm>
 }
 
-export interface IRouteBuilder {
-  actionUrl(integration: Integration): string
-  formUrl(integration: Integration): string
+export interface RouteBuilder {
+  actionUrl(integration: Action): string
+  formUrl(integration: Action): string
 }
 
-export abstract class Integration {
+export abstract class Action {
 
   name: string
   label: string
@@ -48,11 +48,11 @@ export abstract class Integration {
   supportedFormats?: ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
-  requiredFields?: IRequiredField[] = []
+  requiredFields?: RequiredField[] = []
 
-  params: IIntegrationParameter[]
+  params: IntegrationParameter[]
 
-  asJson(router: IRouteBuilder) {
+  asJson(router: RouteBuilder) {
     return {
       description: this.description,
       form_url: this.form ? router.formUrl(this) : null,

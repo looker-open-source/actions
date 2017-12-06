@@ -6,7 +6,7 @@ const jiraApi = require("jira-client")
 
 const apiVersion = "2"
 
-export class JiraIntegration extends D.Integration {
+export class JiraIntegration extends D.Action {
 
   constructor() {
     super()

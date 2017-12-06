@@ -2,7 +2,7 @@ import * as D from "../../framework"
 
 import * as azure from "azure-storage"
 
-export class AzureStorageIntegration extends D.Integration {
+export class AzureStorageIntegration extends D.Action {
 
   constructor() {
     super()

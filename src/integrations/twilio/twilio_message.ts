@@ -5,7 +5,7 @@ import * as twilio from "twilio"
 const TWILIO_MAX_MESSAGE_BODY = 1600
 const TAG = "phone"
 
-export class TwilioMessageIntegration extends D.Integration {
+export class TwilioMessageIntegration extends D.Action {
 
   constructor() {
     super()

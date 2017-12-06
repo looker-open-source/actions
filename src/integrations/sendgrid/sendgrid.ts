@@ -2,7 +2,7 @@ import * as D from "../../framework"
 
 const sendgridMail = require("@sendgrid/mail")
 
-export interface ISendGridEmail {
+interface SendGridEmail {
   to: string
   subject: string
   from: string
@@ -11,7 +11,7 @@ export interface ISendGridEmail {
   attachments: {content: string, filename: string}[]
 }
 
-export class SendGridIntegration extends D.Integration {
+export class SendGridIntegration extends D.Action {
 
   constructor() {
     super()
@@ -43,7 +43,7 @@ export class SendGridIntegration extends D.Integration {
     const filename = request.formParams.filename || request.suggestedFilename() as string
     const subject = request.formParams.subject || request.scheduledPlan!.title!
     const from = request.formParams.from || "Looker <noreply@lookermail.com>"
-    const msg: ISendGridEmail = {
+    const msg: SendGridEmail = {
       to: request.formParams.to!,
       subject,
       from,
@@ -58,7 +58,7 @@ export class SendGridIntegration extends D.Integration {
     return new D.ActionResponse(response)
   }
 
-  async sendEmail(request: D.ActionRequest, msg: ISendGridEmail) {
+  async sendEmail(request: D.ActionRequest, msg: SendGridEmail) {
     const client = this.sgMailClientFromRequest(request)
     let response
     try {

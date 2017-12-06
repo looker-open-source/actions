@@ -2,12 +2,12 @@ import * as D from "../../framework"
 
 const WebClient = require("@slack/client").WebClient
 
-export interface IChannel {
+interface Channel {
   id: string,
   label: string,
 }
 
-export class SlackAttachmentIntegration extends D.Integration {
+export class SlackAttachmentIntegration extends D.Action {
 
   constructor() {
     super()
@@ -96,7 +96,7 @@ export class SlackAttachmentIntegration extends D.Integration {
   }
 
   async usablePublicChannels(request: D.ActionRequest) {
-    return new Promise<IChannel[]>((resolve, reject) => {
+    return new Promise<Channel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.channels.list({
         exclude_archived: 1,
@@ -106,7 +106,7 @@ export class SlackAttachmentIntegration extends D.Integration {
           reject(err)
         } else {
           const channels = response.channels.filter((c: any) => c.is_member && !c.is_archived)
-          const reformatted: IChannel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
+          const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
           resolve(reformatted)
         }
       })
@@ -114,7 +114,7 @@ export class SlackAttachmentIntegration extends D.Integration {
   }
 
   async usableDMs(request: D.ActionRequest) {
-    return new Promise<IChannel[]>((resolve, reject) => {
+    return new Promise<Channel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.users.list({}, (err: any, response: any) => {
         if (err || !response.ok) {
@@ -123,7 +123,7 @@ export class SlackAttachmentIntegration extends D.Integration {
           const users = response.members.filter((u: any) => {
             return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
           })
-          const reformatted: IChannel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
+          const reformatted: Channel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
           resolve(reformatted)
         }
       })

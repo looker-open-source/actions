@@ -9,7 +9,7 @@ import * as apiKey from "./api_key"
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 
-export default class Server implements D.IRouteBuilder {
+export default class Server implements D.RouteBuilder {
 
   static run() {
     dotenv.config()
@@ -94,11 +94,11 @@ export default class Server implements D.IRouteBuilder {
 
   }
 
-  actionUrl(integration: D.Integration) {
+  actionUrl(integration: D.Action) {
     return this.absUrl(`/integrations/${encodeURIComponent(integration.name)}/action`)
   }
 
-  formUrl(integration: D.Integration) {
+  formUrl(integration: D.Action) {
     return this.absUrl(`/integrations/${encodeURIComponent(integration.name)}/form`)
   }
 

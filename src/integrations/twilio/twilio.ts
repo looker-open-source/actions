@@ -5,7 +5,7 @@ import * as twilio from "twilio"
 const MAX_LINES = 10
 const TWILIO_MAX_MESSAGE_BODY = 1600
 
-export class TwilioIntegration extends D.Integration {
+export class TwilioIntegration extends D.Action {
 
   constructor() {
     super()

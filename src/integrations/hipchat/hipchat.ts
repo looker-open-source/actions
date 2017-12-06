@@ -2,7 +2,7 @@ import * as D from "../../framework"
 
 const hipchat = require("hipchatter")
 
-export interface IRoom {
+interface Room {
   id: string,
   label: string,
 }
@@ -10,7 +10,7 @@ export interface IRoom {
 const MAX_LINES = 10
 const HIPCHAT_MAX_MESSAGE_BODY = 10000
 
-export class HipchatIntegration extends D.Integration {
+export class HipchatIntegration extends D.Action {
 
   constructor() {
     super()
@@ -80,14 +80,14 @@ export class HipchatIntegration extends D.Integration {
   }
 
   async usableRooms(request: D.ActionRequest) {
-    return new Promise<IRoom[]>((resolve, reject) => {
+    return new Promise<Room[]>((resolve, reject) => {
       const hipchatClient = this.hipchatClientFromRequest(request)
       hipchatClient.rooms((err: any, response: any) => {
         if (err) {
           reject(err)
         } else {
           const rooms = response.filter((r: any) => !(r.privacy === "private") && !r.is_archived)
-          const reformatted: IRoom[] = rooms.map((room: any) => ({id: room.id, label: room.name}))
+          const reformatted: Room[] = rooms.map((room: any) => ({id: room.id, label: room.name}))
           resolve(reformatted)
         }
       })

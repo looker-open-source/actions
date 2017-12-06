@@ -1,8 +1,8 @@
-import { Integration } from "./integration"
+import { Action } from "./integration"
 
-const integrations: Integration[] = []
+const integrations: Action[] = []
 
-export function addIntegration(integration: Integration) {
+export function addIntegration(integration: Action) {
   integrations.push(integration)
 }
 
