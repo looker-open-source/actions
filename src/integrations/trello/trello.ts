@@ -79,11 +79,13 @@ export class TrelloIntegration extends D.Integration {
       type: "select",
       required: true,
     }, {
+      description: "Trello card name.",
       label: "Name",
       name: "name",
       type: "string",
       required: true,
     }, {
+      description: "Trello card description.",
       label: "Description",
       name: "description",
       type: "textarea",
@@ -96,7 +98,7 @@ export class TrelloIntegration extends D.Integration {
     return new Promise<IList[]>((resolve, reject) => {
       const trello = this.trelloClientFromRequest(request)
       trello.get("/1/members/me/boards", {lists: "all"}, (err: any, response: any) => {
-        if (err) {reject(err)}
+        if (err || response.length === 0) {reject(err)}
         let lists: any[] = []
         response.forEach((b: any) => {
           lists = lists.concat(b.lists.map((l: any) => {
