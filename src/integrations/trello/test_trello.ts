@@ -103,11 +103,13 @@ describe(`${integration.constructor.name} unit tests`, () => {
           type: "select",
           required: true,
         }, {
+          description: "Trello card name.",
           label: "Name",
           name: "name",
           type: "string",
           required: true,
         }, {
+          description: "Trello card description.",
           label: "Description",
           name: "description",
           type: "textarea",
