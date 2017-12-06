@@ -3,7 +3,7 @@ import * as sinon from "sinon"
 
 import * as D from "../../../src/framework"
 
-import { TwilioIntegration } from "../../../src/integrations/twilio/twilio"
+import { TwilioIntegration } from "./twilio"
 
 const integration = new TwilioIntegration()
 
