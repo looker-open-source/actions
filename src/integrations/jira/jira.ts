@@ -35,7 +35,7 @@ export class JiraIntegration extends D.Integration {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = [D.ActionType.Query]
     this.requiredFields = []
   }
 

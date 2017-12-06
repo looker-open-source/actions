@@ -4,9 +4,11 @@ import * as path from "path"
 import {
   ActionForm,
   ActionFormat,
+  ActionFormatting,
   ActionRequest,
   ActionResponse,
   ActionType,
+  ActionVisualizationFormatting,
 } from "."
 
 const datauri = require("datauri")
@@ -44,8 +46,8 @@ export abstract class Integration {
 
   supportedActionTypes: ActionType[]
   supportedFormats?: ActionFormat[]
-  supportedFormattings?: ("formatted" | "unformatted")[]
-  supportedVisualizationFormattings?: ("apply" | "noapply")[]
+  supportedFormattings?: ActionFormatting[]
+  supportedVisualizationFormattings?: ActionVisualizationFormatting[]
   requiredFields?: IRequiredField[] = []
 
   params: IIntegrationParameter[]

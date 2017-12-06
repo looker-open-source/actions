@@ -23,5 +23,8 @@
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
     },
+    "linterOptions": {
+      "exclude": ["src/api_types/**/*"]
+    },
     "rulesDirectory": []
 }

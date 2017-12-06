@@ -11,7 +11,7 @@ export class AmazonS3Integration extends D.Integration {
     this.label = "Amazon S3"
     this.iconName = "amazon/amazon_s3.png"
     this.description = "Write data files to an S3 bucket."
-    this.supportedActionTypes = ["query", "dashboard"]
+    this.supportedActionTypes = [D.ActionType.Dashboard, D.ActionType.Query]
     this.requiredFields = []
     this.params = [
       {

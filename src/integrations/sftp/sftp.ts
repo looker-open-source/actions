@@ -13,7 +13,7 @@ export class SFTPIntegration extends D.Integration {
     this.label = "SFTP"
     this.iconName = "sftp/sftp.png"
     this.description = "Send data files to an SFTP server."
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = [D.ActionType.Query]
     this.params = []
   }
 

@@ -18,7 +18,7 @@ export class HipchatIntegration extends D.Integration {
     this.label = "Hipchat"
     this.iconName = "hipchat/hipchat.png"
     this.description = "Send a message to a Hipchat room referencing data."
-    this.supportedActionTypes = ["query"]
+    this.supportedActionTypes = [D.ActionType.Query]
     this.requiredFields = []
     this.params = [
       {
@@ -29,8 +29,8 @@ export class HipchatIntegration extends D.Integration {
         description: "API Key generated at https://hipchat.com/account/api",
       },
     ]
-    this.supportedFormats = ["json_detail"]
-    this.supportedFormattings = ["unformatted"]
+    this.supportedFormats = [D.ActionFormat.JsonDetail]
+    this.supportedFormattings = [D.ActionFormatting.Unformatted]
   }
 
   async action(request: D.ActionRequest) {

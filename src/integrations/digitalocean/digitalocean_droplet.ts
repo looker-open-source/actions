@@ -22,8 +22,8 @@ export class DigitalOceanDropletIntegration extends D.Integration {
         description: "",
       },
     ]
-    this.supportedActionTypes = ["cell", "query"]
-    this.supportedFormats = ["json_detail"]
+    this.supportedActionTypes = [D.ActionType.Cell, D.ActionType.Query]
+    this.supportedFormats = [D.ActionFormat.JsonDetail]
     this.requiredFields = [{tag: TAG}]
   }
 

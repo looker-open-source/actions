@@ -29,7 +29,7 @@ export class SendGridIntegration extends D.Integration {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = ["query", "dashboard"]
+    this.supportedActionTypes = [D.ActionType.Query, D.ActionType.Dashboard]
   }
 
   async action(request: D.ActionRequest) {
