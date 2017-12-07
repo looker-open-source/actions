@@ -67,7 +67,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       const msg = new helpers.classes.Mail({
         to: request.formParams.to,
-        subject: request.scheduledPlan.title as string,
+        subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
@@ -121,7 +121,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       const msg = new helpers.classes.Mail({
         to: request.formParams.to,
-        subject: request.scheduledPlan.title as string,
+        subject: request.scheduledPlan.title!,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
