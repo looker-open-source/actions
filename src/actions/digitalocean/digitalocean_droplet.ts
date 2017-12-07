@@ -32,7 +32,7 @@ export class DigitalOceanDropletAction extends Hub.Action {
 
       let instanceIds: string[] = []
       switch (request.type) {
-        case "query":
+        case Hub.ActionType.Query:
           if (!(request.attachment && request.attachment.dataJSON)) {
             reject("Couldn't get data from attachment.")
             return
@@ -53,7 +53,7 @@ export class DigitalOceanDropletAction extends Hub.Action {
           }
           instanceIds = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
           break
-        case "cell":
+        case Hub.ActionType.Cell:
           const value = request.params.value
           if (!value) {
             reject("Couldn't get data from attachment.")
