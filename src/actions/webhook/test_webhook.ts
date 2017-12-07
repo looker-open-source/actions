@@ -2,7 +2,7 @@ import * as chai from "chai"
 import * as req from "request-promise-native"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { WebhookAction } from "./webhook"
 
@@ -14,7 +14,7 @@ class GoodWebhookAction extends WebhookAction {
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       label: "Webhook URL",
       name: "url",
@@ -27,7 +27,7 @@ class GoodWebhookAction extends WebhookAction {
 
 const action = new GoodWebhookAction()
 
-function expectWebhookMatch(request: D.ActionRequest, match: any) {
+function expectWebhookMatch(request: Hub.ActionRequest, match: any) {
   const postSpy = sinon.spy(async () => null)
   const stubPost = sinon.stub(req, "post").callsFake(postSpy)
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
@@ -41,13 +41,13 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
     it("errors if there is no url", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {dataJSON: {
         fields: [{name: "coolfield", tags: ["user_id"]}],
@@ -58,7 +58,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is wrong domain for url", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         url: "http://abc.com/",
       }
@@ -71,7 +71,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         url: "http://abc.example.com/",
       }
@@ -94,7 +94,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("has form with url param", (done) => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

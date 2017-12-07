@@ -1,10 +1,10 @@
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import * as EC2 from "aws-sdk/clients/ec2"
 
 const TAG = "aws_resource_id"
 
-export class AmazonEC2Action extends D.Action {
+export class AmazonEC2Action extends Hub.Action {
 
   constructor() {
     super()
@@ -35,12 +35,12 @@ export class AmazonEC2Action extends D.Action {
           "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
       },
     ]
-    this.supportedActionTypes = [D.ActionType.Cell, D.ActionType.Query]
-    this.supportedFormats = [D.ActionFormat.JsonDetail]
+    this.supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
+    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
     this.requiredFields = [{tag: TAG}]
   }
 
-  async execute(request: D.ActionRequest) {
+  async execute(request: Hub.ActionRequest) {
     let instanceIds: string[] = []
     switch (request.type) {
       case "query":
@@ -77,10 +77,10 @@ export class AmazonEC2Action extends D.Action {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.ActionResponse(response)
+    return new Hub.ActionResponse(response)
   }
 
-  private amazonEC2ClientFromRequest(request: D.ActionRequest) {
+  private amazonEC2ClientFromRequest(request: Hub.ActionRequest) {
     return new EC2(({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,
@@ -90,4 +90,4 @@ export class AmazonEC2Action extends D.Action {
 
 }
 
-D.addAction(new AmazonEC2Action())
+Hub.addAction(new AmazonEC2Action())

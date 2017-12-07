@@ -1,9 +1,9 @@
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import * as req from "request-promise-native"
 import * as url from "url"
 
-export abstract class WebhookAction extends D.Action {
+export abstract class WebhookAction extends Hub.Action {
 
   domain: string
 
@@ -11,13 +11,13 @@ export abstract class WebhookAction extends D.Action {
     super()
     this.requiredFields = []
     this.params = []
-    this.supportedActionTypes = [D.ActionType.Query]
-    this.supportedFormats = [D.ActionFormat.JsonDetail]
-    this.supportedFormattings = [D.ActionFormatting.Unformatted]
-    this.supportedVisualizationFormattings = [D.ActionVisualizationFormatting.Noapply]
+    this.supportedActionTypes = [Hub.ActionType.Query]
+    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
+    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
+    this.supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   }
 
-  async execute(request: D.ActionRequest) {
+  async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
       throw "No attached json."
     }
@@ -50,11 +50,11 @@ export abstract class WebhookAction extends D.Action {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.ActionResponse(response)
+    return new Hub.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       label: "Webhook URL",
       name: "url",

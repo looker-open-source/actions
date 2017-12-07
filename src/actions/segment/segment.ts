@@ -1,10 +1,10 @@
 import * as uuid from "uuid"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 const segment: any = require("analytics-node")
 
-export class SegmentAction extends D.Action {
+export class SegmentAction extends Hub.Action {
 
   allowedTags = ["email", "user_id", "segment_anonymous_id"]
 
@@ -24,15 +24,15 @@ export class SegmentAction extends D.Action {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = [D.ActionType.Query]
-    this.supportedFormats = [D.ActionFormat.JsonDetail]
-    this.supportedFormattings = [D.ActionFormatting.Unformatted]
-    this.supportedVisualizationFormattings = [D.ActionVisualizationFormatting.Noapply]
+    this.supportedActionTypes = [Hub.ActionType.Query]
+    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
+    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
+    this.supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
     this.requiredFields = [{any_tag: this.allowedTags}]
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise<D.ActionResponse>((resolve, reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json")
@@ -114,14 +114,14 @@ export class SegmentAction extends D.Action {
         if (err) {
           reject(err)
         } else {
-          resolve(new D.ActionResponse())
+          resolve(new Hub.ActionResponse())
         }
       })
 
     })
   }
 
-  private segmentClientFromRequest(request: D.ActionRequest) {
+  private segmentClientFromRequest(request: Hub.ActionRequest) {
     return new segment(request.params.segment_write_key)
   }
 
@@ -131,4 +131,4 @@ export class SegmentAction extends D.Action {
 
 }
 
-D.addAction(new SegmentAction())
+Hub.addAction(new SegmentAction())

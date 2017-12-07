@@ -1,14 +1,14 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { AirtableAction } from "./airtable"
 
 const action = new AirtableAction()
 
 function expectWebhookMatch(
-  request: D.ActionRequest,
+  request: Hub.ActionRequest,
   base: any,
   table: any,
   match: any,
@@ -38,13 +38,13 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
     it("errors if there is no url", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {dataJSON: {
         fields: {
@@ -59,7 +59,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -79,7 +79,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body with label_short if present", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -110,7 +110,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("has form with base and table param", (done) => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

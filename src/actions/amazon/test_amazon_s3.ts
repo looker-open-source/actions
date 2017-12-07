@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { AmazonS3Action } from "./amazon_s3"
 
 const action = new AmazonS3Action()
 
-function expectAmazonS3Match(request: D.ActionRequest, match: any) {
+function expectAmazonS3Match(request: Hub.ActionRequest, match: any) {
 
   const putObjectSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully put item ${params} in database`)
@@ -31,7 +31,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no bucket", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -46,7 +46,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         bucket: "mybucket",
         access_key_id: "mykey",
@@ -59,7 +59,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body to key and bucket", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         bucket: "mybucket",
         access_key_id: "mykey",
@@ -75,7 +75,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends to right filename if specified", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         bucket: "mybucket",
         access_key_id: "mykey",
@@ -114,7 +114,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }))
 
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

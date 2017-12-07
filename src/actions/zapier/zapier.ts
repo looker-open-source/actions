@@ -1,4 +1,4 @@
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import {WebhookAction} from "../webhook/webhook"
 
@@ -14,7 +14,7 @@ export class ZapierAction extends WebhookAction {
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       label: "Zapier Webhook URL",
       name: "url",
@@ -25,4 +25,4 @@ export class ZapierAction extends WebhookAction {
   }
 }
 
-D.addAction(new ZapierAction())
+Hub.addAction(new ZapierAction())

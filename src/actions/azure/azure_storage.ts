@@ -1,8 +1,8 @@
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import * as azure from "azure-storage"
 
-export class AzureStorageAction extends D.Action {
+export class AzureStorageAction extends Hub.Action {
 
   constructor() {
     super()
@@ -11,7 +11,7 @@ export class AzureStorageAction extends D.Action {
     this.label = "Azure Storage"
     this.iconName = "azure/azure_storage.png"
     this.description = "Write data files to an Azure container."
-    this.supportedActionTypes = [D.ActionType.Query, D.ActionType.Dashboard]
+    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     this.requiredFields = []
     this.params = [
       {
@@ -30,8 +30,8 @@ export class AzureStorageAction extends D.Action {
     ]
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise<D.ActionResponse>((resolve, reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment")
@@ -60,13 +60,13 @@ export class AzureStorageAction extends D.Action {
           if (e) {
             response = {success: false, message: e.message}
           }
-          resolve(new D.ActionResponse(response))
+          resolve(new Hub.ActionResponse(response))
         })
     })
   }
 
-  async form(request: D.ActionRequest) {
-    const promise = new Promise<D.ActionForm>((resolve, reject) => {
+  async form(request: Hub.ActionRequest) {
+    const promise = new Promise<Hub.ActionForm>((resolve, reject) => {
       // error in type definition for listContainersSegmented currentToken?
       // https://github.com/Azure/azure-storage-node/issues/352
       const blogService: any = this.azureClientFromRequest(request)
@@ -74,7 +74,7 @@ export class AzureStorageAction extends D.Action {
         if (err) {
           reject(err)
         } else {
-          const form = new D.ActionForm()
+          const form = new Hub.ActionForm()
           form.fields = [{
             label: "Container",
             name: "container",
@@ -97,10 +97,10 @@ export class AzureStorageAction extends D.Action {
     return promise
   }
 
-  private azureClientFromRequest(request: D.ActionRequest) {
+  private azureClientFromRequest(request: Hub.ActionRequest) {
     return azure.createBlobService(request.params.account!, request.params.accessKey!)
   }
 
 }
 
-D.addAction(new AzureStorageAction())
+Hub.addAction(new AzureStorageAction())

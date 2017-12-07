@@ -1,8 +1,8 @@
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import * as S3 from "aws-sdk/clients/s3"
 
-export class AmazonS3Action extends D.Action {
+export class AmazonS3Action extends Hub.Action {
 
   constructor() {
     super()
@@ -11,7 +11,7 @@ export class AmazonS3Action extends D.Action {
     this.label = "Amazon S3"
     this.iconName = "amazon/amazon_s3.png"
     this.description = "Write data files to an S3 bucket."
-    this.supportedActionTypes = [D.ActionType.Dashboard, D.ActionType.Query]
+    this.supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
     this.requiredFields = []
     this.params = [
       {
@@ -37,8 +37,8 @@ export class AmazonS3Action extends D.Action {
     ]
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise<D.ActionResponse>((resolve, reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -67,22 +67,22 @@ export class AmazonS3Action extends D.Action {
 
       s3.putObject(params, (err) => {
         if (err) {
-          resolve(new D.ActionResponse({ success: false, message: err.message }))
+          resolve(new Hub.ActionResponse({ success: false, message: err.message }))
         } else {
-          resolve(new D.ActionResponse({ success: true }))
+          resolve(new Hub.ActionResponse({ success: true }))
         }
       })
     })
   }
 
-  async form(request: D.ActionRequest) {
-    const promise = new Promise<D.ActionForm>((resolve, reject) => {
+  async form(request: Hub.ActionRequest) {
+    const promise = new Promise<Hub.ActionForm>((resolve, reject) => {
       const s3 = this.amazonS3ClientFromRequest(request)
       s3.listBuckets((err, res) => {
         if (err || !res.Buckets) {
           reject(err)
         } else {
-          const form = new D.ActionForm()
+          const form = new Hub.ActionForm()
           form.fields = [{
             label: "Bucket",
             name: "bucket",
@@ -109,7 +109,7 @@ export class AmazonS3Action extends D.Action {
     return promise
   }
 
-  protected amazonS3ClientFromRequest(request: D.ActionRequest) {
+  protected amazonS3ClientFromRequest(request: Hub.ActionRequest) {
     return new S3(({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,

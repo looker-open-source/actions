@@ -1,11 +1,11 @@
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import * as twilio from "twilio"
 
 const TWILIO_MAX_MESSAGE_BODY = 1600
 const TAG = "phone"
 
-export class TwilioMessageAction extends D.Action {
+export class TwilioMessageAction extends Hub.Action {
 
   constructor() {
     super()
@@ -14,8 +14,8 @@ export class TwilioMessageAction extends D.Action {
     this.label = "Twilio - Send Message"
     this.iconName = "twilio/twilio.svg"
     this.description = "Send a message to phone numbers via Twilio."
-    this.supportedActionTypes = [D.ActionType.Cell, D.ActionType.Query]
-    this.supportedFormats = [D.ActionFormat.Csv, D.ActionFormat.Txt]
+    this.supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
+    this.supportedFormats = [Hub.ActionFormat.Csv, Hub.ActionFormat.Txt]
     this.requiredFields = [{tag: TAG}]
     this.params = [
       {
@@ -40,13 +40,13 @@ export class TwilioMessageAction extends D.Action {
     ]
   }
 
-  async execute(request: D.ActionRequest) {
+  async execute(request: Hub.ActionRequest) {
 
     if (!request.formParams || !request.formParams.message) {
       throw "Need a message."
     }
 
-    const body = D.truncateString(request.formParams.message!, TWILIO_MAX_MESSAGE_BODY)
+    const body = Hub.truncateString(request.formParams.message!, TWILIO_MAX_MESSAGE_BODY)
 
     let phoneNumbers: string[] = []
     switch (request.type) {
@@ -93,11 +93,11 @@ export class TwilioMessageAction extends D.Action {
       response = {success: false, message: e.message}
     }
 
-    return new D.ActionResponse(response)
+    return new Hub.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       label: "Message",
       name: "message",
@@ -107,10 +107,10 @@ export class TwilioMessageAction extends D.Action {
     return form
   }
 
-  private twilioClientFromRequest(request: D.ActionRequest) {
+  private twilioClientFromRequest(request: Hub.ActionRequest) {
     return twilio(request.params.accountSid, request.params.authToken)
   }
 
 }
 
-D.addAction(new TwilioMessageAction())
+Hub.addAction(new TwilioMessageAction())

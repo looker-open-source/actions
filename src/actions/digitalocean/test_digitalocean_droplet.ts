@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { DigitalOceanDropletAction } from "./digitalocean_droplet"
 
 const action = new DigitalOceanDropletAction()
 
-function expectDigitalOceanDropletActionMatch(request: D.ActionRequest, ...match: any[]) {
+function expectDigitalOceanDropletActionMatch(request: Hub.ActionRequest, ...match: any[]) {
 
   const dropletsRequestActionSpy = sinon.spy(
     (dropletId: string, params: any, callback: (err: any, data: any) => void) => {
@@ -28,8 +28,8 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no attachment for query", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Query
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.params = {
         digitalocean_api_key: "mykey",
       }
@@ -39,8 +39,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for query", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Query
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.params = {
         digitalocean_api_key: "mykey",
       }
@@ -54,8 +54,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is no attachment for cell", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Cell
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Cell
       request.params = {
         digitalocean_api_key: "mykey",
       }
@@ -64,8 +64,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for cell", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Cell
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Cell
       request.params = {
         digitalocean_api_key: "mykey",
         value: "12345",

@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { JiraAction } from "./jira"
 
 const action = new JiraAction()
 
-function expectJiraNewIssueMatch(request: D.ActionRequest, match: any) {
+function expectJiraNewIssueMatch(request: Hub.ActionRequest, match: any) {
 
   const addNewIssueSpy = sinon.spy(async () => 1)
   const addAttachmentonIssueSpy = sinon.spy(async () => 10)
@@ -31,7 +31,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("sends correct jira new issue", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {url: "looker_url"}
       request.formParams = {
         project: "1",
@@ -74,7 +74,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               {id: "2", name: "Request"}],
           }
         })
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

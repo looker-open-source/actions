@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { SFTPAction } from "./sftp"
 
 const action = new SFTPAction()
 
-function expectSFTPMatch(request: D.ActionRequest, dataMatch: any, pathMatch: any) {
+function expectSFTPMatch(request: Hub.ActionRequest, dataMatch: any, pathMatch: any) {
 
   const putSpy = sinon.spy(async () => Promise.resolve())
 
@@ -31,7 +31,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no address", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
@@ -41,7 +41,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         address: "sftp://host/path/",
       }
@@ -60,7 +60,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       ]
 
       return Promise.all(bumAddresses.map((address) => {
-        const request = new D.ActionRequest()
+        const request = new Hub.ActionRequest()
         request.formParams = {
           address,
         }
@@ -69,7 +69,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body to filename and address", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         address: "sftp://host/path/",
       }
@@ -79,7 +79,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends to right filename if specified", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         address: "sftp://host/path/",
         filename: "mywackyfilename",

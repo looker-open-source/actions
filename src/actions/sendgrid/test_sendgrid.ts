@@ -1,7 +1,7 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { SendGridAction } from "./sendgrid"
 
@@ -9,7 +9,7 @@ const action = new SendGridAction()
 
 const stubFilename = "stubSuggestedFilename"
 
-function expectSendGridMatch(request: D.ActionRequest, match: any) {
+function expectSendGridMatch(request: Hub.ActionRequest, match: any) {
 
   const sendSpy = sinon.spy(async () => Promise.resolve())
 
@@ -33,7 +33,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no email address", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
@@ -43,7 +43,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         to: "test@example.com",
       }
@@ -53,7 +53,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body to filename and address", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {
         title: "Hello attachment",
         url: "https://mycompany.looker.com/look/1",
@@ -79,7 +79,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends to right filename if specified", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {
         title: "Hello attachment",
         url: "https://mycompany.looker.com/look/1",
@@ -106,7 +106,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends from right email if specified", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {
         title: "Hello attachment",
         url: "https://mycompany.looker.com/look/1",
@@ -134,7 +134,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends with right subject if specified", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {
         title: "Hello attachment",
         url: "https://mycompany.looker.com/look/1",

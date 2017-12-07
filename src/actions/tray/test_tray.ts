@@ -1,6 +1,6 @@
 import * as chai from "chai"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { TrayAction } from "./tray"
 
@@ -15,7 +15,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("has form with url param", (done) => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

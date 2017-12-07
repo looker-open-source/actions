@@ -1,4 +1,4 @@
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import {WebhookAction} from "../webhook/webhook"
 
@@ -14,7 +14,7 @@ export class TrayAction extends WebhookAction {
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       label: "Tray Webhook URL",
       name: "url",
@@ -25,4 +25,4 @@ export class TrayAction extends WebhookAction {
   }
 }
 
-D.addAction(new TrayAction())
+Hub.addAction(new TrayAction())

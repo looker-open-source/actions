@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../hub"
 
 import { HipchatAction } from "./hipchat"
 
 const action = new HipchatAction()
 
-function expectHipchatMatch(request: D.ActionRequest, ...match: any[]) {
+function expectHipchatMatch(request: Hub.ActionRequest, ...match: any[]) {
 
   const messageSpy = sinon.spy((room: any, message: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully sent ${room} ${message}`)
@@ -29,7 +29,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no room", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
@@ -39,7 +39,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         room: "myroom",
       }
@@ -49,7 +49,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body and room", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         room: "myroom",
       }
@@ -84,7 +84,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
       }))
 
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
