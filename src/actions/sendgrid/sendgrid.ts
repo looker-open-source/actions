@@ -1,15 +1,8 @@
 import * as Hub from "../../hub"
 
-const sendgridMail = require("@sendgrid/mail")
+import * as helpers from "@sendgrid/helpers"
 
-interface SendGridEmail {
-  to: string
-  subject: string
-  from: string
-  text: string
-  html: string
-  attachments: {content: string, filename: string}[]
-}
+const sendgridMail = require("@sendgrid/mail")
 
 export class SendGridAction extends Hub.Action {
 
@@ -41,32 +34,33 @@ export class SendGridAction extends Hub.Action {
       throw "Needs a valid email address."
     }
     const filename = request.formParams.filename || request.suggestedFilename() as string
-    const subject = request.formParams.subject || request.scheduledPlan!.title!
+    const plan = request.scheduledPlan!
+    const subject = request.formParams.subject || (plan ? plan.title : "Looker") as string
     const from = request.formParams.from || "Looker <noreply@lookermail.com>"
-    const msg: SendGridEmail = {
+
+    const msg = new helpers.classes.Mail({
       to: request.formParams.to!,
       subject,
       from,
-      text: `View this data in Looker. ${request.scheduledPlan!.url}\n Results are attached.`,
-      html: `<p><a href="${request.scheduledPlan!.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
+      text: `View this data in Looker. ${plan.url}\n Results are attached.`,
+      html: `<p><a href="${plan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
-    }
-    const response = await this.sendEmail(request, msg)
-    return new Hub.ActionResponse(response)
-  }
-
-  async sendEmail(request: Hub.ActionRequest, msg: SendGridEmail) {
-    const client = this.sgMailClientFromRequest(request)
+    })
     let response
     try {
-      await client.send(msg)
+      await this.sendEmail(request, msg)
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return response
+    return new Hub.ActionResponse(response)
+  }
+
+  async sendEmail(request: Hub.ActionRequest, msg: helpers.classes.Mail) {
+    const client = this.sgMailClientFromRequest(request)
+    return await client.send(msg)
   }
 
   async form() {

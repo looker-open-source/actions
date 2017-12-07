@@ -3,6 +3,8 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
+import * as helpers from "@sendgrid/helpers"
+
 import { SendGridAction } from "./sendgrid"
 
 const action = new SendGridAction()
@@ -63,9 +65,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
 
-      const msg = {
+      const msg = new helpers.classes.Mail({
         to: request.formParams.to,
-        subject: request.scheduledPlan.title,
+        subject: request.scheduledPlan.title as string,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
@@ -73,7 +75,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: stubFilename,
         }],
-      }
+      })
 
       return expectSendGridMatch(request, msg)
     })
@@ -90,7 +92,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
 
-      const msg = {
+      const msg = new helpers.classes.Mail({
         to: request.formParams.to,
         subject: "Hello attachment",
         from: "Looker <noreply@lookermail.com>",
@@ -100,7 +102,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: request.formParams.filename!,
         }],
-      }
+      })
 
       return expectSendGridMatch(request, msg)
     })
@@ -114,13 +116,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {
         to: "test@example.com",
         filename: "mywackyfilename",
-        subject: "mysubject",
       }
       request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
 
-      const msg = {
+      const msg = new helpers.classes.Mail({
         to: request.formParams.to,
-        subject: request.formParams.subject,
+        subject: request.scheduledPlan.title as string,
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
@@ -128,7 +129,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: request.formParams.filename!,
         }],
-      }
+      })
 
       return expectSendGridMatch(request, msg)
     })
@@ -141,23 +142,22 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.formParams = {
         to: "test@example.com",
-        from: "from@example.com",
         filename: "mywackyfilename",
         subject: "mysubject",
       }
       request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
 
-      const msg = {
+      const msg = new helpers.classes.Mail({
         to: request.formParams.to,
         subject: request.formParams.subject,
-        from: request.formParams.from,
+        from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
         attachments: [{
           content: request.attachment.dataBuffer!.toString(request.attachment.encoding),
           filename: request.formParams.filename!,
         }],
-      }
+      })
 
       return expectSendGridMatch(request, msg)
     })
