@@ -35,7 +35,7 @@ export class SendGridAction extends Hub.Action {
     }
     const filename = request.formParams.filename || request.suggestedFilename() as string
     const plan = request.scheduledPlan!
-    const subject = request.formParams.subject || (plan ? plan.title : "Looker") as string
+    const subject = request.formParams.subject || (plan && plan.title ? plan.title : "Looker")
     const from = request.formParams.from || "Looker <noreply@lookermail.com>"
 
     const msg = new helpers.classes.Mail({
