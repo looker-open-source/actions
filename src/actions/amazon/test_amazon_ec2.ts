@@ -16,7 +16,7 @@ function expectAmazonEC2Match(request: D.ActionRequest, match: any) {
     .callsFake(() => ({
       stopInstances: stopInstancesSpy,
     }))
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(stopInstancesSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
@@ -36,7 +36,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         region: "us-east-1",
       }
 
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
@@ -69,7 +69,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         region: "us-east-1",
       }
 
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Couldn't get data from cell.")

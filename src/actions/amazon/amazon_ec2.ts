@@ -40,7 +40,7 @@ export class AmazonEC2Action extends D.Action {
     this.requiredFields = [{tag: TAG}]
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
     let instanceIds: string[] = []
     switch (request.type) {
       case "query":

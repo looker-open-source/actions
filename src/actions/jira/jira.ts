@@ -39,7 +39,7 @@ export class JiraAction extends D.Action {
     this.requiredFields = []
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment"
     }

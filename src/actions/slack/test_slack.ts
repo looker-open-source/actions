@@ -25,7 +25,7 @@ function expectSlackMatch(request: D.ActionRequest, fileNameMatch: string, optio
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => stubFileName)
 
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(fileUploadSpy).to.have.been.calledWithMatch(fileNameMatch, optionsMatch)
     stubClient.restore()
@@ -44,7 +44,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
         fileExtension: "csv",
       }
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Missing channel.")
@@ -56,7 +56,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         channel: "mychannel",
       }
 
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 

@@ -24,7 +24,7 @@ function expectWebhookMatch(
       base: baseSpy,
     }))
 
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(baseSpy).to.have.been.calledWith(base)
     chai.expect(tableSpy).to.have.been.calledWith(table)
@@ -39,7 +39,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("errors if the input has no attachment", () => {
       const request = new D.ActionRequest()
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
@@ -54,7 +54,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         },
         data: [{"coolview.coolfield": {value: "funvalue"}}],
       }}
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Missing Airtable base or table.")
     })
 

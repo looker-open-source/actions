@@ -17,7 +17,7 @@ export abstract class WebhookAction extends D.Action {
     this.supportedVisualizationFormattings = [D.ActionVisualizationFormatting.Noapply]
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
       throw "No attached json."
     }

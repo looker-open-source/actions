@@ -17,7 +17,7 @@ export class SFTPAction extends D.Action {
     this.params = []
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
     return new Promise<D.ActionResponse>(async (resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {

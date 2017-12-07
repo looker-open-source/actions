@@ -20,7 +20,7 @@ function expectJiraNewIssueMatch(request: D.ActionRequest, match: any) {
       }
     })
 
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(addNewIssueSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()

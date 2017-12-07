@@ -40,7 +40,7 @@ export class TwilioMessageAction extends D.Action {
     ]
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
 
     if (!request.formParams || !request.formParams.message) {
       throw "Need a message."

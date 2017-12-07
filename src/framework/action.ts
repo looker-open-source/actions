@@ -28,7 +28,7 @@ export interface RequiredField {
 }
 
 export interface Action {
-  action(request: ActionRequest): Promise<ActionResponse>
+  execute(request: ActionRequest): Promise<ActionResponse>
   form?(request: ActionRequest): Promise<ActionForm>
 }
 
@@ -65,11 +65,11 @@ export abstract class Action {
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       icon_data_uri: this.getImageDataUri(),
-      url: this.action ? router.actionUrl(this) : null,
+      url: this.execute ? router.actionUrl(this) : null,
     }
   }
 
-  async validateAndPerformAction(request: ActionRequest) {
+  async validateAndExecute(request: ActionRequest) {
 
     if (this.supportedActionTypes &&
       this.supportedActionTypes.indexOf(request.type) === -1
@@ -92,7 +92,7 @@ export abstract class Action {
       }
     }
 
-    return this.action(request)
+    return this.execute(request)
 
   }
 
@@ -100,8 +100,8 @@ export abstract class Action {
     return this.form!(request)
   }
 
-  get hasAction() {
-    return !!this.action
+  get hasExecute() {
+    return !!this.execute
   }
 
   get hasForm() {

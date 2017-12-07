@@ -19,7 +19,7 @@ function expectSFTPMatch(request: D.ActionRequest, dataMatch: any, pathMatch: an
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
 
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(putSpy).to.have.been.calledWithMatch(dataMatch, pathMatch)
     stubClient.restore()
@@ -37,7 +37,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Needs a valid SFTP address.")
@@ -49,7 +49,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         address: "sftp://host/path/",
       }
 
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment")
     })
 
@@ -67,7 +67,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         request.formParams = {
           address,
         }
-        return chai.expect(integration.action(request)).to.eventually.be.rejected
+        return chai.expect(integration.execute(request)).to.eventually.be.rejected
       }))
     })
 

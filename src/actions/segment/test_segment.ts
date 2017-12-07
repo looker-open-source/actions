@@ -13,7 +13,7 @@ function expectSegmentMatch(request: D.ActionRequest, match: any) {
       return {identify: identifySpy, flush: (cb: () => void) => cb()}
      })
   const stubAnon = sinon.stub(integration as any, "generateAnonymousId").callsFake(() => "stubanon")
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(identifySpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
@@ -27,28 +27,28 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("errors if the input has no attachment", () => {
       const request = new D.ActionRequest()
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("No attached json")
     })
 
     it("errors if the query response has no fields", () => {
       const request = new D.ActionRequest()
       request.attachment = {dataJSON: {wrong: true}}
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Request payload is an invalid format.")
     })
 
     it("errors if the query response is has no data", () => {
       const request = new D.ActionRequest()
       request.attachment = {dataJSON: {fields: []}}
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Request payload is an invalid format.")
     })
 
     it("errors if there is no tagged field", () => {
       const request = new D.ActionRequest()
       request.attachment = {dataJSON: {fields: [{}], data: []}}
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
     })
 
@@ -58,7 +58,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [],
       }}
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("You must pass your Segment project's write key.")
     })
 

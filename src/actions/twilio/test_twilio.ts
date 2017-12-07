@@ -16,7 +16,7 @@ function expectTwilioMatch(request: D.ActionRequest, match: any) {
       messages: {create: createSpy},
     }))
 
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(createSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
@@ -32,7 +32,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.formParams = {}
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4\n5,6,7,8\n", "utf8")}
 
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Need a destination phone number.")
@@ -47,7 +47,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         to: "tophone",
       }
 
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment")
     })
 

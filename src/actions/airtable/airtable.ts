@@ -26,7 +26,7 @@ export class AirtableAction extends D.Action {
     this.supportedVisualizationFormattings = [D.ActionVisualizationFormatting.Noapply]
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
     return new Promise<D.ActionResponse>((resolve, reject) => {
 
       if (!(request.attachment && request.attachment.dataJSON)) {

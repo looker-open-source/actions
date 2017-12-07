@@ -18,7 +18,7 @@ function expectHipchatMatch(request: D.ActionRequest, ...match: any[]) {
       send_room_message: messageSpy,
     }))
 
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(messageSpy).to.have.been.calledWithMatch(...match)
     stubClient.restore()
@@ -35,7 +35,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.attachment = {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
       }
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Missing room.")
@@ -47,7 +47,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         room: "myroom",
       }
 
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 

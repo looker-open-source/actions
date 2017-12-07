@@ -30,7 +30,7 @@ const integration = new GoodWebhookIntegration()
 function expectWebhookMatch(request: D.ActionRequest, match: any) {
   const postSpy = sinon.spy(async () => null)
   const stubPost = sinon.stub(req, "post").callsFake(postSpy)
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(postSpy).to.have.been.calledWith(match)
     stubPost.restore()
@@ -43,7 +43,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("errors if the input has no attachment", () => {
       const request = new D.ActionRequest()
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
@@ -54,7 +54,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Missing url.")
     })
 
@@ -67,7 +67,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
-      return chai.expect(integration.action(request)).to.eventually
+      return chai.expect(integration.execute(request)).to.eventually
         .be.rejectedWith("Incorrect domain for url.")
     })
 

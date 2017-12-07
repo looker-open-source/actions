@@ -11,7 +11,7 @@ before(async () => {
       describe(action.constructor.name, () => {
 
         it("should provide the action function", () => {
-          chai.assert.typeOf(action.action, "function")
+          chai.assert.typeOf(action.execute, "function")
         })
 
         it("should properly create json", () => {

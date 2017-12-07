@@ -39,7 +39,7 @@ export default class Server implements D.RouteBuilder {
   static listen(port = process.env.PORT || 8080) {
     const app = new Server().app
     app.listen(port, () => {
-      winston.info(`Integration Server listening on port ${port}!`)
+      winston.info(`Action Hub listening on port ${port}!`)
     })
   }
 
@@ -52,37 +52,37 @@ export default class Server implements D.RouteBuilder {
     this.app.use(express.static("public"))
 
     this.route("/", async (_req, res) => {
-      const integrations = await D.allActions()
+      const actions = await D.allActions()
       const response = {
-        integrations: integrations.map((d) => d.asJson(this)),
+        integrations: actions.map((d) => d.asJson(this)),
         label: process.env.ACTION_HUB_LABEL,
       }
       res.json(response)
       winston.debug(`response: ${JSON.stringify(response)}`)
     })
 
-    this.route("/integrations/:integrationId", async (req, res) => {
-      const destination = await D.findAction(req.params.integrationId)
-      res.json(destination.asJson(this))
+    this.route("/actions/:actionId", async (req, res) => {
+      const action = await D.findAction(req.params.actionId)
+      res.json(action.asJson(this))
     })
 
-    this.route("/integrations/:integrationId/action", async (req, res) => {
-      const destination = await D.findAction(req.params.integrationId)
-      if (destination.hasAction) {
-         const actionResponse = await destination.validateAndPerformAction(D.ActionRequest.fromRequest(req))
+    this.route("/actions/:actionId/action", async (req, res) => {
+      const action = await D.findAction(req.params.actionId)
+      if (action.hasExecute) {
+         const actionResponse = await action.validateAndExecute(D.ActionRequest.fromRequest(req))
          res.json(actionResponse.asJson())
       } else {
-        throw "No action defined for destination."
+        throw "No action defined for action."
       }
     })
 
-    this.route("/integrations/:integrationId/form", async (req, res) => {
-      const destination = await D.findAction(req.params.integrationId)
-      if (destination.hasForm) {
-         const form = await destination.validateAndFetchForm(D.ActionRequest.fromRequest(req))
+    this.route("/actions/:actionId/form", async (req, res) => {
+      const action = await D.findAction(req.params.actionId)
+      if (action.hasForm) {
+         const form = await action.validateAndFetchForm(D.ActionRequest.fromRequest(req))
          res.json(form.asJson())
       } else {
-        throw "No form defined for destination."
+        throw "No form defined for action."
       }
     })
 
@@ -94,12 +94,12 @@ export default class Server implements D.RouteBuilder {
 
   }
 
-  actionUrl(integration: D.Action) {
-    return this.absUrl(`/integrations/${encodeURIComponent(integration.name)}/action`)
+  actionUrl(action: D.Action) {
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/action`)
   }
 
-  formUrl(integration: D.Action) {
-    return this.absUrl(`/integrations/${encodeURIComponent(integration.name)}/form`)
+  formUrl(action: D.Action) {
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
   }
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {

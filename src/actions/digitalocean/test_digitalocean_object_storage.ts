@@ -19,7 +19,7 @@ function expectAmazonS3Match(request: D.ActionRequest, match: any) {
     const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
       .callsFake(() => "stubSuggestedFilename")
 
-    const action = integration.action(request)
+    const action = integration.execute(request)
     return chai.expect(action).to.be.fulfilled.then(() => {
       chai.expect(putObjectSpy).to.have.been.calledWithMatch(match)
       stubClient.restore()
@@ -43,7 +43,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           request.attachment = {}
           request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-          const action = integration.action(request)
+          const action = integration.execute(request)
 
           return chai.expect(action).to.eventually
             .be.rejectedWith("Need Amazon S3 bucket.")
@@ -58,7 +58,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
             region: "us-east-1",
           }
 
-          return chai.expect(integration.action(request)).to.eventually
+          return chai.expect(integration.execute(request)).to.eventually
             .be.rejectedWith("Couldn't get data from attachment")
         })
 

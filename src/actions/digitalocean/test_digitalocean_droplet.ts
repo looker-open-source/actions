@@ -17,7 +17,7 @@ function expectDigitalOceanDropletActionMatch(request: D.ActionRequest, ...match
     .callsFake(() => ({
       dropletsRequestAction: dropletsRequestActionSpy,
     }))
-  const action = integration.action(request)
+  const action = integration.execute(request)
   return chai.expect(action).to.be.fulfilled.then(() => {
     chai.expect(dropletsRequestActionSpy.firstCall).to.have.been.calledWithMatch(...match)
     stubClient.restore()
@@ -35,7 +35,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         digitalocean_api_key: "mykey",
       }
 
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
@@ -63,7 +63,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         digitalocean_api_key: "mykey",
       }
 
-      const action = integration.action(request)
+      const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")

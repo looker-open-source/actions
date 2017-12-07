@@ -32,7 +32,7 @@ export class SendGridAction extends D.Action {
     this.supportedActionTypes = [D.ActionType.Query, D.ActionType.Dashboard]
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }

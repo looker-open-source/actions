@@ -27,7 +27,7 @@ export class DigitalOceanDropletAction extends D.Action {
     this.requiredFields = [{tag: TAG}]
   }
 
-  async action(request: D.ActionRequest) {
+  async execute(request: D.ActionRequest) {
     return new Promise<D.ActionResponse>((resolve , reject) => {
 
       let instanceIds: string[] = []
