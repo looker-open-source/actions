@@ -11,11 +11,11 @@ export class SendGridAction extends Hub.Action {
 
     this.name = "sendgrid"
     this.label = "SendGrid"
-    this.iconName = "sendgrid/sendgriHub.png"
-    this.description = "Send data files to an email via SendGriHub."
+    this.iconName = "sendgrid/sendgrid.png"
+    this.description = "Send data files to an email via SendGrid."
     this.params = [
       {
-        description: "API key for SendGrid from https://app.sendgriHub.com/settings/api_keys.",
+        description: "API key for SendGrid from https://app.sendgrid.com/settings/api_keys.",
         label: "SendGrid API Key",
         name: "sendgrid_api_key",
         required: true,
