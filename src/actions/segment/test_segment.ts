@@ -1,7 +1,7 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as Hub from "../../framework"
+import * as Hub from "../../hub"
 import { SegmentAction } from "./segment"
 
 const action = new SegmentAction()

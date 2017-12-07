@@ -4,7 +4,7 @@ import * as express from "express"
 import * as path from "path"
 import * as winston from "winston"
 
-import * as Hub from "../framework"
+import * as Hub from "../hub"
 import * as apiKey from "./api_key"
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)

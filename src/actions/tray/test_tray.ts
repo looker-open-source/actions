@@ -1,6 +1,6 @@
 import * as chai from "chai"
 
-import * as Hub from "../../framework"
+import * as Hub from "../../hub"
 
 import { TrayAction } from "./tray"
 

@@ -1,6 +1,6 @@
 import * as chai from "chai"
 
-import * as Hub from "../src/framework"
+import * as Hub from "../src/hub"
 
 before(async () => {
   const allActions = await Hub.allActions()

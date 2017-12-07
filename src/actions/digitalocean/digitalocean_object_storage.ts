@@ -1,4 +1,4 @@
-import * as Hub from "../../framework"
+import * as Hub from "../../hub"
 import { AmazonS3Action } from "../amazon/amazon_s3"
 
 import * as S3 from "aws-sdk/clients/s3"

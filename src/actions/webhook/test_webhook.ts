@@ -2,7 +2,7 @@ import * as chai from "chai"
 import * as req from "request-promise-native"
 import * as sinon from "sinon"
 
-import * as Hub from "../../framework"
+import * as Hub from "../../hub"
 
 import { WebhookAction } from "./webhook"
 

@@ -1,4 +1,4 @@
-import * as Hub from "../../framework"
+import * as Hub from "../../hub"
 
 import {WebhookAction} from "../webhook/webhook"
 

@@ -1,7 +1,7 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as Hub from "../../../src/framework"
+import * as Hub from "../../../src/hub"
 
 import { TwilioMessageAction } from "./twilio_message"
 

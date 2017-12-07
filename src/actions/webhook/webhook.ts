@@ -1,4 +1,4 @@
-import * as Hub from "../../framework"
+import * as Hub from "../../hub"
 
 import * as req from "request-promise-native"
 import * as url from "url"

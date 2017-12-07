@@ -1,4 +1,4 @@
-import * as Hub from "../../framework"
+import * as Hub from "../../hub"
 
 import * as Path from "path"
 import * as Client from "ssh2-sftp-client"
