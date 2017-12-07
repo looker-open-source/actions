@@ -13,17 +13,17 @@
     "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
-    "lint-dependencies": "./node_modules/.bin/depcheck . --ignores '@types/*,depcheck'",
+    "lint-dependencies": "./node_modules/.bin/depcheck . --ignores '@types/*,depcheck,tslint-language-service'",
     "postinstall": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
   },
   "keywords": [
     "looker",
     "data",
-    "integration"
+    "action"
   ],
   "author": {
     "name": "Looker",
-    "email": "opensource+integrations@looker.com",
+    "email": "opensource+actions@looker.com",
     "url": "https://looker.com/"
   },
   "license": "MIT",
@@ -57,6 +57,7 @@
     "sanitize-filename": "^1.6.1",
     "ssh2-sftp-client": "^2.0.1",
     "ts-node": "^3.0.2",
+    "tslint-language-service": "^0.9.7",
     "twilio": "^3.8.0",
     "typescript": "^2.6.1",
     "uuid": "^3.1.0",

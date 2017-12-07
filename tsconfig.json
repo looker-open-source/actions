@@ -9,6 +9,12 @@
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,
-      "target": "ES6"
+      "target": "ES6",
+      "plugins": [
+        {
+          "name": "tslint-language-service",
+          "alwaysShowRuleFailuresAsWarnings": true
+        }
+      ]
     }
 }

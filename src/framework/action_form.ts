@@ -1,11 +1,11 @@
 export class ActionForm {
-  fields: IActionFormField[]
+  fields: ActionFormField[]
   asJson(): any {
     return this.fields
   }
 }
 
-export interface IActionFormField {
+export interface ActionFormField {
   name: string
   label?: string
   description?: string

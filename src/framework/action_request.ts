@@ -16,11 +16,11 @@ import { WireResponseQuery } from "../api_types/query"
 
 export { ActionType, ActionFormat, ActionFormatting, ActionVisualizationFormatting }
 
-export interface IParamMap {
+export interface ParamMap {
   [name: string]: string | undefined
 }
 
-export interface IActionAttachment {
+export interface ActionAttachment {
   dataBuffer?: Buffer
   encoding?: string
   dataJSON?: any
@@ -28,7 +28,7 @@ export interface IActionAttachment {
   fileExtension?: string
 }
 
-export interface IActionScheduledPlan {
+export interface ActionScheduledPlan {
   /** ID of the scheduled plan */
   scheduledPlanId?: number | null
   /** Title of the scheduled plan. */
@@ -103,10 +103,10 @@ export class ActionRequest {
     return request
   }
 
-  attachment?: IActionAttachment
-  formParams: IParamMap = {}
-  params: IParamMap = {}
-  scheduledPlan?: IActionScheduledPlan
+  attachment?: ActionAttachment
+  formParams: ParamMap = {}
+  params: ParamMap = {}
+  scheduledPlan?: ActionScheduledPlan
   type: ActionType
   instanceId?: string
   webhookId?: string

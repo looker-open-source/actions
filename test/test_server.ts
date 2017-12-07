@@ -4,7 +4,7 @@ import * as sinon from "sinon"
 import * as apiKey from "../src/server/api_key"
 import Server from "../src/server/server"
 
-describe("the integration server", () => {
+describe("the action hub", () => {
 
   it("responds to get requests with a nice html page", (done) => {
     chai.request(new Server().app)
@@ -26,7 +26,7 @@ describe("the integration server", () => {
       })
   })
 
-  it("returns a list of integrations on POST to the root url with the proper authentication key", (done) => {
+  it("returns a list of actions on POST to the root url with the proper authentication key", (done) => {
     const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
     chai.request(new Server().app)
       .post("/")

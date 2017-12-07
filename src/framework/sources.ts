@@ -1,26 +1,26 @@
-import { Integration } from "./integration"
+import { Action } from "./action"
 
-const integrations: Integration[] = []
+const actions: Action[] = []
 
-export function addIntegration(integration: Integration) {
-  integrations.push(integration)
+export function addAction(action: Action) {
+  actions.push(action)
 }
 
-export async function allIntegrations() {
-  const whitelistNames = process.env.INTEGRATION_WHITELIST
+export async function allActions() {
+  const whitelistNames = process.env.ACTION_WHITELIST
   if (typeof whitelistNames === "string" && whitelistNames.length > 0) {
     const whitelist = whitelistNames.split(",")
-    return integrations.filter((i) => whitelist.indexOf(i.name) !== -1)
+    return actions.filter((i) => whitelist.indexOf(i.name) !== -1)
   } else {
-    return integrations
+    return actions
   }
 }
 
-export async function findDestination(id: string) {
-  const all = await allIntegrations()
-  const integration = all.filter((i) => i.name === id)[0]
-  if (!integration) {
-    throw "No integration found."
+export async function findAction(id: string) {
+  const all = await allActions()
+  const action = all.filter((i) => i.name === id)[0]
+  if (!action) {
+    throw "No action found."
   }
-  return integration
+  return action
 }

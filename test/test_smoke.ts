@@ -3,19 +3,19 @@ import * as chai from "chai"
 import * as D from "../src/framework"
 
 before(async () => {
-  const allIntegrations = await D.allIntegrations()
-  allIntegrations.forEach((integration) => {
+  const allActions = await D.allActions()
+  allActions.forEach((action) => {
 
     describe("Smoke Tests", () => {
 
-      describe(integration.constructor.name, () => {
+      describe(action.constructor.name, () => {
 
         it("should provide the action function", () => {
-          chai.assert.typeOf(integration.action, "function")
+          chai.assert.typeOf(action.execute, "function")
         })
 
         it("should properly create json", () => {
-          const json = integration.asJson({
+          const json = action.asJson({
             actionUrl(i) {
               return `baseurl/${i.name}`
             },

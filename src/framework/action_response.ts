@@ -1,4 +1,4 @@
-export interface IValidationError {
+export interface ValidationError {
   field: string
   message: string
 }
@@ -8,14 +8,14 @@ export class ActionResponse {
   message: string
   refreshQuery = false
   success = true
-  validationErrors: IValidationError[] = []
+  validationErrors: ValidationError[] = []
 
   constructor(
     fields?: {
         message?: string,
         refreshQuery?: boolean,
         success?: boolean,
-        validationErrors?: IValidationError[],
+        validationErrors?: ValidationError[],
     }) {
     if (fields) {
       Object.assign(this, fields)
