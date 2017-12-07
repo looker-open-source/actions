@@ -3,7 +3,7 @@ import * as D from "../../framework"
 import * as req from "request-promise-native"
 import * as url from "url"
 
-export abstract class WebhookIntegration extends D.Action {
+export abstract class WebhookAction extends D.Action {
 
   domain: string
 

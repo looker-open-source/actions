@@ -2,9 +2,9 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as D from "../../framework"
-import { SegmentIntegration } from "./segment"
+import { SegmentAction } from "./segment"
 
-const integration = new SegmentIntegration()
+const integration = new SegmentAction()
 
 function expectSegmentMatch(request: D.ActionRequest, match: any) {
   const identifySpy = sinon.spy()

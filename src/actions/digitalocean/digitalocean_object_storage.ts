@@ -1,9 +1,9 @@
 import * as D from "../../framework"
-import * as S3Integration from "../amazon/amazon_s3"
+import { AmazonS3Action } from "../amazon/amazon_s3"
 
 import * as S3 from "aws-sdk/clients/s3"
 
-export class DigitalOceanObjectStorageIntegration extends S3Integration.AmazonS3Integration {
+export class DigitalOceanObjectStorageAction extends AmazonS3Action {
 
   constructor() {
     super()
@@ -52,4 +52,4 @@ export class DigitalOceanObjectStorageIntegration extends S3Integration.AmazonS3
 
 }
 
-D.addIntegration(new DigitalOceanObjectStorageIntegration())
+D.addAction(new DigitalOceanObjectStorageAction())

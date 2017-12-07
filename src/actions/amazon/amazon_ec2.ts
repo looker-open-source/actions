@@ -4,7 +4,7 @@ import * as EC2 from "aws-sdk/clients/ec2"
 
 const TAG = "aws_resource_id"
 
-export class AmazonEC2Integration extends D.Action {
+export class AmazonEC2Action extends D.Action {
 
   constructor() {
     super()
@@ -90,4 +90,4 @@ export class AmazonEC2Integration extends D.Action {
 
 }
 
-D.addIntegration(new AmazonEC2Integration())
+D.addAction(new AmazonEC2Action())

@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { AmazonEC2Integration } from "./amazon_ec2"
+import { AmazonEC2Action } from "./amazon_ec2"
 
-const integration = new AmazonEC2Integration()
+const integration = new AmazonEC2Action()
 
 function expectAmazonEC2Match(request: D.ActionRequest, match: any) {
 

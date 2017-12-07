@@ -2,7 +2,7 @@ import * as D from "../../framework"
 
 const airtable: any = require("airtable")
 
-export class AirtableIntegration extends D.Action {
+export class AirtableAction extends D.Action {
 
   constructor() {
     super()
@@ -105,4 +105,4 @@ export class AirtableIntegration extends D.Action {
 
 }
 
-D.addIntegration(new AirtableIntegration())
+D.addAction(new AirtableAction())

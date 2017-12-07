@@ -1,8 +1,8 @@
 import * as D from "../../framework"
 
-import {WebhookIntegration} from "../webhook/webhook"
+import {WebhookAction} from "../webhook/webhook"
 
-export class ZapierIntegration extends WebhookIntegration {
+export class ZapierAction extends WebhookAction {
 
   constructor() {
     super()
@@ -25,4 +25,4 @@ export class ZapierIntegration extends WebhookIntegration {
   }
 }
 
-D.addIntegration(new ZapierIntegration())
+D.addAction(new ZapierAction())

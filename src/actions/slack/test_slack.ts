@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { SlackAttachmentIntegration } from "./slack"
+import { SlackAttachmentAction } from "./slack"
 
-const integration = new SlackAttachmentIntegration()
+const integration = new SlackAttachmentAction()
 
 const stubFileName = "stubSuggestedFilename"
 

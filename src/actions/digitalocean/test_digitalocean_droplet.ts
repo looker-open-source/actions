@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { DigitalOceanDropletIntegration } from "./digitalocean_droplet"
+import { DigitalOceanDropletAction } from "./digitalocean_droplet"
 
-const integration = new DigitalOceanDropletIntegration()
+const integration = new DigitalOceanDropletAction()
 
 function expectDigitalOceanDropletActionMatch(request: D.ActionRequest, ...match: any[]) {
 

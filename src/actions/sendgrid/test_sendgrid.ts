@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { SendGridIntegration } from "./sendgrid"
+import { SendGridAction } from "./sendgrid"
 
-const integration = new SendGridIntegration()
+const integration = new SendGridAction()
 
 const stubFilename = "stubSuggestedFilename"
 

@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { DigitalOceanObjectStorageIntegration } from "./digitalocean_object_storage"
+import { DigitalOceanObjectStorageAction } from "./digitalocean_object_storage"
 
-const integration = new DigitalOceanObjectStorageIntegration()
+const integration = new DigitalOceanObjectStorageAction()
 
 function expectAmazonS3Match(request: D.ActionRequest, match: any) {
 

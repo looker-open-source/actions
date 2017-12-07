@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { HipchatIntegration } from "./hipchat"
+import { HipchatAction } from "./hipchat"
 
-const integration = new HipchatIntegration()
+const integration = new HipchatAction()
 
 function expectHipchatMatch(request: D.ActionRequest, ...match: any[]) {
 

@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { SFTPIntegration } from "./sftp"
+import { SFTPAction } from "./sftp"
 
-const integration = new SFTPIntegration()
+const integration = new SFTPAction()
 
 function expectSFTPMatch(request: D.ActionRequest, dataMatch: any, pathMatch: any) {
 

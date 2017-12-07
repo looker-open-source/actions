@@ -4,7 +4,7 @@ import * as sinon from "sinon"
 import * as apiKey from "../src/server/api_key"
 import Server from "../src/server/server"
 
-describe("the integration server", () => {
+describe("the action hub", () => {
 
   it("responds to get requests with a nice html page", (done) => {
     chai.request(new Server().app)

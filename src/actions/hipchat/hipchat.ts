@@ -10,7 +10,7 @@ interface Room {
 const MAX_LINES = 10
 const HIPCHAT_MAX_MESSAGE_BODY = 10000
 
-export class HipchatIntegration extends D.Action {
+export class HipchatAction extends D.Action {
 
   constructor() {
     super()
@@ -100,4 +100,4 @@ export class HipchatIntegration extends D.Action {
 
 }
 
-D.addIntegration(new HipchatIntegration())
+D.addAction(new HipchatAction())

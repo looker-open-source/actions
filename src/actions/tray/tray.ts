@@ -1,8 +1,8 @@
 import * as D from "../../framework"
 
-import {WebhookIntegration} from "../webhook/webhook"
+import {WebhookAction} from "../webhook/webhook"
 
-export class TrayIntegration extends WebhookIntegration {
+export class TrayAction extends WebhookAction {
 
   constructor() {
     super()
@@ -25,4 +25,4 @@ export class TrayIntegration extends WebhookIntegration {
   }
 }
 
-D.addIntegration(new TrayIntegration())
+D.addAction(new TrayAction())

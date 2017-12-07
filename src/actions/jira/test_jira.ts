@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { JiraIntegration } from "./jira"
+import { JiraAction } from "./jira"
 
-const integration = new JiraIntegration()
+const integration = new JiraAction()
 
 function expectJiraNewIssueMatch(request: D.ActionRequest, match: any) {
 

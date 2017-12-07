@@ -4,9 +4,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { WebhookIntegration } from "./webhook"
+import { WebhookAction } from "./webhook"
 
-class GoodWebhookIntegration extends WebhookIntegration {
+class GoodWebhookIntegration extends WebhookAction {
 
   constructor() {
     super()

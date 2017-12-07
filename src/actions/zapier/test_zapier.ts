@@ -2,9 +2,9 @@ import * as chai from "chai"
 
 import * as D from "../../framework"
 
-import { ZapierIntegration } from "./zapier"
+import { ZapierAction } from "./zapier"
 
-const integration = new ZapierIntegration()
+const integration = new ZapierAction()
 
 describe(`${integration.constructor.name} unit tests`, () => {
 

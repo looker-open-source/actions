@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { AmazonS3Integration } from "./amazon_s3"
+import { AmazonS3Action } from "./amazon_s3"
 
-const integration = new AmazonS3Integration()
+const integration = new AmazonS3Action()
 
 function expectAmazonS3Match(request: D.ActionRequest, match: any) {
 

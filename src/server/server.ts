@@ -52,7 +52,7 @@ export default class Server implements D.RouteBuilder {
     this.app.use(express.static("public"))
 
     this.route("/", async (_req, res) => {
-      const integrations = await D.allIntegrations()
+      const integrations = await D.allActions()
       const response = {
         integrations: integrations.map((d) => d.asJson(this)),
         label: process.env.ACTION_HUB_LABEL,
@@ -62,12 +62,12 @@ export default class Server implements D.RouteBuilder {
     })
 
     this.route("/integrations/:integrationId", async (req, res) => {
-      const destination = await D.findDestination(req.params.integrationId)
+      const destination = await D.findAction(req.params.integrationId)
       res.json(destination.asJson(this))
     })
 
     this.route("/integrations/:integrationId/action", async (req, res) => {
-      const destination = await D.findDestination(req.params.integrationId)
+      const destination = await D.findAction(req.params.integrationId)
       if (destination.hasAction) {
          const actionResponse = await destination.validateAndPerformAction(D.ActionRequest.fromRequest(req))
          res.json(actionResponse.asJson())
@@ -77,7 +77,7 @@ export default class Server implements D.RouteBuilder {
     })
 
     this.route("/integrations/:integrationId/form", async (req, res) => {
-      const destination = await D.findDestination(req.params.integrationId)
+      const destination = await D.findAction(req.params.integrationId)
       if (destination.hasForm) {
          const form = await destination.validateAndFetchForm(D.ActionRequest.fromRequest(req))
          res.json(form.asJson())

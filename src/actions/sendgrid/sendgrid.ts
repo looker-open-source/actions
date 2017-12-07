@@ -11,7 +11,7 @@ interface SendGridEmail {
   attachments: {content: string, filename: string}[]
 }
 
-export class SendGridIntegration extends D.Action {
+export class SendGridAction extends D.Action {
 
   constructor() {
     super()
@@ -101,4 +101,4 @@ export class SendGridIntegration extends D.Action {
 
 }
 
-D.addIntegration(new SendGridIntegration())
+D.addAction(new SendGridAction())

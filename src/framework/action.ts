@@ -13,7 +13,7 @@ import {
 
 const datauri = require("datauri")
 
-export interface IntegrationParameter {
+export interface ActionParameter {
   name: string
   label: string
   required: boolean
@@ -33,8 +33,8 @@ export interface Action {
 }
 
 export interface RouteBuilder {
-  actionUrl(integration: Action): string
-  formUrl(integration: Action): string
+  actionUrl(action: Action): string
+  formUrl(action: Action): string
 }
 
 export abstract class Action {
@@ -50,7 +50,7 @@ export abstract class Action {
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
   requiredFields?: RequiredField[] = []
 
-  params: IntegrationParameter[]
+  params: ActionParameter[]
 
   asJson(router: RouteBuilder) {
     return {
@@ -112,7 +112,7 @@ export abstract class Action {
     if (!this.iconName) {
       return null
     }
-    const iconPath = path.resolve(__dirname, "..", "integrations", this.iconName)
+    const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
     if (fs.existsSync(iconPath)) {
       return new datauri(iconPath).content
     }

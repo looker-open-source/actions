@@ -7,7 +7,7 @@ interface Channel {
   label: string,
 }
 
-export class SlackAttachmentIntegration extends D.Action {
+export class SlackAttachmentAction extends D.Action {
 
   constructor() {
     super()
@@ -136,4 +136,4 @@ export class SlackAttachmentIntegration extends D.Action {
 
 }
 
-D.addIntegration(new SlackAttachmentIntegration())
+D.addAction(new SlackAttachmentAction())

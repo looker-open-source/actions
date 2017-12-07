@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { AirtableIntegration } from "./airtable"
+import { AirtableAction } from "./airtable"
 
-const integration = new AirtableIntegration()
+const integration = new AirtableAction()
 
 function expectWebhookMatch(
   request: D.ActionRequest,

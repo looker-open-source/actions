@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../../src/framework"
 
-import { TwilioMessageIntegration } from "./twilio_message"
+import { TwilioMessageAction } from "./twilio_message"
 
-const integration = new TwilioMessageIntegration()
+const integration = new TwilioMessageAction()
 
 function expectTwilioMatch(request: D.ActionRequest, match: any) {
 

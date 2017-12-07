@@ -4,7 +4,7 @@ import * as Path from "path"
 import * as Client from "ssh2-sftp-client"
 import * as URL from "url"
 
-export class SFTPIntegration extends D.Action {
+export class SFTPAction extends D.Action {
 
   constructor() {
     super()

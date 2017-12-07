@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as D from "../../framework"
 
-import { AzureStorageIntegration } from "./azure_storage"
+import { AzureStorageAction } from "./azure_storage"
 
-const integration = new AzureStorageIntegration()
+const integration = new AzureStorageAction()
 
 function expectAzureStorageMatch(
   request: D.ActionRequest, container: string, fileName: string, dataBuffer: Buffer) {

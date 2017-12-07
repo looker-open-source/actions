@@ -2,9 +2,9 @@ import * as chai from "chai"
 
 import * as D from "../../framework"
 
-import { TrayIntegration } from "./tray"
+import { TrayAction } from "./tray"
 
-const integration = new TrayIntegration()
+const integration = new TrayAction()
 
 describe(`${integration.constructor.name} unit tests`, () => {
 

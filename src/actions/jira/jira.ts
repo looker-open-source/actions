@@ -6,7 +6,7 @@ const jiraApi = require("jira-client")
 
 const apiVersion = "2"
 
-export class JiraIntegration extends D.Action {
+export class JiraAction extends D.Action {
 
   constructor() {
     super()
@@ -137,4 +137,4 @@ export class JiraIntegration extends D.Action {
 
 }
 
-D.addIntegration(new JiraIntegration())
+D.addAction(new JiraAction())

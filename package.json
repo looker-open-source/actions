@@ -19,11 +19,11 @@
   "keywords": [
     "looker",
     "data",
-    "integration"
+    "action"
   ],
   "author": {
     "name": "Looker",
-    "email": "opensource+integrations@looker.com",
+    "email": "opensource+actions@looker.com",
     "url": "https://looker.com/"
   },
   "license": "MIT",
