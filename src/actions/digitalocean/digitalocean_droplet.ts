@@ -1,10 +1,10 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 const digitalOcean = require("do-wrapper")
 
 const TAG = "digitalocean_droplet_id"
 
-export class DigitalOceanDropletAction extends D.Action {
+export class DigitalOceanDropletAction extends Hub.Action {
 
   constructor() {
     super()
@@ -22,13 +22,13 @@ export class DigitalOceanDropletAction extends D.Action {
         description: "",
       },
     ]
-    this.supportedActionTypes = [D.ActionType.Cell, D.ActionType.Query]
-    this.supportedFormats = [D.ActionFormat.JsonDetail]
+    this.supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
+    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
     this.requiredFields = [{tag: TAG}]
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise<D.ActionResponse>((resolve , reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise<Hub.ActionResponse>((resolve , reject) => {
 
       let instanceIds: string[] = []
       switch (request.type) {
@@ -67,9 +67,9 @@ export class DigitalOceanDropletAction extends D.Action {
       instanceIds.forEach((dropletId) => {
         digitalOceanClient.dropletsRequestAction(+dropletId, {type: "power_off"}, (err: any) => {
           if (err) {
-            resolve(new D.ActionResponse({success: false, message: err.message}))
+            resolve(new Hub.ActionResponse({success: false, message: err.message}))
           } else {
-            resolve(new D.ActionResponse())
+            resolve(new Hub.ActionResponse())
           }
         })
       })
@@ -78,10 +78,10 @@ export class DigitalOceanDropletAction extends D.Action {
 
   }
 
-  private digitalOceanClientFromRequest(request: D.ActionRequest) {
+  private digitalOceanClientFromRequest(request: Hub.ActionRequest) {
     return new digitalOcean(request.params.digitalocean_api_key!)
   }
 
 }
 
-D.addAction(new DigitalOceanDropletAction())
+Hub.addAction(new DigitalOceanDropletAction())

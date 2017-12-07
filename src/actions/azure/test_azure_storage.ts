@@ -1,14 +1,14 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 import { AzureStorageAction } from "./azure_storage"
 
 const action = new AzureStorageAction()
 
 function expectAzureStorageMatch(
-  request: D.ActionRequest, container: string, fileName: string, dataBuffer: Buffer) {
+  request: Hub.ActionRequest, container: string, fileName: string, dataBuffer: Buffer) {
 
   const createBlockBlobFromTextSpy = sinon.spy((c: string, f: string, b: Buffer, cb: (err: any, res: any) => void) => {
     chai.expect(c).to.not.equal(null)
@@ -37,7 +37,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no container", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
@@ -47,7 +47,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         container: "mycontainer",
       }
@@ -57,7 +57,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body to filename and container", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         container: "mycontainer",
       }
@@ -69,7 +69,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends to right filename if specified", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         container: "mycontainer",
         filename: "mywackyfilename",
@@ -104,7 +104,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }))
 
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

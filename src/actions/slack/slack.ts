@@ -1,4 +1,4 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 const WebClient = require("@slack/client").WebClient
 
@@ -7,7 +7,7 @@ interface Channel {
   label: string,
 }
 
-export class SlackAttachmentAction extends D.Action {
+export class SlackAttachmentAction extends Hub.Action {
 
   constructor() {
     super()
@@ -15,7 +15,7 @@ export class SlackAttachmentAction extends D.Action {
     this.label = "Slack Attachment"
     this.iconName = "slack/slack.png"
     this.description = "Write a data file to Slack."
-    this.supportedActionTypes = [D.ActionType.Query, D.ActionType.Dashboard]
+    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     this.requiredFields = []
     this.params = [{
       name: "slack_api_token",
@@ -26,8 +26,8 @@ export class SlackAttachmentAction extends D.Action {
     }]
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise <D.ActionResponse>((resolve, reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise <Hub.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -61,12 +61,12 @@ export class SlackAttachmentAction extends D.Action {
           response = {success: true, message: err.message}
         }
       })
-      resolve(new D.ActionResponse(response))
+      resolve(new Hub.ActionResponse(response))
     })
   }
 
-  async form(request: D.ActionRequest) {
-    const form = new D.ActionForm()
+  async form(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
     const channels = await this.usableChannels(request)
 
     form.fields = [{
@@ -89,13 +89,13 @@ export class SlackAttachmentAction extends D.Action {
     return form
   }
 
-  async usableChannels(request: D.ActionRequest) {
+  async usableChannels(request: Hub.ActionRequest) {
     let channels = await this.usablePublicChannels(request)
     channels = channels.concat(await this.usableDMs(request))
     return channels
   }
 
-  async usablePublicChannels(request: D.ActionRequest) {
+  async usablePublicChannels(request: Hub.ActionRequest) {
     return new Promise<Channel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.channels.list({
@@ -113,7 +113,7 @@ export class SlackAttachmentAction extends D.Action {
     })
   }
 
-  async usableDMs(request: D.ActionRequest) {
+  async usableDMs(request: Hub.ActionRequest) {
     return new Promise<Channel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.users.list({}, (err: any, response: any) => {
@@ -130,10 +130,10 @@ export class SlackAttachmentAction extends D.Action {
     })
   }
 
-  private slackClientFromRequest(request: D.ActionRequest) {
+  private slackClientFromRequest(request: Hub.ActionRequest) {
     return new WebClient(request.params.slack_api_token!)
   }
 
 }
 
-D.addAction(new SlackAttachmentAction())
+Hub.addAction(new SlackAttachmentAction())

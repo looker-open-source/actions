@@ -4,12 +4,12 @@ import * as express from "express"
 import * as path from "path"
 import * as winston from "winston"
 
-import * as D from "../framework"
+import * as Hub from "../framework"
 import * as apiKey from "./api_key"
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 
-export default class Server implements D.RouteBuilder {
+export default class Server implements Hub.RouteBuilder {
 
   static run() {
     dotenv.config()
@@ -52,7 +52,7 @@ export default class Server implements D.RouteBuilder {
     this.app.use(express.static("public"))
 
     this.route("/", async (_req, res) => {
-      const actions = await D.allActions()
+      const actions = await Hub.allActions()
       const response = {
         integrations: actions.map((d) => d.asJson(this)),
         label: process.env.ACTION_HUB_LABEL,
@@ -62,14 +62,14 @@ export default class Server implements D.RouteBuilder {
     })
 
     this.route("/actions/:actionId", async (req, res) => {
-      const action = await D.findAction(req.params.actionId)
+      const action = await Hub.findAction(req.params.actionId)
       res.json(action.asJson(this))
     })
 
     this.route("/actions/:actionId/action", async (req, res) => {
-      const action = await D.findAction(req.params.actionId)
+      const action = await Hub.findAction(req.params.actionId)
       if (action.hasExecute) {
-         const actionResponse = await action.validateAndExecute(D.ActionRequest.fromRequest(req))
+         const actionResponse = await action.validateAndExecute(Hub.ActionRequest.fromRequest(req))
          res.json(actionResponse.asJson())
       } else {
         throw "No action defined for action."
@@ -77,9 +77,9 @@ export default class Server implements D.RouteBuilder {
     })
 
     this.route("/actions/:actionId/form", async (req, res) => {
-      const action = await D.findAction(req.params.actionId)
+      const action = await Hub.findAction(req.params.actionId)
       if (action.hasForm) {
-         const form = await action.validateAndFetchForm(D.ActionRequest.fromRequest(req))
+         const form = await action.validateAndFetchForm(Hub.ActionRequest.fromRequest(req))
          res.json(form.asJson())
       } else {
         throw "No form defined for action."
@@ -94,11 +94,11 @@ export default class Server implements D.RouteBuilder {
 
   }
 
-  actionUrl(action: D.Action) {
+  actionUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/action`)
   }
 
-  formUrl(action: D.Action) {
+  formUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
   }
 

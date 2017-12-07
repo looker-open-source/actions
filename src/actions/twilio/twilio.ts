@@ -1,11 +1,11 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 import * as twilio from "twilio"
 
 const MAX_LINES = 10
 const TWILIO_MAX_MESSAGE_BODY = 1600
 
-export class TwilioAction extends D.Action {
+export class TwilioAction extends Hub.Action {
 
   constructor() {
     super()
@@ -14,8 +14,8 @@ export class TwilioAction extends D.Action {
     this.label = "Twilio - Send Data"
     this.iconName = "twilio/twilio.svg"
     this.description = "Send data from a Look to a phone number via Twilio."
-    this.supportedActionTypes = [D.ActionType.Query]
-    this.supportedFormats = [D.ActionFormat.Csv, D.ActionFormat.Txt]
+    this.supportedActionTypes = [Hub.ActionType.Query]
+    this.supportedFormats = [Hub.ActionFormat.Csv, Hub.ActionFormat.Txt]
     this.requiredFields = []
     this.params = [
       {
@@ -40,7 +40,7 @@ export class TwilioAction extends D.Action {
     ]
   }
 
-  async execute(request: D.ActionRequest) {
+  async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -63,11 +63,11 @@ export class TwilioAction extends D.Action {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.ActionResponse(response)
+    return new Hub.ActionResponse(response)
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       label: "Destination Phone Number",
       name: "to",
@@ -77,10 +77,10 @@ export class TwilioAction extends D.Action {
     return form
   }
 
-  private twilioClientFromRequest(request: D.ActionRequest) {
+  private twilioClientFromRequest(request: Hub.ActionRequest) {
     return twilio(request.params.accountSid, request.params.authToken)
   }
 
 }
 
-D.addAction(new TwilioAction())
+Hub.addAction(new TwilioAction())

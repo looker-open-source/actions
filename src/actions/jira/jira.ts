@@ -1,4 +1,4 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 import * as URL from "url"
 
@@ -6,7 +6,7 @@ const jiraApi = require("jira-client")
 
 const apiVersion = "2"
 
-export class JiraAction extends D.Action {
+export class JiraAction extends Hub.Action {
 
   constructor() {
     super()
@@ -35,11 +35,11 @@ export class JiraAction extends D.Action {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = [D.ActionType.Query]
+    this.supportedActionTypes = [Hub.ActionType.Query]
     this.requiredFields = []
   }
 
-  async execute(request: D.ActionRequest) {
+  async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment"
     }
@@ -69,13 +69,13 @@ export class JiraAction extends D.Action {
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    return new D.ActionResponse(response)
+    return new Hub.ActionResponse(response)
   }
 
-  async form(request: D.ActionRequest) {
+  async form(request: Hub.ActionRequest) {
 
     const jira = this.jiraClientFromRequest(request)
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     try {
 
       const [projects, issueTypes] = await Promise.all([
@@ -120,7 +120,7 @@ export class JiraAction extends D.Action {
     }
   }
 
-  private jiraClientFromRequest(request: D.ActionRequest) {
+  private jiraClientFromRequest(request: Hub.ActionRequest) {
     const parsedUrl = URL.parse(request.params.address!)
     if (!parsedUrl.host) {
       throw "Invalid JIRA server address."
@@ -137,4 +137,4 @@ export class JiraAction extends D.Action {
 
 }
 
-D.addAction(new JiraAction())
+Hub.addAction(new JiraAction())

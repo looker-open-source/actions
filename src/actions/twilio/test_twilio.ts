@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../../src/framework"
+import * as Hub from "../../../src/framework"
 
 import { TwilioAction } from "./twilio"
 
 const action = new TwilioAction()
 
-function expectTwilioMatch(request: D.ActionRequest, match: any) {
+function expectTwilioMatch(request: Hub.ActionRequest, match: any) {
 
   const createSpy = sinon.spy(async () => Promise.resolve())
 
@@ -27,7 +27,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no to", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4\n5,6,7,8\n", "utf8")}
 
@@ -36,7 +36,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if the input has no attachment", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.formParams = {
         bucket: "mybucket",
       }
@@ -49,7 +49,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.params = {
         from: "fromphone",
       }
@@ -65,7 +65,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right body with look title and url", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {
         title: "mylook",
         url: "http://my.looker.com/looks/12345",
@@ -85,7 +85,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends truncates body at 10 lines", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.params = {
         from: "fromphone",
       }
@@ -102,7 +102,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends truncates body at 10 lines with title and url", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {
         title: "mylook",
         url: "http://my.looker.com/looks/12345",
@@ -126,7 +126,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends truncates body at 1600 with title on newline", () => {
-      const request = new D.ActionRequest()
+      const request = new Hub.ActionRequest()
       request.scheduledPlan = {
         title: "mylook",
         url: "http://my.looker.com/looks/12345",

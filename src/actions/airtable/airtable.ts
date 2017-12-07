@@ -1,8 +1,8 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 const airtable: any = require("airtable")
 
-export class AirtableAction extends D.Action {
+export class AirtableAction extends Hub.Action {
 
   constructor() {
     super()
@@ -20,14 +20,14 @@ export class AirtableAction extends D.Action {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = [D.ActionType.Query]
-    this.supportedFormats = [D.ActionFormat.JsonDetail]
-    this.supportedFormattings = [D.ActionFormatting.Unformatted]
-    this.supportedVisualizationFormattings = [D.ActionVisualizationFormatting.Noapply]
+    this.supportedActionTypes = [Hub.ActionType.Query]
+    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
+    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
+    this.supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise<D.ActionResponse>((resolve, reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
       if (!(request.attachment && request.attachment.dataJSON)) {
         reject("No attached json.")
@@ -75,15 +75,15 @@ export class AirtableAction extends D.Action {
           message: errors.map((e) => e.message).join(", "),
         }
       }
-      resolve(new D.ActionResponse(response))
+      resolve(new Hub.ActionResponse(response))
 
     })
   }
 
   async form() {
-    return new Promise<D.ActionForm>((resolve) => {
+    return new Promise<Hub.ActionForm>((resolve) => {
 
-      const form = new D.ActionForm()
+      const form = new Hub.ActionForm()
       form.fields = [{
         label: "Airtable Base",
         name: "base",
@@ -99,10 +99,10 @@ export class AirtableAction extends D.Action {
     })
   }
 
-  private airtableClientFromRequest(request: D.ActionRequest) {
+  private airtableClientFromRequest(request: Hub.ActionRequest) {
     return new airtable({apiKey: request.params.airtable_api_key})
   }
 
 }
 
-D.addAction(new AirtableAction())
+Hub.addAction(new AirtableAction())

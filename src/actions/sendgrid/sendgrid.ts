@@ -1,4 +1,4 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 const sendgridMail = require("@sendgrid/mail")
 
@@ -11,7 +11,7 @@ interface SendGridEmail {
   attachments: {content: string, filename: string}[]
 }
 
-export class SendGridAction extends D.Action {
+export class SendGridAction extends Hub.Action {
 
   constructor() {
     super()
@@ -29,10 +29,10 @@ export class SendGridAction extends D.Action {
         sensitive: true,
       },
     ]
-    this.supportedActionTypes = [D.ActionType.Query, D.ActionType.Dashboard]
+    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   }
 
-  async execute(request: D.ActionRequest) {
+  async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -55,10 +55,10 @@ export class SendGridAction extends D.Action {
       }],
     }
     const response = await this.sendEmail(request, msg)
-    return new D.ActionResponse(response)
+    return new Hub.ActionResponse(response)
   }
 
-  async sendEmail(request: D.ActionRequest, msg: SendGridEmail) {
+  async sendEmail(request: Hub.ActionRequest, msg: SendGridEmail) {
     const client = this.sgMailClientFromRequest(request)
     let response
     try {
@@ -70,7 +70,7 @@ export class SendGridAction extends D.Action {
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       name: "to",
       label: "To Email Address",
@@ -94,11 +94,11 @@ export class SendGridAction extends D.Action {
     return form
   }
 
-  private sgMailClientFromRequest(request: D.ActionRequest) {
+  private sgMailClientFromRequest(request: Hub.ActionRequest) {
     sendgridMail.setApiKey(request.params.sendgrid_api_key!)
     return sendgridMail
   }
 
 }
 
-D.addAction(new SendGridAction())
+Hub.addAction(new SendGridAction())

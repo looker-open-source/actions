@@ -1,9 +1,9 @@
 import * as chai from "chai"
 
-import * as D from "../src/framework"
+import * as Hub from "../src/framework"
 
 before(async () => {
-  const allActions = await D.allActions()
+  const allActions = await Hub.allActions()
   allActions.forEach((action) => {
 
     describe("Smoke Tests", () => {

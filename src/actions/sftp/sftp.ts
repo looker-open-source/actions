@@ -1,10 +1,10 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 import * as Path from "path"
 import * as Client from "ssh2-sftp-client"
 import * as URL from "url"
 
-export class SFTPAction extends D.Action {
+export class SFTPAction extends Hub.Action {
 
   constructor() {
     super()
@@ -13,12 +13,12 @@ export class SFTPAction extends D.Action {
     this.label = "SFTP"
     this.iconName = "sftp/sftp.png"
     this.description = "Send data files to an SFTP server."
-    this.supportedActionTypes = [D.ActionType.Query]
+    this.supportedActionTypes = [Hub.ActionType.Query]
     this.params = []
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise<D.ActionResponse>(async (resolve, reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise<Hub.ActionResponse>(async (resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -40,13 +40,13 @@ export class SFTPAction extends D.Action {
       const remotePath = Path.join(parsedUrl.pathname, fileName)
 
       client.put(data, remotePath)
-        .then(() => resolve(new D.ActionResponse()))
-        .catch((err: any) => resolve(new D.ActionResponse({success: false, message: err.message})))
+        .then(() => resolve(new Hub.ActionResponse()))
+        .catch((err: any) => resolve(new Hub.ActionResponse({success: false, message: err.message})))
     })
   }
 
   async form() {
-    const form = new D.ActionForm()
+    const form = new Hub.ActionForm()
     form.fields = [{
       name: "address",
       label: "Address",
@@ -71,7 +71,7 @@ export class SFTPAction extends D.Action {
     return form
   }
 
-  private async sftpClientFromRequest(request: D.ActionRequest) {
+  private async sftpClientFromRequest(request: Hub.ActionRequest) {
 
     const client = new Client()
     const parsedUrl = URL.parse(request.formParams.address!)

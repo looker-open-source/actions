@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 import { AmazonEC2Action } from "./amazon_ec2"
 
 const action = new AmazonEC2Action()
 
-function expectAmazonEC2Match(request: D.ActionRequest, match: any) {
+function expectAmazonEC2Match(request: Hub.ActionRequest, match: any) {
 
   const stopInstancesSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully called with ${params}`)
@@ -28,8 +28,8 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
     it("errors if there is no attachment for query", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Query
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -40,8 +40,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for query", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Query
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -58,8 +58,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("errors if there is no attachment for cell", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Cell
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Cell
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",
@@ -71,8 +71,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("sends right params for cell", () => {
-      const request = new D.ActionRequest()
-      request.type = D.ActionType.Cell
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Cell
       request.params = {
         access_key_id: "mykey",
         secret_access_key: "mysecret",

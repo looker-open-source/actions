@@ -1,4 +1,4 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 import { AmazonS3Action } from "../amazon/amazon_s3"
 
 import * as S3 from "aws-sdk/clients/s3"
@@ -35,13 +35,13 @@ export class DigitalOceanObjectStorageAction extends AmazonS3Action {
     ]
   }
 
-  async form(request: D.ActionRequest) {
+  async form(request: Hub.ActionRequest) {
     const form = await super.form(request)
     form.fields.filter( (field) => field.name === "bucket")[0].label = "Space Name"
     return form
   }
 
-  protected amazonS3ClientFromRequest(request: D.ActionRequest) {
+  protected amazonS3ClientFromRequest(request: Hub.ActionRequest) {
    return new S3({
      region: request.params.region,
      endpoint: `https://${request.params.region}.digitaloceanspaces.com`,
@@ -52,4 +52,4 @@ export class DigitalOceanObjectStorageAction extends AmazonS3Action {
 
 }
 
-D.addAction(new DigitalOceanObjectStorageAction())
+Hub.addAction(new DigitalOceanObjectStorageAction())

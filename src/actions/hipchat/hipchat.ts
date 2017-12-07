@@ -1,4 +1,4 @@
-import * as D from "../../framework"
+import * as Hub from "../../framework"
 
 const hipchat = require("hipchatter")
 
@@ -10,7 +10,7 @@ interface Room {
 const MAX_LINES = 10
 const HIPCHAT_MAX_MESSAGE_BODY = 10000
 
-export class HipchatAction extends D.Action {
+export class HipchatAction extends Hub.Action {
 
   constructor() {
     super()
@@ -18,7 +18,7 @@ export class HipchatAction extends D.Action {
     this.label = "Hipchat"
     this.iconName = "hipchat/hipchat.png"
     this.description = "Send a message to a Hipchat room referencing data."
-    this.supportedActionTypes = [D.ActionType.Query]
+    this.supportedActionTypes = [Hub.ActionType.Query]
     this.requiredFields = []
     this.params = [
       {
@@ -29,12 +29,12 @@ export class HipchatAction extends D.Action {
         description: "API Key generated at https://hipchat.com/account/api",
       },
     ]
-    this.supportedFormats = [D.ActionFormat.JsonDetail]
-    this.supportedFormattings = [D.ActionFormatting.Unformatted]
+    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
+    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
   }
 
-  async execute(request: D.ActionRequest) {
-    return new Promise<D.ActionResponse>((resolve, reject) => {
+  async execute(request: Hub.ActionRequest) {
+    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
       if (!request.attachment || !request.attachment.dataBuffer) {
         reject("Couldn't get data from attachment.")
@@ -59,12 +59,12 @@ export class HipchatAction extends D.Action {
             response = {success: false, message: err.message}
           }
         })
-      resolve(new D.ActionResponse(response))
+      resolve(new Hub.ActionResponse(response))
     })
   }
 
-  async form(request: D.ActionRequest) {
-    const form = new D.ActionForm()
+  async form(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
     const rooms = await this.usableRooms(request)
 
     form.fields = [{
@@ -79,7 +79,7 @@ export class HipchatAction extends D.Action {
     return form
   }
 
-  async usableRooms(request: D.ActionRequest) {
+  async usableRooms(request: Hub.ActionRequest) {
     return new Promise<Room[]>((resolve, reject) => {
       const hipchatClient = this.hipchatClientFromRequest(request)
       hipchatClient.rooms((err: any, response: any) => {
@@ -94,10 +94,10 @@ export class HipchatAction extends D.Action {
     })
   }
 
-  private hipchatClientFromRequest(request: D.ActionRequest) {
+  private hipchatClientFromRequest(request: Hub.ActionRequest) {
     return new hipchat(request.params.hipchat_api_key)
   }
 
 }
 
-D.addAction(new HipchatAction())
+Hub.addAction(new HipchatAction())
