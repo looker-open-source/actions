@@ -15,7 +15,7 @@ export class TwilioAction extends Hub.Action {
     this.iconName = "twilio/twilio.svg"
     this.description = "Send data from a Look to a phone number via Twilio."
     this.supportedActionTypes = [Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.Csv, Hub.ActionFormat.Txt]
+    this.supportedFormats = [Hub.ActionFormat.Csv]
     this.requiredFields = []
     this.params = [
       {

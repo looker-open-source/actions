@@ -43,7 +43,7 @@ export class AmazonEC2Action extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     let instanceIds: string[] = []
     switch (request.type) {
-      case "query":
+      case Hub.ActionType.Query:
         if (!(request.attachment && request.attachment.dataJSON)) {
           throw "Couldn't get data from attachment."
         }
@@ -61,7 +61,7 @@ export class AmazonEC2Action extends Hub.Action {
         }
         instanceIds = qr.data.map((row: any) => (row[identifiableFields[0].name].value))
         break
-      case "cell":
+      case Hub.ActionType.Cell:
         if (!request.params.value) {
           throw "Couldn't get data from cell."
         }
