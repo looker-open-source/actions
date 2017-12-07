@@ -5,7 +5,7 @@ import * as D from "../../framework"
 
 import { AirtableAction } from "./airtable"
 
-const integration = new AirtableAction()
+const action = new AirtableAction()
 
 function expectWebhookMatch(
   request: D.ActionRequest,
@@ -19,13 +19,13 @@ function expectWebhookMatch(
   const tableSpy = sinon.spy(() => ({create: createSpy}))
   const baseSpy = sinon.spy(() => (tableSpy))
 
-  const stubPost = sinon.stub(integration as any, "airtableClientFromRequest")
+  const stubPost = sinon.stub(action as any, "airtableClientFromRequest")
     .callsFake(() => ({
       base: baseSpy,
     }))
 
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  const execute = action.execute(request)
+  return chai.expect(execute).to.be.fulfilled.then(() => {
     chai.expect(baseSpy).to.have.been.calledWith(base)
     chai.expect(tableSpy).to.have.been.calledWith(table)
     chai.expect(createSpy).to.have.been.calledWith(match)
@@ -33,13 +33,13 @@ function expectWebhookMatch(
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
     it("errors if the input has no attachment", () => {
       const request = new D.ActionRequest()
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
@@ -54,7 +54,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         },
         data: [{"coolview.coolfield": {value: "funvalue"}}],
       }}
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Missing Airtable base or table.")
     })
 
@@ -106,12 +106,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with base and table param", (done) => {
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Airtable Base",

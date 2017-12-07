@@ -5,29 +5,28 @@ import * as D from "../../framework"
 
 import { AmazonS3Action } from "./amazon_s3"
 
-const integration = new AmazonS3Action()
+const action = new AmazonS3Action()
 
 function expectAmazonS3Match(request: D.ActionRequest, match: any) {
 
   const putObjectSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully put item ${params} in database`)
   })
-  const stubClient = sinon.stub(integration as any, "amazonS3ClientFromRequest")
+  const stubClient = sinon.stub(action as any, "amazonS3ClientFromRequest")
     .callsFake(() => ({
       putObject: putObjectSpy,
     }))
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
 
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(putObjectSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
     stubSuggestedFilename.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -42,9 +41,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Need Amazon S3 bucket.")
     })
 
@@ -57,7 +54,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         region: "us-east-1",
       }
 
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment")
     })
 
@@ -99,12 +96,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with correct buckets", (done) => {
 
-      const stubClient = sinon.stub(integration as any, "amazonS3ClientFromRequest")
+      const stubClient = sinon.stub(action as any, "amazonS3ClientFromRequest")
         .callsFake(() => ({
           listBuckets: (cb: (err: any, res: any) => void) => {
             const response = {
@@ -118,7 +115,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         }))
 
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Bucket",

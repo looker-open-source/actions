@@ -15,4 +15,4 @@
 
 4. Navigate to authentication and copy the Base
 
-5. Enable Airtable in your looker Administration page for integrations (/admin/actions).
+5. Enable Airtable in your looker Administration page for actions (/admin/actions).

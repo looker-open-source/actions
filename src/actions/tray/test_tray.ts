@@ -4,19 +4,19 @@ import * as D from "../../framework"
 
 import { TrayAction } from "./tray"
 
-const integration = new TrayAction()
+const action = new TrayAction()
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with url param", (done) => {
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Tray Webhook URL",

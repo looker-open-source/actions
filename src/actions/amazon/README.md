@@ -1,7 +1,7 @@
 # AWS S3, EC2
 ## Write data files to an S3 bucket or Stop an EC2 instance.
 
-The Amazon S3 integrations enables you to send and store a data file on S3 via the Amazon S3 API. The Amazon EC2 Stop Instance integration allows you to stop an EC2 (from a dimension tagged with `aws_resource_id` in LookML) via the Amazon EC2 API.
+The Amazon S3 actions enables you to send and store a data file on S3 via the Amazon S3 API. The Amazon EC2 Stop Instance action allows you to stop an EC2 (from a dimension tagged with `aws_resource_id` in LookML) via the Amazon EC2 API.
 
 1. Existing User
 1. New Programmatic User
@@ -30,7 +30,7 @@ https://console.aws.amazon.com/iam/home?#/users) to create a new programmatic us
 
 Name the user and select Programmatic Access type. Select Next: permissions.
 
-Select AmazonS3FullAccess or AmazonEC2FullAccess depending on integration.
+Select AmazonS3FullAccess or AmazonEC2FullAccess depending on action.
 ![](AWS&#32;S3&#32;Full&#32;Access.png)
 ![](AWS&#32;EC2&#32;Full&#32;Access.png)
 
@@ -40,4 +40,4 @@ Select Create user
 Copy Access key ID and Secret access key
 ![](AWS&#32;S3&#32;Full&#32;Access&#32;Credentials.png)
 
-# Enable Amazon S3 or Amazon EC2 in your looker Administration page for integrations (/admin/actions).
+# Enable Amazon S3 or Amazon EC2 in your looker Administration page for actions (/admin/actions).

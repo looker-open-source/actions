@@ -5,7 +5,7 @@ import * as D from "../../framework"
 
 import { DigitalOceanDropletAction } from "./digitalocean_droplet"
 
-const integration = new DigitalOceanDropletAction()
+const action = new DigitalOceanDropletAction()
 
 function expectDigitalOceanDropletActionMatch(request: D.ActionRequest, ...match: any[]) {
 
@@ -13,18 +13,17 @@ function expectDigitalOceanDropletActionMatch(request: D.ActionRequest, ...match
     (dropletId: string, params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully called with ${dropletId} ${params}`)
   })
-  const stubClient = sinon.stub(integration as any, "digitalOceanClientFromRequest")
+  const stubClient = sinon.stub(action as any, "digitalOceanClientFromRequest")
     .callsFake(() => ({
       dropletsRequestAction: dropletsRequestActionSpy,
     }))
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(dropletsRequestActionSpy.firstCall).to.have.been.calledWithMatch(...match)
     stubClient.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -35,9 +34,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         digitalocean_api_key: "mykey",
       }
 
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 
@@ -62,10 +59,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.params = {
         digitalocean_api_key: "mykey",
       }
-
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 
@@ -84,7 +78,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("doesn't have form", () => {
-      chai.expect(integration.hasForm).equals(false)
+      chai.expect(action.hasForm).equals(false)
     })
 
   })

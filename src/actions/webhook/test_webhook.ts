@@ -6,7 +6,7 @@ import * as D from "../../framework"
 
 import { WebhookAction } from "./webhook"
 
-class GoodWebhookIntegration extends WebhookAction {
+class GoodWebhookAction extends WebhookAction {
 
   constructor() {
     super()
@@ -25,25 +25,24 @@ class GoodWebhookIntegration extends WebhookAction {
   }
 }
 
-const integration = new GoodWebhookIntegration()
+const action = new GoodWebhookAction()
 
 function expectWebhookMatch(request: D.ActionRequest, match: any) {
   const postSpy = sinon.spy(async () => null)
   const stubPost = sinon.stub(req, "post").callsFake(postSpy)
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(postSpy).to.have.been.calledWith(match)
     stubPost.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
     it("errors if the input has no attachment", () => {
       const request = new D.ActionRequest()
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("No attached json.")
     })
 
@@ -54,7 +53,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Missing url.")
     })
 
@@ -67,7 +66,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Incorrect domain for url.")
     })
 
@@ -91,12 +90,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with url param", (done) => {
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Webhook URL",

@@ -5,7 +5,7 @@ import * as D from "../../framework"
 
 import { SlackAttachmentAction } from "./slack"
 
-const integration = new SlackAttachmentAction()
+const action = new SlackAttachmentAction()
 
 const stubFileName = "stubSuggestedFilename"
 
@@ -15,7 +15,7 @@ function expectSlackMatch(request: D.ActionRequest, fileNameMatch: string, optio
     callback(null, `successfully sent ${filename} ${params}`)
   })
 
-  const stubClient = sinon.stub(integration as any, "slackClientFromRequest")
+  const stubClient = sinon.stub(action as any, "slackClientFromRequest")
     .callsFake(() => ({
       files: {
         upload: fileUploadSpy,
@@ -25,15 +25,14 @@ function expectSlackMatch(request: D.ActionRequest, fileNameMatch: string, optio
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => stubFileName)
 
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(fileUploadSpy).to.have.been.calledWithMatch(fileNameMatch, optionsMatch)
     stubClient.restore()
     stubSuggestedFilename.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -44,9 +43,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
         fileExtension: "csv",
       }
-      const action = integration.execute(request)
 
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Missing channel.")
     })
 
@@ -56,7 +54,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         channel: "mychannel",
       }
 
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 
@@ -112,11 +110,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with correct channels", (done) => {
-      const stubClient = sinon.stub(integration as any, "slackClientFromRequest")
+      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({
           channels: {
             list: (filters: any, callback: (err: any, response: any) => void) => {
@@ -144,7 +142,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           },
         }))
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           description: "Name of the Slack channel you would like to post to.",

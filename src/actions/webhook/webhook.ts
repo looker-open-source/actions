@@ -27,7 +27,7 @@ export abstract class WebhookAction extends D.Action {
     }
 
     if (!this.domain) {
-      throw "Integration requires a domain."
+      throw "Action requires a domain."
     }
 
     const providedUrl = request.formParams.url!

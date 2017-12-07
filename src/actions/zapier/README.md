@@ -1,7 +1,7 @@
 # Zapier
 ## Send data and begin a Zapier zap.
 
-This integration allows you to send data directly to a Zapier Zap. The data format received by Zapier will be the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/integrations/docs/json_detail_example.json)). Build out your Zap using Looker data!
+This action allows you to send data directly to a Zapier Zap. The data format received by Zapier will be the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/actions/docs/json_detail_example.json)). Build out your Zap using Looker data!
 
 1. Go to your Zapier [home page](https://zapier.com/app/explore).
 
@@ -17,6 +17,6 @@ This integration allows you to send data directly to a Zapier Zap. The data form
 
 4. Copy Webhook URL.
 
-5. Enable Zapier  in your in your looker Administration page for integrations (/admin/actions).
+5. Enable Zapier  in your in your looker Administration page for actions (/admin/actions).
 
 6. Use the copied webhook URL in Send or Schedule to Zapier.

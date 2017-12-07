@@ -82,7 +82,7 @@ export class SegmentAction extends D.Action {
 
       const context = {
         app: {
-          name: "looker/integrations",
+          name: "looker/actions",
           version: process.env.APP_VERSION,
         },
       }

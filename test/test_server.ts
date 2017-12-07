@@ -26,7 +26,7 @@ describe("the action hub", () => {
       })
   })
 
-  it("returns a list of integrations on POST to the root url with the proper authentication key", (done) => {
+  it("returns a list of actions on POST to the root url with the proper authentication key", (done) => {
     const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
     chai.request(new Server().app)
       .post("/")

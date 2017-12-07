@@ -5,25 +5,25 @@ import * as D from "../../framework"
 
 import { AmazonEC2Action } from "./amazon_ec2"
 
-const integration = new AmazonEC2Action()
+const action = new AmazonEC2Action()
 
 function expectAmazonEC2Match(request: D.ActionRequest, match: any) {
 
   const stopInstancesSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully called with ${params}`)
   })
-  const stubClient = sinon.stub(integration as any, "amazonEC2ClientFromRequest")
+  const stubClient = sinon.stub(action as any, "amazonEC2ClientFromRequest")
     .callsFake(() => ({
       stopInstances: stopInstancesSpy,
     }))
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  const execute = action.execute(request)
+  return chai.expect(execute).to.be.fulfilled.then(() => {
     chai.expect(stopInstancesSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -35,10 +35,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         secret_access_key: "mysecret",
         region: "us-east-1",
       }
-
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 
@@ -69,9 +66,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         region: "us-east-1",
       }
 
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from cell.")
     })
 
@@ -92,7 +87,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("doesn't have form", () => {
-      chai.expect(integration.hasForm).equals(false)
+      chai.expect(action.hasForm).equals(false)
     })
 
   })

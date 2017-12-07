@@ -5,14 +5,14 @@ import * as D from "../../framework"
 
 import { JiraAction } from "./jira"
 
-const integration = new JiraAction()
+const action = new JiraAction()
 
 function expectJiraNewIssueMatch(request: D.ActionRequest, match: any) {
 
   const addNewIssueSpy = sinon.spy(async () => 1)
   const addAttachmentonIssueSpy = sinon.spy(async () => 10)
 
-  const stubClient = sinon.stub(integration as any, "jiraClientFromRequest")
+  const stubClient = sinon.stub(action as any, "jiraClientFromRequest")
     .callsFake(() => {
       return {
         addNewIssue: addNewIssueSpy,
@@ -20,14 +20,13 @@ function expectJiraNewIssueMatch(request: D.ActionRequest, match: any) {
       }
     })
 
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(addNewIssueSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -60,11 +59,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with correct projects and issues", (done) => {
-      const stubClient = sinon.stub(integration as any, "jiraClientFromRequest")
+      const stubClient = sinon.stub(action as any, "jiraClientFromRequest")
         .callsFake(() => {
           return {
             listProjects: () => [
@@ -76,7 +75,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           }
         })
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           default: "1",

@@ -5,7 +5,7 @@ import * as D from "../../framework"
 
 import { HipchatAction } from "./hipchat"
 
-const integration = new HipchatAction()
+const action = new HipchatAction()
 
 function expectHipchatMatch(request: D.ActionRequest, ...match: any[]) {
 
@@ -13,19 +13,18 @@ function expectHipchatMatch(request: D.ActionRequest, ...match: any[]) {
     callback(null, `successfully sent ${room} ${message}`)
   })
 
-  const stubClient = sinon.stub(integration as any, "hipchatClientFromRequest")
+  const stubClient = sinon.stub(action as any, "hipchatClientFromRequest")
     .callsFake(() => ({
       send_room_message: messageSpy,
     }))
 
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(messageSpy).to.have.been.calledWithMatch(...match)
     stubClient.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -35,9 +34,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.attachment = {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
       }
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Missing room.")
     })
 
@@ -47,7 +44,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         room: "myroom",
       }
 
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from attachment.")
     })
 
@@ -71,11 +68,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with correct rooms", (done) => {
-      const stubClient = sinon.stub(integration as any, "hipchatClientFromRequest")
+      const stubClient = sinon.stub(action as any, "hipchatClientFromRequest")
       .callsFake(() => ({
         rooms: (callback: (err: any, response: any) => void) => {
             callback(null, [
@@ -88,7 +85,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       }))
 
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           description: "Name of the Hipchat room you would like to post to.",

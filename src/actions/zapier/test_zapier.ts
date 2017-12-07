@@ -4,19 +4,19 @@ import * as D from "../../framework"
 
 import { ZapierAction } from "./zapier"
 
-const integration = new ZapierAction()
+const action = new ZapierAction()
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with url param", (done) => {
       const request = new D.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Zapier Webhook URL",

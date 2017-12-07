@@ -5,25 +5,24 @@ import * as D from "../../../src/framework"
 
 import { TwilioMessageAction } from "./twilio_message"
 
-const integration = new TwilioMessageAction()
+const action = new TwilioMessageAction()
 
 function expectTwilioMatch(request: D.ActionRequest, match: any) {
 
   const createSpy = sinon.spy(async () => Promise.resolve())
 
-  const stubClient = sinon.stub(integration as any, "twilioClientFromRequest")
+  const stubClient = sinon.stub(action as any, "twilioClientFromRequest")
     .callsFake(() => ({
       messages: {create: createSpy},
     }))
 
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(createSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -41,9 +40,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         ],
       }}
 
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Query requires a field tagged phone.")
     })
 
@@ -58,7 +55,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         ],
       }}
 
-      return chai.expect(integration.execute(request)).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Need a message.")
     })
 
@@ -93,9 +90,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
       request.formParams = {
         message: "My Message",
       }
-      const action = integration.execute(request)
 
-      return chai.expect(action).to.eventually
+      return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Couldn't get data from cell.")
     })
 
@@ -121,7 +117,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
   })
