@@ -48,17 +48,17 @@ export class HipchatAction extends Hub.Action {
       const hipchatClient = this.hipchatClientFromRequest(request)
       const message = request.suggestedTruncatedMessage(MAX_LINES, HIPCHAT_MAX_MESSAGE_BODY)
 
-      let response
       hipchatClient.send_room_message(
         request.formParams.room, {
           from: "Looker",
           message,
         }, (err: any) => {
+          let response
           if (err) {
             response = {success: false, message: err.message}
           }
+          resolve(new Hub.ActionResponse(response))
         })
-      resolve(new Hub.ActionResponse(response))
     })
   }
 
