@@ -29,8 +29,7 @@ export class HipchatAction extends Hub.Action {
         description: "API Key generated at https://hipchat.com/account/api",
       },
     ]
-    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
-    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
+    this.supportedFormats = [Hub.ActionFormat.Csv]
   }
 
   async execute(request: Hub.ActionRequest) {
