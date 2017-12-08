@@ -69,6 +69,10 @@ describe(`${action.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
         fileExtension: "csv",
       }
+      request.scheduledPlan = {
+        title: "New Lookless Dashboard",
+        url: "https://my.looker.com/dashboards/3",
+      }
       return expectSlackMatch(request, request.formParams.filename!, {
         file: {
           value: request.attachment.dataBuffer,
@@ -78,7 +82,8 @@ describe(`${action.constructor.name} unit tests`, () => {
         },
         channels: request.formParams.channel,
         filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment,
+        initial_comment: `${request.formParams.initial_comment}
+View this data in Looker. ${request.scheduledPlan.url}`,
       })
     })
 

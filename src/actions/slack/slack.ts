@@ -41,27 +41,33 @@ export class SlackAttachmentAction extends Hub.Action {
 
       const slack = this.slackClientFromRequest(request)
 
-      const fileName = request.formParams.filename || request.suggestedFilename()
+      const filename = request.formParams.filename || request.suggestedFilename()
+      let initialComment = request.formParams.initial_comment
+
+      if (request.scheduledPlan && request.scheduledPlan.url) {
+        const viewTemplate = `View this data in Looker. ${request.scheduledPlan.url}`
+        initialComment = initialComment ? initialComment + "\n" + viewTemplate : viewTemplate
+      }
 
       const options = {
         file: {
           value: request.attachment.dataBuffer,
           options: {
-            filename: fileName,
+            filename,
           },
         },
         channels: request.formParams.channel,
         filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment,
+        initial_comment: initialComment,
       }
 
-      let response
-      slack.files.upload(fileName, options, (err: any) => {
+      slack.files.upload(filename, options, (err: any) => {
+        let response
         if (err) {
           response = {success: true, message: err.message}
         }
+        resolve(new Hub.ActionResponse(response))
       })
-      resolve(new Hub.ActionResponse(response))
     })
   }
 
