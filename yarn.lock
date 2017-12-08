@@ -17,7 +17,7 @@
     "@types/request" "^2.0.3"
     request "^2.81.0"
 
-"@sendgrid/helpers@^6.1.3":
+"@sendgrid/helpers@^6.1.3", "@sendgrid/helpers@^6.1.5":
   version "6.1.5"
   resolved "https://registry.yarnpkg.com/@sendgrid/helpers/-/helpers-6.1.5.tgz#bc105b330800c0af7098d5f9775929319b7437d6"
   dependencies:
@@ -106,8 +106,8 @@
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.44.tgz#1d4a798e53f35212fd5ad4d04050620171cd5b5e"
 
 "@types/node@*", "@types/node@^8.0.45":
-  version "8.0.55"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.55.tgz#015966c0af809216b8a46cc527b5c211994d36f0"
+  version "8.0.56"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.56.tgz#c4652f88d7a677e26ccc16c1485c282ce28f1ce9"
 
 "@types/nodemailer-direct-transport@*":
   version "1.0.31"
@@ -175,8 +175,8 @@
     "@types/sinon" "*"
 
 "@types/sinon@*", "@types/sinon@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-4.0.0.tgz#9a93ffa4ee1329e85166278a5ed99f81dc4c8362"
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-4.1.0.tgz#cdfb934d656b2c888e51f53e95900c7bbca11c08"
 
 "@types/ssh2-sftp-client@^2.0.0":
   version "2.0.0"
@@ -261,15 +261,15 @@ ajv@^5.1.0:
     json-schema-traverse "^0.3.0"
 
 analytics-node@^3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/analytics-node/-/analytics-node-3.1.1.tgz#8bc8e0c6a9e2cf2a961d687772e5831dd7b5dcf0"
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/analytics-node/-/analytics-node-3.2.0.tgz#7b1380cb1a75df20646382bde63995fc4f92853f"
   dependencies:
     "@segment/loosely-validate-event" "^1.1.2"
     axios "^0.16.2"
     axios-retry "^3.0.1"
     commander "^2.9.0"
     crypto-token "^1.0.1"
-    debug "^2.6.2"
+    lodash.isstring "^4.0.1"
     ms "^2.0.0"
     remove-trailing-slash "^0.1.0"
 
@@ -390,8 +390,8 @@ asynckit@^0.4.0:
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
 
 aws-sdk@^2.135.0:
-  version "2.163.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.163.0.tgz#bf0c43878634800c5426aa0931b5683900493d92"
+  version "2.165.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.165.0.tgz#4ae6f73111c3e83acb70fadac5791c4892b84d3d"
   dependencies:
     buffer "4.9.1"
     crypto-browserify "1.0.9"
@@ -873,7 +873,7 @@ datauri@^1.0.5:
     mimer "^0.2.1"
     semver "^5.0.3"
 
-debug@2, debug@2.6.9, debug@^2.1.2, debug@^2.2.0, debug@^2.6.2, debug@^2.6.8:
+debug@2, debug@2.6.9, debug@^2.1.2, debug@^2.2.0, debug@^2.6.8:
   version "2.6.9"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.9.tgz#5d128515df134ff327e90a4c93f4e077a536341f"
   dependencies:
@@ -1943,6 +1943,10 @@ lodash.isarray@^3.0.0:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/lodash.isarray/-/lodash.isarray-3.0.4.tgz#79e4eb88c36a8122af86f844aa9bcd851b5fbb55"
 
+lodash.isstring@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/lodash.isstring/-/lodash.isstring-4.0.1.tgz#d527dfb5456eca7cc9bb95d5daeaf88ba54a5451"
+
 lodash.keys@^3.0.0:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/lodash.keys/-/lodash.keys-3.1.2.tgz#4dbc0472b156be50a0b286855d1bd0b0c656098a"
@@ -2909,8 +2913,8 @@ sinon-chai@^2.12.0:
   resolved "https://registry.yarnpkg.com/sinon-chai/-/sinon-chai-2.14.0.tgz#da7dd4cc83cd6a260b67cca0f7a9fdae26a1205d"
 
 sinon@^4.1.2:
-  version "4.1.2"
-  resolved "https://registry.yarnpkg.com/sinon/-/sinon-4.1.2.tgz#65610521d926fb53742dd84cd599f0b89a82f440"
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/sinon/-/sinon-4.1.3.tgz#fc599eda47ed9f1a694ce774b94ab44260bd7ac5"
   dependencies:
     diff "^3.1.0"
     formatio "1.2.0"
@@ -2918,7 +2922,7 @@ sinon@^4.1.2:
     lolex "^2.2.0"
     nise "^1.2.0"
     supports-color "^4.4.0"
-    type-detect "^4.0.0"
+    type-detect "^4.0.5"
 
 sntp@1.x.x:
   version "1.0.9"
@@ -3204,8 +3208,12 @@ tsconfig@^6.0.0:
     strip-json-comments "^2.0.0"
 
 tslib@^1.7.1:
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.8.0.tgz#dc604ebad64bcbf696d613da6c954aa0e7ea1eb6"
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.8.1.tgz#6946af2d1d651a7b1863b531d6e5afa41aa44eac"
+
+tslint-language-service@^0.9.7:
+  version "0.9.7"
+  resolved "https://registry.yarnpkg.com/tslint-language-service/-/tslint-language-service-0.9.7.tgz#94a35442bc1163e4629df8804e6fa694ced549ff"
 
 tslint@^5.8.0:
   version "5.8.0"
@@ -3257,7 +3265,7 @@ twilio@^3.8.0:
     scmp "0.0.3"
     xmlbuilder "9.0.1"
 
-type-detect@^4.0.0:
+type-detect@^4.0.0, type-detect@^4.0.5:
   version "4.0.5"
   resolved "https://registry.yarnpkg.com/type-detect/-/type-detect-4.0.5.tgz#d70e5bc81db6de2a381bcaca0c6e0cbdc7635de2"
 
