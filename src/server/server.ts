@@ -104,7 +104,7 @@ export default class Server implements Hub.RouteBuilder {
   }
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {
-    this.app.get(urlPath, async (req, res) => {
+    this.app.post(urlPath, async (req, res) => {
       this.logInfo(req, "Starting request.")
 
       const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
