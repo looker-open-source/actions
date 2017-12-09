@@ -39,7 +39,7 @@ export default class Server implements Hub.RouteBuilder {
   static listen(port = process.env.PORT || 8080) {
     const app = new Server().app
     app.listen(port, () => {
-      winston.info(`Action Hub listening on port ${port}!`)
+      winston.info(`Action Hub listening!`, {port})
     })
   }
 
@@ -88,7 +88,8 @@ export default class Server implements Hub.RouteBuilder {
 
     // To provide a health or version check endpoint you should place a status.json file
     // into the project root, which will get served by this endpoint (or 404 otherwise).
-    this.app.get("/status", (_req, res) => {
+    this.app.get("/status", (req, res) => {
+      this.logInfo(req, "Status page requested.")
       res.sendFile(path.resolve(`${__dirname}/../status.json`))
     })
 
@@ -104,32 +105,55 @@ export default class Server implements Hub.RouteBuilder {
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {
     this.app.post(urlPath, async (req, res) => {
-      winston.info(`Starting request for ${req.url}`)
+      this.logInfo(req, "Starting request.")
 
       const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})
-        winston.info(`Unauthorized request for ${req.url}`)
+        this.logInfo(req, "Unauthorized request.")
         return
       }
 
       try {
         await fn(req, res)
-        winston.info(`Completed request for ${req.url}`)
+        this.logInfo(req, "Completed request.")
       } catch (e) {
-        winston.error(`Error on request for ${req.url}:`)
+        this.logError(req, "Error on request")
         if (typeof(e) === "string") {
           res.status(404)
           res.json({success: false, error: e})
-          winston.error(e)
+          this.logError(req, e)
         } else {
           res.status(500)
           res.json({success: false, error: "Internal server error."})
-          winston.error(e)
+          this.logError(req, e)
         }
       }
     })
+  }
+
+  private logInfo(req: express.Request, message: any, options: any = {}) {
+    winston.info(message, {
+      ...options,
+      ...this.requestLog(req),
+    })
+  }
+
+  private logError(req: express.Request, message: any, options: any = {}) {
+    winston.error(message, {
+      ...options,
+      ...this.requestLog(req),
+    })
+  }
+
+  private requestLog(req: express.Request) {
+    return {
+      url: req.url,
+      ip: req.ip,
+      instanceId: req.header("x-looker-instance"),
+      webhookId: req.header("x-looker-webhook-id"),
+    }
   }
 
   private absUrl(rootRelativeUrl: string) {
