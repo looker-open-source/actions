@@ -7,6 +7,8 @@ import * as winston from "winston"
 import * as Hub from "../hub"
 import * as apiKey from "./api_key"
 
+const expressWinston = require("express-winston")
+
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 
 export default class Server implements Hub.RouteBuilder {
@@ -49,6 +51,15 @@ export default class Server implements Hub.RouteBuilder {
 
     this.app = express()
     this.app.use(bodyParser.json({limit: "250mb"}))
+    this.app.use(expressWinston.logger({
+      winstonInstance: winston,
+      dynamicMeta: this.requestLog,
+      requestFilter(req: {[key: string]: any}, propName: string) {
+        if (propName !== "headers") {
+          return req[propName]
+        }
+      },
+    }))
     this.app.use(express.static("public"))
 
     this.route("/", async (_req, res) => {
@@ -88,8 +99,7 @@ export default class Server implements Hub.RouteBuilder {
 
     // To provide a health or version check endpoint you should place a status.json file
     // into the project root, which will get served by this endpoint (or 404 otherwise).
-    this.app.get("/status", (req, res) => {
-      this.logInfo(req, "Status page requested.")
+    this.app.get("/status", (_req, res) => {
       res.sendFile(path.resolve(`${__dirname}/../status.json`))
     })
 
@@ -105,52 +115,52 @@ export default class Server implements Hub.RouteBuilder {
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {
     this.app.post(urlPath, async (req, res) => {
-      this.logInfo(req, "Starting request.")
+      this.logInfo(req, res, "Starting request.")
 
       const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})
-        this.logInfo(req, "Unauthorized request.")
+        this.logInfo(req, res, "Unauthorized request.")
         return
       }
 
       try {
         await fn(req, res)
-        this.logInfo(req, "Completed request.")
       } catch (e) {
-        this.logError(req, "Error on request")
+        this.logError(req, res, "Error on request")
         if (typeof(e) === "string") {
           res.status(404)
           res.json({success: false, error: e})
-          this.logError(req, e)
+          this.logError(req, res, e)
         } else {
           res.status(500)
           res.json({success: false, error: "Internal server error."})
-          this.logError(req, e)
+          this.logError(req, res, e)
         }
       }
     })
   }
 
-  private logInfo(req: express.Request, message: any, options: any = {}) {
+  private logInfo(req: express.Request, res: express.Response, message: any, options: any = {}) {
     winston.info(message, {
       ...options,
-      ...this.requestLog(req),
+      ...this.requestLog(req, res),
     })
   }
 
-  private logError(req: express.Request, message: any, options: any = {}) {
+  private logError(req: express.Request, res: express.Response, message: any, options: any = {}) {
     winston.error(message, {
       ...options,
-      ...this.requestLog(req),
+      ...this.requestLog(req, res),
     })
   }
 
-  private requestLog(req: express.Request) {
+  private requestLog(req: express.Request, res: express.Response) {
     return {
       url: req.url,
       ip: req.ip,
+      statusCode: res.statusCode,
       instanceId: req.header("x-looker-instance"),
       webhookId: req.header("x-looker-webhook-id"),
     }
