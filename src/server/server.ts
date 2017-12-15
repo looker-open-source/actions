@@ -77,7 +77,7 @@ export default class Server implements Hub.RouteBuilder {
       res.json(action.asJson(this))
     })
 
-    this.route("/actions/:actionId/action", async (req, res) => {
+    this.route("/actions/:actionId/execute", async (req, res) => {
       const action = await Hub.findAction(req.params.actionId)
       if (action.hasExecute) {
          const actionResponse = await action.validateAndExecute(Hub.ActionRequest.fromRequest(req))
@@ -106,7 +106,7 @@ export default class Server implements Hub.RouteBuilder {
   }
 
   actionUrl(action: Hub.Action) {
-    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/action`)
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/execute`)
   }
 
   formUrl(action: Hub.Action) {
