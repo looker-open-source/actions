@@ -7,9 +7,9 @@ Because Looker will only accept an integration server with a valid HTTPS certifi
 * `cd` into the `integrations` directory and run:
    * `heroku create`
    * `git push heroku master`
-   * `heroku config:set BASE_URL="https://my-heroku-integration-server-1234.herokuapp.com"` — use the URL for your Heroku application that was mentioned after running `git push heroku master` above
-   * `heroku config:set INTEGRATION_PROVIDER_LABEL="Awesome Integration Service`
-   * `heroku config:set INTEGRATION_SERVICE_SECRET="<my-secret>"`
+   * `heroku config:set ACTION_HUB_BASE_URL="https://my-heroku-integration-server-1234.herokuapp.com"` — use the URL for your Heroku application that was mentioned after running `git push heroku master` above
+   * `heroku config:set ACTION_HUB_LABEL="Awesome Integration Service`
+   * `heroku config:set ACTION_HUB_SECRET="<my-secret>"`
 
 We recommend, per best practices, that you work on features using a branch. To create and push a branch to Heroku:
 
