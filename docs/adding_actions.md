@@ -64,7 +64,7 @@ Add any dependencies
 
 You can get a development server running with `yarn dev` per the instructions below. Because Looker requires that your integration server has a valid SSL certificate, we highly recommend using a service like Heroku for development (helpful instructions below).
 
-    export BASE_URL="https://my-integration-service.heroku.com";
+    export ACTION_HUB_BASE_URL="https://my-integration-service.heroku.com";
     export ACTION_HUB_LABEL="My Company";
     export ACTION_HUB_SECRET="my-secret";
     yarn dev
