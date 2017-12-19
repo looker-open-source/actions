@@ -54,6 +54,7 @@
     "express-winston": "^2.4.0",
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.0",
+    "node-marketo-rest": "^0.3.8",
     "nodemon": "^1.12.1",
     "request-promise-native": "^1.0.5",
     "sanitize-filename": "^1.6.1",
