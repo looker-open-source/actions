@@ -1,8 +1,8 @@
 import * as chai from "chai"
+import * as chaiAsPromised from "chai-as-promised"
 import * as sinonChai from "sinon-chai"
 import * as winston from "winston"
 
-const chaiAsPromised = require("chai-as-promised")
 const chaiHttp = require("chai-http")
 
 chai.use(chaiHttp)
@@ -10,26 +10,26 @@ chai.use(sinonChai)
 chai.use(chaiAsPromised) // should be last
 winston.remove(winston.transports.Console)
 
-import "../src/integrations/index"
+import "../src/actions/index"
 
 import "./test_server"
 import "./test_smoke"
 
-import "../src/integrations/airtable/test_airtable"
-import "../src/integrations/amazon/test_amazon_ec2"
-import "../src/integrations/amazon/test_amazon_s3"
-import "../src/integrations/azure/test_azure_storage"
-import "../src/integrations/digitalocean/test_digitalocean_droplet"
-import "../src/integrations/digitalocean/test_digitalocean_object_storage"
-import "../src/integrations/facebook/test_facebook"
-import "../src/integrations/hipchat/test_hipchat"
-import "../src/integrations/jira/test_jira"
-import "../src/integrations/segment/test_segment"
-import "../src/integrations/sendgrid/test_sendgrid"
-import "../src/integrations/sftp/test_sftp"
-import "../src/integrations/slack/test_slack"
-import "../src/integrations/tray/test_tray"
-import "../src/integrations/twilio/test_twilio"
-import "../src/integrations/twilio/test_twilio_message"
-import "../src/integrations/webhook/test_webhook"
-import "../src/integrations/zapier/test_zapier"
+import "../src/actions/airtable/test_airtable"
+import "../src/actions/amazon/test_amazon_ec2"
+import "../src/actions/amazon/test_amazon_s3"
+import "../src/actions/azure/test_azure_storage"
+import "../src/actions/digitalocean/test_digitalocean_droplet"
+import "../src/actions/digitalocean/test_digitalocean_object_storage"
+import "../src/actions/facebook/test_facebook"
+import "../src/actions/hipchat/test_hipchat"
+import "../src/actions/jira/test_jira"
+import "../src/actions/segment/test_segment"
+import "../src/actions/sendgrid/test_sendgrid"
+import "../src/actions/sftp/test_sftp"
+import "../src/actions/slack/test_slack"
+import "../src/actions/tray/test_tray"
+import "../src/actions/twilio/test_twilio"
+import "../src/actions/twilio/test_twilio_message"
+import "../src/actions/webhook/test_webhook"
+import "../src/actions/zapier/test_zapier"
