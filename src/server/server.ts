@@ -62,8 +62,9 @@ export default class Server implements Hub.RouteBuilder {
     }))
     this.app.use(express.static("public"))
 
-    this.route("/", async (_req, res) => {
-      const actions = await Hub.allActions()
+    this.route("/", async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const actions = await Hub.allActions({ lookerVersion: request.lookerVersion })
       const response = {
         integrations: actions.map((d) => d.asJson(this)),
         label: process.env.ACTION_HUB_LABEL,
@@ -73,24 +74,27 @@ export default class Server implements Hub.RouteBuilder {
     })
 
     this.route("/actions/:actionId", async (req, res) => {
-      const action = await Hub.findAction(req.params.actionId)
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       res.json(action.asJson(this))
     })
 
     this.route("/actions/:actionId/execute", async (req, res) => {
-      const action = await Hub.findAction(req.params.actionId)
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
       if (action.hasExecute) {
-         const actionResponse = await action.validateAndExecute(Hub.ActionRequest.fromRequest(req))
-         res.json(actionResponse.asJson())
+        const actionResponse = await action.validateAndExecute(request)
+        res.json(actionResponse.asJson())
       } else {
         throw "No action defined for action."
       }
     })
 
     this.route("/actions/:actionId/form", async (req, res) => {
-      const action = await Hub.findAction(req.params.actionId)
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasForm) {
-         const form = await action.validateAndFetchForm(Hub.ActionRequest.fromRequest(req))
+         const form = await action.validateAndFetchForm(request)
          res.json(form.asJson())
       } else {
         throw "No form defined for action."
