@@ -1,4 +1,5 @@
 import * as chai from "chai"
+import * as semver from "semver"
 
 import * as Hub from "../src/hub"
 
@@ -29,6 +30,13 @@ before(async () => {
         it("should provide supported_action_types", () => {
           chai.assert.typeOf(action.supportedActionTypes, "array")
           chai.assert.isNotEmpty(action.supportedActionTypes, "each action should support at least one action type")
+        })
+
+        it("should provide a valid minimumSupportedLookerVersion", () => {
+          chai.assert.isNotNull(
+            semver.valid(action.minimumSupportedLookerVersion),
+            `the version number ${action.minimumSupportedLookerVersion} is not a valid semver number`,
+          )
         })
 
       })
