@@ -26,6 +26,11 @@ before(async () => {
           chai.assert.typeOf(json.url, "string")
         })
 
+        it("should provide supported_action_types", () => {
+          chai.assert.typeOf(action.supportedActionTypes, "array")
+          chai.assert.isNotEmpty(action.supportedActionTypes, "each action should support at least one action type")
+        })
+
       })
 
     })
