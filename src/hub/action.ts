@@ -44,6 +44,9 @@ export abstract class Action {
   description: string
   iconName?: string
 
+  // Default to the earliest version of Looker with support for the Action API
+  minimumSupportedLookerVersion = "5.5.0"
+
   supportedActionTypes: ActionType[]
   supportedFormats?: ActionFormat[]
   supportedFormattings?: ActionFormatting[]

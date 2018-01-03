@@ -9,6 +9,7 @@ export class DebugAction extends Hub.Action {
     this.name = "debug"
     this.label = "Debug"
     this.description = "Sends data to a sample website and optionally sleeps."
+    this.supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Dashboard, Hub.ActionType.Query]
     this.params = []
   }
 

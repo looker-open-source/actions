@@ -24,6 +24,7 @@ export class SegmentAction extends Hub.Action {
         sensitive: true,
       },
     ]
+    this.minimumSupportedLookerVersion = "4.20.0"
     this.supportedActionTypes = [Hub.ActionType.Query]
     this.supportedFormats = [Hub.ActionFormat.JsonDetail]
     this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
