@@ -14,8 +14,7 @@
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-dependencies": "./node_modules/.bin/depcheck . --ignores '@types/*,depcheck,tslint-language-service' --ignore-dirs 'lib'",
-    "postinstall": "./node_modules/.bin/tsc -d -p tsconfig.npm.json",
-    "build-docs": "./node_modules/.bin/typedoc --theme markdown --mdHideSources --out ./docs/generated ./src/api_types"
+    "postinstall": "./node_modules/.bin/tsc -d -p tsconfig.npm.json"
   },
   "keywords": [
     "looker",
@@ -64,8 +63,6 @@
     "ts-node": "^4.0.1",
     "tslint-language-service": "^0.9.7",
     "twilio": "^3.8.0",
-    "typedoc": "^0.9.0",
-    "typedoc-plugin-markdown": "^1.0.12",
     "typescript": "^2.6.1",
     "uuid": "^3.1.0",
     "winston": "^2.3.1"
