@@ -24,6 +24,8 @@ In order to implement the Action API your server will need to expose a few endpo
 
   If the action's definition specifies a form, Looker will ask this endpoint for a form template that should be displayed to the end user to configure the action. Since Looker will ask this endpoint for the form every time it's displayed, it's possible to dynamically change the form based on whatever information you like. For example, in a chat application the form might dynamically list all the available chat channels that data can be sent to.
 
+Each of these endpoints can optionally perform [authentication](#authentication) with an API key.
+
 ### Actions List Endpoint
 
 Looker will send an HTTP POST request with an empty body to this endpoint.
