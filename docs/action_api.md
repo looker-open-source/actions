@@ -11,12 +11,17 @@ By implementing the Action API your server becomes an "Action Hub" that users ca
 In order to implement the Action API your server will need to expose a few endpoints for Looker to connect to:
 
 - [Actions List Endpoint](#actions-list-endpoint)
+
   This endpoint lists all the actions your hub exposes. Each listed action contains metadata instructing Looker how to execute your action. It indicates what data payload formats are supported, what information (if any) to collect from the Looker administrator (such as API keys), and if the action also has an end-user facing Action Form.
 
   The URL of this endpoint is entered into the Looker admin panel (as the "Action Hub URL") and is how users connect to your action hub.
+
 - [Action Execute Endpoint](#action-execute-endpoint)
+
   This is the endpoint that Looker will send the payload, form information, and other metadata in order to execute a given action. This is the main implementation of your action. This endpoint works the same way as a Looker Webhook endpoint.
+
 - (optional) [Action Form Endpoint](#action-form-endpoint)
+
   If the action's definition specifies a form, Looker will ask this endpoint for a form template that should be displayed to the end user to configure the action. Since Looker will ask this endpoint for the form every time it's displayed, it's possible to dynamically change the form based on whatever information you like. For example, in a chat application the form might dynamically list all the available chat channels that data can be sent to.
 
 ### Actions List Endpoint
