@@ -30,7 +30,7 @@ There are a couple of ways to contribute actions for Looker:
 
    The Action API is a simple webhook-like API to accept actions from Looker. The above action options are based on this same API.
 
-  [Action API Guide &rarr;](docs/action_api.md)
+   [Action API Guide &rarr;](docs/action_api.md)
 
 ## Issues and Requests
 
