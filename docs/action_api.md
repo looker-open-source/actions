@@ -87,7 +87,7 @@ interface ActionDefinition {
   required_fields?: RequiredField[]
 }
 
-export class Param {
+interface Param {
   /** (required) Name of the parameter. */
   name: string
   /** (required) Label of the parameter. */
@@ -150,7 +150,7 @@ interface ExecutePayloadScheduledPlan {
   filters_differ_from_look: boolean
 }
 
-export class ExecutePayloadAttachment {
+interface ExecutePayloadAttachment {
   /** MIME type of the attachment. Ends with ";base64" if the attachment is Base64 encoded. */
   mimetype: string
   /** File extension of the attachment. */
