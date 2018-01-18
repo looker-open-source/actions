@@ -51,7 +51,7 @@ export class ActionRequest {
   static fromRequest(request: express.Request) {
     const actionRequest = this.fromJSON(request.body)
     actionRequest.instanceId = request.header("x-looker-instance")
-    actionRequest.webhookId = request.header("user-agent")
+    actionRequest.webhookId = request.header("x-looker-webhook-id")
     const userAgent = request.header("user-agent")
     if (userAgent) {
       const version = userAgent.split("LookerOutgoingWebhook/")[1]

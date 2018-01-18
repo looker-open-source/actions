@@ -14,8 +14,7 @@ export const RESPONSE_DATA_WEBHOOK_PAYLOAD_SCHEDULED_PLAN_FIELDS = [
   'url',
   'queryId',
   'query',
-  'filtersDifferFromLook',
-  'can'
+  'filtersDifferFromLook'
 ]
 
 export enum DataWebhookPayloadScheduledPlanType {
@@ -42,8 +41,6 @@ export class ResponseDataWebhookPayloadScheduledPlan {
   query: ResponseQuery | null
   /** A boolean representing whether this schedule payload has customized the filter values compared to the underlying content item. */
   filtersDifferFromLook: boolean
-  /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
 }
 
 export class WireRequestDataWebhookPayloadScheduledPlan {
@@ -66,7 +63,5 @@ export class WireResponseDataWebhookPayloadScheduledPlan {
   query: WireResponseQuery | null
   /** A boolean representing whether this schedule payload has customized the filter values compared to the underlying content item. */
   filters_differ_from_look: boolean
-  /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
 }
 /* tslint:enable:variable-name */

@@ -13,8 +13,7 @@ export const RESPONSE_DATA_WEBHOOK_PAYLOAD_FIELDS = [
   'scheduledPlan',
   'attachment',
   'data',
-  'formParams',
-  'can'
+  'formParams'
 ]
 
 export enum DataWebhookPayloadType {
@@ -38,8 +37,6 @@ export class ResponseDataWebhookPayload {
   data: {[key: string]: string} | null
   /** Form parameters associated with the payload. */
   formParams: {[key: string]: string} | null
-  /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
 }
 
 export class WireRequestDataWebhookPayload {
@@ -58,7 +55,5 @@ export class WireResponseDataWebhookPayload {
   data: {[key: string]: string} | null
   /** Form parameters associated with the payload. */
   form_params: {[key: string]: string} | null
-  /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
 }
 /* tslint:enable:variable-name */
