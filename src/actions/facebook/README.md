@@ -1,9 +1,9 @@
-# Facebook Workplace
-## Send a message to a Facebook Workplace group or member referencing Looker data
+# Workplace by Facebook
+## Send a message to a Workplace by Facebook group or member referencing Looker data
 
-This action will send a message and link to a Facebook Workplace group or member through a custom Looker integration created in Facebook Workplace.
+This action will send a message and link to a Workplace by Facebook group or member through a custom Looker integration created in Workplace by Facebook.
 
-1. Go to your Facebook Workplace administration page [e.g. something of the format https://YOURCOMPANY.facebook.com/work/admin/?section=apps&tab=custom].
+1. Go to your Workplace by Facebook administration page [e.g. something of the format https://YOURCOMPANY.facebook.com/work/admin/?section=apps&tab=custom].
 
 ![](facebook&#32;workplace&#32;integration.png)
 
@@ -11,4 +11,4 @@ This action will send a message and link to a Facebook Workplace group or member
 
 3. Create an Access Token
 
-4. Enable the Facebook Workplace action in your looker Administration page for actions (/admin/actions) with the created Access Token.
+4. Enable the Workplace by Facebook action in your looker Administration page for actions (/admin/actions) with the created Access Token.

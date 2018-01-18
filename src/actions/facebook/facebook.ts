@@ -11,10 +11,10 @@ export class FacebookAction extends Hub.Action {
 
   constructor() {
     super()
-    this.name = "facebook"
-    this.label = "Facebook Workplace"
-    this.iconName = "facebook/facebook.svg"
-    this.description = "Write a message to Facebook Workplace."
+    this.name = "workplace-facebook"
+    this.label = "Workplace by Facebook"
+    this.iconName = "facebook/workplace-facebook.svg"
+    this.description = "Write a message to Workplace by Facebook."
     this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     this.params = [
       {
@@ -45,7 +45,7 @@ export class FacebookAction extends Hub.Action {
       link,
     }
 
-    const resp = await fb.api(`/${request.formParams.destination}/feed`, "post", qs)
+    const resp = await fb.api(`/${encodeURIComponent(request.formParams.destination!)}/feed`, "post", qs)
     let response
     if (!resp || resp.error) {
       response = {success: false, message: resp ? resp.error : "Error Occurred"}
@@ -74,25 +74,27 @@ export class FacebookAction extends Hub.Action {
     return form
   }
 
-  async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
+  private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
     const fb = this.facebookClientFromRequest(request)
     const response = await fb.api("/community")
-    if (!response) {
+    if (!(response && response.id)) {
       throw "No communnity."
     }
-    let destinations = await this.usableGroups(fb, response.id)
-    destinations = destinations.concat(await this.usableMembers(fb, response.id))
-    return destinations
+    const [groups, members] = await Promise.all([
+      this.usableGroups(fb, response.id),
+      this.usableMembers(fb, response.id),
+    ])
+    return groups.concat(members)
   }
 
-  async usableGroups(fb: any, community: string) {
-    const response = await fb.api(`/${community}/groups`)
+  private async usableGroups(fb: any, community: string) {
+    const response = await fb.api(`/${encodeURIComponent(community)}/groups`)
     const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
     return groups.map((g: any) => ({id: g.id, label: `#${g.name}`}))
   }
 
-  async usableMembers(fb: any, community: string) {
-    const response = await fb.api(`/${community}/members`)
+  private async usableMembers(fb: any, community: string) {
+    const response = await fb.api(`/${encodeURIComponent(community)}/members`)
     return response.data.map((m: any) => ({id: m.id, label: `@${m.name}`}))
   }
 
