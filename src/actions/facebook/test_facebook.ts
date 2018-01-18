@@ -78,19 +78,15 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("has form with correct destinations", (done) => {
 
       const apiStub = sinon.stub()
-      apiStub.withArgs("/community").returns({
-        community: {
-          id: "community",
-        },
-      })
-      apiStub.withArgs("/community/groups").returns({
-        groups: [
+      apiStub.withArgs("/community").returns({id: "mycommunity"})
+      apiStub.withArgs("/mycommunity/groups").returns({
+        data: [
           {id: "1", name: "A"},
           {id: "2", name: "B"},
         ],
       })
-      apiStub.withArgs("/community/members").returns({
-        members: [
+      apiStub.withArgs("/mycommunity/members").returns({
+        data: [
           {id: "10", name: "Z"},
           {id: "20", name: "Y"},
         ],
@@ -122,10 +118,6 @@ describe(`${integration.constructor.name} unit tests`, () => {
           name: "message",
         }],
       }).and.notify(apiStub.restore).and.notify(stubClient.restore).and.notify(done)
-      // .then(() => {
-      //   apiStub.restore()
-      //   stubClient.restore()
-      // })
     })
 
   })

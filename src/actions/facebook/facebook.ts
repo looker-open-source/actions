@@ -45,7 +45,6 @@ export class FacebookAction extends Hub.Action {
       link,
     }
 
-    // POST /id/feed
     const resp = await fb.api(`/${request.formParams.destination}/feed`, "post", qs)
     let response
     if (!resp || resp.error) {
@@ -77,24 +76,24 @@ export class FacebookAction extends Hub.Action {
 
   async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
     const fb = this.facebookClientFromRequest(request)
-    const response = fb.api("/community")
-    // confirm response structure
-    let destinations = await this.usableGroups(fb, response.community.id)
-    destinations = destinations.concat(await this.usableMembers(fb, response.community.id))
+    const response = await fb.api("/community")
+    if (!response) {
+      throw "No communnity."
+    }
+    let destinations = await this.usableGroups(fb, response.id)
+    destinations = destinations.concat(await this.usableMembers(fb, response.id))
     return destinations
   }
 
   async usableGroups(fb: any, community: string) {
-    const response = fb.api(`/${community}/groups`)
-    // confirm response structure
-    // https://developers.facebook.com/tools/explorer/145634995501895/?method=GET&path=community&version=v2.11
-    return response.groups.map((group: any) => ({id: group.id, label: `#${group.name}`}))
+    const response = await fb.api(`/${community}/groups`)
+    const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
+    return groups.map((g: any) => ({id: g.id, label: `#${g.name}`}))
   }
 
   async usableMembers(fb: any, community: string) {
-    const response = fb.api(`/${community}/members`)
-    // confirm response structure
-    return response.members.map((members: any) => ({id: members.id, label: `@${members.name}`}))
+    const response = await fb.api(`/${community}/members`)
+    return response.data.map((m: any) => ({id: m.id, label: `@${m.name}`}))
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
