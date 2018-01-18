@@ -7,7 +7,7 @@ export interface Destination {
   label: string,
 }
 
-export class FacebookAction extends Hub.Action {
+export class WorkplaceAction extends Hub.Action {
 
   constructor() {
     super()
@@ -107,4 +107,4 @@ export class FacebookAction extends Hub.Action {
 
 }
 
-Hub.addAction(new FacebookAction())
+Hub.addAction(new WorkplaceAction())

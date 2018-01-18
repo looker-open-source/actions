@@ -3,9 +3,9 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
-import { FacebookAction } from "./facebook"
+import { WorkplaceAction } from "./workplace"
 
-const integration = new FacebookAction()
+const integration = new WorkplaceAction()
 
 function expectFacebookMatch(request: Hub.ActionRequest, path: string, method: string, qs: any) {
 
