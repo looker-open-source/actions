@@ -1,5 +1,4 @@
 import * as bodyParser from "body-parser"
-import * as dotenv from "dotenv"
 import * as express from "express"
 import * as fs from "fs"
 import * as path from "path"
@@ -18,7 +17,6 @@ const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
 export default class Server implements Hub.RouteBuilder {
 
   static run() {
-    dotenv.config()
 
     if (useRaven()) {
       let statusJson: any = {}
@@ -115,10 +113,48 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasForm) {
-         const form = await action.validateAndFetchForm(request)
-         res.json(form.asJson())
+        const form = await action.validateAndFetchForm(request)
+        res.json(form.asJson())
       } else {
         throw "No form defined for action."
+      }
+    })
+
+    this.route("/actions/:actionId/form", async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      if (action.hasForm) {
+        const form = await action.validateAndFetchForm(request)
+        res.json(form.asJson())
+      } else {
+        throw "No form defined for action."
+      }
+    })
+
+    // OAuth flows
+    this.app.get('/actions/:actionId/oauth', async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      if (action && Hub.isOauthAction(action)) {
+        const url = await action.oauthUrl(this.oauthRedirectUrl(action))
+        res.redirect(url)
+      } else {
+        throw "Action does not support OAuth."
+      }
+    })
+
+    this.app.get('/actions/:actionId/oauth_redirect', async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      if (action && Hub.isOauthAction(action)) {
+        try {
+          const data = await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
+          res.json({ success: true, data: data })
+        } catch (e) {
+          this.logPromiseFail(req, res, e)
+        }
+      } else {
+        throw "Action does not support OAuth."
       }
     })
 
@@ -136,6 +172,10 @@ export default class Server implements Hub.RouteBuilder {
 
   formUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
+  }
+
+  oauthRedirectUrl(action: Hub.Action) {
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
   }
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {
@@ -161,19 +201,7 @@ export default class Server implements Hub.RouteBuilder {
       try {
         await fn(req, res)
       } catch (e) {
-        this.logError(req, res, "Error on request")
-        if (typeof(e) === "string") {
-          res.status(404)
-          res.json({success: false, error: e})
-          this.logError(req, res, e)
-        } else {
-          res.status(500)
-          res.json({success: false, error: "Internal server error."})
-          this.logError(req, res, e)
-          if (useRaven()) {
-            Raven.captureException(e)
-          }
-        }
+        this.logPromiseFail(req, res, e)
       }
 
       if (useRaven()) {
@@ -181,6 +209,19 @@ export default class Server implements Hub.RouteBuilder {
       }
 
     })
+  }
+
+  private logPromiseFail(req: express.Request, res: express.Response, e: any) {
+    this.logError(req, res, "Error on request")
+    if (typeof (e) === "string") {
+      res.status(404)
+      res.json({ success: false, error: e })
+      this.logError(req, res, e)
+    } else {
+      res.status(500)
+      res.json({ success: false, error: "Internal server error." })
+      this.logError(req, res, e)
+    }
   }
 
   private logInfo(req: express.Request, res: express.Response, message: any, options: any = {}) {

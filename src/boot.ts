@@ -1,5 +1,7 @@
+require("dotenv").config()
+
 import "./actions"
-import {DebugAction} from "./actions/debug/debug"
+import { DebugAction } from "./actions/debug/debug"
 import * as Hub from "./hub"
 import Server from "./server/server"
 
