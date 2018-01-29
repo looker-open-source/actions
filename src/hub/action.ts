@@ -18,6 +18,7 @@ export interface ActionParameter {
   label: string
   required: boolean
   sensitive: boolean
+  per_user?: boolean
   description?: string
 }
 
@@ -122,4 +123,13 @@ export abstract class Action {
     return null
   }
 
+}
+
+export abstract class OAuthAction extends Action {
+  abstract async oauthUrl(redirectUri: string): Promise<string>
+  abstract async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string): Promise<string>
+}
+
+export function isOauthAction(action: Action): action is OAuthAction {
+  return (action as OAuthAction).oauthUrl !== undefined
 }
