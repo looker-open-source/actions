@@ -8,29 +8,25 @@ export class SegmentAction extends Hub.Action {
 
   allowedTags = ["email", "user_id", "segment_anonymous_id"]
 
-  constructor() {
-    super()
-
-    this.name = "segment_event"
-    this.label = "Segment"
-    this.iconName = "segment/segment.png"
-    this.description = "Add traits to your Segment users."
-    this.params = [
-      {
-        description: "A write key for Segment.",
-        label: "Segment Write Key",
-        name: "segment_write_key",
-        required: true,
-        sensitive: true,
-      },
-    ]
-    this.minimumSupportedLookerVersion = "4.20.0"
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
-    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
-    this.supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-    this.requiredFields = [{any_tag: this.allowedTags}]
-  }
+  name = "segment_event"
+  label = "Segment"
+  iconName = "segment/segment.png"
+  description = "Add traits to your Segment users."
+  params = [
+    {
+      description: "A write key for Segment.",
+      label: "Segment Write Key",
+      name: "segment_write_key",
+      required: true,
+      sensitive: true,
+    },
+  ]
+  minimumSupportedLookerVersion = "4.20.0"
+  supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  requiredFields = [{ any_tag: this.allowedTags }]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {

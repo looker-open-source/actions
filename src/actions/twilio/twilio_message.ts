@@ -7,38 +7,34 @@ const TAG = "phone"
 
 export class TwilioMessageAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "twilio_message"
-    this.label = "Twilio - Send Message"
-    this.iconName = "twilio/twilio.svg"
-    this.description = "Send a message to phone numbers via Twilio."
-    this.supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
-    this.requiredFields = [{tag: TAG}]
-    this.params = [
-      {
-        name: "accountSid",
-        label: "Account SID",
-        required: true,
-        sensitive: false,
-        description: "Account SID from www.twilio.com/console.",
-      }, {
-        name: "authToken",
-        label: "Auth Token",
-        required: true,
-        sensitive: true,
-        description: "Auth Token from www.twilio.com/console.",
-      }, {
-        name: "from",
-        label: "Twilio Verified Phone # Caller Id",
-        required: true,
-        sensitive: false,
-        description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
-      },
-    ]
-  }
+  name = "twilio_message"
+  label = "Twilio - Send Message"
+  iconName = "twilio/twilio.svg"
+  description = "Send a message to phone numbers via Twilio."
+  supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  requiredFields = [{ tag: TAG }]
+  params = [
+    {
+      name: "accountSid",
+      label: "Account SID",
+      required: true,
+      sensitive: false,
+      description: "Account SID from www.twilio.com/console.",
+    }, {
+      name: "authToken",
+      label: "Auth Token",
+      required: true,
+      sensitive: true,
+      description: "Auth Token from www.twilio.com/console.",
+    }, {
+      name: "from",
+      label: "Twilio Verified Phone # Caller Id",
+      required: true,
+      sensitive: false,
+      description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
+    },
+  ]
 
   async execute(request: Hub.ActionRequest) {
 
@@ -46,7 +42,7 @@ export class TwilioMessageAction extends Hub.Action {
       throw "Need a message."
     }
 
-    const body = Hub.truncateString(request.formParams.message!, TWILIO_MAX_MESSAGE_BODY)
+    const body = Hub.truncateString(request.formParams.message, TWILIO_MAX_MESSAGE_BODY)
 
     let phoneNumbers: string[] = []
     switch (request.type) {

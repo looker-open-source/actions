@@ -8,36 +8,33 @@ const apiVersion = "2"
 
 export class JiraAction extends Hub.Action {
 
-  constructor() {
-    super()
-    this.name = "jira_create_issue"
-    this.label = "JIRA"
-    this.iconName = "jira/jira.svg"
-    this.description = "Create a JIRA issue referencing data."
-    this.params = [
-      {
-        description: "The address of your JIRA server ex. https://myjira.atlassian.net.",
-        label: "Address",
-        name: "address",
-        required: true,
-        sensitive: false,
-      }, {
-        description: "The JIRA username assigned to create issues for Looker.",
-        label: "Username",
-        name: "username",
-        required: true,
-        sensitive: false,
-      }, {
-        description: "The password for the JIRA user assigned to Looker.",
-        label: "Password",
-        name: "password",
-        required: true,
-        sensitive: true,
-      },
-    ]
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.requiredFields = []
-  }
+  name = "jira_create_issue"
+  label = "JIRA"
+  iconName = "jira/jira.svg"
+  description = "Create a JIRA issue referencing data."
+  params = [
+    {
+      description: "The address of your JIRA server ex. https://myjira.atlassian.net.",
+      label: "Address",
+      name: "address",
+      required: true,
+      sensitive: false,
+    }, {
+      description: "The JIRA username assigned to create issues for Looker.",
+      label: "Username",
+      name: "username",
+      required: true,
+      sensitive: false,
+    }, {
+      description: "The password for the JIRA user assigned to Looker.",
+      label: "Password",
+      name: "password",
+      required: true,
+      sensitive: true,
+    },
+  ]
+  supportedActionTypes = [Hub.ActionType.Query]
+  requiredFields = []
 
   async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
