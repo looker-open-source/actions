@@ -3,6 +3,7 @@ import * as dotenv from "dotenv"
 import * as express from "express"
 import * as path from "path"
 import * as winston from "winston"
+import * as Raven from "raven"
 
 import * as Hub from "../hub"
 import * as apiKey from "./api_key"
@@ -15,6 +16,10 @@ export default class Server implements Hub.RouteBuilder {
 
   static run() {
     dotenv.config()
+
+    if (process.env.ACTION_HUB_RAVEN_DSN) {
+      Raven.config(process.env.ACTION_HUB_RAVEN_DSN).install()
+    }
 
     if (!process.env.ACTION_HUB_BASE_URL) {
       throw new Error("No ACTION_HUB_BASE_URL environment variable set.")
@@ -50,6 +55,10 @@ export default class Server implements Hub.RouteBuilder {
   constructor() {
 
     this.app = express()
+    if (process.env.ACTION_HUB_RAVEN_DSN) {
+      this.app.use(Raven.requestHandler())
+      this.app.use(Raven.errorHandler())
+    }
     this.app.use(bodyParser.json({limit: "250mb"}))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
