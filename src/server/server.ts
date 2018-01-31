@@ -12,7 +12,7 @@ import * as apiKey from "./api_key"
 const expressWinston = require("express-winston")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
-const statusJsonPath = path.resolve(`${__dirname}/../status.json`)
+const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
 const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
 
 export default class Server implements Hub.RouteBuilder {
@@ -23,7 +23,7 @@ export default class Server implements Hub.RouteBuilder {
     if (useRaven()) {
       let statusJson: any = {}
       if (fs.existsSync(statusJsonPath)) {
-        statusJson = fs.readFileSync(statusJsonPath).toJSON()
+        statusJson = JSON.parse(fs.readFileSync(statusJsonPath).toString())
       }
       Raven.config(process.env.ACTION_HUB_RAVEN_DSN, {
         captureUnhandledRejections: true,
