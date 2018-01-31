@@ -9,22 +9,19 @@ interface Channel {
 
 export class SlackAttachmentAction extends Hub.Action {
 
-  constructor() {
-    super()
-    this.name = "slack"
-    this.label = "Slack Attachment"
-    this.iconName = "slack/slack.png"
-    this.description = "Write a data file to Slack."
-    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
-    this.requiredFields = []
-    this.params = [{
-      name: "slack_api_token",
-      label: "Slack API Token",
-      required: true,
-      description: "https://api.slack.com/custom-integrations/legacy-tokens",
-      sensitive: true,
-    }]
-  }
+  name = "slack"
+  label = "Slack Attachment"
+  iconName = "slack/slack.png"
+  description = "Write a data file to Slack."
+  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  requiredFields = []
+  params = [{
+    name: "slack_api_token",
+    label: "Slack API Token",
+    required: true,
+    description: "https://api.slack.com/custom-integrations/legacy-tokens",
+    sensitive: true,
+  }]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise <Hub.ActionResponse>((resolve, reject) => {

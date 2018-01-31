@@ -28,19 +28,19 @@ export class RequestDataWebhookPayloadScheduledPlan {
 
 export class ResponseDataWebhookPayloadScheduledPlan {
   /** ID of the scheduled plan */
-  scheduledPlanId: number | null
+  scheduledPlanId!: number | null
   /** Title of the scheduled plan. */
-  title: string | null
+  title!: string | null
   /** Type of content of the scheduled plan. Valid values are: "Look", "Dashboard". */
-  type: DataWebhookPayloadScheduledPlanType
+  type!: DataWebhookPayloadScheduledPlanType
   /** URL of the content item in Looker. */
-  url: string | null
+  url!: string | null
   /** ID of the query that the data payload represents. */
-  queryId: number | null
+  queryId!: number | null
   /** Query that was run (not available for dashboards) */
-  query: ResponseQuery | null
+  query!: ResponseQuery | null
   /** A boolean representing whether this schedule payload has customized the filter values compared to the underlying content item. */
-  filtersDifferFromLook: boolean
+  filtersDifferFromLook!: boolean
 }
 
 export class WireRequestDataWebhookPayloadScheduledPlan {
@@ -50,18 +50,18 @@ export class WireRequestDataWebhookPayloadScheduledPlan {
 /* tslint:disable:variable-name */
 export class WireResponseDataWebhookPayloadScheduledPlan {
   /** ID of the scheduled plan */
-  scheduled_plan_id: number | null
+  scheduled_plan_id!: number | null
   /** Title of the scheduled plan. */
-  title: string | null
+  title!: string | null
   /** Type of content of the scheduled plan. Valid values are: "Look", "Dashboard". */
-  type: DataWebhookPayloadScheduledPlanType
+  type!: DataWebhookPayloadScheduledPlanType
   /** URL of the content item in Looker. */
-  url: string | null
+  url!: string | null
   /** ID of the query that the data payload represents. */
-  query_id: number | null
+  query_id!: number | null
   /** Query that was run (not available for dashboards) */
-  query: WireResponseQuery | null
+  query!: WireResponseQuery | null
   /** A boolean representing whether this schedule payload has customized the filter values compared to the underlying content item. */
-  filters_differ_from_look: boolean
+  filters_differ_from_look!: boolean
 }
 /* tslint:enable:variable-name */

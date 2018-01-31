@@ -7,38 +7,34 @@ const TWILIO_MAX_MESSAGE_BODY = 1600
 
 export class TwilioAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "twilio"
-    this.label = "Twilio - Send Data"
-    this.iconName = "twilio/twilio.svg"
-    this.description = "Send data from a Look to a phone number via Twilio."
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.Csv]
-    this.requiredFields = []
-    this.params = [
-      {
-        name: "accountSid",
-        label: "Account SID",
-        required: true,
-        sensitive: false,
-        description: "Account SID from www.twilio.com/console.",
-      }, {
-        name: "authToken",
-        label: "Auth Token",
-        required: true,
-        sensitive: true,
-        description: "Auth Token from www.twilio.com/console.",
-      }, {
-        name: "from",
-        label: "Twilio Verified Phone Number",
-        required: true,
-        sensitive: false,
-        description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
-      },
-    ]
-  }
+  name = "twilio"
+  label = "Twilio - Send Data"
+  iconName = "twilio/twilio.svg"
+  description = "Send data from a Look to a phone number via Twilio."
+  supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.Csv]
+  requiredFields = []
+  params = [
+    {
+      name: "accountSid",
+      label: "Account SID",
+      required: true,
+      sensitive: false,
+      description: "Account SID from www.twilio.com/console.",
+    }, {
+      name: "authToken",
+      label: "Auth Token",
+      required: true,
+      sensitive: true,
+      description: "Auth Token from www.twilio.com/console.",
+    }, {
+      name: "from",
+      label: "Twilio Verified Phone Number",
+      required: true,
+      sensitive: false,
+      description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
+    },
+  ]
 
   async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {

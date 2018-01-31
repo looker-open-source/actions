@@ -4,14 +4,11 @@ import * as Hub from "../../hub"
 
 export class DebugAction extends Hub.Action {
 
-  constructor() {
-    super()
-    this.name = "debug"
-    this.label = "Debug"
-    this.description = "Sends data to a sample website and optionally sleeps."
-    this.supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Dashboard, Hub.ActionType.Query]
-    this.params = []
-  }
+  name = "debug"
+  label = "Debug"
+  description = "Sends data to a sample website and optionally sleeps."
+  supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Dashboard, Hub.ActionType.Query]
+  params = []
 
   async execute(request: Hub.ActionRequest) {
     const url = process.env.ACTION_HUB_DEBUG_ENDPOINT!

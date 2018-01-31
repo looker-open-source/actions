@@ -6,26 +6,22 @@ const TAG = "digitalocean_droplet_id"
 
 export class DigitalOceanDropletAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "digitalocean_droplet"
-    this.label = "DigitalOcean - Stop Droplet"
-    this.iconName = "digitalocean/DigitalOcean.png"
-    this.description = "Stop a DigitalOcean droplet."
-    this.params = [
-      {
-        name: "digitalocean_api_key",
-        label: "DigitalOcean API Key",
-        required: true,
-        sensitive: true,
-        description: "",
-      },
-    ]
-    this.supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
-    this.requiredFields = [{tag: TAG}]
-  }
+  name = "digitalocean_droplet"
+  label = "DigitalOcean - Stop Droplet"
+  iconName = "digitalocean/DigitalOcean.png"
+  description = "Stop a DigitalOcean droplet."
+  params = [
+    {
+      name: "digitalocean_api_key",
+      label: "DigitalOcean API Key",
+      required: true,
+      sensitive: true,
+      description: "",
+    },
+  ]
+  supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  requiredFields = [{tag: TAG}]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve , reject) => {

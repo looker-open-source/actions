@@ -26,21 +26,21 @@ export class RequestIntegrationParam {
 
 export class ResponseIntegrationParam {
   /** Name of the parameter. */
-  name: string | null
+  name!: string | null
   /** Label of the parameter. */
-  label: string | null
+  label!: string | null
   /** Short description of the parameter. */
-  description: string | null
+  description!: string | null
   /** Whether the parameter is required to be set to use the destination. */
-  required: boolean
+  required!: boolean
   /** Whether the parameter has a value set. */
-  hasValue: boolean
+  hasValue!: boolean
   /** The current value of the parameter. Always null if the value is sensitive. When writing, null values will be ignored. Set the value to an empty string to clear it. */
-  value: string | null
+  value!: string | null
   /** When present, the param's value comes from this user attribute instead of the 'value' parameter. Set to null to use the 'value'. */
-  userAttributeName: string | null
+  userAttributeName!: string | null
   /** Whether the parameter contains sensitive data like API credentials. */
-  sensitive: boolean
+  sensitive!: boolean
 }
 
 /* tslint:disable:variable-name */
@@ -55,20 +55,20 @@ export class WireRequestIntegrationParam {
 /* tslint:disable:variable-name */
 export class WireResponseIntegrationParam {
   /** Name of the parameter. */
-  name: string | null
+  name!: string | null
   /** Label of the parameter. */
-  label: string | null
+  label!: string | null
   /** Short description of the parameter. */
-  description: string | null
+  description!: string | null
   /** Whether the parameter is required to be set to use the destination. */
-  required: boolean
+  required!: boolean
   /** Whether the parameter has a value set. */
-  has_value: boolean
+  has_value!: boolean
   /** The current value of the parameter. Always null if the value is sensitive. When writing, null values will be ignored. Set the value to an empty string to clear it. */
-  value: string | null
+  value!: string | null
   /** When present, the param's value comes from this user attribute instead of the 'value' parameter. Set to null to use the 'value'. */
-  user_attribute_name: string | null
+  user_attribute_name!: string | null
   /** Whether the parameter contains sensitive data like API credentials. */
-  sensitive: boolean
+  sensitive!: boolean
 }
 /* tslint:enable:variable-name */
