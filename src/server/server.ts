@@ -23,7 +23,7 @@ export default class Server implements Hub.RouteBuilder {
     if (useRaven()) {
       let statusJson: any = {}
       if (fs.existsSync(statusJsonPath)) {
-        statusJson = fs.readFileSync(statusJsonPath).toJSON()
+        statusJson = JSON.parse(fs.readFileSync(statusJsonPath).toString())
       }
       Raven.config(process.env.ACTION_HUB_RAVEN_DSN, {
         captureUnhandledRejections: true,
