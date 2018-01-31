@@ -27,7 +27,7 @@ export default class Server implements Hub.RouteBuilder {
       }
       Raven.config(process.env.ACTION_HUB_RAVEN_DSN, {
         captureUnhandledRejections: true,
-        release: statusJson.app_version,
+        release: statusJson.git_commit,
         autoBreadcrumbs: true,
         environment: process.env.ACTION_HUB_BASE_URL,
       }).install()
