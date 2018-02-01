@@ -63,31 +63,31 @@ export class RequestIntegration {
 
 export class ResponseIntegration {
   /** ID of the integration. */
-  id: string
+  id!: string
   /** ID of the integration hub. */
-  integrationHubId: number
+  integrationHubId!: number
   /** Label for the integration. */
-  label: string
+  label!: string
   /** Description of the integration. */
-  description: string | null
+  description!: string | null
   /** Whether the integration is available to users. */
-  enabled: boolean
+  enabled!: boolean
   /** Array of params for the integration. */
-  params: ResponseIntegrationParam[]
+  params!: ResponseIntegrationParam[]
   /** A list of data formats the integration supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
-  supportedFormats: IntegrationSupportedFormats[]
+  supportedFormats!: IntegrationSupportedFormats[]
   /** A list of action types the integration supports. Valid values are: "cell", "query", "dashboard". */
-  supportedActionTypes: IntegrationSupportedActionTypes[]
+  supportedActionTypes!: IntegrationSupportedActionTypes[]
   /** A list of formatting options the integration supports. Valid values are: "formatted", "unformatted". */
-  supportedFormattings: IntegrationSupportedFormattings[]
+  supportedFormattings!: IntegrationSupportedFormattings[]
   /** A list of visualization formatting options the integration supports. Valid values are: "apply", "noapply". */
-  supportedVisualizationFormattings: IntegrationSupportedVisualizationFormattings[]
+  supportedVisualizationFormattings!: IntegrationSupportedVisualizationFormattings[]
   /** URL to an icon for the integration. */
-  iconUrl: string | null
+  iconUrl!: string | null
   /** A list of descriptions of required fields that this integration is compatible with. If there are multiple entries in this list, the integration requires more than one field. */
-  requiredFields: ResponseIntegrationRequiredField[]
+  requiredFields!: ResponseIntegrationRequiredField[]
   /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
+  can!: {[key: string]: boolean}
 }
 
 export class WireRequestIntegration {
@@ -100,30 +100,30 @@ export class WireRequestIntegration {
 /* tslint:disable:variable-name */
 export class WireResponseIntegration {
   /** ID of the integration. */
-  id: string
+  id!: string
   /** ID of the integration hub. */
-  integration_hub_id: number
+  integration_hub_id!: number
   /** Label for the integration. */
-  label: string
+  label!: string
   /** Description of the integration. */
-  description: string | null
+  description!: string | null
   /** Whether the integration is available to users. */
-  enabled: boolean
+  enabled!: boolean
   /** Array of params for the integration. */
-  params: WireResponseIntegrationParam[]
+  params!: WireResponseIntegrationParam[]
   /** A list of data formats the integration supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
-  supported_formats: IntegrationSupportedFormats[]
+  supported_formats!: IntegrationSupportedFormats[]
   /** A list of action types the integration supports. Valid values are: "cell", "query", "dashboard". */
-  supported_action_types: IntegrationSupportedActionTypes[]
+  supported_action_types!: IntegrationSupportedActionTypes[]
   /** A list of formatting options the integration supports. Valid values are: "formatted", "unformatted". */
-  supported_formattings: IntegrationSupportedFormattings[]
+  supported_formattings!: IntegrationSupportedFormattings[]
   /** A list of visualization formatting options the integration supports. Valid values are: "apply", "noapply". */
-  supported_visualization_formattings: IntegrationSupportedVisualizationFormattings[]
+  supported_visualization_formattings!: IntegrationSupportedVisualizationFormattings[]
   /** URL to an icon for the integration. */
-  icon_url: string | null
+  icon_url!: string | null
   /** A list of descriptions of required fields that this integration is compatible with. If there are multiple entries in this list, the integration requires more than one field. */
-  required_fields: WireResponseIntegrationRequiredField[]
+  required_fields!: WireResponseIntegrationRequiredField[]
   /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
+  can!: {[key: string]: boolean}
 }
 /* tslint:enable:variable-name */

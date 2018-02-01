@@ -5,17 +5,14 @@ import * as url from "url"
 
 export abstract class WebhookAction extends Hub.Action {
 
-  domain: string
+  abstract domain: string
 
-  constructor() {
-    super()
-    this.requiredFields = []
-    this.params = []
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
-    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
-    this.supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  }
+  requiredFields = []
+  params = []
+  supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
@@ -30,7 +27,7 @@ export abstract class WebhookAction extends Hub.Action {
       throw "Action requires a domain."
     }
 
-    const providedUrl = request.formParams.url!
+    const providedUrl = request.formParams.url
     const parsedUrl = url.parse(providedUrl)
     if (!parsedUrl.hostname) {
       throw "Incorrect domain for url."

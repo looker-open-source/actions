@@ -8,8 +8,7 @@ export const REQUEST_DATA_WEBHOOK_PAYLOAD_ATTACHMENT_FIELDS = [
 export const RESPONSE_DATA_WEBHOOK_PAYLOAD_ATTACHMENT_FIELDS = [
   'mimetype',
   'extension',
-  'data',
-  'can'
+  'data'
 ]
 
 export class RequestDataWebhookPayloadAttachment {
@@ -18,13 +17,11 @@ export class RequestDataWebhookPayloadAttachment {
 
 export class ResponseDataWebhookPayloadAttachment {
   /** MIME type of the attachment. Ends with ";base64" if the attachment is Base64 encoded. */
-  mimetype: string | null
+  mimetype!: string | null
   /** File extension of the attachment. */
-  extension: string | null
+  extension!: string | null
   /** Attachment data. For JSON formats, this JSON is inline. */
-  data: string | null
-  /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
+  data!: string | null
 }
 
 export class WireRequestDataWebhookPayloadAttachment {
@@ -33,11 +30,9 @@ export class WireRequestDataWebhookPayloadAttachment {
 
 export class WireResponseDataWebhookPayloadAttachment {
   /** MIME type of the attachment. Ends with ";base64" if the attachment is Base64 encoded. */
-  mimetype: string | null
+  mimetype!: string | null
   /** File extension of the attachment. */
-  extension: string | null
+  extension!: string | null
   /** Attachment data. For JSON formats, this JSON is inline. */
-  data: string | null
-  /** Operations the current user is able to perform on this object */
-  can: {[key: string]: boolean}
+  data!: string | null
 }

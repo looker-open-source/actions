@@ -4,27 +4,23 @@ const airtable: any = require("airtable")
 
 export class AirtableAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "airtable"
-    this.label = "Airtable"
-    this.iconName = "airtable/airtable.png"
-    this.description = "Add records to an Airtable table."
-    this.params = [
-      {
-        description: "API key for Airtable from https://airtable.com/account.",
-        label: "Airtable API Key",
-        name: "airtable_api_key",
-        required: true,
-        sensitive: true,
-      },
-    ]
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
-    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
-    this.supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  }
+  name = "airtable"
+  label = "Airtable"
+  iconName = "airtable/airtable.png"
+  description = "Add records to an Airtable table."
+  params = [
+    {
+      description: "API key for Airtable from https://airtable.com/account.",
+      label: "Airtable API Key",
+      name: "airtable_api_key",
+      required: true,
+      sensitive: true,
+    },
+  ]
+  supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {

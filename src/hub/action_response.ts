@@ -5,7 +5,7 @@ export interface ValidationError {
 
 export class ActionResponse {
 
-  message: string
+  message?: string
   refreshQuery = false
   success = true
   validationErrors: ValidationError[] = []

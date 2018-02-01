@@ -1,6 +1,6 @@
 # Looker Action Hub
 
-Looker hosts and provides a stateless server that implements Looker's Action Hub API and exposes popular actions. A full list of actions provided by default within the Looker App can be referenced on our [Docs Page](https://docs.looker.com/r/admin/action-hub).
+Looker hosts and provides a stateless server that implements Looker's Action API and exposes popular actions. A full list of actions provided by default within the Looker App can be referenced on our [Docs Page](https://docs.looker.com/r/admin/action-hub).
 
 Our service is open source so you can contribute additional actions or host an instance of the service within your own infrastructure.
 
@@ -24,11 +24,13 @@ There are a couple of ways to contribute actions for Looker:
 
    [Copy and deploy our template Node application &rarr;](https://github.com/looker/custom-action-hub-example)
 
-3. Implement Looker's RESTful Action Hub API into any web server
+3. Implement Looker's RESTful Action API into any web server
 
-   If you'd like to build your action directly into an existing web service, or you'd prefer to build your hub in a language of your choosing, you can easily have your server implement our Action Hub API directly.
+   If you'd like to build your action directly into an existing web service, or you'd prefer to build your hub in a language of your choosing, you can easily have your server implement our Action API directly.
 
-   The Action Hub API is a simple webhook-like API to accept actions from Looker. The above action options are based on this same API.
+   The Action API is a simple webhook-like API to accept actions from Looker. The above action options are based on this same API.
+
+   [Action API Guide &rarr;](docs/action_api.md)
 
 ## Issues and Requests
 

@@ -4,38 +4,34 @@ import * as S3 from "aws-sdk/clients/s3"
 
 export class AmazonS3Action extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "amazon_s3"
-    this.label = "Amazon S3"
-    this.iconName = "amazon/amazon_s3.png"
-    this.description = "Write data files to an S3 bucket."
-    this.supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
-    this.requiredFields = []
-    this.params = [
-      {
-        name: "access_key_id",
-        label: "Access Key",
-        required: true,
-        sensitive: true,
-        description: "Your access key for S3.",
-      }, {
-        name: "secret_access_key",
-        label: "Secret Key",
-        required: true,
-        sensitive: true,
-        description: "Your secret key for S3.",
-      }, {
-        name: "region",
-        label: "Region",
-        required: true,
-        sensitive: false,
-        description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
-          "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
-      },
-    ]
-  }
+  name = "amazon_s3"
+  label = "Amazon S3"
+  iconName = "amazon/amazon_s3.png"
+  description = "Write data files to an S3 bucket."
+  supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
+  requiredFields = []
+  params = [
+    {
+      name: "access_key_id",
+      label: "Access Key",
+      required: true,
+      sensitive: true,
+      description: "Your access key for S3.",
+    }, {
+      name: "secret_access_key",
+      label: "Secret Key",
+      required: true,
+      sensitive: true,
+      description: "Your secret key for S3.",
+    }, {
+      name: "region",
+      label: "Region",
+      required: true,
+      sensitive: false,
+      description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
+        "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
+    },
+  ]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
@@ -60,7 +56,7 @@ export class AmazonS3Action extends Hub.Action {
       }
 
       const params = {
-        Bucket: request.formParams.bucket!,
+        Bucket: request.formParams.bucket,
         Key: filename,
         Body: request.attachment.dataBuffer,
       }

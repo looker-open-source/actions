@@ -6,24 +6,20 @@ const sendgridMail = require("@sendgrid/mail")
 
 export class SendGridAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "sendgrid"
-    this.label = "SendGrid"
-    this.iconName = "sendgrid/sendgrid.png"
-    this.description = "Send data files to an email via SendGrid."
-    this.params = [
-      {
-        description: "API key for SendGrid from https://app.sendgrid.com/settings/api_keys.",
-        label: "SendGrid API Key",
-        name: "sendgrid_api_key",
-        required: true,
-        sensitive: true,
-      },
-    ]
-    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
-  }
+  name = "sendgrid"
+  label = "SendGrid"
+  iconName = "sendgrid/sendgrid.png"
+  description = "Send data files to an email via SendGrid."
+  params = [
+    {
+      description: "API key for SendGrid from https://app.sendgrid.com/settings/api_keys.",
+      label: "SendGrid API Key",
+      name: "sendgrid_api_key",
+      required: true,
+      sensitive: true,
+    },
+  ]
+  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
 
   async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
@@ -39,7 +35,7 @@ export class SendGridAction extends Hub.Action {
     const from = request.formParams.from || "Looker <noreply@lookermail.com>"
 
     const msg = new helpers.classes.Mail({
-      to: request.formParams.to!,
+      to: request.formParams.to,
       subject,
       from,
       text: `View this data in Looker. ${plan.url}\n Results are attached.`,
