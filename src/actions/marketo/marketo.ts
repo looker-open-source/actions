@@ -11,42 +11,38 @@ export class MarketoAction extends Hub.Action {
     return arrays
   }
 
-  constructor() {
-    super()
+  name = "marketo"
+  label = "Marketo"
+  iconName = "marketo/marketo.png"
+  description = "Add records to Marketo"
+  params = [
+    {
+      description: "Identity server host URL",
+      label: "URL",
+      name: "url",
+      required: true,
+      sensitive: false,
+    },
+    {
+      description: "Client ID from Marketo",
+      label: "Client ID",
+      name: "clientID",
+      required: true,
+      sensitive: false,
+    },
+    {
+      description: "Client Secret from Marketo",
+      label: "Client Secret",
+      name: "clientSecret",
+      required: true,
+      sensitive: true,
+    },
 
-    this.name = "marketo"
-    this.label = "Marketo"
-    this.iconName = "marketo/marketo.png"
-    this.description = "Add records to Marketo"
-    this.params = [
-      {
-        description: "Identity server host URL",
-        label: "URL",
-        name: "url",
-        required: true,
-        sensitive: false,
-      },
-      {
-        description: "Client ID from Marketo",
-        label: "Client ID",
-        name: "clientID",
-        required: true,
-        sensitive: false,
-      },
-      {
-        description: "Client Secret from Marketo",
-        label: "Client Secret",
-        name: "clientSecret",
-        required: true,
-        sensitive: true,
-      },
-
-    ]
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.supportedFormats = [Hub.ActionFormat.JsonDetail]
-    this.supportedFormattings = [Hub.ActionFormatting.Unformatted]
-    this.supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  }
+  ]
+  supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
