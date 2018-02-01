@@ -4,14 +4,11 @@ import {WebhookAction} from "../webhook/webhook"
 
 export class TrayAction extends WebhookAction {
 
-  constructor() {
-    super()
-    this.name = "tray"
-    this.label = "Tray"
-    this.iconName = "tray/tray.svg"
-    this.description = "Send data and begin a Tray workflow."
-    this.domain = "trayapp.io"
-  }
+  name = "tray"
+  label = "Tray"
+  iconName = "tray/tray.svg"
+  description = "Send data and begin a Tray workflow."
+  domain = "trayapp.io"
 
   async form() {
     const form = new Hub.ActionForm()
@@ -23,6 +20,7 @@ export class TrayAction extends WebhookAction {
     }]
     return form
   }
+
 }
 
 Hub.addAction(new TrayAction())

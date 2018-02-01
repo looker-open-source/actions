@@ -4,31 +4,27 @@ import * as azure from "azure-storage"
 
 export class AzureStorageAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "azure_storage"
-    this.label = "Azure Storage"
-    this.iconName = "azure/azure_storage.png"
-    this.description = "Write data files to an Azure container."
-    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
-    this.requiredFields = []
-    this.params = [
-      {
-        name: "account",
-        label: "Storage Account",
-        required: true,
-        sensitive: false,
-        description: "Your account for Azure.",
-      }, {
-        name: "accessKey",
-        label: "Access Key",
-        required: true,
-        sensitive: true,
-        description: "Your access key for Azure.",
-      },
-    ]
-  }
+  name = "azure_storage"
+  label = "Azure Storage"
+  iconName = "azure/azure_storage.png"
+  description = "Write data files to an Azure container."
+  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  requiredFields = []
+  params = [
+    {
+      name: "account",
+      label: "Storage Account",
+      required: true,
+      sensitive: false,
+      description: "Your account for Azure.",
+    }, {
+      name: "accessKey",
+      label: "Access Key",
+      required: true,
+      sensitive: true,
+      description: "Your access key for Azure.",
+    },
+  ]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
@@ -52,7 +48,7 @@ export class AzureStorageAction extends Hub.Action {
       }
 
       blobService.createBlockBlobFromText(
-        request.formParams.container!,
+        request.formParams.container,
         fileName,
         request.attachment.dataBuffer,
         (e) => {

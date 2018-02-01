@@ -17,11 +17,11 @@ export class RequestDataWebhookPayloadAttachment {
 
 export class ResponseDataWebhookPayloadAttachment {
   /** MIME type of the attachment. Ends with ";base64" if the attachment is Base64 encoded. */
-  mimetype: string | null
+  mimetype!: string | null
   /** File extension of the attachment. */
-  extension: string | null
+  extension!: string | null
   /** Attachment data. For JSON formats, this JSON is inline. */
-  data: string | null
+  data!: string | null
 }
 
 export class WireRequestDataWebhookPayloadAttachment {
@@ -30,9 +30,9 @@ export class WireRequestDataWebhookPayloadAttachment {
 
 export class WireResponseDataWebhookPayloadAttachment {
   /** MIME type of the attachment. Ends with ";base64" if the attachment is Base64 encoded. */
-  mimetype: string | null
+  mimetype!: string | null
   /** File extension of the attachment. */
-  extension: string | null
+  extension!: string | null
   /** Attachment data. For JSON formats, this JSON is inline. */
-  data: string | null
+  data!: string | null
 }

@@ -1,5 +1,5 @@
 export class ActionForm {
-  fields: ActionFormField[]
+  fields: ActionFormField[] = []
   asJson(): any {
     return this.fields
   }

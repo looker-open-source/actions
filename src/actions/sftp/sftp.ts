@@ -6,16 +6,12 @@ import * as URL from "url"
 
 export class SFTPAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "sftp"
-    this.label = "SFTP"
-    this.iconName = "sftp/sftp.png"
-    this.description = "Send data files to an SFTP server."
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.params = []
-  }
+  name = "sftp"
+  label = "SFTP"
+  iconName = "sftp/sftp.png"
+  description = "Send data files to an SFTP server."
+  supportedActionTypes = [Hub.ActionType.Query]
+  params = []
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>(async (resolve, reject) => {
@@ -31,7 +27,7 @@ export class SFTPAction extends Hub.Action {
       }
 
       const client = await this.sftpClientFromRequest(request)
-      const parsedUrl = URL.parse(request.formParams.address!)
+      const parsedUrl = URL.parse(request.formParams.address)
       if (!parsedUrl.pathname) {
         throw "Needs a valid SFTP address."
       }

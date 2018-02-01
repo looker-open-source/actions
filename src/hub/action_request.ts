@@ -113,10 +113,10 @@ export class ActionRequest {
   formParams: ParamMap = {}
   params: ParamMap = {}
   scheduledPlan?: ActionScheduledPlan
-  type: ActionType
+  type!: ActionType
   instanceId?: string
   webhookId?: string
-  lookerVersion: string | null
+  lookerVersion: string | null = null
 
   suggestedFilename() {
     if (this.attachment) {
