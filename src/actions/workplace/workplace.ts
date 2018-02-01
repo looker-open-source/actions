@@ -9,24 +9,21 @@ export interface Destination {
 
 export class WorkplaceAction extends Hub.Action {
 
-  constructor() {
-    super()
-    this.name = "workplace-facebook"
-    this.label = "Workplace by Facebook"
-    this.iconName = "facebook/workplace-facebook.svg"
-    this.description = "Write a message to Workplace by Facebook."
-    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
-    this.params = [
-      {
-        name: "facebook_app_access_token",
-        label: "Facebook App Access Token",
-        required: true,
-        description:
-          "https://developers.facebook.com/docs/workplace/integrations/custom-integrations/reference#appaccesstoken",
-        sensitive: true,
-      },
-    ]
-  }
+  name = "workplace-facebook"
+  label = "Workplace by Facebook"
+  iconName = "facebook/workplace-facebook.svg"
+  description = "Write a message to Workplace by Facebook."
+  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  params = [
+    {
+      name: "facebook_app_access_token",
+      label: "Facebook App Access Token",
+      required: true,
+      description:
+        "https://developers.facebook.com/docs/workplace/integrations/custom-integrations/reference#appaccesstoken",
+      sensitive: true,
+    },
+  ]
 
   async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
@@ -45,7 +42,7 @@ export class WorkplaceAction extends Hub.Action {
       link,
     }
 
-    const resp = await fb.api(`/${encodeURIComponent(request.formParams.destination!)}/feed`, "post", qs)
+    const resp = await fb.api(`/${encodeURIComponent(request.formParams.destination)}/feed`, "post", qs)
     let response
     if (!resp || resp.error) {
       response = {success: false, message: resp ? resp.error : "Error Occurred"}
