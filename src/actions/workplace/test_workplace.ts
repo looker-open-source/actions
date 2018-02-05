@@ -117,7 +117,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           type: "string",
           name: "message",
         }],
-      }).and.notify(apiStub.restore).and.notify(stubClient.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
   })
