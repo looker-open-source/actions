@@ -1,21 +1,22 @@
 import * as chai from "chai"
+import * as semver from "semver"
 
-import * as D from "../src/framework"
+import * as Hub from "../src/hub"
 
 before(async () => {
-  const allIntegrations = await D.allIntegrations()
-  allIntegrations.forEach((integration) => {
+  const allActions = await Hub.allActions()
+  allActions.forEach((action) => {
 
     describe("Smoke Tests", () => {
 
-      describe(integration.constructor.name, () => {
+      describe(action.constructor.name, () => {
 
         it("should provide the action function", () => {
-          chai.assert.typeOf(integration.action, "function")
+          chai.assert.typeOf(action.execute, "function")
         })
 
         it("should properly create json", () => {
-          const json = integration.asJson({
+          const json = action.asJson({
             actionUrl(i) {
               return `baseurl/${i.name}`
             },
@@ -24,6 +25,18 @@ before(async () => {
             },
           })
           chai.assert.typeOf(json.url, "string")
+        })
+
+        it("should provide supported_action_types", () => {
+          chai.assert.typeOf(action.supportedActionTypes, "array")
+          chai.assert.isNotEmpty(action.supportedActionTypes, "each action should support at least one action type")
+        })
+
+        it("should provide a valid minimumSupportedLookerVersion", () => {
+          chai.assert.isNotNull(
+            semver.valid(action.minimumSupportedLookerVersion),
+            `the version number ${action.minimumSupportedLookerVersion} is not a valid semver number`,
+          )
         })
 
       })

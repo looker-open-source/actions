@@ -18,10 +18,17 @@
       "use-default-type-parameter": true,
       "deprecation": true,
       "return-undefined": true,
+      "interface-name": [
+        true,
+        "never-prefix"
+      ],
       "array-type": [true, "array"],
       "no-for-in-array": true,
       "member-access": [true, "no-public"],
       "semicolon": [true, "never"]
+    },
+    "linterOptions": {
+      "exclude": ["src/api_types/**/*"]
     },
     "rulesDirectory": []
 }
