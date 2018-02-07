@@ -11,7 +11,7 @@ export class WorkplaceAction extends Hub.Action {
 
   name = "workplace-facebook"
   label = "Workplace by Facebook"
-  iconName = "facebook/workplace-facebook.svg"
+  iconName = "workplace/workplace-facebook.svg"
   description = "Write a message to Workplace by Facebook."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   params = [
