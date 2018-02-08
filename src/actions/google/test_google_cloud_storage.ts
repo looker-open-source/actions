@@ -98,8 +98,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const stubClient = sinon.stub(integration as any, "gcsClientFromRequest")
         .callsFake(() => ({
           getBuckets: () => [[
-            {metadata: {id: "1", name: "A"}},
-            {metadata: {id: "2", name: "B"}},
+            {id: "1", name: "A"},
+            {id: "2", name: "B"},
           ]],
         }))
 

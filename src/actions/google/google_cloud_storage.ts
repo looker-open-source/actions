@@ -34,27 +34,27 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment"
-      }
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment"
+    }
 
-      if (!request.formParams ||
-        !request.formParams.bucket) {
-        throw "Need GCS bucket."
-      }
+    if (!request.formParams ||
+      !request.formParams.bucket) {
+      throw "Need GCS bucket."
+    }
 
-      const gcs = this.gcsClientFromRequest(request)
-      const file = gcs.bucket(request.formParams.bucket)
-        .file(request.formParams.filename ? request.formParams.filename : request.suggestedFilename())
+    const gcs = this.gcsClientFromRequest(request)
+    const file = gcs.bucket(request.formParams.bucket)
+      .file(request.formParams.filename || request.suggestedFilename())
 
-      let response
-      try {
-        await file.save(request.attachment.dataBuffer)
-      } catch (e) {
-        response = {success: false, message: e.message}
-      }
+    let response
+    try {
+      await file.save(request.attachment.dataBuffer)
+    } catch (e) {
+      response = {success: false, message: e.message}
+    }
 
-      return new Hub.ActionResponse(response)
+    return new Hub.ActionResponse(response)
   }
 
   async form(request: Hub.ActionRequest) {
@@ -63,15 +63,19 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const gcs = this.gcsClientFromRequest(request)
     const buckets = await gcs.getBuckets()[0]
 
+    if (!buckets) {
+      throw "No buckets in account."
+    }
+
     form.fields = [{
       label: "Bucket",
       name: "bucket",
       required: true,
       options: buckets.map((b: any) => {
-          return {name: b.metadata.id, label: b.metadata.name}
+          return {name: b.id, label: b.name}
         }),
       type: "select",
-      default: buckets[0].metadata.id,
+      default: buckets[0].id,
     }, {
       label: "Filename",
       name: "filename",
@@ -84,7 +88,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
   private gcsClientFromRequest(request: Hub.ActionRequest) {
     const credentials = {
       client_email: request.params.client_email,
-      private_key: request.params.private_key,
+      private_key: request.params.private_key!.replace(/\\n/g, "\n"),
     }
     const config = {
       projectId: request.params.project_id,
