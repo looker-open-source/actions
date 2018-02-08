@@ -7,7 +7,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
   name = "google_cloud_storage"
   label = "Google Cloud Storage"
   iconName = "google/google_cloud_storage.svg"
-  description = "Write data files to an GCS bucket."
+  description = "Write data files to a Google Cloud Storage bucket."
   supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
   requiredFields = []
   params = [
@@ -16,31 +16,31 @@ export class GoogleCloudStorageAction extends Hub.Action {
       label: "Client Email",
       required: true,
       sensitive: false,
-      description: "Your client email for GCS from https://console.cloud.google.com/",
+      description: "Your client email for GCS from https://console.cloud.google.com/apis/credentials",
     }, {
       name: "private_key",
       label: "Private Key",
       required: true,
       sensitive: true,
-      description: "Your private key for GCS from https://console.cloud.google.com/",
+      description: "Your private key for GCS from https://console.cloud.google.com/apis/credentials",
     }, {
       name: "project_id",
       label: "Project Id",
       required: true,
       sensitive: false,
-      description: "The Project Id for your GCS project from https://console.cloud.google.com/",
+      description: "The Project Id for your GCS project from https://console.cloud.google.com/apis/credentials",
     },
   ]
 
   async execute(request: Hub.ActionRequest) {
 
     if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment"
+      throw "Couldn't get data from attachment."
     }
 
     if (!request.formParams ||
       !request.formParams.bucket) {
-      throw "Need GCS bucket."
+      throw "Need Google Cloud Storage bucket."
     }
 
     const gcs = this.gcsClientFromRequest(request)
