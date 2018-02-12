@@ -4,16 +4,12 @@ import { createTransport, SendMailOptions} from "nodemailer"
 
 export class SMTPAction extends Hub.Action {
 
-  constructor() {
-    super()
-
-    this.name = "smtp"
-    this.label = "SMTP"
-    this.iconName = "smtp/smtp.svg"
-    this.description = "Send data files to an email via a SMTP server."
-    this.supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
-    this.params = []
-  }
+  name = "smtp"
+  label = "SMTP"
+  iconName = "smtp/smtp.svg"
+  description = "Send data files to an email via a SMTP server."
+  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  params = []
 
   async action(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {

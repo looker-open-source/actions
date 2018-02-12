@@ -12,25 +12,22 @@ const HIPCHAT_MAX_MESSAGE_BODY = 10000
 
 export class HipchatAction extends Hub.Action {
 
-  constructor() {
-    super()
-    this.name = "hipchat"
-    this.label = "Hipchat"
-    this.iconName = "hipchat/hipchat.png"
-    this.description = "Send a message to a Hipchat room referencing data."
-    this.supportedActionTypes = [Hub.ActionType.Query]
-    this.requiredFields = []
-    this.params = [
-      {
-        name: "hipchat_api_key",
-        label: "HipChat API Key",
-        required: true,
-        sensitive: true,
-        description: "API Key generated at https://hipchat.com/account/api",
-      },
-    ]
-    this.supportedFormats = [Hub.ActionFormat.Csv]
-  }
+  name = "hipchat"
+  label = "Hipchat"
+  iconName = "hipchat/hipchat.png"
+  description = "Send a message to a Hipchat room referencing data."
+  supportedActionTypes = [Hub.ActionType.Query]
+  requiredFields = []
+  params = [
+    {
+      name: "hipchat_api_key",
+      label: "HipChat API Key",
+      required: true,
+      sensitive: true,
+      description: "API Key generated at https://hipchat.com/account/api",
+    },
+  ]
+  supportedFormats = [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {

@@ -8,10 +8,10 @@ import { WebhookAction } from "./webhook"
 
 class GoodWebhookAction extends WebhookAction {
 
-  constructor() {
-    super()
-    this.domain = "example.com"
-  }
+  name = "webhook"
+  label = "webhook"
+  description = ""
+  domain = "example.com"
 
   async form() {
     const form = new Hub.ActionForm()

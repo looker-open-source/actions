@@ -1,5 +1,6 @@
 import * as express from "express"
 import * as sanitizeFilename from "sanitize-filename"
+import * as semver from "semver"
 import { truncateString } from "./utils"
 
 import {
@@ -51,6 +52,11 @@ export class ActionRequest {
     const actionRequest = this.fromJSON(request.body)
     actionRequest.instanceId = request.header("x-looker-instance")
     actionRequest.webhookId = request.header("x-looker-webhook-id")
+    const userAgent = request.header("user-agent")
+    if (userAgent) {
+      const version = userAgent.split("LookerOutgoingWebhook/")[1]
+      actionRequest.lookerVersion = semver.valid(version)
+    }
     return actionRequest
   }
 
@@ -107,9 +113,10 @@ export class ActionRequest {
   formParams: ParamMap = {}
   params: ParamMap = {}
   scheduledPlan?: ActionScheduledPlan
-  type: ActionType
+  type!: ActionType
   instanceId?: string
   webhookId?: string
+  lookerVersion: string | null = null
 
   suggestedFilename() {
     if (this.attachment) {

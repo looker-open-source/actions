@@ -39,6 +39,61 @@ describe("the action hub", () => {
       })
   })
 
+  it("for looker versions before 5.5 it returns only segment", (done) => {
+    const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+    chai.request(new Server().app)
+      .post("/")
+      .set("Authorization", 'Token token="foo"')
+      .set("User-Agent", "LookerOutgoingWebhook/5.0.0")
+      .end((_err, res) => {
+        chai.expect(res).to.have.status(200)
+        chai.expect(res.body.integrations.length).to.equal(1)
+        stub.restore()
+        done()
+      })
+  })
+
+  it("when no user agent is present don't filter the integrations", (done) => {
+    const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+    chai.request(new Server().app)
+      .post("/")
+      .set("Authorization", 'Token token="foo"')
+      .end((_err, res) => {
+        stub.restore()
+        chai.expect(res).to.have.status(200)
+        chai.expect(res.body.integrations.length).to.be.greaterThan(2)
+        done()
+      })
+  })
+
+  it("when an unknown user agent is present don't filter the integrations", (done) => {
+    const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+    chai.request(new Server().app)
+      .post("/")
+      .set("Authorization", 'Token token="foo"')
+      .set("User-Agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko)")
+      .end((_err, res) => {
+        stub.restore()
+        chai.expect(res).to.have.status(200)
+        chai.expect(res.body.integrations.length).to.be.greaterThan(2)
+        done()
+      })
+  })
+
+  it("returns more integrations after 5.5", (done) => {
+    const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+    chai.request(new Server().app)
+      .post("/")
+      .set("Authorization", 'Token token="foo"')
+      .set("User-Agent", "LookerOutgoingWebhook/5.5.0")
+      .end((_err, res) => {
+        stub.restore()
+        chai.expect(res).to.have.status(200)
+        chai.expect(res.body.integrations.length).to.be.greaterThan(2)
+        done()
+      })
+  })
+
   it("requires the token format", (done) => {
     const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
     chai.request(new Server().app)

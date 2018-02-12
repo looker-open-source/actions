@@ -17,11 +17,11 @@ export class RequestIntegrationRequiredField {
 
 export class ResponseIntegrationRequiredField {
   /** Matches a field that has this tag. */
-  tag: string | null
+  tag!: string | null
   /** If present, supercedes 'tag' and matches a field that has any of the provided tags. */
-  anyTag: string[] | null
+  anyTag!: string[] | null
   /** If present, supercedes 'tag' and matches a field that has all of the provided tags. */
-  allTags: string[] | null
+  allTags!: string[] | null
 }
 
 export class WireRequestIntegrationRequiredField {
@@ -31,10 +31,10 @@ export class WireRequestIntegrationRequiredField {
 /* tslint:disable:variable-name */
 export class WireResponseIntegrationRequiredField {
   /** Matches a field that has this tag. */
-  tag: string | null
+  tag!: string | null
   /** If present, supercedes 'tag' and matches a field that has any of the provided tags. */
-  any_tag: string[] | null
+  any_tag!: string[] | null
   /** If present, supercedes 'tag' and matches a field that has all of the provided tags. */
-  all_tags: string[] | null
+  all_tags!: string[] | null
 }
 /* tslint:enable:variable-name */

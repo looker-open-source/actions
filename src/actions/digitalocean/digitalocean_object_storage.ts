@@ -5,35 +5,31 @@ import * as S3 from "aws-sdk/clients/s3"
 
 export class DigitalOceanObjectStorageAction extends AmazonS3Action {
 
-  constructor() {
-    super()
-
-    this.name = "digitalocean_object_storage"
-    this.label = "DigitalOcean Spaces"
-    this.iconName = "digitalocean/DigitalOcean.png"
-    this.description = "Write data files to DigitalOcean's Spaces storage."
-    this.params = [
-      {
-        name: "access_key_id",
-        label: "Spaces Access Key",
-        required: true,
-        sensitive: false,
-        description: "Your access key for DigitalOcean Spaces https://cloud.digitalocean.com/settings/api/tokens.",
-      }, {
-        name: "secret_access_key",
-        label: "Spaces Secret Key",
-        required: true,
-        sensitive: true,
-        description: "Your secret key for DigitalOcean Spaces https://cloud.digitalocean.com/settings/api/tokens.",
-      }, {
-        name: "region",
-        label: "Region",
-        required: true,
-        sensitive: false,
-        description: "DigitalOcean Region e.g. NYC3 ",
-      },
-    ]
-  }
+  name = "digitalocean_object_storage"
+  label = "DigitalOcean Spaces"
+  iconName = "digitalocean/DigitalOcean.png"
+  description = "Write data files to DigitalOcean's Spaces storage."
+  params = [
+    {
+      name: "access_key_id",
+      label: "Spaces Access Key",
+      required: true,
+      sensitive: false,
+      description: "Your access key for DigitalOcean Spaces https://cloud.digitalocean.com/settings/api/tokens.",
+    }, {
+      name: "secret_access_key",
+      label: "Spaces Secret Key",
+      required: true,
+      sensitive: true,
+      description: "Your secret key for DigitalOcean Spaces https://cloud.digitalocean.com/settings/api/tokens.",
+    }, {
+      name: "region",
+      label: "Region",
+      required: true,
+      sensitive: false,
+      description: "DigitalOcean Region e.g. NYC3 ",
+    },
+  ]
 
   async form(request: Hub.ActionRequest) {
     const form = await super.form(request)
