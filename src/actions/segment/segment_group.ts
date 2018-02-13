@@ -1,24 +1,15 @@
-import * as uuid from "uuid"
-
 import * as Hub from "../../hub"
 
 const segment: any = require("analytics-node")
 
-function capitalizeFirstLetter(s: string) {
-  if (s) {
-    return s.charAt(0).toUpperCase() + s.slice(1)
-  }
-}
+export class SegmentGroupAction extends Hub.Action {
 
-export class SegmentAction extends Hub.Action {
+  tag = "segment_group_id"
 
-  allowedTags = ["email", "user_id", "segment_anonymous_id"]
-
-  segmentCall: string
-  name: string
-  label: string
-  description: string
+  name = "segment_group"
+  label = "Segment Group"
   iconName = "segment/segment.png"
+  description = "Add traits and / or users to your Segment groups."
   params = [
     {
       description: "A write key for Segment.",
@@ -32,18 +23,7 @@ export class SegmentAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  requiredFields = [{ any_tag: this.allowedTags }]
-
-  constructor(segmentCall?: string, minimumSupportedLookerVersion?: string) {
-    super()
-    this.segmentCall = segmentCall || "identify"
-    this.name = this.segmentCall === "identify" ? "segment" : `segment_${this.segmentCall}`
-    this.label = `Segment ${capitalizeFirstLetter(this.segmentCall)}`
-    this.description = `Add traits via ${this.segmentCall} to your Segment users.`
-    if (minimumSupportedLookerVersion) {
-      this.minimumSupportedLookerVersion = minimumSupportedLookerVersion
-    }
-  }
+  requiredFields = [{ tag: this.tag }]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
@@ -68,29 +48,26 @@ export class SegmentAction extends Hub.Action {
         hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
       }
 
-      const identifiableFields = fields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => this.allowedTags.indexOf(t) !== -1),
-      )
-      if (identifiableFields.length === 0) {
-        reject(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
+      const groupIdField = fields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => t === this.tag),
+      )[0]
+
+      if (!groupIdField) {
+        reject(`Query requires a field tagged ${this.tag}.`)
         return
       }
+      const segmentClient = this.segmentClientFromRequest(request)
 
-      const idField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "user_id" || t === "segment_anonymous_id"),
-      )[0]
-
-      const emailField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "email"),
-      )[0]
-
-      const anonymousIdField = identifiableFields.filter((f: any) =>
+      const anonymousIdField = fields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
       )[0]
+      const userIdField = fields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => t === "user_id"),
+      )[0]
 
-      const anonymousId = this.generateAnonymousId()
-
-      const segmentClient = this.segmentClientFromRequest(request)
+      const idFieldNames = [groupIdField.name]
+      if (anonymousIdField) { idFieldNames.push(anonymousIdField.name)}
+      if (userIdField) { idFieldNames.push(userIdField.name) }
 
       const ranAt = qr.ran_at && new Date(qr.ran_at)
 
@@ -105,22 +82,20 @@ export class SegmentAction extends Hub.Action {
         const traits: any = {}
         for (const field of fields) {
           const value = row[field.name].value
-          if (!idField || field.name !== idField.name) {
+          if (idFieldNames.indexOf(field.name) !== -1) {
             if (!hiddenFields.includes(field.name)) {
               traits[field.name] = value
             }
           }
-          if (emailField && field.name === emailField.name) {
-            traits.email = value
-          }
         }
 
-        segmentClient[this.segmentCall]({
-          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
+        segmentClient.group({
+          groupId: groupIdField ? row[groupIdField.name].value : null,
+          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : null,
           context,
           traits,
           timestamp: ranAt,
-          userId: idField ? row[idField.name].value : null,
+          userId: userIdField ? row[userIdField.name].value : null,
         })
       }
 
@@ -139,11 +114,6 @@ export class SegmentAction extends Hub.Action {
     return new segment(request.params.segment_write_key)
   }
 
-  private generateAnonymousId() {
-    return uuid.v4()
-  }
-
 }
 
-Hub.addAction(new SegmentAction("identify", "4.20.0"))
-Hub.addAction(new SegmentAction("track", "5.5.0"))
+Hub.addAction(new SegmentGroupAction())

@@ -4,17 +4,17 @@ import * as sinon from "sinon"
 import * as Hub from "../../hub"
 import { SegmentAction } from "./segment"
 
-const action = new SegmentAction()
+const action = new SegmentAction("segmentCall")
 
 function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
-  const identifySpy = sinon.spy()
+  const segmentCallSpy = sinon.spy()
   const stubClient = sinon.stub(action as any, "segmentClientFromRequest")
     .callsFake(() => {
-      return {identify: identifySpy, flush: (cb: () => void) => cb()}
+      return {segmentCall: segmentCallSpy, flush: (cb: () => void) => cb()}
      })
   const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(identifySpy).to.have.been.calledWithMatch(match)
+    chai.expect(segmentCallSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
     stubAnon.restore()
   })
@@ -23,6 +23,29 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
 describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
+
+    it("has correct name", () => {
+      const identifyAction = new SegmentAction()
+      return chai.expect(identifyAction.name).equal("segment")
+    })
+
+    it("has correct name", () => {
+      return chai.expect(action.name).equal("segment_segmentCall")
+    })
+
+    it("has correct label", () => {
+      return chai.expect(action.label).equal("Segment SegmentCall")
+    })
+
+    it("has correct description", () => {
+      return chai.expect(action.description).equal("Add traits via segmentCall to your Segment users.")
+    })
+
+    it("errors if the input has no attachment", () => {
+      const request = new Hub.ActionRequest()
+      return chai.expect(action.execute(request)).to.eventually
+        .be.rejectedWith("No attached json")
+    })
 
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
