@@ -75,7 +75,7 @@ export class WorkplaceAction extends Hub.Action {
     const fb = this.facebookClientFromRequest(request)
     const response = await fb.api("/community")
     if (!(response && response.id)) {
-      throw "No communnity."
+      throw "No community."
     }
     const [groups, members] = await Promise.all([
       this.usableGroups(fb, response.id),
