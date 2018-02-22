@@ -56,8 +56,9 @@ export class AirtableAction extends Hub.Action {
           table.create(record, (err: { message: string }) => {
             if (err) {
               reject(err)
+            } else {
+              resolve()
             }
-            resolve()
           })
         })
       }))
