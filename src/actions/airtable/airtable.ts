@@ -41,23 +41,27 @@ export class AirtableAction extends Hub.Action {
     for (const field of fields) {
       fieldMap[field.name] = field.label_short || field.label || field.name
     }
-
-    const airtableClient = this.airtableClientFromRequest(request)
-    const table = airtableClient.base(request.formParams.base)(request.formParams.table)
+    const records = qr.data.map((row: any) => {
+      const record: any = {}
+      for (const field of fields) {
+        record[fieldMap[field.name]] = row[field.name].value
+      }
+      return record
+    })
 
     let response
     try {
-      await Promise.all(qr.data.map(async (row: any) => {
-        const record: any = {}
-        for (const field of fields) {
-          record[fieldMap[field.name]] = row[field.name].value
-        }
+      const airtableClient = this.airtableClientFromRequest(request)
+      const base = airtableClient.base(request.formParams.base)
+      const table = base(request.formParams.table)
+
+      await Promise.all(records.map(async (record: any) => {
         return new Promise<void>((resolve, reject) => {
-          table.create(record, (err: { message: string }) => {
+          table.create(record, (err: { message: string }, rec: any) => {
             if (err) {
               reject(err)
             } else {
-              resolve()
+              resolve(rec)
             }
           })
         })
