@@ -30,33 +30,37 @@ export class HipchatAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment."
+    }
 
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        reject("Couldn't get data from attachment.")
-        return
-      }
+    if (!request.formParams || !request.formParams.room) {
+      throw "Missing room."
+    }
 
-      if (!request.formParams || !request.formParams.room) {
-        reject("Missing room.")
-        return
-      }
+    const message = request.suggestedTruncatedMessage(MAX_LINES, HIPCHAT_MAX_MESSAGE_BODY)
 
+    let response
+    try {
       const hipchatClient = this.hipchatClientFromRequest(request)
-      const message = request.suggestedTruncatedMessage(MAX_LINES, HIPCHAT_MAX_MESSAGE_BODY)
 
-      hipchatClient.send_room_message(
-        request.formParams.room, {
-          from: "Looker",
-          message,
-        }, (err: any) => {
-          let response
-          if (err) {
-            response = {success: false, message: err.message}
-          }
-          resolve(new Hub.ActionResponse(response))
+      await new Promise<void>((resolve, reject) => {
+        hipchatClient.send_room_message(
+          request.formParams.room, {
+            from: "Looker",
+            message,
+          }, (err: any) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
         })
-    })
+    } catch (e) {
+      response = { success: false, message: e.message }
+    }
+    return new Hub.ActionResponse(response)
   }
 
   async form(request: Hub.ActionRequest) {
