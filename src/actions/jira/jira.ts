@@ -45,8 +45,6 @@ export class JiraAction extends Hub.Action {
       throw "Need JIRA issue fields."
     }
 
-    const jira = this.jiraClientFromRequest(request)
-
     const issue = {
       fields: {
         project: {
@@ -62,6 +60,7 @@ export class JiraAction extends Hub.Action {
     }
     let response
     try {
+      const jira = this.jiraClientFromRequest(request)
       await jira.addNewIssue(issue)
     } catch (e) {
       response = {success: false, message: e.message}

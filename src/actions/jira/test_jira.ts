@@ -54,6 +54,38 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("returns failure on jira addNewIssue error", () => {
+      const request = new Hub.ActionRequest()
+      request.scheduledPlan = { url: "looker_url" }
+      request.formParams = {
+        project: "1",
+        summary: "mysummary",
+        description: "mydescription",
+        issueType: "10",
+      }
+      request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
+
+      const addNewIssueSpy = sinon.spy(() => {
+        throw new Error("Could not create issue.")
+      })
+
+      const stubClient = sinon.stub(action as any, "jiraClientFromRequest")
+        .callsFake(() => {
+          return {
+            addNewIssue: addNewIssueSpy,
+          }
+        })
+
+      return chai.expect(action.execute(request)).to.eventually.deep.equal({
+        success: false,
+        message: "Could not create issue.",
+        refreshQuery: false,
+        validationErrors: [],
+      }).then(() => {
+        stubClient.restore()
+      })
+    })
+
   })
 
   describe("form", () => {
