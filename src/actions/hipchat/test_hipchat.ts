@@ -63,6 +63,36 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
     })
 
+    it("returns failure on hipchat send_room_message error", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {
+        room: "myroom",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
+      }
+      const messageSpy = sinon.spy((_room: any, _message: any, callback: (err: any) => void) => {
+        callback({
+          type: "ROOM_NOT_FOUND",
+          message: "Could not find room myroom",
+        })
+      })
+
+      const stubClient = sinon.stub(action as any, "hipchatClientFromRequest")
+        .callsFake(() => ({
+          send_room_message: messageSpy,
+        }))
+
+      return chai.expect(action.execute(request)).to.eventually.deep.equal({
+        success: false,
+        message: "Could not find room myroom",
+        refreshQuery: false,
+        validationErrors: [],
+      }).then(() => {
+        stubClient.restore()
+      })
+    })
+
   })
 
   describe("form", () => {
