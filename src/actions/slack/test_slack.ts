@@ -105,6 +105,41 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("returns failure on slack files.upload error", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {
+        channel: "mychannel",
+        initial_comment: "mycomment",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
+        fileExtension: "csv",
+      }
+
+      const fileUploadSpy = sinon.spy((_filename: string, _params: any, callback: (err: any) => void) => {
+        callback({
+          type: "CHANNEL_NOT_FOUND",
+          message: "Could not find channel mychannel",
+        })
+      })
+
+      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
+        .callsFake(() => ({
+          files: {
+            upload: fileUploadSpy,
+          },
+        }))
+
+      return chai.expect(action.execute(request)).to.eventually.deep.equal({
+        success: false,
+        message: "Could not find channel mychannel",
+        refreshQuery: false,
+        validationErrors: [],
+      }).then(() => {
+        stubClient.restore()
+      })
+    })
+
   })
 
   describe("form", () => {
