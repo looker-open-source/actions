@@ -58,3 +58,6 @@ typings/
 .env
 status.json
 lib
+
+# intellij
+.idea/

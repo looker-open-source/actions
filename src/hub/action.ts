@@ -9,6 +9,7 @@ import {
   ActionResponse,
   ActionType,
   ActionVisualizationFormatting,
+  ActionDownloadSettings,
 } from "."
 
 const datauri = require("datauri")
@@ -51,6 +52,7 @@ export abstract class Action {
   supportedFormats?: ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
+  supportedDownloadSettings?: ActionDownloadSettings[]
   requiredFields?: RequiredField[] = []
 
   abstract params: ActionParameter[]
@@ -67,6 +69,7 @@ export abstract class Action {
       supported_formats: this.supportedFormats,
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
+      supported_download_settings: this.supportedDownloadSettings,
       icon_data_uri: this.getImageDataUri(),
       url: this.execute ? router.actionUrl(this) : null,
     }
