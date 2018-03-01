@@ -39,6 +39,7 @@ export enum IntegrationSupportedFormats {
   JsonDetail = 'json_detail',
   Xlsx = 'xlsx',
   Html = 'html',
+  CsvZip = 'csv_zip',
   WysiwygPdf = 'wysiwyg_pdf',
   AssembledPdf = 'assembled_pdf',
   WysiwygPng = 'wysiwyg_png'
@@ -74,7 +75,7 @@ export class ResponseIntegration {
   enabled!: boolean
   /** Array of params for the integration. */
   params!: ResponseIntegrationParam[]
-  /** A list of data formats the integration supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
+  /** A list of data formats the integration supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "xlsx", "html", "csv_zip", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
   supportedFormats!: IntegrationSupportedFormats[]
   /** A list of action types the integration supports. Valid values are: "cell", "query", "dashboard". */
   supportedActionTypes!: IntegrationSupportedActionTypes[]
@@ -87,7 +88,7 @@ export class ResponseIntegration {
   /** A list of descriptions of required fields that this integration is compatible with. If there are multiple entries in this list, the integration requires more than one field. */
   requiredFields!: ResponseIntegrationRequiredField[]
   /** Operations the current user is able to perform on this object */
-  can!: {[key: string]: boolean}
+  can!: { [key: string]: boolean }
 }
 
 export class WireRequestIntegration {
@@ -111,7 +112,7 @@ export class WireResponseIntegration {
   enabled!: boolean
   /** Array of params for the integration. */
   params!: WireResponseIntegrationParam[]
-  /** A list of data formats the integration supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
+  /** A list of data formats the integration supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "xlsx", "html", "csv_zip", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
   supported_formats!: IntegrationSupportedFormats[]
   /** A list of action types the integration supports. Valid values are: "cell", "query", "dashboard". */
   supported_action_types!: IntegrationSupportedActionTypes[]
@@ -124,6 +125,6 @@ export class WireResponseIntegration {
   /** A list of descriptions of required fields that this integration is compatible with. If there are multiple entries in this list, the integration requires more than one field. */
   required_fields!: WireResponseIntegrationRequiredField[]
   /** Operations the current user is able to perform on this object */
-  can!: {[key: string]: boolean}
+  can!: { [key: string]: boolean }
 }
 /* tslint:enable:variable-name */
