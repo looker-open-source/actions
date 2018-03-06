@@ -3,6 +3,7 @@ import * as Hub from "../../hub"
 import * as S3 from "aws-sdk/clients/s3"
 
 import * as winston from "winston"
+import {PassThrough} from "stream"
 
 export class AmazonS3Action extends Hub.Action {
 
@@ -40,7 +41,14 @@ export class AmazonS3Action extends Hub.Action {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
       if (request!.scheduledPlan!.downloadUrl) {
-        winston.info("got a download url")
+        winston.info("got a download url" + request!.scheduledPlan!.downloadUrl)
+        const https = require("request")
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+        const stre = new PassThrough()
+        stre.on("data", (chunk) => {
+          winston.info(chunk.toString() + "LOL NEWLINE \n")
+        })
+        https.get(request!.scheduledPlan!.downloadUrl).pipe(stre)
         resolve(new Hub.ActionResponse({ success: true }))
       }
 
