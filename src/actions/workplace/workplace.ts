@@ -1,4 +1,5 @@
 import * as Hub from "../../hub"
+import { IntegrationSupportedFormats } from "../../hub";
 
 const FB = require("fb")
 
@@ -13,7 +14,8 @@ export class WorkplaceAction extends Hub.Action {
   label = "Workplace by Facebook"
   iconName = "workplace/workplace-facebook.svg"
   description = "Write a message to Workplace by Facebook."
-  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  supportedActionTypes = [Hub.ActionType.Dashboard]
+  supportedFormats = [Hub.ActionFormat.AssembledPdf, Hub.ActionFormat.WysiwygPdf, Hub.ActionFormat.WysiwygPng]
   params = [
     {
       name: "facebook_app_access_token",
