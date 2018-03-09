@@ -85,12 +85,6 @@ describe(`${integration.constructor.name} unit tests`, () => {
           {id: "2", name: "B"},
         ],
       })
-      apiStub.withArgs("/mycommunity/members").returns({
-        data: [
-          {id: "10", name: "Z"},
-          {id: "20", name: "Y"},
-        ],
-      })
 
       const stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
         .callsFake(() => ({
@@ -108,8 +102,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           options: [
             {name: "1", label: "#A"},
             {name: "2", label: "#B"},
-            {name: "10", label: "@Z"},
-            {name: "20", label: "@Y"}],
+          ],
           required: true,
           type: "select",
         }, {

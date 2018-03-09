@@ -79,22 +79,14 @@ export class WorkplaceAction extends Hub.Action {
     if (!(response && response.id)) {
       throw "No community."
     }
-    const [groups, members] = await Promise.all([
-      this.usableGroups(fb, response.id),
-      this.usableMembers(fb, response.id),
-    ])
-    return groups.concat(members)
+    const groups = await this.usableGroups(fb, response.id)
+    return groups
   }
 
   private async usableGroups(fb: any, community: string) {
     const response = await fb.api(`/${encodeURIComponent(community)}/groups`)
     const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
     return groups.map((g: any) => ({id: g.id, label: `#${g.name}`}))
-  }
-
-  private async usableMembers(fb: any, community: string) {
-    const response = await fb.api(`/${encodeURIComponent(community)}/members`)
-    return response.data.map((m: any) => ({id: m.id, label: `@${m.name}`}))
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
