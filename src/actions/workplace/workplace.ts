@@ -1,5 +1,4 @@
 import * as Hub from "../../hub"
-import { IntegrationSupportedFormats } from "../../hub";
 
 const FB = require("fb")
 
@@ -15,7 +14,7 @@ export class WorkplaceAction extends Hub.Action {
   iconName = "workplace/workplace-facebook.svg"
   description = "Write a message to Workplace by Facebook."
   supportedActionTypes = [Hub.ActionType.Dashboard]
-  supportedFormats = [Hub.ActionFormat.AssembledPdf, Hub.ActionFormat.WysiwygPdf, Hub.ActionFormat.WysiwygPng]
+  supportedFormats = [Hub.ActionFormat.WysiwygPng]
   params = [
     {
       name: "facebook_app_access_token",
@@ -39,17 +38,32 @@ export class WorkplaceAction extends Hub.Action {
     const fb = this.facebookClientFromRequest(request)
     const message = request.formParams.message || request.scheduledPlan!.title!
     const link = request.scheduledPlan && request.scheduledPlan.url
+
+    const groupId = encodeURIComponent(request.formParams.destination)
+    const photoUpload = {
+      source: request.attachment.dataBuffer,
+      // caption: (request.scheduledPlan && request.scheduledPlan.title ? request.scheduledPlan.title : "Looker"),
+    }
+
+    const photoResponse = await fb.api(`/${groupId}/photos`, "post", photoUpload)
+    let response
+    if (!photoResponse || photoResponse.error) {
+      response = { success: false, message: photoResponse ? photoResponse.error : "Error in Photo Upload Occurred" }
+      return new Hub.ActionResponse(response)
+    }
+
     const qs = {
       message,
       link,
+      attached_media: [{
+        media_fbid: photoResponse.id,
+      }],
     }
 
-    const resp = await fb.api(`/${encodeURIComponent(request.formParams.destination)}/feed`, "post", qs)
-    let response
-    if (!resp || resp.error) {
-      response = {success: false, message: resp ? resp.error : "Error Occurred"}
+    const postResponse = await fb.api(`/${groupId}/feed`, "post", qs)
+    if (!postResponse || postResponse.error) {
+      response = { success: false, message: postResponse ? postResponse.error : "Error in Feed Post Occurred" }
     }
-
     return new Hub.ActionResponse(response)
   }
 
