@@ -40,6 +40,7 @@ export class WorkplaceAction extends Hub.Action {
     const link = request.scheduledPlan && request.scheduledPlan.url
 
     const groupId = encodeURIComponent(request.formParams.destination)
+    // TODO upload require for multipart
     const photoUpload = {
       source: request.attachment.dataBuffer,
       // caption: (request.scheduledPlan && request.scheduledPlan.title ? request.scheduledPlan.title : "Looker"),
