@@ -7,6 +7,8 @@ export interface Destination {
   label: string,
 }
 
+// a comment
+
 export class WorkplaceAction extends Hub.Action {
 
   name = "workplace-facebook"
