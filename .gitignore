@@ -58,3 +58,5 @@ typings/
 .env
 status.json
 lib
+
+.DS_Store

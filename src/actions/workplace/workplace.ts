@@ -7,7 +7,9 @@ export interface Destination {
   label: string,
 }
 
-// a comment
+function log(...args: any[]) {
+  console.log.apply(console, args)
+}
 
 export class WorkplaceAction extends Hub.Action {
 
@@ -37,7 +39,15 @@ export class WorkplaceAction extends Hub.Action {
     }
 
     const fb = this.facebookClientFromRequest(request)
-    const message = request.formParams.message || request.scheduledPlan!.title!
+    // const message = request.formParams.message || request.scheduledPlan!.title!
+    let message = ""
+    try {
+      message = JSON.parse(request.formParams.message || "")
+    } catch (err) {
+      log(err)
+      message = request.formParams.message || request.scheduledPlan!.title!
+    }
+
     const link = request.scheduledPlan && request.scheduledPlan.url
     const qs = {
       message,
