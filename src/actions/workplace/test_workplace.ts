@@ -7,22 +7,6 @@ import { WorkplaceAction } from "./workplace"
 
 const integration = new WorkplaceAction()
 
-function expectFacebookMatch(request: Hub.ActionRequest, path: string, method: string, qs: any) {
-
-  const apiSpy = sinon.spy(async () => Promise.resolve())
-
-  const stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
-    .callsFake(() => ({
-      api: apiSpy,
-    }))
-
-  const execute = integration.execute(request)
-  return chai.expect(execute).to.be.fulfilled.then(() => {
-    chai.expect(apiSpy).to.have.been.calledWithMatch(path, method, qs)
-    stubClient.restore()
-  })
-}
-
 describe(`${integration.constructor.name} unit tests`, () => {
 
   describe("execute", () => {
@@ -50,7 +34,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("sends to right link, destination and message if specified", () => {
       const request = new Hub.ActionRequest()
       request.formParams = {
-        destination: "destination",
+        destination: "mygroup",
         message: "message",
       }
       request.scheduledPlan = {
@@ -59,11 +43,29 @@ describe(`${integration.constructor.name} unit tests`, () => {
       }
       request.attachment = {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
+        fileExtension: "png",
       }
-      return expectFacebookMatch(request, `/${request.formParams.destination}/feed`, "post", {
-        message: request.formParams.message,
-        link: request.scheduledPlan.url,
+      const apiStub = sinon.stub()
+      apiStub.withArgs(`/${request.formParams.destination}/photos`).returns({ id: "myphoto" })
+
+      const stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
+        .callsFake(() => ({
+          api: apiStub,
+        }))
+
+      const execute = integration.execute(request)
+      return chai.expect(execute).to.be.fulfilled.then(() => {
+        chai.expect(apiStub.firstCall).to.have.been.calledWithMatch(`/mygroup/photos`, "post", {
+          source: request.attachment!.dataBuffer,
+        })
+        chai.expect(apiStub.secondCall).to.have.been.calledWithMatch(`/mygroup/feed`, "post", {
+          message: request.formParams.message,
+          link: request.scheduledPlan!.url,
+          attached_media: [{
+            media_fbid: "myphoto",
+          }],
+        })
+        stubClient.restore()
       })
     })
 
@@ -85,12 +87,6 @@ describe(`${integration.constructor.name} unit tests`, () => {
           {id: "2", name: "B"},
         ],
       })
-      apiStub.withArgs("/mycommunity/members").returns({
-        data: [
-          {id: "10", name: "Z"},
-          {id: "20", name: "Y"},
-        ],
-      })
 
       const stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
         .callsFake(() => ({
@@ -108,8 +104,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
           options: [
             {name: "1", label: "#A"},
             {name: "2", label: "#B"},
-            {name: "10", label: "@Z"},
-            {name: "20", label: "@Y"}],
+          ],
           required: true,
           type: "select",
         }, {

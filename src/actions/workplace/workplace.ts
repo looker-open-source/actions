@@ -17,7 +17,8 @@ export class WorkplaceAction extends Hub.Action {
   label = "Workplace by Facebook"
   iconName = "workplace/workplace-facebook.svg"
   description = "Write a message to Workplace by Facebook."
-  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  supportedActionTypes = [Hub.ActionType.Dashboard]
+  supportedFormats = [Hub.ActionFormat.WysiwygPng]
   params = [
     {
       name: "facebook_app_access_token",
@@ -41,17 +42,33 @@ export class WorkplaceAction extends Hub.Action {
     const fb = this.facebookClientFromRequest(request)
     const message = request.formParams.message || request.scheduledPlan!.title!
     const link = request.scheduledPlan && request.scheduledPlan.url
+
+    const groupId = encodeURIComponent(request.formParams.destination)
+    // TODO upload require for multipart
+    const photoUpload = {
+      source: request.attachment.dataBuffer,
+      // caption: (request.scheduledPlan && request.scheduledPlan.title ? request.scheduledPlan.title : "Looker"),
+    }
+
+    const photoResponse = await fb.api(`/${groupId}/photos`, "post", photoUpload)
+    let response
+    if (!photoResponse || photoResponse.error) {
+      response = { success: false, message: photoResponse ? photoResponse.error : "Error in Photo Upload Occurred" }
+      return new Hub.ActionResponse(response)
+    }
+
     const qs = {
       message,
       link,
+      attached_media: [{
+        media_fbid: photoResponse.id,
+      }],
     }
 
-    const resp = await fb.api(`/${encodeURIComponent(request.formParams.destination)}/feed`, "post", qs)
-    let response
-    if (!resp || resp.error) {
-      response = {success: false, message: resp ? resp.error : "Error Occurred"}
+    const postResponse = await fb.api(`/${groupId}/feed`, "post", qs)
+    if (!postResponse || postResponse.error) {
+      response = { success: false, message: postResponse ? postResponse.error : "Error in Feed Post Occurred" }
     }
-
     return new Hub.ActionResponse(response)
   }
 
@@ -81,22 +98,14 @@ export class WorkplaceAction extends Hub.Action {
     if (!(response && response.id)) {
       throw "No community."
     }
-    const [groups, members] = await Promise.all([
-      this.usableGroups(fb, response.id),
-      this.usableMembers(fb, response.id),
-    ])
-    return groups.concat(members)
+    const groups = await this.usableGroups(fb, response.id)
+    return groups
   }
 
   private async usableGroups(fb: any, community: string) {
     const response = await fb.api(`/${encodeURIComponent(community)}/groups`)
     const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
     return groups.map((g: any) => ({id: g.id, label: `#${g.name}`}))
-  }
-
-  private async usableMembers(fb: any, community: string) {
-    const response = await fb.api(`/${encodeURIComponent(community)}/members`)
-    return response.data.map((m: any) => ({id: m.id, label: `@${m.name}`}))
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
