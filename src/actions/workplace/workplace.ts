@@ -39,6 +39,8 @@ export class WorkplaceAction extends Hub.Action {
       throw "Missing destination."
     }
 
+    this.debugRequest(request)
+
     const fb = this.facebookClientFromRequest(request)
     const message = request.formParams.message || request.scheduledPlan!.title!
     const link = request.scheduledPlan && request.scheduledPlan.url
@@ -113,6 +115,16 @@ export class WorkplaceAction extends Hub.Action {
       accessToken: request.params.facebook_app_access_token,
     }
     return new FB.Facebook(options)
+  }
+
+  private debugRequest(request: Hub.ActionRequest) {
+    const requestInfo = Object.assign({}, request)
+    requestInfo.attachment = Object.assign({}, request.attachment)
+    delete requestInfo.attachment.dataBuffer
+    // delete requestInfo.attachment.dataJSON
+    log("-".repeat(40))
+    log(JSON.stringify(requestInfo, null, 2))
+    log("-".repeat(40))
   }
 
 }
