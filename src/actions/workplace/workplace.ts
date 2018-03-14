@@ -1,5 +1,5 @@
-import * as FormData from "form-data"
-// import * as req from "request"
+// import * as FormData from "form-data"
+import * as req from "request"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
@@ -96,7 +96,7 @@ export class WorkplaceAction extends Hub.Action {
   }
 
   async postToFacebook(request: Hub.ActionRequest) {
-    // return new Promise<any>((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       if (!request.attachment || !request.attachment.dataBuffer) {
         throw "Couldn't get data from attachment."
       }
@@ -118,31 +118,32 @@ export class WorkplaceAction extends Hub.Action {
       const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
       log("graphUrl", graphUrl)
 
-      const formData = new FormData()
-      formData.append("image", buffer)
+      // const formData = new FormData()
+      // formData.append("image", buffer)
 
       const photoOptions = {
-        source: formData,
-        // message,
-        // formatting: "MARKDOWN",
+        source: buffer,
+        message,
+        formatting: "MARKDOWN",
       }
 
-      const fb = this.facebookClientFromRequest(request)
+      // const fb = this.facebookClientFromRequest(request)
 
-      const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
+      // const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
 
-      return response
+      // return response
 
-      // const graphOptions = {
-      //   method: "POST",
-      //   url: graphUrl,
-      //   formData,
-      // }
+      const graphOptions = {
+        method: "POST",
+        url: graphUrl,
+        // formData,
+      }
 
-      // req(graphOptions)
-      //   .on("response", resolve)
-      //   .on("error", reject)
-    // })
+      req(graphOptions)
+        .form(photoOptions)
+        .on("response", resolve)
+        .on("error", reject)
+    })
   }
 
   async form(request: Hub.ActionRequest) {
