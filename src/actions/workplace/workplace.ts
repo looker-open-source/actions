@@ -83,28 +83,30 @@ export class WorkplaceAction extends Hub.Action {
       if (!request.attachment || !request.attachment.dataBuffer) {
         throw "Couldn't get data from attachment."
       }
+      log("fileType", fileType(request.attachment.dataBuffer))
 
       if (!request.formParams || !request.formParams.destination) {
         throw "Missing destination."
       }
+      const groupId = encodeURIComponent(request.formParams.destination)
+      log("groupId", groupId)
 
       const message = this.getMarkdownMessage(request)
       log("message", message)
-      log("fileType", fileType(request.attachment.dataBuffer))
 
-      const groupId = encodeURIComponent(request.formParams.destination)
-
-      const form = new FormData()
-      form.append("source", request.attachment.dataBuffer)
-      form.append("messages", message)
-      form.append("formatting", "MARKDOWN")
-
-      const graphUrl = `https://graph.facebook.com/${groupId}/photos`
+      const query = `access_token=${request.params.facebook_app_access_token}`
+      const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
+      log("graphUrl", graphUrl)
 
       const graphOptions = {
         method: "POST",
         url: graphUrl,
       }
+
+      const form = new FormData()
+      form.append("source", request.attachment.dataBuffer)
+      form.append("messages", message)
+      form.append("formatting", "MARKDOWN")
 
       form.pipe(
         req(graphOptions)
