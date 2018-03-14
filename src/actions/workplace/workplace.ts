@@ -1,4 +1,5 @@
 import * as FormData from "form-data"
+import * as req from "request"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
@@ -34,31 +35,13 @@ export class WorkplaceAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
-    }
-
-    if (!request.formParams || !request.formParams.destination) {
-      throw "Missing destination."
-    }
-
     this.debugRequest(request)
 
-    const fb = this.facebookClientFromRequest(request)
+    // const fb = this.facebookClientFromRequest(request)
     // const message = request.formParams.message || request.scheduledPlan!.title!
     // const link = request.scheduledPlan && request.scheduledPlan.url
-    const message = this.getMarkdownMessage(request)
-    log("message", message)
-    log("fileType", fileType(request.attachment.dataBuffer))
 
-    const groupId = encodeURIComponent(request.formParams.destination)
-
-    const form = new FormData()
-    form.append("source", request.attachment.dataBuffer)
-    form.append("messages", message)
-    form.append("formatting", "MARKDOWN")
-
-    const photoResponse = await fb.api(`/${groupId}/photos`, "post", form)
+    const photoResponse = await this.postToFacebook(request)
 
     let response
     if (!photoResponse || photoResponse.error) {
@@ -92,6 +75,42 @@ export class WorkplaceAction extends Hub.Action {
     }
 
     return `[${title}](${url})`
+  }
+
+  postToFacebook(request: Hub.ActionRequest) {
+    return new Promise<any>((resolve, reject) => {
+      if (!request.attachment || !request.attachment.dataBuffer) {
+        throw "Couldn't get data from attachment."
+      }
+
+      if (!request.formParams || !request.formParams.destination) {
+        throw "Missing destination."
+      }
+
+      const message = this.getMarkdownMessage(request)
+      log("message", message)
+      log("fileType", fileType(request.attachment.dataBuffer))
+
+      const groupId = encodeURIComponent(request.formParams.destination)
+
+      const form = new FormData()
+      form.append("source", request.attachment.dataBuffer)
+      form.append("messages", message)
+      form.append("formatting", "MARKDOWN")
+
+      const graphUrl = `https://graph.facebook.com/${groupId}/photos`
+
+      const graphOptions = {
+        method: "POST",
+        url: graphUrl,
+      }
+
+      const graphRequest = req(graphOptions)
+      graphRequest.on("response", resolve)
+      graphRequest.on("error", reject)
+
+      form.pipe(graphRequest)
+    })
   }
 
   async form(request: Hub.ActionRequest) {

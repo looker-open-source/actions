@@ -61,6 +61,7 @@
     "jira-client": "^6.4.0",
     "nodemon": "^1.12.1",
     "raven": "^2.4.0",
+    "request": "^2.85.0",
     "request-promise-native": "^1.0.5",
     "sanitize-filename": "^1.6.1",
     "semver": "^5.4.1",
