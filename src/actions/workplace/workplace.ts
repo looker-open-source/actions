@@ -83,7 +83,8 @@ export class WorkplaceAction extends Hub.Action {
       if (!request.attachment || !request.attachment.dataBuffer) {
         throw "Couldn't get data from attachment."
       }
-      log("fileType", fileType(request.attachment.dataBuffer))
+      const bufferType = fileType(request.attachment.dataBuffer)
+      log("bufferType", bufferType)
 
       if (!request.formParams || !request.formParams.destination) {
         throw "Missing destination."
@@ -101,11 +102,16 @@ export class WorkplaceAction extends Hub.Action {
       const graphOptions = {
         method: "POST",
         url: graphUrl,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        }
       }
 
       const form = new FormData()
-      form.append("source", request.attachment.dataBuffer)
-      form.append("messages", message)
+      form.append("source", request.attachment.dataBuffer, {
+        contentType: bufferType.mime,
+      })
+      form.append("message", message)
       form.append("formatting", "MARKDOWN")
 
       form.pipe(
