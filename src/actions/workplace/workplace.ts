@@ -126,7 +126,7 @@ export class WorkplaceAction extends Hub.Action {
       const graphOptions = {
         method: "POST",
         url: graphUrl,
-        formData,
+        // formData,
         headers: {
           "Content-Type": "multipart/form-data",
         },
