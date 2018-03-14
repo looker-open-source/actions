@@ -53,7 +53,7 @@ export class WorkplaceAction extends Hub.Action {
     const groupId = encodeURIComponent(request.formParams.destination)
 
     const photoUpload = {
-      source: request.attachment.dataBuffer,
+      source: request.attachment.dataBuffer.toString(),
       message,
       formatting: "MARKDOWN",
       // caption: (request.scheduledPlan && request.scheduledPlan.title ? request.scheduledPlan.title : "Looker"),
