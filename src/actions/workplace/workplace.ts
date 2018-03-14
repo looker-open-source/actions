@@ -110,10 +110,7 @@ export class WorkplaceAction extends Hub.Action {
       log("graphUrl", graphUrl)
 
       const formData = new FormData()
-      formData.append("source", buffer, {
-        filename: `${request.scheduledPlan!.title}.png`,
-        contentType: bufferType.mime,
-      })
+      formData.append("source", buffer)
       formData.append("message", message)
       formData.append("formatting", "MARKDOWN")
 
