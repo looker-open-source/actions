@@ -1,4 +1,3 @@
-import * as FormData from "form-data"
 import * as req from "request"
 import * as Hub from "../../hub"
 
@@ -118,18 +117,16 @@ export class WorkplaceAction extends Hub.Action {
       const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
       log("graphUrl", graphUrl)
 
-      const formData = new FormData()
-      formData.append("source", buffer)
-      formData.append("message", message)
-      formData.append("formatting", "MARKDOWN")
+      const formData = {
+        source: buffer,
+        message,
+        formatting: "MARKDOWN",
+      }
 
       const graphOptions = {
         method: "POST",
         url: graphUrl,
         formData,
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
       }
 
       req(graphOptions)
