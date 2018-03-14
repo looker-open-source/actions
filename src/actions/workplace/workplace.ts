@@ -1,3 +1,4 @@
+import * as FormData from "form-data"
 // import * as req from "request"
 import * as Hub from "../../hub"
 
@@ -117,15 +118,18 @@ export class WorkplaceAction extends Hub.Action {
       const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
       log("graphUrl", graphUrl)
 
-      const formData = {
-        source: buffer,
+      const formData = new FormData()
+      formData.append("image", buffer)
+
+      const photoOptions = {
+        source: formData,
         message,
         formatting: "MARKDOWN",
       }
 
       const fb = this.facebookClientFromRequest(request)
 
-      const response = await fb.api(`/${groupId}/photos`, "post", formData)
+      const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
 
       return response
 
