@@ -42,6 +42,7 @@ export class WorkplaceAction extends Hub.Action {
     // const link = request.scheduledPlan && request.scheduledPlan.url
 
     const photoResponse = await this.postToFacebook(request)
+    log("photoResponse", photoResponse)
 
     let response
     if (!photoResponse || photoResponse.error) {
@@ -105,11 +106,11 @@ export class WorkplaceAction extends Hub.Action {
         url: graphUrl,
       }
 
-      const graphRequest = req(graphOptions)
-      graphRequest.on("response", resolve)
-      graphRequest.on("error", reject)
-
-      form.pipe(graphRequest)
+      form.pipe(
+        req(graphOptions)
+          .on("response", resolve)
+          .on("error", reject),
+      )
     })
   }
 
