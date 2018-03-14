@@ -99,26 +99,25 @@ export class WorkplaceAction extends Hub.Action {
       const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
       log("graphUrl", graphUrl)
 
+      const formData = new FormData()
+      formData.append("source", request.attachment.dataBuffer, {
+        contentType: bufferType.mime,
+      })
+      formData.append("message", message)
+      formData.append("formatting", "MARKDOWN")
+
       const graphOptions = {
         method: "POST",
         url: graphUrl,
+        formData,
         headers: {
           "Content-Type": "multipart/form-data",
         },
       }
 
-      const form = new FormData()
-      form.append("source", request.attachment.dataBuffer.buffer, {
-        contentType: bufferType.mime,
-      })
-      form.append("message", message)
-      form.append("formatting", "MARKDOWN")
-
-      form.pipe(
-        req(graphOptions)
-          .on("response", resolve)
-          .on("error", reject),
-      )
+      req(graphOptions)
+        .on("response", resolve)
+        .on("error", reject)
     })
   }
 
