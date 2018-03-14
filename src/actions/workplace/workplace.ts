@@ -14,6 +14,14 @@ function log(...args: any[]) {
   console.log.apply(console, args)
 }
 
+const _getContentDisposition = FormData.prototype._getContentDisposition
+FormData.prototype._getContentDisposition
+  = function _getContentDispositionWrapper(value: any, options: any) {
+  log("value", value)
+  log("options", options)
+  _getContentDisposition.call(this, value, options)
+}
+
 export class WorkplaceAction extends Hub.Action {
 
   name = "workplace-facebook"
@@ -83,7 +91,9 @@ export class WorkplaceAction extends Hub.Action {
       if (!request.attachment || !request.attachment.dataBuffer) {
         throw "Couldn't get data from attachment."
       }
-      const bufferType = fileType(request.attachment.dataBuffer)
+      const buffer = request.attachment.dataBuffer
+      log("is Buffer", Buffer.isBuffer(buffer))
+      const bufferType = fileType(buffer)
       log("bufferType", bufferType)
 
       if (!request.formParams || !request.formParams.destination) {
@@ -100,7 +110,7 @@ export class WorkplaceAction extends Hub.Action {
       log("graphUrl", graphUrl)
 
       const formData = new FormData()
-      formData.append("source", request.attachment.dataBuffer, {
+      formData.append("source", buffer, {
         filename: `${request.scheduledPlan!.title}.png`,
         contentType: bufferType.mime,
       })
