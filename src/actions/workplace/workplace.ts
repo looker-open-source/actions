@@ -123,8 +123,8 @@ export class WorkplaceAction extends Hub.Action {
 
       const photoOptions = {
         source: formData,
-        message,
-        formatting: "MARKDOWN",
+        // message,
+        // formatting: "MARKDOWN",
       }
 
       const fb = this.facebookClientFromRequest(request)
