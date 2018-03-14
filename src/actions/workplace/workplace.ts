@@ -101,6 +101,7 @@ export class WorkplaceAction extends Hub.Action {
 
       const formData = new FormData()
       formData.append("source", request.attachment.dataBuffer, {
+        filename: `${request.scheduledPlan!.title}.png`,
         contentType: bufferType.mime,
       })
       formData.append("message", message)
