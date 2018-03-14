@@ -118,7 +118,7 @@ export class WorkplaceAction extends Hub.Action {
       log("graphUrl", graphUrl)
 
       const formData = {
-        source: buffer,
+        source: buffer.buffer,
         message,
         formatting: "MARKDOWN",
       }
