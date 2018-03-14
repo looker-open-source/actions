@@ -20,7 +20,7 @@ FormData.prototype._multiPartHeader
   log("field", field)
   log("value", value)
   log("options", options)
-  return _multiPartHeader.call(this, value, options)
+  return _multiPartHeader.call(this, field, value, options)
 }
 
 const _getContentDisposition = FormData.prototype._getContentDisposition
