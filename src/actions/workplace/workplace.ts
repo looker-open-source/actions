@@ -1,6 +1,7 @@
 import * as Hub from "../../hub"
 
 const FB = require("fb")
+const fileType = require("file-type")
 
 export interface Destination {
   id: string,
@@ -47,6 +48,7 @@ export class WorkplaceAction extends Hub.Action {
     // const link = request.scheduledPlan && request.scheduledPlan.url
     const message = this.getMarkdownMessage(request)
     log("message", message)
+    log("fileType", fileType(request.attachment.dataBuffer))
 
     const groupId = encodeURIComponent(request.formParams.destination)
 
