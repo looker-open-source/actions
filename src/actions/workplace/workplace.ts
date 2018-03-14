@@ -14,22 +14,22 @@ function log(...args: any[]) {
   console.log.apply(console, args)
 }
 
-const _multiPartHeader = FormData.prototype._multiPartHeader
-FormData.prototype._multiPartHeader
-  = function _multiPartHeaderWrapper(field: any, value: any, options: any) {
-  log("field", field)
-  log("value", value)
-  log("options", options)
-  return _multiPartHeader.call(this, field, value, options)
-}
+// const _multiPartHeader = FormData.prototype._multiPartHeader
+// FormData.prototype._multiPartHeader
+//   = function _multiPartHeaderWrapper(field: any, value: any, options: any) {
+//   log("field", field)
+//   log("value", value)
+//   log("options", options)
+//   return _multiPartHeader.call(this, field, value, options)
+// }
 
-const _getContentDisposition = FormData.prototype._getContentDisposition
-FormData.prototype._getContentDisposition
-  = function _getContentDispositionWrapper(value: any, options: any) {
-  log("value", value)
-  log("options", options)
-  return _getContentDisposition.call(this, value, options)
-}
+// const _getContentDisposition = FormData.prototype._getContentDisposition
+// FormData.prototype._getContentDisposition
+//   = function _getContentDispositionWrapper(value: any, options: any) {
+//   log("value", value)
+//   log("options", options)
+//   return _getContentDisposition.call(this, value, options)
+// }
 
 export class WorkplaceAction extends Hub.Action {
 
