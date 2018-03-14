@@ -1,3 +1,4 @@
+import * as FormData from "form-data"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
@@ -52,14 +53,12 @@ export class WorkplaceAction extends Hub.Action {
 
     const groupId = encodeURIComponent(request.formParams.destination)
 
-    const photoUpload = {
-      source: request.attachment.dataBuffer.toString(),
-      message,
-      formatting: "MARKDOWN",
-      // caption: (request.scheduledPlan && request.scheduledPlan.title ? request.scheduledPlan.title : "Looker"),
-    }
+    const form = new FormData()
+    form.append("source", request.attachment.dataBuffer)
+    form.append("messages", message)
+    form.append("formatting", "MARKDOWN")
 
-    const photoResponse = await fb.api(`/${groupId}/photos`, "post", photoUpload)
+    const photoResponse = await fb.api(`/${groupId}/photos`, "post", form)
 
     let response
     if (!photoResponse || photoResponse.error) {
