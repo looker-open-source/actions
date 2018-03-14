@@ -43,54 +43,75 @@ export class WorkplaceAction extends Hub.Action {
     this.debugRequest(request)
 
     const fb = this.facebookClientFromRequest(request)
-    const message = request.formParams.message || request.scheduledPlan!.title!
-    const link = request.scheduledPlan && request.scheduledPlan.url
+    // const message = request.formParams.message || request.scheduledPlan!.title!
+    // const link = request.scheduledPlan && request.scheduledPlan.url
+    const message = this.getMarkdownMessage(request)
+    log("message", message)
 
     const groupId = encodeURIComponent(request.formParams.destination)
-    // TODO upload require for multipart
+
     const photoUpload = {
       source: request.attachment.dataBuffer,
+      message,
+      formatting: "MARKDOWN",
       // caption: (request.scheduledPlan && request.scheduledPlan.title ? request.scheduledPlan.title : "Looker"),
     }
 
     const photoResponse = await fb.api(`/${groupId}/photos`, "post", photoUpload)
+
     let response
     if (!photoResponse || photoResponse.error) {
       response = { success: false, message: photoResponse ? photoResponse.error : "Error in Photo Upload Occurred" }
-      return new Hub.ActionResponse(response)
-    }
-
-    const qs = {
-      message,
-      link,
-      attached_media: [{
-        media_fbid: photoResponse.id,
-      }],
-    }
-
-    const postResponse = await fb.api(`/${groupId}/feed`, "post", qs)
-    if (!postResponse || postResponse.error) {
-      response = { success: false, message: postResponse ? postResponse.error : "Error in Feed Post Occurred" }
     }
     return new Hub.ActionResponse(response)
+
+    // const qs = {
+    //   message,
+    //   link,
+    //   attached_media: [{
+    //     media_fbid: photoResponse.id,
+    //   }],
+    // }
+
+    // const postResponse = await fb.api(`/${groupId}/feed`, "post", qs)
+    // if (!postResponse || postResponse.error) {
+    //   response = { success: false, message: postResponse ? postResponse.error : "Error in Feed Post Occurred" }
+    // }
+    // return new Hub.ActionResponse(response)
+  }
+
+  getMarkdownMessage(request: Hub.ActionRequest): string {
+    if (!request.scheduledPlan) {
+      throw "Missing scheduledPlan."
+    }
+
+    const { title, url } = request.scheduledPlan
+    if (!title || !url) {
+      throw "Missing title or url."
+    }
+
+    return `[${title}](${url})`
   }
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
 
     const destinations = await this.usableDestinations(request)
-    form.fields = [{
-      description: "Name of the Facebook group you would like to post to.",
-      label: "Share In",
-      name: "destination",
-      options: destinations.map((destination) => ({name: destination.id, label: destination.label})),
-      required: true,
-      type: "select",
-    }, {
-      label: "Message",
-      type: "string",
-      name: "message",
-    }]
+    form.fields = [
+      {
+        description: "Name of the Facebook group you would like to post to.",
+        label: "Share In",
+        name: "destination",
+        options: destinations.map((destination) => ({ name: destination.id, label: destination.label })),
+        required: true,
+        type: "select",
+      },
+      // {
+      //   label: "Message",
+      //   type: "string",
+      //   name: "message",
+      // },
+    ]
 
     return form
   }
@@ -108,7 +129,7 @@ export class WorkplaceAction extends Hub.Action {
   private async usableGroups(fb: any, community: string) {
     const response = await fb.api(`/${encodeURIComponent(community)}/groups`)
     const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
-    return groups.map((g: any) => ({id: g.id, label: `#${g.name}`}))
+    return groups.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
