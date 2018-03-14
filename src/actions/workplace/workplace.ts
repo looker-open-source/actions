@@ -133,16 +133,19 @@ export class WorkplaceAction extends Hub.Action {
 
       // return response
 
-      const graphOptions = {
-        method: "POST",
-        url: graphUrl,
-        // formData,
-      }
+      // const graphOptions = {
+      //   method: "POST",
+      //   url: graphUrl,
+      //   // formData,
+      // }
 
-      req(graphOptions)
-        .form(photoOptions)
-        .on("response", resolve)
-        .on("error", reject)
+      req.post({ url: graphUrl, formData: photoOptions}, (err, response, body) => {
+        if (err) {
+          return reject(err)
+        }
+        log("body", body)
+        resolve(response)
+      })
     })
   }
 
