@@ -104,11 +104,11 @@ export class WorkplaceAction extends Hub.Action {
         url: graphUrl,
         headers: {
           "Content-Type": "multipart/form-data",
-        }
+        },
       }
 
       const form = new FormData()
-      form.append("source", request.attachment.dataBuffer, {
+      form.append("source", request.attachment.dataBuffer.buffer, {
         contentType: bufferType.mime,
       })
       form.append("message", message)
