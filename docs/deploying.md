@@ -13,18 +13,22 @@ Because Looker will only accept an action hub with a valid HTTPS certificate, it
 
 We recommend that you work on features using a branch. To create and push a branch to Heroku:
 
-* `git checkout -b my-name/my-awesome-feature` # creates a branch called `my-name/my-awesome-feature` and switches to it
-* `git push heroku my-name/my-awesome-feature:master` # pushes your branch to Heroku and runs it
+* `git checkout -b my-name/my-awesome-feature` 
+   
+   This creates a branch called `my-name/my-awesome-feature` and switches to it
+* `git push heroku my-name/my-awesome-feature:master`
+
+   This pushes your branch to Heroku and runs it
 
 You can test that the action hub is running by going to your Heroku application URL. If you need to view logs at any time, you can run:
 
-   heroku logs
+    heroku logs
 
 If at some point you forget the URL of your Heroku server, you can run:
 
-   heroku info -s | grep web_url
+    heroku info -s | grep web_url
 
-#### To add the action hub to Looker
+#### Adding the Action Hub to Looker
 
 Make sure your action hub is running. You will then need to run the following command on the server that is running the action hub:
 
@@ -38,7 +42,7 @@ Save the value that is returned and then navigate to the actions admin page on a
 
 There, add the URL for your action hub and enter the token returned by `yarn generate-api-key` above. You should see a list of actions supported by your hub.
 
-Enable my-action
+#### Testing your Action
 
 Within Looker, [create and save](https://docs.looker.com/exploring-data/saving-and-editing-looks) a Look.
 
