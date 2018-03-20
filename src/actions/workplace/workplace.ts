@@ -1,6 +1,5 @@
 // import * as FormData from "form-data"
 import * as req from "request"
-import * as stream from "stream"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
@@ -148,11 +147,17 @@ export class WorkplaceAction extends Hub.Action {
       // formData.append("image", buffer)
 
       // create a stream from our buffer
-      const bufferStream = new stream.PassThrough()
-      bufferStream.end(buffer)
+      // const bufferStream = new stream.PassThrough()
+      // bufferStream.end(buffer)
 
       const photoOptions = {
-        source: bufferStream,
+        source: {
+          value: buffer,
+          options: {
+            filename: `source.${bufferType.ext}`,
+            contentType: bufferType.mime,
+          },
+        },
         message,
         formatting: "MARKDOWN",
       }
@@ -169,7 +174,7 @@ export class WorkplaceAction extends Hub.Action {
       //   // formData,
       // }
 
-      req.post({ url: graphUrl, formData: photoOptions}, (err, response, body) => {
+      req.post({ url: graphUrl, formData: photoOptions }, (err, response, body) => {
         if (err) {
           return reject(err)
         }
