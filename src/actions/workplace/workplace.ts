@@ -1,5 +1,5 @@
 // import * as FormData from "form-data"
-import * as req from "request"
+// import * as req from "request"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
@@ -121,67 +121,67 @@ export class WorkplaceAction extends Hub.Action {
   }
 
   async postToFacebook(request: Hub.ActionRequest) {
-    return new Promise<any>((resolve, reject) => {
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment."
-      }
-      const buffer = request.attachment.dataBuffer
-      log("is Buffer", Buffer.isBuffer(buffer))
-      const bufferType = fileType(buffer)
-      log("bufferType", bufferType)
+    // return new Promise<any>((resolve, reject) => {
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment."
+    }
+    const buffer = request.attachment.dataBuffer
+    log("is Buffer", Buffer.isBuffer(buffer))
+    const bufferType = fileType(buffer)
+    log("bufferType", bufferType)
 
-      if (!request.formParams || !request.formParams.destination) {
-        throw "Missing destination."
-      }
-      const groupId = encodeURIComponent(request.formParams.destination)
-      log("groupId", groupId)
+    if (!request.formParams || !request.formParams.destination) {
+      throw "Missing destination."
+    }
+    const groupId = encodeURIComponent(request.formParams.destination)
+    log("groupId", groupId)
 
-      const message = this.getMarkdownMessage(request)
-      log("message", message)
+    const message = this.getMarkdownMessage(request)
+    log("message", message)
 
-      const query = `access_token=${request.params.facebook_app_access_token}`
-      const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
-      log("graphUrl", graphUrl)
+    const query = `access_token=${request.params.facebook_app_access_token}`
+    const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
+    log("graphUrl", graphUrl)
 
-      // const formData = new FormData()
-      // formData.append("image", buffer)
+    // const formData = new FormData()
+    // formData.append("image", buffer)
 
-      // create a stream from our buffer
-      // const bufferStream = new stream.PassThrough()
-      // bufferStream.end(buffer)
+    // create a stream from our buffer
+    // const bufferStream = new stream.PassThrough()
+    // bufferStream.end(buffer)
 
-      const photoOptions = {
-        source: {
-          value: buffer,
-          options: {
-            filename: `source.${bufferType.ext}`,
-            contentType: bufferType.mime,
-          },
+    const photoOptions = {
+      source: {
+        value: buffer,
+        options: {
+          filename: `source.${bufferType.ext}`,
+          contentType: bufferType.mime,
         },
-        message,
-        formatting: "MARKDOWN",
-      }
+      },
+      message,
+      formatting: "MARKDOWN",
+    }
 
-      // const fb = this.facebookClientFromRequest(request)
+    const fb = this.facebookClientFromRequest(request)
 
-      // const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
+    const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
 
-      // return response
+    return response
 
-      // const graphOptions = {
-      //   method: "POST",
-      //   url: graphUrl,
-      //   // formData,
-      // }
+    // const graphOptions = {
+    //   method: "POST",
+    //   url: graphUrl,
+    //   // formData,
+    // }
 
-      req.post({ url: graphUrl, formData: photoOptions }, (err, response, body) => {
-        if (err) {
-          return reject(err)
-        }
-        log("body", body)
-        resolve(response)
-      })
-    })
+    // req.post({ url: graphUrl, formData: photoOptions }, (err, response, body) => {
+    //   if (err) {
+    //     return reject(err)
+    //   }
+    //   log("body", body)
+    //   resolve(response)
+    // })
+    // })
   }
 
   async form(request: Hub.ActionRequest) {
