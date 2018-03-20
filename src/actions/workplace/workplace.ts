@@ -14,48 +14,6 @@ function log(...args: any[]) {
   console.log.apply(console, args)
 }
 
-// const _multiPartHeader = FormData.prototype._multiPartHeader
-// FormData.prototype._multiPartHeader
-//   = function _multiPartHeaderWrapper(field: any, value: any, options: any) {
-//   log("field", field)
-//   log("value", value)
-//   log("options", options)
-//   return _multiPartHeader.call(this, field, value, options)
-// }
-
-// const _getContentDisposition = FormData.prototype._getContentDisposition
-// FormData.prototype._getContentDisposition
-//   = function _getContentDispositionWrapper(value: any, options: any) {
-//   log("value", value)
-//   log("options", options)
-//   return _getContentDisposition.call(this, value, options)
-// }
-
-const methods = {
-  "facebook-api-with-plain-object"(request: Hub.ActionRequest) {
-    log(request)
-  },
-  "facebook-api-with-form-data-object"(request: Hub.ActionRequest) {
-    log(request)
-  },
-  "facebook-api-with-multi-part-object"(request: Hub.ActionRequest) {
-    log(request)
-  },
-  "request-with-plain-object"(request: Hub.ActionRequest) {
-    log(request)
-  },
-  "request-with-request-dot-form"(request: Hub.ActionRequest) {
-    log(request)
-  },
-  "request-with-form-data-object"(request: Hub.ActionRequest) {
-    log(request)
-  },
-  "request-with-multi-part-object"(request: Hub.ActionRequest) {
-    log(request)
-  },
-}
-log(Object.keys(methods))
-
 export class WorkplaceAction extends Hub.Action {
 
   name = "workplace-facebook"
@@ -79,32 +37,16 @@ export class WorkplaceAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     this.debugRequest(request)
 
-    // const fb = this.facebookClientFromRequest(request)
-    // const message = request.formParams.message || request.scheduledPlan!.title!
-    // const link = request.scheduledPlan && request.scheduledPlan.url
+    let response
 
     const photoResponse = await this.postToFacebook(request)
-    log("photoResponse", photoResponse)
 
-    let response
     if (!photoResponse || photoResponse.error) {
       response = { success: false, message: photoResponse ? photoResponse.error : "Error in Photo Upload Occurred" }
     }
+
     return new Hub.ActionResponse(response)
 
-    // const qs = {
-    //   message,
-    //   link,
-    //   attached_media: [{
-    //     media_fbid: photoResponse.id,
-    //   }],
-    // }
-
-    // const postResponse = await fb.api(`/${groupId}/feed`, "post", qs)
-    // if (!postResponse || postResponse.error) {
-    //   response = { success: false, message: postResponse ? postResponse.error : "Error in Feed Post Occurred" }
-    // }
-    // return new Hub.ActionResponse(response)
   }
 
   getMarkdownMessage(request: Hub.ActionRequest): string {
@@ -117,7 +59,14 @@ export class WorkplaceAction extends Hub.Action {
       throw "Missing title or url."
     }
 
-    return `[${title}](${url})`
+    const { message } = request.formParams
+
+    const parts = [
+      `[${title}](${url})`,
+      message,
+    ]
+
+    return parts.join("\n\n")
   }
 
   async postToFacebook(request: Hub.ActionRequest) {
@@ -126,7 +75,6 @@ export class WorkplaceAction extends Hub.Action {
       throw "Couldn't get data from attachment."
     }
     const buffer = request.attachment.dataBuffer
-    log("is Buffer", Buffer.isBuffer(buffer))
     const bufferType = fileType(buffer)
     log("bufferType", bufferType)
 
@@ -138,17 +86,6 @@ export class WorkplaceAction extends Hub.Action {
 
     const message = this.getMarkdownMessage(request)
     log("message", message)
-
-    const query = `access_token=${request.params.facebook_app_access_token}`
-    const graphUrl = `https://graph.facebook.com/${groupId}/photos?${query}`
-    log("graphUrl", graphUrl)
-
-    // const formData = new FormData()
-    // formData.append("image", buffer)
-
-    // create a stream from our buffer
-    // const bufferStream = new stream.PassThrough()
-    // bufferStream.end(buffer)
 
     const photoOptions = {
       source: {
@@ -168,12 +105,7 @@ export class WorkplaceAction extends Hub.Action {
 
     return response
 
-    // const graphOptions = {
-    //   method: "POST",
-    //   url: graphUrl,
-    //   // formData,
-    // }
-
+    // old req.post version below here
     // req.post({ url: graphUrl, formData: photoOptions }, (err, response, body) => {
     //   if (err) {
     //     return reject(err)
@@ -197,11 +129,12 @@ export class WorkplaceAction extends Hub.Action {
         required: true,
         type: "select",
       },
-      // {
-      //   label: "Message",
-      //   type: "string",
-      //   name: "message",
-      // },
+      {
+        description: "Optional message to accompany the post.",
+        label: "Message",
+        type: "string",
+        name: "message",
+      },
     ]
 
     return form
