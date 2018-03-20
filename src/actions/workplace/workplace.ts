@@ -1,5 +1,6 @@
 // import * as FormData from "form-data"
 import * as req from "request"
+import * as stream from "stream"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
@@ -30,6 +31,31 @@ function log(...args: any[]) {
 //   log("options", options)
 //   return _getContentDisposition.call(this, value, options)
 // }
+
+const methods = {
+  "facebook-api-with-plain-object"(request: Hub.ActionRequest) {
+    log(request)
+  },
+  "facebook-api-with-form-data-object"(request: Hub.ActionRequest) {
+    log(request)
+  },
+  "facebook-api-with-multi-part-object"(request: Hub.ActionRequest) {
+    log(request)
+  },
+  "request-with-plain-object"(request: Hub.ActionRequest) {
+    log(request)
+  },
+  "request-with-request-dot-form"(request: Hub.ActionRequest) {
+    log(request)
+  },
+  "request-with-form-data-object"(request: Hub.ActionRequest) {
+    log(request)
+  },
+  "request-with-multi-part-object"(request: Hub.ActionRequest) {
+    log(request)
+  },
+}
+log(Object.keys(methods))
 
 export class WorkplaceAction extends Hub.Action {
 
@@ -121,8 +147,12 @@ export class WorkplaceAction extends Hub.Action {
       // const formData = new FormData()
       // formData.append("image", buffer)
 
+      // create a stream from our buffer
+      const bufferStream = new stream.PassThrough()
+      bufferStream.end(buffer)
+
       const photoOptions = {
-        source: buffer,
+        source: bufferStream,
         message,
         formatting: "MARKDOWN",
       }
