@@ -132,7 +132,7 @@ export class WorkplaceAction extends Hub.Action {
       {
         description: "Optional message to accompany the post.",
         label: "Message",
-        type: "string",
+        type: "textarea",
         name: "message",
       },
     ]
