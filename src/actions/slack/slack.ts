@@ -24,42 +24,44 @@ export class SlackAttachmentAction extends Hub.Action {
   }]
 
   async execute(request: Hub.ActionRequest) {
-    return new Promise <Hub.ActionResponse>((resolve, reject) => {
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment."
+    }
 
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        reject("Couldn't get data from attachment.")
-        return
-      }
+    if (!request.formParams || !request.formParams.channel) {
+      throw "Missing channel."
+    }
 
-      if (!request.formParams || !request.formParams.channel) {
-        reject("Missing channel.")
-        return
-      }
+    const fileName = request.formParams.filename || request.suggestedFilename()
 
-      const slack = this.slackClientFromRequest(request)
-
-      const fileName = request.formParams.filename || request.suggestedFilename()
-
-      const options = {
-        file: {
-          value: request.attachment.dataBuffer,
-          options: {
-            filename: fileName,
-          },
+    const options = {
+      file: {
+        value: request.attachment.dataBuffer,
+        options: {
+          filename: fileName,
         },
-        channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment,
-      }
+      },
+      channels: request.formParams.channel,
+      filetype: request.attachment.fileExtension,
+      initial_comment: request.formParams.initial_comment,
+    }
 
-      let response
-      slack.files.upload(fileName, options, (err: any) => {
-        if (err) {
-          response = {success: true, message: err.message}
-        }
+    let response
+    try {
+      const slack = this.slackClientFromRequest(request)
+      await new Promise<void>((resolve, reject) => {
+        slack.files.upload(fileName, options, (err: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
       })
-      resolve(new Hub.ActionResponse(response))
-    })
+    } catch (e) {
+      response = { success: false, message: e.message }
+    }
+    return new Hub.ActionResponse(response)
   }
 
   async form(request: Hub.ActionRequest) {
