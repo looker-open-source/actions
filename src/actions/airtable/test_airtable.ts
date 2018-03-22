@@ -101,6 +101,46 @@ describe(`${action.constructor.name} unit tests`, () => {
         {"cool field": "funvalue"})
     })
 
+    it("returns failure on airtable create error", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {
+        base: "mybase",
+        table: "mytable",
+      }
+      request.attachment = {
+        dataJSON: {
+          fields: {
+            dimensions: [
+              { name: "coolview.coolfield", tags: ["user_id"] },
+            ],
+          },
+          data: [{ "coolview.coolfield": { value: "funvalue" } }],
+        },
+      }
+      const tableSpy = sinon.spy(() => ({
+        create: (_rec: any, cb: (err: any) => void) => {
+          cb({
+            type: "TABLE_NOT_FOUND",
+            message: "Could not find table Contacts123 in application app",
+          })
+        },
+      }))
+      const baseSpy = sinon.spy(() => (tableSpy))
+
+      const stubPost = sinon.stub(action as any, "airtableClientFromRequest")
+        .callsFake(() => ({
+          base: baseSpy,
+        }))
+      return chai.expect(action.execute(request)).to.eventually.deep.equal({
+        success: false,
+        message: "Could not find table Contacts123 in application app",
+        refreshQuery: false,
+        validationErrors: [],
+      }).then(() => {
+        stubPost.restore()
+      })
+    })
+
   })
 
   describe("form", () => {
