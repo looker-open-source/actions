@@ -3,7 +3,7 @@ import * as Hub from "../../hub"
 import * as S3 from "aws-sdk/clients/s3"
 
 import * as winston from "winston"
-import {PassThrough} from "stream"
+import { PassThrough } from "stream"
 
 export class AmazonS3Action extends Hub.Action {
 
