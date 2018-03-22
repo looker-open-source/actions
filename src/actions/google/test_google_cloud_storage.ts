@@ -47,7 +47,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
       const action = integration.execute(request)
 
       return chai.expect(action).to.eventually
-        .be.rejectedWith("Need GCS bucket.")
+        .be.rejectedWith("Need Google Cloud Storage bucket.")
     })
 
     it("errors if the input has no attachment", () => {
