@@ -44,6 +44,8 @@ export interface ActionScheduledPlan {
   query?: WireResponseQuery | null
   /** A boolean representing whether this schedule payload has customized the filter values. */
   filtersDifferFromLook?: boolean
+  /** A string to be included in scheduled integrations if this scheduled plan is a download query */
+  downloadUrl?: string | null
 }
 
 export class ActionRequest {
@@ -95,6 +97,7 @@ export class ActionRequest {
         title: json.scheduled_plan.title,
         type: json.scheduled_plan.type,
         url: json.scheduled_plan.url,
+        downloadUrl: json.scheduled_plan.download_url,
       }
     }
 

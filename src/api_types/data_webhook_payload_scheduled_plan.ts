@@ -63,5 +63,7 @@ export class WireResponseDataWebhookPayloadScheduledPlan {
   query!: WireResponseQuery | null
   /** A boolean representing whether this schedule payload has customized the filter values compared to the underlying content item. */
   filters_differ_from_look!: boolean
+  /** */
+  download_url!: string | null
 }
 /* tslint:enable:variable-name */
