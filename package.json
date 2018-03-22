@@ -28,6 +28,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/storage": "^1.5.2",
     "@sendgrid/helpers": "^6.1.5",
     "@sendgrid/mail": "^6.1.4",
     "@slack/client": "^3.14.0",
@@ -55,8 +56,9 @@
     "express": "^4.16.2",
     "express-winston": "^2.4.0",
     "hipchatter": "^1.0.0",
-    "jira-client": "^6.4.0",
+    "jira-client": "^6.4.1",
     "node-marketo-rest": "^0.3.8",
+    "mailchimp": "^1.2.0",
     "nodemon": "^1.12.1",
     "raven": "^2.4.0",
     "request-promise-native": "^1.0.5",
