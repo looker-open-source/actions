@@ -24,7 +24,12 @@ export class StripeRefundAction extends Hub.Action {
     requiredFields = [{ tag: TAG }]
 
     async execute(request: Hub.ActionRequest) {
-        stripe_client = stripe(request.params.secret_key)
+        let stripe_client: stripe
+        if (!request.params.value) {
+            throw "Couldn't find secret key."
+        }
+        stripe_client = new stripe(request.params.secret_key!)
+
         let charge_id: string
         if (!request.params.value) {
             throw "Couldn't get data from cell."

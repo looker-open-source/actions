@@ -42,6 +42,7 @@
     "@types/sanitize-filename": "^1.1.28",
     "@types/semver": "^5.4.0",
     "@types/ssh2-sftp-client": "^2.0.0",
+    "@types/stripe": "^5.0.8",
     "@types/twilio": "^0.0.9",
     "@types/uuid": "^3.4.3",
     "@types/winston": "^2.3.6",

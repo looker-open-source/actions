@@ -237,6 +237,12 @@
   version "0.0.30"
   resolved "https://registry.yarnpkg.com/@types/strip-json-comments/-/strip-json-comments-0.0.30.tgz#9aa30c04db212a9a0649d6ae6fd50accc40748a1"
 
+"@types/stripe@^5.0.8":
+  version "5.0.8"
+  resolved "https://registry.yarnpkg.com/@types/stripe/-/stripe-5.0.8.tgz#14b4ec93e9572644a3461ebd1d5b0e72f9288a1e"
+  dependencies:
+    "@types/node" "*"
+
 "@types/twilio@^0.0.9":
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/@types/twilio/-/twilio-0.0.9.tgz#dac8236bf714a85955cb6bc63273b2c56c9c484b"
