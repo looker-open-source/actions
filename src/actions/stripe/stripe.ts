@@ -8,7 +8,7 @@ export class StripeRefundAction extends Hub.Action {
 
     name = "stripe_refund_charge"
     label = "Stripe - Refund Charge"
-    iconName = "amazon/amazon_ec2.png"
+    iconName = "stripe/stripe_logo.png"
     description = "Refund a Stripe charge."
     params = [
         {
@@ -22,6 +22,19 @@ export class StripeRefundAction extends Hub.Action {
     supportedActionTypes = [Hub.ActionType.Cell]
     supportedFormats = [Hub.ActionFormat.JsonDetail]
     requiredFields = [{ tag: TAG }]
+
+    async form(request: Hub.ActionRequest) {
+        const form = new Hub.ActionForm()
+
+        form.fields = [{
+            label: "Reason",
+            name: "reason",
+            required: false,
+            type: "string",
+        }]
+
+        return form
+    }
 
     async execute(request: Hub.ActionRequest) {
         let stripe_client: stripe
