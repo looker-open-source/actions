@@ -31,7 +31,7 @@ export class StripeRefundAction extends Hub.Action {
             description: "The reason for this refund.",
             label: "Reason",
             name: "reason",
-            options: ["duplicate", "fraudulent", "requested_by_customer"],
+            options: [{name: "duplicate", label: "duplicate"}, {name:"fraudulent", label:"fraudulent"}, {name: "requested_by_customer", label: "requested_by_customer"}],
             required: false,
             type: "select",
         }]
