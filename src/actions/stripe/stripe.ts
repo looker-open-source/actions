@@ -1,6 +1,7 @@
 import * as Hub from "../../hub"
 
 import * as stripe from "stripe"
+import {endianness} from "os";
 
 const TAG = "stripe_charge_id"
 
@@ -27,10 +28,12 @@ export class StripeRefundAction extends Hub.Action {
         const form = new Hub.ActionForm()
 
         form.fields = [{
+            description: "The reason for this refund.",
             label: "Reason",
             name: "reason",
+            options: ["duplicate", "fraudulent", "requested_by_customer"],
             required: false,
-            type: "string",
+            type: "select",
         }]
 
         return form
@@ -48,7 +51,11 @@ export class StripeRefundAction extends Hub.Action {
             throw "Couldn't get data from cell."
         }
         charge_id = request.params.value
+
         const params = {charge: charge_id}
+        if (request.formParams.reason !== undefined) {
+            params["reason"] = request.formParams.reason
+        }
 
         let response
         try {
