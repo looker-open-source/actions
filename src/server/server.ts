@@ -186,6 +186,7 @@ export default class Server implements Hub.RouteBuilder {
           client_secret: process.env.WORKPLACE_APP_SECRET,
           redirect_uri: process.env.WORKPLACE_APP_REDIRECT,
           code: req.query.code,
+          grant_type: "manage_pages,publish_pages",
         })
         nodeRequest(
           baseURL + "/oauth/access_token?" + tokenQueryString,
