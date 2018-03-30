@@ -134,98 +134,113 @@ export default class Server implements Hub.RouteBuilder {
 
     // ported from https://github.com/jokr/workplace-demo-authentication
     this.app.get("/actions/workplace/install", (req, res) => {
-      if (!req.query.code) {
-        return res
-          .status(400)
-          .send({ message: "No code received." })
-      }
-      const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
-      const tokenQueryString = qs.stringify({
-        client_id: process.env.WORKPLACE_APP_ID,
-        client_secret: process.env.WORKPLACE_APP_SECRET,
-        redirect_uri: process.env.WORKPLACE_APP_REDIRECT,
-        code: req.query.code,
-      })
-      nodeRequest(
-        baseURL + "/oauth/access_token?" + tokenQueryString,
-        (tokenErr: any, tokenResponse: any, tokenBody: any) => {
-          if (tokenErr) {
-            return res
-              .status(500)
-              .send(
-                {
-                  message: "Error when sending request for access token.",
-                  code: tokenErr,
-                },
-            )
-          }
-          const parsedTokenBody = JSON.parse(tokenBody)
-          if (tokenResponse.statusCode !== 200) {
-            return res
-              .status(500)
-              .send(
-                {
-                  message: "Access token exchange failed.",
-                  code: JSON.stringify(parsedTokenBody.error),
-                },
-            )
-          }
-
-          const accessToken = parsedTokenBody.access_token
-          if (!accessToken) {
-            return res
-              .status(500)
-              .send(
-                { message: "Response did not contain an access token." },
-            )
-          }
-          const appsecretTime = Math.floor(Date.now() / 1000)
-          const appsecretProof = crypto
-            .createHmac("sha256", process.env.APP_SECRET)
-            .update(accessToken + "|" + appsecretTime)
-            .digest("hex")
-          const companyQueryString = qs.stringify({
-            fields: "name",
-            access_token: accessToken,
-            appsecret_proof: appsecretProof,
-            appsecret_time: appsecretTime,
-          })
-
-          nodeRequest(
-            baseURL + "/company?" + companyQueryString,
-            (companyErr: any, companyResponse: any, companyBody: any) => {
-              if (companyErr) {
+      try {
+        if (!req.query.code) {
+          return res
+            .status(400)
+            .send({ message: "No code received." })
+        }
+        const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
+        const tokenQueryString = qs.stringify({
+          client_id: process.env.WORKPLACE_APP_ID,
+          client_secret: process.env.WORKPLACE_APP_SECRET,
+          redirect_uri: process.env.WORKPLACE_APP_REDIRECT,
+          code: req.query.code,
+        })
+        nodeRequest(
+          baseURL + "/oauth/access_token?" + tokenQueryString,
+          (tokenErr: any, tokenResponse: any, tokenBody: any) => {
+            try {
+              if (tokenErr) {
                 return res
                   .status(500)
                   .send(
                     {
-                      message: "Error when sending a graph request.",
-                      code: companyErr,
+                      message: "Error when sending request for access token.",
+                      code: tokenErr,
                     },
                 )
               }
-              const parsedCompanyBody = JSON.parse(companyBody)
-              if (companyResponse.statusCode !== 200) {
+              const parsedTokenBody = JSON.parse(tokenBody)
+              if (tokenResponse.statusCode !== 200) {
                 return res
                   .status(500)
                   .send(
                     {
-                      message: "Graph API returned an error.",
-                      code: JSON.stringify(parsedCompanyBody.error),
+                      message: "Access token exchange failed.",
+                      code: JSON.stringify(parsedTokenBody.error),
                     },
                 )
               }
 
-              return res.send(
-                {
-                  companyName: parsedCompanyBody.name,
-                  accessToken,
+              const accessToken = parsedTokenBody.access_token
+              if (!accessToken) {
+                return res
+                  .status(500)
+                  .send(
+                    { message: "Response did not contain an access token." },
+                )
+              }
+              const appsecretTime = Math.floor(Date.now() / 1000)
+              const appsecretProof = crypto
+                .createHmac("sha256", process.env.APP_SECRET)
+                .update(accessToken + "|" + appsecretTime)
+                .digest("hex")
+              const companyQueryString = qs.stringify({
+                fields: "name",
+                access_token: accessToken,
+                appsecret_proof: appsecretProof,
+                appsecret_time: appsecretTime,
+              })
+
+              nodeRequest(
+                baseURL + "/company?" + companyQueryString,
+                (companyErr: any, companyResponse: any, companyBody: any) => {
+                  try {
+                    if (companyErr) {
+                      return res
+                        .status(500)
+                        .send(
+                          {
+                            message: "Error when sending a graph request.",
+                            code: companyErr,
+                          },
+                      )
+                    }
+                    const parsedCompanyBody = JSON.parse(companyBody)
+                    if (companyResponse.statusCode !== 200) {
+                      return res
+                        .status(500)
+                        .send(
+                          {
+                            message: "Graph API returned an error.",
+                            code: JSON.stringify(parsedCompanyBody.error),
+                          },
+                      )
+                    }
+
+                    return res.send(
+                      {
+                        companyName: parsedCompanyBody.name,
+                        accessToken,
+                      },
+                    )
+                  } catch (companyRequestError) {
+                    console.log(companyRequestError)
+                    res.send({ companyRequestError })
+                  }
                 },
               )
-            },
-          )
-        },
-      )
+            } catch (accessTokenRequestError) {
+              console.log(accessTokenRequestError)
+              res.send({ accessTokenRequestError })
+            }
+          },
+        )
+      } catch (outerRequestError) {
+        console.log(outerRequestError)
+        res.send({ outerRequestError })
+      }
     })
 
   }
