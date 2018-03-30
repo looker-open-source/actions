@@ -60,6 +60,7 @@
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.0",
     "nodemon": "^1.12.1",
+    "qs": "^6.5.1",
     "raven": "^2.4.0",
     "request": "^2.85.0",
     "request-promise-native": "^1.0.5",

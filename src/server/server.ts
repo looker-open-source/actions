@@ -10,6 +10,9 @@ import * as Hub from "../hub"
 import * as apiKey from "./api_key"
 
 const expressWinston = require("express-winston")
+const crypto = require("crypto")
+const qs = require("qs")
+const nodeRequest = require("request")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
@@ -58,7 +61,7 @@ export default class Server implements Hub.RouteBuilder {
   static listen(port = process.env.PORT || 8080) {
     const app = new Server().app
     app.listen(port, () => {
-      winston.info(`Action Hub listening!`, {port})
+      winston.info(`Action Hub listening!`, { port })
     })
   }
 
@@ -71,16 +74,17 @@ export default class Server implements Hub.RouteBuilder {
       this.app.use(Raven.requestHandler())
       this.app.use(Raven.errorHandler())
     }
-    this.app.use(bodyParser.json({limit: "250mb"}))
+    this.app.use(bodyParser.json({ limit: "250mb" }))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
       dynamicMeta: this.requestLog,
-      requestFilter(req: {[key: string]: any}, propName: string) {
+      requestFilter(req: { [key: string]: any }, propName: string) {
         if (propName !== "headers") {
           return req[propName]
         }
       },
     }))
+    this.app.set("view engine", "pug")
     this.app.use(express.static("public"))
 
     this.route("/", async (req, res) => {
@@ -102,7 +106,7 @@ export default class Server implements Hub.RouteBuilder {
 
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
-      const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasExecute) {
         const actionResponse = await action.validateAndExecute(request)
         res.json(actionResponse.asJson())
@@ -115,8 +119,8 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasForm) {
-         const form = await action.validateAndFetchForm(request)
-         res.json(form.asJson())
+        const form = await action.validateAndFetchForm(request)
+        res.json(form.asJson())
       } else {
         throw "No form defined for action."
       }
@@ -126,6 +130,102 @@ export default class Server implements Hub.RouteBuilder {
     // into the project root, which will get served by this endpoint (or 404 otherwise).
     this.app.get("/status", (_req, res) => {
       res.sendFile(statusJsonPath)
+    })
+
+    // ported from https://github.com/jokr/workplace-demo-authentication
+    this.app.get("/actions/workplace/install", (req, res) => {
+      if (!req.query.code) {
+        return res
+          .status(400)
+          .send({ message: "No code received." })
+      }
+      const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
+      const tokenQueryString = qs.stringify({
+        client_id: process.env.WORKPLACE_APP_ID,
+        client_secret: process.env.WORKPLACE_APP_SECRET,
+        redirect_uri: process.env.WORKPLACE_APP_REDIRECT,
+        code: req.query.code,
+      })
+      nodeRequest(
+        baseURL + "/oauth/access_token?" + tokenQueryString,
+        (tokenErr: any, tokenResponse: any, tokenBody: any) => {
+          if (tokenErr) {
+            return res
+              .status(500)
+              .send(
+                {
+                  message: "Error when sending request for access token.",
+                  code: tokenErr,
+                },
+            )
+          }
+          const parsedTokenBody = JSON.parse(tokenBody)
+          if (tokenResponse.statusCode !== 200) {
+            return res
+              .status(500)
+              .send(
+                {
+                  message: "Access token exchange failed.",
+                  code: JSON.stringify(parsedTokenBody.error),
+                },
+            )
+          }
+
+          const accessToken = parsedTokenBody.access_token
+          if (!accessToken) {
+            return res
+              .status(500)
+              .send(
+                { message: "Response did not contain an access token." },
+            )
+          }
+          const appsecretTime = Math.floor(Date.now() / 1000)
+          const appsecretProof = crypto
+            .createHmac("sha256", process.env.APP_SECRET)
+            .update(accessToken + "|" + appsecretTime)
+            .digest("hex")
+          const companyQueryString = qs.stringify({
+            fields: "name",
+            access_token: accessToken,
+            appsecret_proof: appsecretProof,
+            appsecret_time: appsecretTime,
+          })
+
+          nodeRequest(
+            baseURL + "/company?" + companyQueryString,
+            (companyErr: any, companyResponse: any, companyBody: any) => {
+              if (companyErr) {
+                return res
+                  .status(500)
+                  .send(
+                    {
+                      message: "Error when sending a graph request.",
+                      code: companyErr,
+                    },
+                )
+              }
+              const parsedCompanyBody = JSON.parse(companyBody)
+              if (companyResponse.statusCode !== 200) {
+                return res
+                  .status(500)
+                  .send(
+                    {
+                      message: "Graph API returned an error.",
+                      code: JSON.stringify(parsedCompanyBody.error),
+                    },
+                )
+              }
+
+              return res.send(
+                {
+                  companyName: parsedCompanyBody.name,
+                  accessToken,
+                },
+              )
+            },
+          )
+        },
+      )
     })
 
   }
@@ -153,7 +253,7 @@ export default class Server implements Hub.RouteBuilder {
       const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
-        res.json({success: false, error: "Invalid 'Authorization' header."})
+        res.json({ success: false, error: "Invalid 'Authorization' header." })
         this.logInfo(req, res, "Unauthorized request.")
         return
       }
@@ -162,13 +262,13 @@ export default class Server implements Hub.RouteBuilder {
         await fn(req, res)
       } catch (e) {
         this.logError(req, res, "Error on request")
-        if (typeof(e) === "string") {
+        if (typeof (e) === "string") {
           res.status(404)
-          res.json({success: false, error: e})
+          res.json({ success: false, error: e })
           this.logError(req, res, e)
         } else {
           res.status(500)
-          res.json({success: false, error: "Internal server error."})
+          res.json({ success: false, error: "Internal server error." })
           this.logError(req, res, e)
           if (useRaven()) {
             Raven.captureException(e)
