@@ -143,34 +143,40 @@ export class WorkplaceAction extends Hub.Action {
 
   private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
     const fb = this.facebookClientFromRequest(request)
-    const response = await fb.api("/community")
+    const options = this.getAppSecretOptions(request)
+    const response = await fb.api("/community", options)
     if (!(response && response.id)) {
       throw "No community."
     }
-    const groups = await this.usableGroups(fb, response.id)
+    const groups = await this.usableGroups(fb, response.id, options)
     return groups
   }
 
-  private async usableGroups(fb: any, community: string) {
-    const response = await fb.api(`/${encodeURIComponent(community)}/groups`)
+  private async usableGroups(fb: any, community: string, options: any) {
+    const response = await fb.api(`/${encodeURIComponent(community)}/groups`, options)
     const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
     return groups.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
     const accessToken = request.params.facebook_app_access_token
+    const options = {
+      accessToken,
+    }
+    return new FB.Facebook(options)
+  }
+
+  private getAppSecretOptions(request: Hub.ActionRequest) {
+    const accessToken = request.params.facebook_app_access_token
     const appsecretTime = Math.floor(Date.now() / 1000)
     const appsecretProof = crypto
       .createHmac("sha256", process.env.WORKPLACE_APP_SECRET)
       .update(accessToken + "|" + appsecretTime)
       .digest("hex")
-
-    const options = {
-      accessToken,
-      appsecretTime,
-      appsecretProof,
+    return {
+      appsecret_time: appsecretTime,
+      appsecret_proof: appsecretProof,
     }
-    return new FB.Facebook(options)
   }
 
   private debugRequest(request: Hub.ActionRequest) {
