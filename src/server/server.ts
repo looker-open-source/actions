@@ -183,7 +183,7 @@ export default class Server implements Hub.RouteBuilder {
               }
               const appsecretTime = Math.floor(Date.now() / 1000)
               const appsecretProof = crypto
-                .createHmac("sha256", process.env.APP_SECRET)
+                .createHmac("sha256", process.env.WORKPLACE_APP_SECRET)
                 .update(accessToken + "|" + appsecretTime)
                 .digest("hex")
               const companyQueryString = qs.stringify({
