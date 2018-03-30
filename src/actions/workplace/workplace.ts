@@ -102,6 +102,10 @@ export class WorkplaceAction extends Hub.Action {
 
     const fb = this.facebookClientFromRequest(request)
 
+    // add appsecret_proof and appsecret_time to the options
+    const options = this.getAppSecretOptions(request)
+    Object.assign(photoOptions, options)
+
     const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
 
     return response
