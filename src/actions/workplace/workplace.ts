@@ -3,6 +3,7 @@
 import * as Hub from "../../hub"
 
 const FB = require("fb")
+const crypto = require("crypto")
 const fileType = require("file-type")
 
 export interface Destination {
@@ -157,8 +158,17 @@ export class WorkplaceAction extends Hub.Action {
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
+    const accessToken = request.params.facebook_app_access_token
+    const appsecretTime = Math.floor(Date.now() / 1000)
+    const appsecretProof = crypto
+      .createHmac("sha256", process.env.WORKPLACE_APP_SECRET)
+      .update(accessToken + "|" + appsecretTime)
+      .digest("hex")
+
     const options = {
-      accessToken: request.params.facebook_app_access_token,
+      accessToken,
+      appsecretTime,
+      appsecretProof,
     }
     return new FB.Facebook(options)
   }
