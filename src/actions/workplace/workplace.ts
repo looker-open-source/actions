@@ -15,9 +15,8 @@ function log(...args: any[]) {
   console.log.apply(console, args)
 }
 
-const description = `Install the Looker app for Facebook Workplace,
- and enter the provided token in this field.
- https://workplace.facebook.com/work/admin/?section=apps&app_id=188384231761746`
+// tslint:disable-next-line max-line-length
+const description = "Install the <a href=\"https://workplace.facebook.com/work/admin/?section=apps&app_id=188384231761746\">Looker app for Facebook Workplace</a>, and enter the provided token in this field."
 
 export class WorkplaceAction extends Hub.Action {
 
