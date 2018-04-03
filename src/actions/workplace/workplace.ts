@@ -15,6 +15,10 @@ function log(...args: any[]) {
   console.log.apply(console, args)
 }
 
+const description = `Install the Looker app for Facebook Workplace,
+ and enter the provided token in this field.
+ https://workplace.facebook.com/work/admin/?section=apps&app_id=188384231761746`
+
 export class WorkplaceAction extends Hub.Action {
 
   name = "workplace-facebook"
@@ -29,8 +33,7 @@ export class WorkplaceAction extends Hub.Action {
       name: "facebook_app_access_token",
       label: "Facebook App Access Token",
       required: true,
-      description:
-        "https://developers.facebook.com/docs/workplace/integrations/custom-integrations/reference#appaccesstoken",
+      description,
       sensitive: true,
     },
   ]
