@@ -123,7 +123,7 @@ export class SegmentTrackAction extends Hub.Action {
     form.fields = [{
       name: "event",
       label: "Event",
-      description: "The name of the event you’re tracking",
+      description: "The name of the event you’re tracking.",
       type: "string",
       required: true,
     }]
