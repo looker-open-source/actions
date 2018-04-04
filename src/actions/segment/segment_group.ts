@@ -1,3 +1,5 @@
+import * as uuid from "uuid"
+
 import * as Hub from "../../hub"
 
 const segment: any = require("analytics-node")
@@ -61,6 +63,7 @@ export class SegmentGroupAction extends Hub.Action {
       const anonymousIdField = fields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
       )[0]
+      const anonymousId = this.generateAnonymousId()
       const userIdField = fields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "user_id"),
       )[0]
@@ -91,7 +94,7 @@ export class SegmentGroupAction extends Hub.Action {
 
         segmentClient.group({
           groupId: groupIdField ? row[groupIdField.name].value : null,
-          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : null,
+          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : userIdField ? null : anonymousId,
           context,
           traits,
           timestamp: ranAt,
@@ -112,6 +115,10 @@ export class SegmentGroupAction extends Hub.Action {
 
   private segmentClientFromRequest(request: Hub.ActionRequest) {
     return new segment(request.params.segment_write_key)
+  }
+
+  private generateAnonymousId() {
+    return uuid.v4()
   }
 
 }
