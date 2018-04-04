@@ -12,9 +12,11 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
     .callsFake(() => {
       return { group: groupSpy, flush: (cb: () => void) => cb()}
      })
+  const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(groupSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
+    stubAnon.restore()
   })
 }
 
@@ -67,7 +69,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }}
       return expectSegmentMatch(request, {
         groupId: "funvalue",
-        anonymousId: null,
+        anonymousId: "stubanon",
         userId: null,
       })
     })
