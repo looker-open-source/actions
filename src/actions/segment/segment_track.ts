@@ -4,13 +4,13 @@ import * as Hub from "../../hub"
 
 const segment: any = require("analytics-node")
 
-export class SegmentAction extends Hub.Action {
+export class SegmentTrackAction extends Hub.Action {
 
   allowedTags = ["email", "user_id", "segment_anonymous_id"]
 
-  name = "segment"
-  label = "Segment Identify"
-  description = "Add traits via identify to you Segment users."
+  name = "segment_track"
+  label = "Segment Track"
+  description = "Add traits via track to your Segment users."
   iconName = "segment/segment.png"
   params = [
     {
@@ -26,7 +26,7 @@ export class SegmentAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
-  minimumSupportedLookerVersion = "4.20.0"
+  minimumSupportedLookerVersion = "5.5.0"
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
@@ -97,10 +97,11 @@ export class SegmentAction extends Hub.Action {
             traits.email = value
           }
         }
-        segmentClient.identify({
+        segmentClient.track({
           anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
           context,
-          traits,
+          event: request.formParams.event!,
+          properties: traits,
           timestamp: ranAt,
           userId: idField ? row[idField.name].value : null,
         })
@@ -117,6 +118,18 @@ export class SegmentAction extends Hub.Action {
     })
   }
 
+  async form() {
+    const form = new Hub.ActionForm()
+    form.fields = [{
+      name: "event",
+      label: "Event",
+      description: "The name of the event you’re tracking",
+      type: "string",
+      required: true,
+    }]
+    return form
+  }
+
   private segmentClientFromRequest(request: Hub.ActionRequest) {
     return new segment(request.params.segment_write_key)
   }
@@ -127,4 +140,4 @@ export class SegmentAction extends Hub.Action {
 
 }
 
-Hub.addAction(new SegmentAction())
+Hub.addAction(new SegmentTrackAction())
