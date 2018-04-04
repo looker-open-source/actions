@@ -10,11 +10,16 @@ function capitalizeFirstLetter(s: string) {
   }
 }
 
+export enum segmentCallTypes {
+  Identify = "identify",
+  Track = "track",
+}
+
 export class SegmentAction extends Hub.Action {
 
   allowedTags = ["email", "user_id", "segment_anonymous_id"]
 
-  segmentCall: string
+  segmentCallType: segmentCallTypes
   name: string
   label: string
   description: string
@@ -34,12 +39,12 @@ export class SegmentAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
 
-  constructor(segmentCall?: string, minimumSupportedLookerVersion?: string) {
+  constructor(segmentCallType?: segmentCallTypes, minimumSupportedLookerVersion?: string) {
     super()
-    this.segmentCall = segmentCall || "identify"
-    this.name = this.segmentCall === "identify" ? "segment" : `segment_${this.segmentCall}`
-    this.label = `Segment ${capitalizeFirstLetter(this.segmentCall)}`
-    this.description = `Add traits via ${this.segmentCall} to your Segment users.`
+    this.segmentCallType = segmentCallType || segmentCallTypes.Identify
+    this.name = this.segmentCallType === segmentCallTypes.Identify ? "segment" : `segment_${this.segmentCallType}`
+    this.label = `Segment ${capitalizeFirstLetter(this.segmentCallType)}`
+    this.description = `Add traits via ${this.segmentCallType} to your Segment users.`
     if (minimumSupportedLookerVersion) {
       this.minimumSupportedLookerVersion = minimumSupportedLookerVersion
     }
@@ -114,14 +119,22 @@ export class SegmentAction extends Hub.Action {
             traits.email = value
           }
         }
-
-        segmentClient[this.segmentCall]({
+        const message: any = {
           anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
           context,
-          traits,
           timestamp: ranAt,
           userId: idField ? row[idField.name].value : null,
-        })
+        }
+        switch (this.segmentCallType) {
+          case segmentCallTypes.Identify:
+            message.traits = traits
+            break
+          case segmentCallTypes.Track:
+            message.event = ""
+            message.properties = traits
+            break
+        }
+        segmentClient[this.segmentCallType](message)
       }
 
       segmentClient.flush((err: any) => {
@@ -145,5 +158,5 @@ export class SegmentAction extends Hub.Action {
 
 }
 
-Hub.addAction(new SegmentAction("identify", "4.20.0"))
-Hub.addAction(new SegmentAction("track", "5.5.0"))
+Hub.addAction(new SegmentAction(segmentCallTypes.Identify, "4.20.0"))
+Hub.addAction(new SegmentAction(segmentCallTypes.Track, "5.5.0"))

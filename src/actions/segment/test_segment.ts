@@ -2,15 +2,15 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
-import { SegmentAction } from "./segment"
+import { SegmentAction, segmentCallTypes } from "./segment"
 
-const action = new SegmentAction("segmentCall")
+const action = new SegmentAction(segmentCallTypes.Identify)
 
 function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
   const segmentCallSpy = sinon.spy()
   const stubClient = sinon.stub(action as any, "segmentClientFromRequest")
     .callsFake(() => {
-      return {segmentCall: segmentCallSpy, flush: (cb: () => void) => cb()}
+      return {identify: segmentCallSpy, flush: (cb: () => void) => cb()}
      })
   const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
@@ -30,15 +30,18 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("has correct name", () => {
-      return chai.expect(action.name).equal("segment_segmentCall")
+      const trackAction = new SegmentAction(segmentCallTypes.Track)
+      return chai.expect(trackAction.name).equal("segment_track")
     })
 
     it("has correct label", () => {
-      return chai.expect(action.label).equal("Segment SegmentCall")
+      const trackAction = new SegmentAction(segmentCallTypes.Track)
+      return chai.expect(trackAction.label).equal("Segment Track")
     })
 
     it("has correct description", () => {
-      return chai.expect(action.description).equal("Add traits via segmentCall to your Segment users.")
+      const trackAction = new SegmentAction(segmentCallTypes.Track)
+      return chai.expect(trackAction.description).equal("Add traits via track to your Segment users.")
     })
 
     it("errors if the input has no attachment", () => {
