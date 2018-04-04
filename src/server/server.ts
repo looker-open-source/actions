@@ -9,10 +9,9 @@ import * as winston from "winston"
 import * as Hub from "../hub"
 import * as apiKey from "./api_key"
 
+import { installWorkplace } from "../actions/workplace/install"
+
 const expressWinston = require("express-winston")
-const crypto = require("crypto")
-const qs = require("qs")
-const nodeRequest = require("request")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
@@ -131,149 +130,7 @@ export default class Server implements Hub.RouteBuilder {
       res.sendFile(statusJsonPath)
     })
 
-    function renderError(error: any) {
-      return `
-        <html>
-          <head>
-            <title>An Error Occurred.</title>
-            <link rel="stylesheet" href="/install/workplace/styles.css" />
-          </head>
-          <body class="error">
-            <h1>Sorry, an error occurred:</h1>
-            <div class="error-message">
-              ${JSON.stringify(error)}
-            </div>
-          </body>
-        </html>
-      `
-    }
-
-    function renderSuccess({ accessToken }: any) {
-      /* tslint:disable */
-      return `
-        <html>
-          <head>
-            <title>Success</title>
-            <link rel="stylesheet" href="/install/workplace/styles.css" />
-          </head>
-          <body class="success">
-            <h1>Your Access Token:</h1>
-            <div class="access-token">${accessToken}</div>
-
-            <h2>Please copy and paste this token into the Workplace by Facebook Action config settings in your Looker instance.</h2>
-
-            <img src="/install/workplace/instruction-1.png" alt="Edit Workplace by Facebook Action in Looker instance" />
-
-            <img src="/install/workplace/instruction-2.png" alt="Paste Access Token and Save" />
-
-          </body>
-        </html>
-      `
-      /* tslint:enable */
-    }
-
-    // ported from https://github.com/jokr/workplace-demo-authentication
-    this.app.get("/actions/workplace/install", (req, res) => {
-      try {
-        if (!req.query.code) {
-          return res
-            .status(400)
-            .send(renderError({ message: "No code received." }))
-        }
-        const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
-        const tokenQueryString = qs.stringify({
-          client_id: process.env.WORKPLACE_APP_ID,
-          client_secret: process.env.WORKPLACE_APP_SECRET,
-          redirect_uri: process.env.WORKPLACE_APP_REDIRECT,
-          code: req.query.code,
-          scopes: "manage_pages,publish_pages",
-        })
-        nodeRequest(
-          baseURL + "/oauth/access_token?" + tokenQueryString,
-          (tokenErr: any, tokenResponse: any, tokenBody: any) => {
-            try {
-              if (tokenErr) {
-                return res
-                  .status(500)
-                  .send(renderError({
-                    message: "Error when sending request for access token.",
-                    code: tokenErr,
-                  }))
-              }
-              const parsedTokenBody = JSON.parse(tokenBody)
-              if (tokenResponse.statusCode !== 200) {
-                return res
-                  .status(500)
-                  .send(renderError({
-                    message: "Access token exchange failed.",
-                    code: JSON.stringify(parsedTokenBody.error),
-                  }))
-              }
-
-              const accessToken = parsedTokenBody.access_token
-              if (!accessToken) {
-                return res
-                  .status(500)
-                  .send(renderError({
-                    message: "Response did not contain an access token.",
-                  }))
-              }
-              const appsecretTime = Math.floor(Date.now() / 1000)
-              const appsecretProof = crypto
-                .createHmac("sha256", process.env.WORKPLACE_APP_SECRET)
-                .update(accessToken + "|" + appsecretTime)
-                .digest("hex")
-              const companyQueryString = qs.stringify({
-                fields: "name",
-                access_token: accessToken,
-                appsecret_proof: appsecretProof,
-                appsecret_time: appsecretTime,
-              })
-
-              nodeRequest(
-                baseURL + "/company?" + companyQueryString,
-                (companyErr: any, companyResponse: any, companyBody: any) => {
-                  try {
-                    if (companyErr) {
-                      return res
-                        .status(500)
-                        .send(renderError({
-                          message: "Error when sending a graph request.",
-                          code: companyErr,
-                        }))
-                    }
-                    const parsedCompanyBody = JSON.parse(companyBody)
-                    if (companyResponse.statusCode !== 200) {
-                      return res
-                        .status(500)
-                        .send(renderError({
-                          message: "Graph API returned an error.",
-                          code: JSON.stringify(parsedCompanyBody.error),
-                        }))
-                    }
-
-                    return res.send(renderSuccess({
-                      companyName: parsedCompanyBody.name,
-                      accessToken,
-                    }))
-                  } catch (companyRequestError) {
-                    // console.error(companyRequestError)
-                    res.send(renderError({ companyRequestError }))
-                  }
-                },
-              )
-            } catch (accessTokenRequestError) {
-              // console.error(accessTokenRequestError)
-              res.send(renderError({ accessTokenRequestError }))
-            }
-          },
-        )
-      } catch (outerRequestError) {
-        // console.error(outerRequestError)
-        res.send(renderError({ outerRequestError }))
-      }
-    })
-
+    this.app.get("/actions/workplace/install", installWorkplace)
   }
 
   actionUrl(action: Hub.Action) {
