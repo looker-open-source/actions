@@ -113,13 +113,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           email: "emailemail",
           cooltrait: "funtrait",
         },
-        // context: {
-        //   app: {
-        //     name: "looker/actions",
-        //     version: process.env.APP_VERSION,
-        //   },
-        // },
-        // timestamp: undefined,
       })
     })
 
