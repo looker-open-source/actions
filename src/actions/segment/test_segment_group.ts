@@ -87,6 +87,42 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("works with segment_group_id, user id and email", () => {
+      const request = new Hub.ActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [
+          {name: "coolemail", tags: ["email"]},
+          {name: "coolfield", tags: ["segment_group_id"]},
+          {name: "coolid", tags: ["user_id"]},
+          {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
+          {name: "cooltrait"},
+        ],
+        data: [{
+          coolemail: {value: "emailemail"},
+          coolfield: {value: "funvalue"},
+          coolid: {value: "id"},
+          coolanonymousid: {value: "anon_id"},
+          cooltrait: {value: "funtrait"},
+        }],
+      }}
+      return expectSegmentMatch(request, {
+        groupId: "funvalue",
+        userId: "id",
+        anonymousId: "anon_id",
+        traits: {
+          email: "emailemail",
+          cooltrait: "funtrait",
+        },
+        // context: {
+        //   app: {
+        //     name: "looker/actions",
+        //     version: process.env.APP_VERSION,
+        //   },
+        // },
+        // timestamp: undefined,
+      })
+    })
+
     it("works with segment_group_id, user id and anonymous id", () => {
       const request = new Hub.ActionRequest()
       request.attachment = {dataJSON: {

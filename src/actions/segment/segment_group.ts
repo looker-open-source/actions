@@ -67,10 +67,14 @@ export class SegmentGroupAction extends Hub.Action {
       const userIdField = fields.filter((f: any) =>
         f.tags && f.tags.some((t: string) => t === "user_id"),
       )[0]
+      const emailField = fields.filter((f: any) =>
+        f.tags && f.tags.some((t: string) => t === "email"),
+      )[0]
 
       const idFieldNames = [groupIdField.name]
-      if (anonymousIdField) { idFieldNames.push(anonymousIdField.name)}
+      if (anonymousIdField) { idFieldNames.push(anonymousIdField.name) }
       if (userIdField) { idFieldNames.push(userIdField.name) }
+      if (emailField) { idFieldNames.push(emailField.name) }
 
       const ranAt = qr.ran_at && new Date(qr.ran_at)
 
@@ -85,10 +89,13 @@ export class SegmentGroupAction extends Hub.Action {
         const traits: any = {}
         for (const field of fields) {
           const value = row[field.name].value
-          if (idFieldNames.indexOf(field.name) !== -1) {
+          if (idFieldNames.indexOf(field.name) === -1) {
             if (!hiddenFields.includes(field.name)) {
               traits[field.name] = value
             }
+          }
+          if (emailField && field.name === emailField.name) {
+            traits.email = value
           }
         }
 
