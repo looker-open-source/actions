@@ -1,4 +1,3 @@
-const crypto = require("crypto")
 const qs = require("qs")
 const request = require("request")
 
@@ -12,7 +11,7 @@ function renderError(error: any) {
       <body class="error">
         <h1>Sorry, an error occurred:</h1>
         <div class="error-message">
-          ${JSON.stringify(error)}
+          ${error.message}
         </div>
       </body>
     </html>
@@ -45,103 +44,59 @@ function renderSuccess({ accessToken }: any) {
 
 // ported from https://github.com/jokr/workplace-demo-authentication
 export function installWorkplace(req: any, res: any) {
-  try {
-    if (!req.query.code) {
-      return res
-        .status(400)
-        .send(renderError({ message: "No code received." }))
-    }
-    const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
-    const tokenQueryString = qs.stringify({
-      client_id: process.env.WORKPLACE_APP_ID,
-      client_secret: process.env.WORKPLACE_APP_SECRET,
-      redirect_uri: process.env.WORKPLACE_APP_REDIRECT,
-      code: req.query.code,
-      scopes: "manage_pages,publish_pages",
-    })
-    request(
-      baseURL + "/oauth/access_token?" + tokenQueryString,
-      (tokenErr: any, tokenResponse: any, tokenBody: any) => {
-        try {
-          if (tokenErr) {
-            return res
-              .status(500)
-              .send(renderError({
-                message: "Error when sending request for access token.",
-                code: tokenErr,
-              }))
-          }
-          const parsedTokenBody = JSON.parse(tokenBody)
-          if (tokenResponse.statusCode !== 200) {
-            return res
-              .status(500)
-              .send(renderError({
-                message: "Access token exchange failed.",
-                code: JSON.stringify(parsedTokenBody.error),
-              }))
-          }
-
-          const accessToken = parsedTokenBody.access_token
-          if (!accessToken) {
-            return res
-              .status(500)
-              .send(renderError({
-                message: "Response did not contain an access token.",
-              }))
-          }
-          const appsecretTime = Math.floor(Date.now() / 1000)
-          const appsecretProof = crypto
-            .createHmac("sha256", process.env.WORKPLACE_APP_SECRET)
-            .update(accessToken + "|" + appsecretTime)
-            .digest("hex")
-          const companyQueryString = qs.stringify({
-            fields: "name",
-            access_token: accessToken,
-            appsecret_proof: appsecretProof,
-            appsecret_time: appsecretTime,
-          })
-
-          request(
-            baseURL + "/company?" + companyQueryString,
-            (companyErr: any, companyResponse: any, companyBody: any) => {
-              try {
-                if (companyErr) {
-                  return res
-                    .status(500)
-                    .send(renderError({
-                      message: "Error when sending a graph request.",
-                      code: companyErr,
-                    }))
-                }
-                const parsedCompanyBody = JSON.parse(companyBody)
-                if (companyResponse.statusCode !== 200) {
-                  return res
-                    .status(500)
-                    .send(renderError({
-                      message: "Graph API returned an error.",
-                      code: JSON.stringify(parsedCompanyBody.error),
-                    }))
-                }
-
-                return res.send(renderSuccess({
-                  companyName: parsedCompanyBody.name,
-                  accessToken,
-                }))
-              } catch (companyRequestError) {
-                // console.error(companyRequestError)
-                res.send(renderError({ companyRequestError }))
-              }
-            },
-          )
-        } catch (accessTokenRequestError) {
-          // console.error(accessTokenRequestError)
-          res.send(renderError({ accessTokenRequestError }))
-        }
-      },
-    )
-  } catch (outerRequestError) {
-    // console.error(outerRequestError)
-    res.send(renderError({ outerRequestError }))
+  if (!req.query.code) {
+    return res
+      .status(400)
+      .send(renderError({ message: "No code received." }))
   }
+  const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
+  const tokenQueryString = qs.stringify({
+    client_id: process.env.WORKPLACE_APP_ID,
+    client_secret: process.env.WORKPLACE_APP_SECRET,
+    redirect_uri: process.env.WORKPLACE_APP_REDIRECT,
+    code: req.query.code,
+  })
+  request(
+    baseURL + "/oauth/access_token?" + tokenQueryString,
+    (tokenErr: any, tokenResponse: any, tokenBody: any) => {
+      try {
+        if (tokenErr) {
+          return res
+            .status(500)
+            .send(renderError({
+              message: "Error when sending request for access token.",
+            }))
+        }
+        const parsedTokenBody = JSON.parse(tokenBody)
+        if (tokenResponse.statusCode !== 200) {
+          return res
+            .status(500)
+            .send(renderError({
+              message: "Access token exchange failed.",
+              code: JSON.stringify(parsedTokenBody.error),
+            }))
+        }
+
+        const accessToken = parsedTokenBody.access_token
+        if (!accessToken) {
+          return res
+            .status(500)
+            .send(renderError({
+              message: "Response did not contain an access token.",
+            }))
+        }
+
+        return res.send(renderSuccess({
+          accessToken,
+        }))
+
+      } catch (accessTokenRequestError) {
+        // console.error(accessTokenRequestError)
+        res.send(renderError({
+          message: "Facebook Graph API returned an error.",
+        }))
+      }
+    },
+  )
 
 }
