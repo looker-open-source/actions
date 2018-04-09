@@ -9,7 +9,27 @@ const integration = new WorkplaceAction()
 
 describe(`${integration.constructor.name} unit tests`, () => {
 
+  let apiStub: any
+  let stubClient: any
+
+  before(() => {
+    process.env.WORKPLACE_APP_SECRET = "test-secret"
+  })
+
   describe("execute", () => {
+
+    before(() => {
+      apiStub = sinon.stub()
+
+      stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
+        .callsFake(() => ({
+          api: apiStub,
+        }))
+    })
+
+    after(() => {
+      stubClient.restore()
+    })
 
     it("errors if there is no destination", () => {
       const request = new Hub.ActionRequest()
@@ -45,27 +65,24 @@ describe(`${integration.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
         fileExtension: "png",
       }
-      const apiStub = sinon.stub()
       apiStub.withArgs(`/${request.formParams.destination}/photos`).returns({ id: "myphoto" })
 
-      const stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
-        .callsFake(() => ({
-          api: apiStub,
-        }))
+      sinon.stub(integration as any, "getFileType").returns({
+        mime: "image/png",
+        ext: "png",
+      })
 
       const execute = integration.execute(request)
       return chai.expect(execute).to.be.fulfilled.then(() => {
         chai.expect(apiStub.firstCall).to.have.been.calledWithMatch(`/mygroup/photos`, "post", {
-          source: request.attachment!.dataBuffer,
+          source: {
+            options: {
+              contentType: "image/png",
+              filename: "source.png",
+            },
+            value: request.attachment!.dataBuffer,
+          },
         })
-        chai.expect(apiStub.secondCall).to.have.been.calledWithMatch(`/mygroup/feed`, "post", {
-          message: request.formParams.message,
-          link: request.scheduledPlan!.url,
-          attached_media: [{
-            media_fbid: "myphoto",
-          }],
-        })
-        stubClient.restore()
       })
     })
 
@@ -73,13 +90,21 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
   describe("form", () => {
 
+    before(() => {
+      apiStub = sinon.stub()
+
+      stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
+        .callsFake(() => ({
+          api: apiStub,
+        }))
+    })
+
     it("has form", () => {
       chai.expect(integration.hasForm).equals(true)
     })
 
     it("has form with correct destinations", (done) => {
 
-      const apiStub = sinon.stub()
       apiStub.withArgs("/community").returns({ id: "mycommunity" })
       apiStub.withArgs("/mycommunity/groups").returns({
         data: [
@@ -87,11 +112,6 @@ describe(`${integration.constructor.name} unit tests`, () => {
           { id: "2", name: "B" },
         ],
       })
-
-      const stubClient = sinon.stub(integration as any, "facebookClientFromRequest")
-        .callsFake(() => ({
-          api: apiStub,
-        }))
 
       const request = new Hub.ActionRequest()
       const form = integration.validateAndFetchForm(request)
@@ -108,11 +128,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
           required: true,
           type: "select",
         }, {
+          description: "Optional message to accompany the post.",
           label: "Message",
-          type: "string",
+          type: "textarea",
           name: "message",
         }],
-      }).and.notify(stubClient.restore).and.notify(done)
+      }).and.notify(done)
     })
 
   })
@@ -156,7 +177,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
     describe("with scheduledPlan.title and scheduledPlan.url", () => {
       it("should return expected output", () => {
         const result = integration.getMarkdownMessage(request)
-        const expected = `[Hello attachment](https://mycompany.looker.com/look/1)`
+        const expected = `[Hello attachment](https://mycompany.looker.com/look/1)\n\n`
         chai.expect(result).to.equal(expected)
       })
     })

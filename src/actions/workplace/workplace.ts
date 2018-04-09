@@ -11,10 +11,6 @@ export interface Destination {
   label: string,
 }
 
-function log(...args: any[]) {
-  console.log.apply(console, args)
-}
-
 // tslint:disable-next-line max-line-length
 const description = "Install the Looker app for Facebook Workplace (https://workplace.facebook.com/work/admin/?section=apps&app_id=188384231761746), and enter the provided token in this field."
 
@@ -75,17 +71,14 @@ export class WorkplaceAction extends Hub.Action {
       throw "Couldn't get data from attachment."
     }
     const buffer = request.attachment.dataBuffer
-    const bufferType = fileType(buffer)
-    log("bufferType", bufferType)
+    const bufferType = this.getFileType(buffer)
 
     if (!request.formParams || !request.formParams.destination) {
       throw "Missing destination."
     }
     const groupId = encodeURIComponent(request.formParams.destination)
-    log("groupId", groupId)
 
     const message = this.getMarkdownMessage(request)
-    log("message", message)
 
     const photoOptions = {
       source: {
@@ -108,6 +101,10 @@ export class WorkplaceAction extends Hub.Action {
     const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
 
     return response
+  }
+
+  getFileType(buffer: Buffer) {
+    return fileType(buffer)
   }
 
   async form(request: Hub.ActionRequest) {
