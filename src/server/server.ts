@@ -130,7 +130,8 @@ export default class Server implements Hub.RouteBuilder {
       res.sendFile(statusJsonPath)
     })
 
-    this.app.get("/actions/workplace/install", installWorkplace)
+    // mounting this in the same namespace as the facebook-workplace action
+    this.app.get("/actions/facebook-workplace/install", installWorkplace)
   }
 
   actionUrl(action: Hub.Action) {
