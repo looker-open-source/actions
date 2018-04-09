@@ -59,5 +59,8 @@ typings/
 status.json
 lib
 
+# For IdeaStorm
+.idea/
+
 # Mac OS X Finder metadata files
 .DS_Store
