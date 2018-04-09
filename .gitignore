@@ -59,4 +59,5 @@ typings/
 status.json
 lib
 
+# Mac OS X Finder metadata files
 .DS_Store
