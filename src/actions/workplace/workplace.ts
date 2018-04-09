@@ -38,8 +38,6 @@ export class WorkplaceAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    this.debugRequest(request)
-
     let response
 
     const photoResponse = await this.postToFacebook(request)
@@ -49,7 +47,6 @@ export class WorkplaceAction extends Hub.Action {
     }
 
     return new Hub.ActionResponse(response)
-
   }
 
   getMarkdownMessage(request: Hub.ActionRequest): string {
@@ -111,16 +108,6 @@ export class WorkplaceAction extends Hub.Action {
     const response = await fb.api(`/${groupId}/photos`, "post", photoOptions)
 
     return response
-
-    // old req.post version below here
-    // req.post({ url: graphUrl, formData: photoOptions }, (err, response, body) => {
-    //   if (err) {
-    //     return reject(err)
-    //   }
-    //   log("body", body)
-    //   resolve(response)
-    // })
-    // })
   }
 
   async form(request: Hub.ActionRequest) {
@@ -183,16 +170,6 @@ export class WorkplaceAction extends Hub.Action {
       appsecret_time: appsecretTime,
       appsecret_proof: appsecretProof,
     }
-  }
-
-  private debugRequest(request: Hub.ActionRequest) {
-    const requestInfo = Object.assign({}, request)
-    requestInfo.attachment = Object.assign({}, request.attachment)
-    delete requestInfo.attachment.dataBuffer
-    // delete requestInfo.attachment.dataJSON
-    log("-".repeat(40))
-    log(JSON.stringify(requestInfo, null, 2))
-    log("-".repeat(40))
   }
 
 }

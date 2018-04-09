@@ -9,11 +9,11 @@ const integration = new WorkplaceAction()
 
 describe(`${integration.constructor.name} unit tests`, () => {
 
-  xdescribe("execute", () => {
+  describe("execute", () => {
 
     it("errors if there is no destination", () => {
       const request = new Hub.ActionRequest()
-      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
 
       const execute = integration.execute(request)
 
@@ -71,7 +71,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
   })
 
-  xdescribe("form", () => {
+  describe("form", () => {
 
     it("has form", () => {
       chai.expect(integration.hasForm).equals(true)
@@ -80,11 +80,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
     it("has form with correct destinations", (done) => {
 
       const apiStub = sinon.stub()
-      apiStub.withArgs("/community").returns({id: "mycommunity"})
+      apiStub.withArgs("/community").returns({ id: "mycommunity" })
       apiStub.withArgs("/mycommunity/groups").returns({
         data: [
-          {id: "1", name: "A"},
-          {id: "2", name: "B"},
+          { id: "1", name: "A" },
+          { id: "2", name: "B" },
         ],
       })
 
@@ -102,8 +102,8 @@ describe(`${integration.constructor.name} unit tests`, () => {
           label: "Share In",
           name: "destination",
           options: [
-            {name: "1", label: "#A"},
-            {name: "2", label: "#B"},
+            { name: "1", label: "#A" },
+            { name: "2", label: "#B" },
           ],
           required: true,
           type: "select",
