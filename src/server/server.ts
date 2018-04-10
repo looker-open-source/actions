@@ -9,6 +9,8 @@ import * as winston from "winston"
 import * as Hub from "../hub"
 import * as apiKey from "./api_key"
 
+import { installWorkplace } from "../actions/workplace/install"
+
 const expressWinston = require("express-winston")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
@@ -115,8 +117,8 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasForm) {
-         const form = await action.validateAndFetchForm(request)
-         res.json(form.asJson())
+        const form = await action.validateAndFetchForm(request)
+        res.json(form.asJson())
       } else {
         throw "No form defined for action."
       }
@@ -128,6 +130,9 @@ export default class Server implements Hub.RouteBuilder {
       res.sendFile(statusJsonPath)
     })
 
+    // Facebook Workplace install endpoint
+    // mounting this in the same namespace as the facebook-workplace action
+    this.app.get("/actions/facebook-workplace/install", installWorkplace)
   }
 
   actionUrl(action: Hub.Action) {
