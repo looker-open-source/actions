@@ -99,13 +99,15 @@ export class SegmentGroupAction extends Hub.Action {
           }
         }
 
+        const userId = userIdField ? row[userIdField.name].value : null
+
         segmentClient.group({
           groupId: groupIdField ? row[groupIdField.name].value : null,
-          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : userIdField ? null : anonymousId,
+          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : userId ? null : anonymousId,
           context,
           traits,
           timestamp: ranAt,
-          userId: userIdField ? row[userIdField.name].value : null,
+          userId,
         })
       }
 

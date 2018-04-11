@@ -97,12 +97,15 @@ export class SegmentAction extends Hub.Action {
             traits.email = value
           }
         }
+
+        const userId = idField ? row[idField.name].value : null
+
         segmentClient.identify({
-          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
+          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : userId ? null : anonymousId,
           context,
           traits,
           timestamp: ranAt,
-          userId: idField ? row[idField.name].value : null,
+          userId,
         })
       }
 

@@ -97,13 +97,16 @@ export class SegmentTrackAction extends Hub.Action {
             traits.email = value
           }
         }
+
+        const userId = idField ? row[idField.name].value : null
+
         segmentClient.track({
-          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
+          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : userId ? null : anonymousId,
           context,
           event: request.formParams.event!,
           properties: traits,
           timestamp: ranAt,
-          userId: idField ? row[idField.name].value : null,
+          userId,
         })
       }
 

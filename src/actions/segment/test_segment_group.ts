@@ -132,6 +132,19 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("works with segment_group_id and null user_id", () => {
+      const request = new Hub.ActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [{ name: "coolfield", tags: ["segment_group_id"]}, {name: "coolid", tags: ["user_id"]}],
+        data: [{ coolfield: { value: "funvalue"}, coolid: {value: null}}],
+      }}
+      return expectSegmentMatch(request, {
+        groupId: "funvalue",
+        userId: null,
+        anonymousId: "stubanon",
+      })
+    })
+
   })
 
   describe("form", () => {

@@ -215,6 +215,22 @@ describe(`${action.constructor.name} unit tests`, () => {
        })
     })
 
+    it("works with null user_id", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {
+        event: "funevent",
+      }
+      request.attachment = {dataJSON: {
+        fields: [{name: "coolfield", tags: ["user_id"]}],
+        data: [{coolfield: {value: null}}],
+      }}
+      return expectSegmentMatch(request, {
+        userId: null,
+        anonymousId: "stubanon",
+        event: "funevent",
+      })
+    })
+
   })
 
   describe("form", () => {

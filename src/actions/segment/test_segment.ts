@@ -169,6 +169,18 @@ describe(`${action.constructor.name} unit tests`, () => {
        })
     })
 
+    it("works with null user_ids", () => {
+      const request = new Hub.ActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [{name: "coolfield", tags: ["user_id"]}],
+        data: [{coolfield: {value: null}}],
+      }}
+      return expectSegmentMatch(request, {
+        userId: null,
+        anonymousId: "stubanon",
+      })
+    })
+
   })
 
   describe("form", () => {
