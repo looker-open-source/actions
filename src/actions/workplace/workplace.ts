@@ -157,8 +157,9 @@ export class WorkplaceAction extends Hub.Action {
   private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
     const fb = this.facebookClientFromRequest(request)
     const options = this.getAppSecretOptions(request)
+    console.log("options", options)
 
-    console.log('request.params.user_email', request.params.user_email)
+    console.log("request.params.user_email", request.params.user_email)
 
     const userId = await fb.api(`/${request.params.user_email}`, options)
     console.log("userId", userId)
@@ -166,10 +167,7 @@ export class WorkplaceAction extends Hub.Action {
     const response = await fb.api(`/${userId}/managed_groups`, options)
     console.log("response", response)
 
-    const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
-    console.log("groups", groups)
-
-    return groups.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
+    return response.data.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
