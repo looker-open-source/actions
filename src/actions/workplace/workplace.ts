@@ -1,3 +1,4 @@
+// tslint:disable no-console
 // import * as FormData from "form-data"
 // import * as req from "request"
 import * as Hub from "../../hub"
@@ -14,7 +15,6 @@ export interface Destination {
 // tslint:disable-next-line max-line-length
 const description = "Install the Looker app for Facebook Workplace (https://workplace.facebook.com/work/admin/?section=apps&app_id=188384231761746), and enter the provided token in this field."
 
-// tslint:disable
 function logRequest(request: Hub.ActionRequest) {
   const requestInfo = Object.assign({}, request)
   requestInfo.attachment = Object.assign({}, request.attachment)
@@ -24,7 +24,6 @@ function logRequest(request: Hub.ActionRequest) {
   console.log(JSON.stringify(requestInfo, null, 2))
   console.log("-".repeat(40))
 }
-// tslint:enable
 
 export class WorkplaceAction extends Hub.Action {
 
@@ -158,17 +157,15 @@ export class WorkplaceAction extends Hub.Action {
   private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
     const fb = this.facebookClientFromRequest(request)
     const options = this.getAppSecretOptions(request)
-    const response = await fb.api("/community", options)
-    if (!(response && response.id)) {
-      throw "No community."
-    }
-    const groups = await this.usableGroups(fb, response.id, options)
-    return groups
-  }
 
-  private async usableGroups(fb: any, community: string, options: any) {
-    const response = await fb.api(`/${encodeURIComponent(community)}/groups`, options)
+    const userId = await fb.api(`/${request.params.user_email}`)
+
+    const response = await fb.api(`/${userId}/managed_groups`, options)
+    console.log("response", response)
+
     const groups = response.data.filter((g: any) => g.privacy ? g.privacy !== "CLOSED" : true)
+    console.log("groups", groups)
+
     return groups.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
   }
 
