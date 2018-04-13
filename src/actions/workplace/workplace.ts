@@ -36,7 +36,8 @@ export class WorkplaceAction extends Hub.Action {
       label: "Looker User Email",
       required: true,
       description: `
-        Set this to 'User Email' so the action can determine
+        Click the button on the right and select 'Email'.
+        This is required for the action to determine
         which Workplace groups the user has access to.
       `,
       sensitive: false,
