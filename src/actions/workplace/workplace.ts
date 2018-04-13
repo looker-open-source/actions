@@ -21,7 +21,7 @@ export class WorkplaceAction extends Hub.Action {
   iconName = "workplace/workplace-facebook.svg"
   description = "Write a message to Workplace by Facebook."
   // added Hub.ActionType.Query because dashboards are sending request.type: query
-  supportedActionTypes = [Hub.ActionType.Dashboard]
+  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   supportedFormats = [Hub.ActionFormat.WysiwygPng]
   params = [
     {
