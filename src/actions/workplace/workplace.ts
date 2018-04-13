@@ -158,7 +158,8 @@ export class WorkplaceAction extends Hub.Action {
     const fb = this.facebookClientFromRequest(request)
     const options = this.getAppSecretOptions(request)
 
-    const userId = await fb.api(`/${request.params.user_email}`)
+    const userId = await fb.api(`/${request.params.user_email}`, options)
+    console.log("userId", userId)
 
     const response = await fb.api(`/${userId}/managed_groups`, options)
     console.log("response", response)
