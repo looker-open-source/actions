@@ -31,6 +31,16 @@ export class WorkplaceAction extends Hub.Action {
       description,
       sensitive: true,
     },
+    {
+      name: "user_email",
+      label: "Looker User Email",
+      required: true,
+      description: `
+        Set this to 'User Email' so the action can determine
+        which Workplace groups the user has access to.
+      `,
+      sensitive: false,
+    },
   ]
 
   async execute(request: Hub.ActionRequest) {
