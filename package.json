@@ -55,6 +55,7 @@
     "dotenv": "^4.0.0",
     "express": "^4.16.2",
     "express-winston": "^2.4.0",
+    "fb": "^2.0.0",
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.1",
     "node-marketo-rest": "^0.3.8",
