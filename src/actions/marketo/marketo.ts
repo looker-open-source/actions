@@ -13,7 +13,7 @@ export class MarketoAction extends Hub.Action {
 
   name = "marketo"
   label = "Marketo"
-  iconName = "marketo/marketo.png"
+  iconName = "marketo/marketo.svg"
   description = "Add records to Marketo"
   params = [
     {
