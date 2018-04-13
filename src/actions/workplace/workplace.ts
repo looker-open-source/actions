@@ -186,6 +186,7 @@ export class WorkplaceAction extends Hub.Action {
       .update(accessToken + "|" + appsecretTime)
       .digest("hex")
     return {
+      access_token: accessToken,
       appsecret_time: appsecretTime,
       appsecret_proof: appsecretProof,
     }
