@@ -11,7 +11,7 @@ export class SegmentAction extends Hub.Action {
   name = "segment_event"
   label = "Segment Identify"
   iconName = "segment/segment.png"
-  description = "Add traits via identify to you Segment users."
+  description = "Add traits via identify to your Segment users."
   params = [
     {
       description: "A write key for Segment.",
