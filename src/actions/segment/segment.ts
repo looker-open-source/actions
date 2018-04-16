@@ -8,10 +8,10 @@ export class SegmentAction extends Hub.Action {
 
   allowedTags = ["email", "user_id", "segment_anonymous_id"]
 
-  name = "segment"
+  name = "segment_event"
   label = "Segment Identify"
-  description = "Add traits via identify to you Segment users."
   iconName = "segment/segment.png"
+  description = "Add traits via identify to you Segment users."
   params = [
     {
       description: "A write key for Segment.",
@@ -21,12 +21,12 @@ export class SegmentAction extends Hub.Action {
       sensitive: true,
     },
   ]
+  minimumSupportedLookerVersion = "4.20.0"
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
-  minimumSupportedLookerVersion = "4.20.0"
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
