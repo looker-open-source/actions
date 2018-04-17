@@ -44,64 +44,6 @@ export class SegmentAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
 
-  taggedFields(fields: any, tags: string[]) {
-    return fields.filter((f: any) =>
-      f.tags && f.tags.some((t: string) => tags.indexOf(t) !== -1),
-    )
-  }
-
-  taggedField(fields: any, tags: string[]) {
-    return this.taggedFields(fields, tags)[0]
-  }
-
-  segmentFields(fields: any): SegmentFields {
-    const idFieldNames = this.taggedFields(fields, [
-      SegmentTags.Email,
-      SegmentTags.SegmentAnonymousId,
-      SegmentTags.UserId,
-      SegmentTags.SegmentGroupId,
-    ]).map((f: any) => (f.name))
-
-    return {
-      idFieldNames,
-      idField: this.taggedField(fields, [SegmentTags.UserId, SegmentTags.SegmentAnonymousId]),
-      userIdField: this.taggedField(fields, [SegmentTags.UserId]),
-      groupIdField: this.taggedField(fields, [SegmentTags.SegmentGroupId]),
-      emailField: this.taggedField(fields, [SegmentTags.Email]),
-      anonymousIdField: this.taggedField(fields, [SegmentTags.SegmentAnonymousId]),
-    }
-  }
-
-  prepareSegmentTraitsFromRow(row: any, fields: any[], segmentFields: SegmentFields, hiddenFields: any[]) {
-    const traits: any = {}
-    for (const field of fields) {
-      const value = row[field.name].value
-      if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
-        if (hiddenFields.indexOf(field.name) === -1) {
-          traits[field.name] = value
-        }
-      }
-      if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
-        traits.email = value
-      }
-    }
-    const userId = segmentFields.idField ? row[segmentFields.idField.name].value : null
-    let anonymousId
-    if (segmentFields.anonymousIdField) {
-      anonymousId = row[segmentFields.anonymousIdField.name].value
-    } else {
-      anonymousId = userId ? null : this.generateAnonymousId()
-    }
-    const groupId = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
-
-    return {
-      traits,
-      userId,
-      anonymousId,
-      groupId,
-    }
-  }
-
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
@@ -166,11 +108,69 @@ export class SegmentAction extends Hub.Action {
     })
   }
 
-  segmentClientFromRequest(request: Hub.ActionRequest) {
+  protected taggedFields(fields: any, tags: string[]) {
+    return fields.filter((f: any) =>
+      f.tags && f.tags.some((t: string) => tags.indexOf(t) !== -1),
+    )
+  }
+
+  protected taggedField(fields: any, tags: string[]) {
+    return this.taggedFields(fields, tags)[0]
+  }
+
+  protected segmentFields(fields: any): SegmentFields {
+    const idFieldNames = this.taggedFields(fields, [
+      SegmentTags.Email,
+      SegmentTags.SegmentAnonymousId,
+      SegmentTags.UserId,
+      SegmentTags.SegmentGroupId,
+    ]).map((f: any) => (f.name))
+
+    return {
+      idFieldNames,
+      idField: this.taggedField(fields, [SegmentTags.UserId, SegmentTags.SegmentAnonymousId]),
+      userIdField: this.taggedField(fields, [SegmentTags.UserId]),
+      groupIdField: this.taggedField(fields, [SegmentTags.SegmentGroupId]),
+      emailField: this.taggedField(fields, [SegmentTags.Email]),
+      anonymousIdField: this.taggedField(fields, [SegmentTags.SegmentAnonymousId]),
+    }
+  }
+
+  protected prepareSegmentTraitsFromRow(row: any, fields: any[], segmentFields: SegmentFields, hiddenFields: any[]) {
+    const traits: any = {}
+    for (const field of fields) {
+      const value = row[field.name].value
+      if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
+        if (hiddenFields.indexOf(field.name) === -1) {
+          traits[field.name] = value
+        }
+      }
+      if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
+        traits.email = value
+      }
+    }
+    const userId = segmentFields.idField ? row[segmentFields.idField.name].value : null
+    let anonymousId
+    if (segmentFields.anonymousIdField) {
+      anonymousId = row[segmentFields.anonymousIdField.name].value
+    } else {
+      anonymousId = userId ? null : this.generateAnonymousId()
+    }
+    const groupId = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
+
+    return {
+      traits,
+      userId,
+      anonymousId,
+      groupId,
+    }
+  }
+
+  protected segmentClientFromRequest(request: Hub.ActionRequest) {
     return new segment(request.params.segment_write_key)
   }
 
-  private generateAnonymousId() {
+  protected generateAnonymousId() {
     return uuid.v4()
   }
 
