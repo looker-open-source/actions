@@ -54,9 +54,8 @@ export class SegmentGroupAction extends SegmentAction {
           traits,
           userId,
           anonymousId,
+          groupId,
         } = this.prepareSegmentTraitsFromRow(row, fields, segmentFields, hiddenFields)
-
-        const groupId = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
 
         segmentClient.group({
           groupId,

@@ -92,10 +92,13 @@ export class SegmentAction extends Hub.Action {
     } else {
       anonymousId = userId ? null : this.generateAnonymousId()
     }
+    const groupId = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
+
     return {
       traits,
       userId,
       anonymousId,
+      groupId,
     }
   }
 
