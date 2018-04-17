@@ -159,9 +159,15 @@ export class WorkplaceAction extends Hub.Action {
     const options = this.getAppSecretOptions(request)
     console.log("options", options)
 
+    if (!request.params.user_email) {
+      throw "request.params.user_email is required"
+    }
     console.log("request.params.user_email", request.params.user_email)
 
-    const userId = await fb.api(`/${request.params.user_email}`, options)
+    const userEmail = request.params.user_email.toLowerCase()
+    console.log("userEmail", userEmail)
+
+    const userId = await fb.api(`/${userEmail}`, options)
     console.log("userId", userId)
 
     const response = await fb.api(`/${userId}/managed_groups`, options)
