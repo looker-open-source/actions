@@ -22,6 +22,37 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
 
 describe(`${action.constructor.name} unit tests`, () => {
 
+  describe("taggedFields", () => {
+
+    it("returns tagged fields and field", () => {
+      const fields = [
+        {name: "coolemail", tags: ["email"]},
+        {name: "coolid", tags: ["user_id"]},
+        {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
+        {name: "coolnontagged"},
+        {name: "coolweirdtag", tags: ["xyz"]},
+      ]
+      chai.expect(action.taggedFields(fields, ["email"])).deep.equals([{name: "coolemail", tags: ["email"]}])
+      chai.expect(action.taggedField(fields, ["email"])).deep.equals({name: "coolemail", tags: ["email"]})
+    })
+
+    it("returns one of multiple tags", () => {
+      const fields = [
+        {name: "coolemail", tags: ["email"]},
+        {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
+        {name: "coolnontagged"},
+        {name: "coolweirdtag", tags: ["xyz"]},
+      ]
+      const tags = ["user_id", "segment_anonymous_id"]
+      chai.expect(action.taggedFields(fields, tags)).deep.equals([{
+        name: "coolanonymousid", tags: ["segment_anonymous_id"],
+      }])
+      chai.expect(action.taggedField(fields, tags)).deep.equals({
+        name: "coolanonymousid", tags: ["segment_anonymous_id"],
+      })
+    })
+  })
+
   describe("action", () => {
 
     it("errors if the input has no attachment", () => {
@@ -117,6 +148,32 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectSegmentMatch(request, {
         userId: "id",
         traits: {email: "email@email.email"},
+        anonymousId: "anon_id",
+      })
+    })
+
+    it("works with email, user id and anonymous id and trait", () => {
+      const request = new Hub.ActionRequest()
+      request.attachment = {dataJSON: {
+        fields: [
+          {name: "coolemail", tags: ["email"]},
+          {name: "coolid", tags: ["user_id"]},
+          {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
+          {name: "cooltrait"},
+        ],
+        data: [{
+          coolemail: {value: "emailemail"},
+          coolid: {value: "id"},
+          coolanonymousid: {value: "anon_id"},
+          cooltrait: {value: "funtrait"},
+        }],
+      }}
+      return expectSegmentMatch(request, {
+        userId: "id",
+        traits: {
+          email: "emailemail",
+          cooltrait: "funtrait",
+        },
         anonymousId: "anon_id",
       })
     })

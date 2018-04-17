@@ -1,31 +1,16 @@
-import * as uuid from "uuid"
-
 import * as Hub from "../../hub"
+import { SegmentAction, SegmentTags } from "./segment"
 
-const segment: any = require("analytics-node")
+export class SegmentGroupAction extends SegmentAction {
 
-export class SegmentGroupAction extends Hub.Action {
-
-  tag = "segment_group_id"
+  tag = SegmentTags.SegmentGroupId
 
   name = "segment_group"
   label = "Segment Group"
   iconName = "segment/segment.png"
   description = "Add traits and / or users to your Segment groups."
-  params = [
-    {
-      description: "A write key for Segment.",
-      label: "Segment Write Key",
-      name: "segment_write_key",
-      required: true,
-      sensitive: true,
-    },
-  ]
-  supportedActionTypes = [Hub.ActionType.Query]
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
-  supportedFormattings = [Hub.ActionFormatting.Unformatted]
-  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  requiredFields = [{ tag: this.tag }]
+  requiredFields = [{ tag: this.tag , any_tag: this.allowedTags}]
+  minimumSupportedLookerVersion = "5.5.0"
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
@@ -50,63 +35,35 @@ export class SegmentGroupAction extends Hub.Action {
         hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
       }
 
-      const groupIdField = fields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === this.tag),
-      )[0]
-
-      if (!groupIdField) {
+      const segmentFields = this.segmentFields(fields)
+      if (!segmentFields.groupIdField) {
         reject(`Query requires a field tagged ${this.tag}.`)
         return
       }
-      const segmentClient = this.segmentClientFromRequest(request)
 
-      const anonymousIdField = fields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
-      )[0]
-      const anonymousId = this.generateAnonymousId()
-      const userIdField = fields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "user_id"),
-      )[0]
-      const emailField = fields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "email"),
-      )[0]
-
-      const idFieldNames = [groupIdField.name]
-      if (anonymousIdField) { idFieldNames.push(anonymousIdField.name) }
-      if (userIdField) { idFieldNames.push(userIdField.name) }
-      if (emailField) { idFieldNames.push(emailField.name) }
-
-      const ranAt = qr.ran_at && new Date(qr.ran_at)
-
+      const timestamp = qr.ran_at && new Date(qr.ran_at)
       const context = {
         app: {
           name: "looker/actions",
           version: process.env.APP_VERSION,
         },
       }
-
+      const segmentClient = this.segmentClientFromRequest(request)
       for (const row of qr.data) {
-        const traits: any = {}
-        for (const field of fields) {
-          const value = row[field.name].value
-          if (idFieldNames.indexOf(field.name) === -1) {
-            if (!hiddenFields.includes(field.name)) {
-              traits[field.name] = value
-            }
-          }
-          if (emailField && field.name === emailField.name) {
-            traits.email = value
-          }
-        }
+        const {
+          traits,
+          userId,
+          anonymousId,
+        } = this.prepareSegmentTraitsFromRow(row, fields, segmentFields, hiddenFields)
 
-        const userId = userIdField ? row[userIdField.name].value : null
+        const groupId = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
 
         segmentClient.group({
-          groupId: groupIdField ? row[groupIdField.name].value : null,
-          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : userId ? null : anonymousId,
+          groupId,
+          anonymousId,
           context,
           traits,
-          timestamp: ranAt,
+          timestamp,
           userId,
         })
       }
@@ -120,14 +77,6 @@ export class SegmentGroupAction extends Hub.Action {
       })
 
     })
-  }
-
-  private segmentClientFromRequest(request: Hub.ActionRequest) {
-    return new segment(request.params.segment_write_key)
-  }
-
-  private generateAnonymousId() {
-    return uuid.v4()
   }
 
 }
