@@ -1,6 +1,7 @@
 // tslint:disable no-console
 // import * as FormData from "form-data"
 // import * as req from "request"
+import * as req from "request-promise-native"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
@@ -131,33 +132,9 @@ export class WorkplaceAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     logRequest(request)
-    const form = new Hub.ActionForm()
 
-    const destinations = await this.usableDestinations(request)
-    form.fields = [
-      {
-        description: "Name of the Facebook group you would like to post to.",
-        label: "Share In",
-        name: "destination",
-        options: destinations.map((destination) => ({ name: destination.id, label: destination.label })),
-        required: true,
-        type: "select",
-      },
-      {
-        description: "Optional message to accompany the post.",
-        label: "Message",
-        type: "textarea",
-        name: "message",
-      },
-    ]
-
-    return form
-  }
-
-  private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
-    const fb = this.facebookClientFromRequest(request)
-    const options = this.getAppSecretOptions(request)
-    console.log("options", options)
+    const body = this.getAppSecretOptions(request)
+    console.log("body", body)
 
     if (!request.params.user_email) {
       throw "request.params.user_email is required"
@@ -167,14 +144,62 @@ export class WorkplaceAction extends Hub.Action {
     const userEmail = request.params.user_email.toLowerCase()
     console.log("userEmail", userEmail)
 
-    const userId = await fb.api(`/${userEmail}`, options)
-    console.log("userId", userId)
+    const options = {
+      method: "POST",
+      uri: `https://graph.facebook.com/${userEmail}`,
+      body,
+      json: true,
+    }
 
-    const response = await fb.api(`/${userId}/managed_groups`, options)
+    const response = await req(options)
     console.log("response", response)
 
-    return response.data.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
+    return response
+
+    // const form = new Hub.ActionForm()
+
+    // const destinations = await this.usableDestinations(request)
+    // form.fields = [
+    //   {
+    //     description: "Name of the Facebook group you would like to post to.",
+    //     label: "Share In",
+    //     name: "destination",
+    //     options: destinations.map((destination) => ({ name: destination.id, label: destination.label })),
+    //     required: true,
+    //     type: "select",
+    //   },
+    //   {
+    //     description: "Optional message to accompany the post.",
+    //     label: "Message",
+    //     type: "textarea",
+    //     name: "message",
+    //   },
+    // ]
+
+    // return form
   }
+
+  // private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
+  //   const fb = this.facebookClientFromRequest(request)
+  //   const options = this.getAppSecretOptions(request)
+  //   console.log("options", options)
+
+  //   if (!request.params.user_email) {
+  //     throw "request.params.user_email is required"
+  //   }
+  //   console.log("request.params.user_email", request.params.user_email)
+
+  //   const userEmail = request.params.user_email.toLowerCase()
+  //   console.log("userEmail", userEmail)
+
+  //   const userId = await fb.api(`/${userEmail}`, options)
+  //   console.log("userId", userId)
+
+  //   const response = await fb.api(`/${userId}/managed_groups`, options)
+  //   console.log("response", response)
+
+  //   return response.data.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
+  // }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
     const accessToken = request.params.facebook_app_access_token
