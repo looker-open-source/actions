@@ -133,82 +133,57 @@ export class WorkplaceAction extends Hub.Action {
   async form(request: Hub.ActionRequest) {
     logRequest(request)
 
-    // const body = this.getAppSecretOptions(request)
-    // console.log("body", body)
+    const destinations = await this.usableDestinations(request)
 
-    // if (!request.params.user_email) {
-    //   throw "request.params.user_email is required"
-    // }
-    // console.log("request.params.user_email", request.params.user_email)
+    const form = new Hub.ActionForm()
 
-    // const userEmail = request.params.user_email.toLowerCase()
-    // console.log("userEmail", userEmail)
+    form.fields = [
+      {
+        description: "Name of the Facebook group you would like to post to.",
+        label: "Share In",
+        name: "destination",
+        options: destinations.map((destination) => ({ name: destination.id, label: destination.label })),
+        required: true,
+        type: "select",
+      },
+      {
+        description: "Optional message to accompany the post.",
+        label: "Message",
+        type: "textarea",
+        name: "message",
+      },
+    ]
 
-    // const options = {
-    //   method: "GET",
-    //   uri: `https://graph.facebook.com/${userEmail}`,
-    //   body,
-    //   json: true,
-    // }
-
-    // const response = await req(options)
-    // console.log("response", response)
-
-    // return response
-
-    try {
-      const destinations = await this.usableDestinations(request)
-
-      const form = new Hub.ActionForm()
-
-      form.fields = [
-        {
-          description: "Name of the Facebook group you would like to post to.",
-          label: "Share In",
-          name: "destination",
-          options: destinations.map((destination) => ({ name: destination.id, label: destination.label })),
-          required: true,
-          type: "select",
-        },
-        {
-          description: "Optional message to accompany the post.",
-          label: "Message",
-          type: "textarea",
-          name: "message",
-        },
-      ]
-
-      return form
-
-    } catch (err) {
-      throw `
-        There was an error retrieving Workplace groups for your account.
-        Please verify that you have access to at least one Workplace group and try again."
-      `
-    }
-
+    return form
   }
 
   private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
     const fb = this.facebookClientFromRequest(request)
     const options = this.getAppSecretOptions(request)
-    console.log("options", options)
 
     if (!request.params.user_email) {
       throw "request.params.user_email is required"
     }
-    console.log("request.params.user_email", request.params.user_email)
 
     const userEmail = request.params.user_email.toLowerCase()
     console.log("userEmail", userEmail)
 
-    const user = await fb.api(`/${userEmail}x`, options)
-    console.log("user.id", user.id)
+    let user
+    let groups
+    try {
+      // if either request fails, or we don't get any groups back, throw the
+      // same error message (in the catch below)
+      user = await fb.api(`/${userEmail}x`, options)
+      groups = await fb.api(`/${user.id}/managed_groups`, options)
+      if (!groups || !groups.data || !groups.data.length) {
+        throw "No groups returned."
+      }
+    } catch (err) {
+      // tslint:disable-next-line max-line-length
+      throw "There was an error retrieving Workplace groups for your account. Please verify that you have access to at least one Workplace group and try again."
+    }
 
-    const response = await fb.api(`/${user.id}/managed_groups`, options)
-    console.log("response", response)
-
-    return response.data.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
+    return groups.data.map((g: any) => ({ id: g.id, label: `#${g.name}` }))
   }
 
   private facebookClientFromRequest(request: Hub.ActionRequest) {
