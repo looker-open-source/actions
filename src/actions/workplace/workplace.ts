@@ -1,7 +1,4 @@
 // tslint:disable no-console
-// import * as FormData from "form-data"
-// import * as req from "request"
-// import * as req from "request-promise-native"
 import * as Hub from "../../hub"
 
 const FB = require("fb")
