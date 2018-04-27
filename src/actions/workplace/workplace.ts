@@ -166,14 +166,13 @@ export class WorkplaceAction extends Hub.Action {
     }
 
     const userEmail = request.params.user_email.toLowerCase()
-    console.log("userEmail", userEmail)
 
     let user
     let groups
     try {
       // if either request fails, or we don't get any groups back, throw the
       // same error message (in the catch below)
-      user = await fb.api(`/${userEmail}x`, options)
+      user = await fb.api(`/${userEmail}`, options)
       groups = await fb.api(`/${user.id}/managed_groups`, options)
       if (!groups || !groups.data || !groups.data.length) {
         throw "No groups returned."
