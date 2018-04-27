@@ -156,27 +156,37 @@ export class WorkplaceAction extends Hub.Action {
 
     // return response
 
-    const form = new Hub.ActionForm()
+    try {
+      const destinations = await this.usableDestinations(request)
 
-    const destinations = await this.usableDestinations(request)
-    form.fields = [
-      {
-        description: "Name of the Facebook group you would like to post to.",
-        label: "Share In",
-        name: "destination",
-        options: destinations.map((destination) => ({ name: destination.id, label: destination.label })),
-        required: true,
-        type: "select",
-      },
-      {
-        description: "Optional message to accompany the post.",
-        label: "Message",
-        type: "textarea",
-        name: "message",
-      },
-    ]
+      const form = new Hub.ActionForm()
 
-    return form
+      form.fields = [
+        {
+          description: "Name of the Facebook group you would like to post to.",
+          label: "Share In",
+          name: "destination",
+          options: destinations.map((destination) => ({ name: destination.id, label: destination.label })),
+          required: true,
+          type: "select",
+        },
+        {
+          description: "Optional message to accompany the post.",
+          label: "Message",
+          type: "textarea",
+          name: "message",
+        },
+      ]
+
+      return form
+
+    } catch (err) {
+      throw new Error(`
+        There was an error retrieving Workplace groups for your account.
+        Please verify that you have access to at least one Workplace group and try again."
+      `)
+    }
+
   }
 
   private async usableDestinations(request: Hub.ActionRequest): Promise<Destination[]> {
@@ -192,7 +202,7 @@ export class WorkplaceAction extends Hub.Action {
     const userEmail = request.params.user_email.toLowerCase()
     console.log("userEmail", userEmail)
 
-    const user = await fb.api(`/${userEmail}`, options)
+    const user = await fb.api(`/${userEmail}x`, options)
     console.log("user.id", user.id)
 
     const response = await fb.api(`/${user.id}/managed_groups`, options)
