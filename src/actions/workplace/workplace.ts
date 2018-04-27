@@ -181,10 +181,10 @@ export class WorkplaceAction extends Hub.Action {
       return form
 
     } catch (err) {
-      throw new Error(`
+      throw `
         There was an error retrieving Workplace groups for your account.
         Please verify that you have access to at least one Workplace group and try again."
-      `)
+      `
     }
 
   }
@@ -202,7 +202,7 @@ export class WorkplaceAction extends Hub.Action {
     const userEmail = request.params.user_email.toLowerCase()
     console.log("userEmail", userEmail)
 
-    const user = await fb.api(`/${userEmail}`, options)
+    const user = await fb.api(`/${userEmail}x`, options)
     console.log("user.id", user.id)
 
     const response = await fb.api(`/${user.id}/managed_groups`, options)
