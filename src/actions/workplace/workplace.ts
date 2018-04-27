@@ -202,7 +202,7 @@ export class WorkplaceAction extends Hub.Action {
     const userEmail = request.params.user_email.toLowerCase()
     console.log("userEmail", userEmail)
 
-    const user = await fb.api(`/${userEmail}x`, options)
+    const user = await fb.api(`/${userEmail}`, options)
     console.log("user.id", user.id)
 
     const response = await fb.api(`/${user.id}/managed_groups`, options)
