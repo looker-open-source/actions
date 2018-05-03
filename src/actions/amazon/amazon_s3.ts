@@ -34,41 +34,36 @@ export class AmazonS3Action extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        reject("Couldn't get data from attachment.")
-        return
-      }
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw new Error("Couldn't get data from attachment.")
+    }
 
-      if (!request.formParams || !request.formParams.bucket) {
-        reject("Need Amazon S3 bucket.")
-        return
-      }
+    if (!request.formParams || !request.formParams.bucket) {
+      throw new Error("Need Amazon S3 bucket.")
+    }
 
-      const s3 = this.amazonS3ClientFromRequest(request)
+    const s3 = this.amazonS3ClientFromRequest(request)
 
-      const filename = request.formParams.filename || request.suggestedFilename()
+    const filename = request.formParams.filename || request.suggestedFilename()
 
-      if (!filename) {
-        reject("Couldn't determine filename.")
-        return
-      }
+    if (!filename) {
+      throw new Error("Couldn't determine filename.")
+    }
 
-      const params = {
-        Bucket: request.formParams.bucket,
-        Key: filename,
-        Body: request.attachment.dataBuffer,
-      }
+    const params = {
+      Bucket: request.formParams.bucket,
+      Key: filename,
+      Body: request.attachment.dataBuffer,
+    }
 
-      s3.putObject(params, (err) => {
-        if (err) {
-          resolve(new Hub.ActionResponse({ success: false, message: err.message }))
-        } else {
-          resolve(new Hub.ActionResponse({ success: true }))
-        }
-      })
-    })
+    try {
+      await s3.putObject(params).promise()
+      return new Hub.ActionResponse({ success: true })
+    } catch (err) {
+      return new Hub.ActionResponse({ success: false, message: err.message })
+    }
+
   }
 
   async form(request: Hub.ActionRequest) {
@@ -84,7 +79,7 @@ export class AmazonS3Action extends Hub.Action {
             name: "bucket",
             required: true,
             options: res.Buckets.map((c) => {
-              return {name: c.Name!, label: c.Name!}
+              return { name: c.Name!, label: c.Name! }
             }),
             type: "select",
             default: res.Buckets[0].Name,
