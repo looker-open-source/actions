@@ -1,6 +1,8 @@
 import * as express from "express"
+import * as httpRequest from "request"
 import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
+import { PassThrough, Readable } from "stream"
 import { truncateString } from "./utils"
 
 import {
@@ -9,13 +11,20 @@ import {
 } from "../api_types/data_webhook_payload"
 import { DataWebhookPayloadScheduledPlanType } from "../api_types/data_webhook_payload_scheduled_plan"
 import {
+  IntegrationSupportedDownloadSettings as ActionDownloadSettings,
   IntegrationSupportedFormats as ActionFormat,
   IntegrationSupportedFormattings as ActionFormatting,
   IntegrationSupportedVisualizationFormattings as ActionVisualizationFormatting,
 } from "../api_types/integration"
 import { Query } from "../api_types/query"
 
-export { ActionType, ActionFormat, ActionFormatting, ActionVisualizationFormatting }
+export {
+  ActionType,
+  ActionFormat,
+  ActionFormatting,
+  ActionVisualizationFormatting,
+  ActionDownloadSettings,
+}
 
 export interface ParamMap {
   [name: string]: string | undefined
@@ -44,6 +53,8 @@ export interface ActionScheduledPlan {
   query?: Query | null
   /** A boolean representing whether this schedule payload has customized the filter values. */
   filtersDifferFromLook?: boolean
+  /** A string to be included in scheduled integrations if this scheduled plan is a download query */
+  downloadUrl?: string | null
 }
 
 export class ActionRequest {
@@ -95,6 +106,7 @@ export class ActionRequest {
         title: json.scheduled_plan.title,
         type: json.scheduled_plan.type,
         url: json.scheduled_plan.url,
+        downloadUrl: json.scheduled_plan.download_url,
       }
     }
 
@@ -117,6 +129,19 @@ export class ActionRequest {
   instanceId?: string
   webhookId?: string
   lookerVersion: string | null = null
+
+  async stream<T>(callback: (readable: Readable) => Promise<T>): Promise <T> {
+    const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
+    if (!url) {
+      throw new Error(
+        "startStream was called on an ActionRequest that does not have" +
+        "a streaming download url. Ensure the action has set supportsStreaming to true")
+    }
+    const stream = new PassThrough()
+    const promise = callback(stream)
+    httpRequest.get(url).pipe(stream)
+    return promise
+  }
 
   suggestedFilename() {
     if (this.attachment) {

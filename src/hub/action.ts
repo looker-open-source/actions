@@ -2,6 +2,7 @@ import * as fs from "fs"
 import * as path from "path"
 
 import {
+  ActionDownloadSettings,
   ActionForm,
   ActionFormat,
   ActionFormatting,
@@ -42,6 +43,7 @@ export abstract class Action {
   abstract name: string
   abstract label: string
   abstract description: string
+  supportsStreaming = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
@@ -67,6 +69,13 @@ export abstract class Action {
       supported_formats: this.supportedFormats,
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
+      supported_download_settings: (
+        this.supportsStreaming
+          ?
+            [ActionDownloadSettings.Url]
+          :
+            [ActionDownloadSettings.Push]
+      ),
       icon_data_uri: this.getImageDataUri(),
       url: this.execute ? router.actionUrl(this) : null,
     }
@@ -93,6 +102,10 @@ export abstract class Action {
       } else {
         throw `No "params" provided but this action has required parameters.`
       }
+    }
+
+    if (this.supportsStreaming && (!request.scheduledPlan || !request.scheduledPlan.downloadUrl)) {
+      throw "A streaming action was sent non-streaming data."
     }
 
     return this.execute(request)

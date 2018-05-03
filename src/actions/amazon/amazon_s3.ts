@@ -9,6 +9,7 @@ export class AmazonS3Action extends Hub.Action {
   iconName = "amazon/amazon_s3.png"
   description = "Write data files to an S3 bucket."
   supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
+  supportsStreaming = true
   requiredFields = []
   params = [
     {
@@ -35,10 +36,6 @@ export class AmazonS3Action extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw new Error("Couldn't get data from attachment.")
-    }
-
     if (!request.formParams || !request.formParams.bucket) {
       throw new Error("Need Amazon S3 bucket.")
     }
@@ -51,14 +48,17 @@ export class AmazonS3Action extends Hub.Action {
       throw new Error("Couldn't determine filename.")
     }
 
-    const params = {
-      Bucket: request.formParams.bucket,
-      Key: filename,
-      Body: request.attachment.dataBuffer,
-    }
+    const bucket = request.formParams.bucket
 
     try {
-      await s3.putObject(params).promise()
+      await request.stream(async (readable) => {
+        const params = {
+          Bucket: bucket,
+          Key: filename,
+          Body: readable,
+        }
+        return s3.upload(params).promise()
+      })
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
       return new Hub.ActionResponse({ success: false, message: err.message })
@@ -109,3 +109,4 @@ export class AmazonS3Action extends Hub.Action {
   }
 
 }
+
