@@ -130,7 +130,21 @@ export class ActionRequest {
   webhookId?: string
   lookerVersion: string | null = null
 
-  async stream<T>(callback: (readable: Readable) => Promise<T>): Promise <T> {
+  /** `stream` creates and manages a stream of the request data
+   *
+   * The only argument is a function will be passed a Node.js `Readable` object.
+   * The readable object represents the streaming data.
+   *
+   * The stream function will call the passed function and pass through its return value.
+   * (this is useful if you need to pass the `readable` object to something that returns a promise)
+   *
+   * ```ts
+   * let prom = await request.stream(async (readable) => {
+   *    return myService.uploadStreaming(readable).promise()
+   * })
+   * ```
+   */
+  stream<T>(callback: (readable: Readable) => T): T {
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
     if (!url) {
       throw new Error(
@@ -138,9 +152,9 @@ export class ActionRequest {
         "a streaming download url. Ensure the action has set supportsStreaming to true")
     }
     const stream = new PassThrough()
-    const promise = callback(stream)
+    const returnVal = callback(stream)
     httpRequest.get(url).pipe(stream)
-    return promise
+    return returnVal
   }
 
   suggestedFilename() {
