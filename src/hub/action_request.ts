@@ -4,8 +4,8 @@ import * as semver from "semver"
 import { truncateString } from "./utils"
 
 import {
+  DataWebhookPayload,
   DataWebhookPayloadType as ActionType,
-  WireResponseDataWebhookPayload,
 } from "../api_types/data_webhook_payload"
 import { DataWebhookPayloadScheduledPlanType } from "../api_types/data_webhook_payload_scheduled_plan"
 import {
@@ -13,7 +13,7 @@ import {
   IntegrationSupportedFormattings as ActionFormatting,
   IntegrationSupportedVisualizationFormattings as ActionVisualizationFormatting,
 } from "../api_types/integration"
-import { WireResponseQuery } from "../api_types/query"
+import { Query } from "../api_types/query"
 
 export { ActionType, ActionFormat, ActionFormatting, ActionVisualizationFormatting }
 
@@ -41,7 +41,7 @@ export interface ActionScheduledPlan {
   /** ID of the query that the data payload represents. */
   queryId?: number | null
   /** Query that was run (not available for dashboards) */
-  query?: WireResponseQuery | null
+  query?: Query | null
   /** A boolean representing whether this schedule payload has customized the filter values. */
   filtersDifferFromLook?: boolean
 }
@@ -60,7 +60,7 @@ export class ActionRequest {
     return actionRequest
   }
 
-  static fromJSON(json: WireResponseDataWebhookPayload) {
+  static fromJSON(json: DataWebhookPayload) {
 
     if (!json) {
       throw "Request body must be valid JSON."
