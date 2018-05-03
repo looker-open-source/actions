@@ -13,7 +13,7 @@ const requiredTypings = [
 ]
 
 requiredTypings.forEach((t) => {
-  const src = path.join(__dirname, "..", "..", "helltool", "lib", "helltool", "assets", "api_types", `${t}.ts`)
+  const src = path.join(__dirname, "..", "..", "helltool", "lib", "helltool", "assets", "core_api", "types", `${t}.ts`)
   const dest = path.join(__dirname, "..", "src", "api_types", `${t}.ts`)
   if (!fs.existsSync(path.dirname(dest))) {
     fs.mkdirSync(path.dirname(dest))
