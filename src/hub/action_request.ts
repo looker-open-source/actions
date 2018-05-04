@@ -4,6 +4,7 @@ import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import { truncateString } from "./utils"
+import * as oboe from "oboe"
 
 import {
   DataWebhookPayload,
@@ -17,6 +18,8 @@ import {
   IntegrationSupportedVisualizationFormattings as ActionVisualizationFormatting,
 } from "../api_types/integration"
 import { Query } from "../api_types/query"
+import { LookmlModelExploreFieldset as Fieldset } from "../api_types/lookml_model_explore_fieldset";
+import { Row as JsonDetailRow } from "./json_detail";
 
 export {
   ActionType,
@@ -132,7 +135,7 @@ export class ActionRequest {
 
   /** `stream` creates and manages a stream of the request data
    *
-   * The only argument is a function will be passed a Node.js `Readable` object.
+   * The argument is a function will be passed a Node.js `Readable` object.
    * The readable object represents the streaming data.
    *
    * The stream function will call the passed function and pass through its return value.
@@ -163,6 +166,38 @@ export class ActionRequest {
       }
     }
     return returnVal
+  }
+
+  async streamJson(callbacks: {
+    onRow: (row: {[fieldName: string]: any}) => void,
+  }) {
+    return new Promise<void>((resolve) => {
+      this.stream((readable) => {
+        oboe(readable)
+          .node("![*]", (row) => {
+            callbacks.onRow(row)
+          })
+          .done(() => resolve())
+      })
+    })
+  }
+
+  async streamJsonDetail(callbacks: {
+    onFields?: (fields: Fieldset) => void,
+    onRow: (row: JsonDetailRow) => void,
+  }) {
+    return new Promise<void>((resolve) => {
+      this.stream((readable) => {
+        oboe(readable)
+          .node("data.*", (row) => {
+            callbacks.onRow(row)
+          })
+          .node("!.fields", (fields) => {
+            callbacks.onFields && callbacks.onFields(fields)
+          })
+          .done(() => resolve())
+      })
+    })
   }
 
   suggestedFilename() {
