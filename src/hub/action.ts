@@ -43,7 +43,7 @@ export abstract class Action {
   abstract name: string
   abstract label: string
   abstract description: string
-  supportsStreaming = false
+  usesStreaming = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
@@ -70,7 +70,7 @@ export abstract class Action {
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       supported_download_settings: (
-        this.supportsStreaming
+        this.usesStreaming
           ?
             [ActionDownloadSettings.Url]
           :
@@ -104,7 +104,7 @@ export abstract class Action {
       }
     }
 
-    if (this.supportsStreaming && (!request.scheduledPlan || !request.scheduledPlan.downloadUrl)) {
+    if (this.usesStreaming && (!request.scheduledPlan || !request.scheduledPlan.downloadUrl)) {
       throw "A streaming action was sent non-streaming data."
     }
 

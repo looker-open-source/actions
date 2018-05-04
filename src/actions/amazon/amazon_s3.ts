@@ -9,7 +9,7 @@ export class AmazonS3Action extends Hub.Action {
   iconName = "amazon/amazon_s3.png"
   description = "Write data files to an S3 bucket."
   supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
-  supportsStreaming = true
+  usesStreaming = true
   requiredFields = []
   params = [
     {

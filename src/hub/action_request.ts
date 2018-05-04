@@ -143,17 +143,25 @@ export class ActionRequest {
    *    return myService.uploadStreaming(readable).promise()
    * })
    * ```
+   *
+   * Streaming generally occurs only if Looker sends the data in a streaming fashion via a push url,
+   * however it will also wrap non-streaming attachment data so that actions only need a single implementation.
    */
   stream<T>(callback: (readable: Readable) => T): T {
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
-    if (!url) {
-      throw new Error(
-        "startStream was called on an ActionRequest that does not have" +
-        "a streaming download url. Ensure the action has set supportsStreaming to true")
-    }
     const stream = new PassThrough()
     const returnVal = callback(stream)
-    httpRequest.get(url).pipe(stream)
+    if (url) {
+      httpRequest.get(url).pipe(stream)
+    } else {
+      if (this.attachment && this.attachment.dataBuffer) {
+        stream.write(this.attachment.dataBuffer)
+      } else {
+        throw new Error(
+          "startStream was called on an ActionRequest that does not have" +
+          "a streaming download url or an attachment. Ensure usesStreaming is set properly on the action.")
+      }
+    }
     return returnVal
   }
 
