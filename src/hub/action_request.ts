@@ -176,6 +176,7 @@ export class ActionRequest {
         oboe(readable)
           .node("![*]", (row) => {
             callbacks.onRow(row)
+            return oboe.drop
           })
           .done(() => resolve())
       })
@@ -191,9 +192,13 @@ export class ActionRequest {
         oboe(readable)
           .node("data.*", (row) => {
             callbacks.onRow(row)
+            return oboe.drop
           })
           .node("!.fields", (fields) => {
-            callbacks.onFields && callbacks.onFields(fields)
+            if (callbacks.onFields) {
+              callbacks.onFields(fields)
+            }
+            return oboe.drop
           })
           .done(() => resolve())
       })
