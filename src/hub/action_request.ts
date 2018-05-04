@@ -1,10 +1,10 @@
 import * as express from "express"
+import * as oboe from "oboe"
 import * as httpRequest from "request"
 import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import { truncateString } from "./utils"
-import * as oboe from "oboe"
 
 import {
   DataWebhookPayload,
@@ -17,9 +17,9 @@ import {
   IntegrationSupportedFormattings as ActionFormatting,
   IntegrationSupportedVisualizationFormattings as ActionVisualizationFormatting,
 } from "../api_types/integration"
+import { LookmlModelExploreFieldset as Fieldset } from "../api_types/lookml_model_explore_fieldset"
 import { Query } from "../api_types/query"
-import { LookmlModelExploreFieldset as Fieldset } from "../api_types/lookml_model_explore_fieldset";
-import { Row as JsonDetailRow } from "./json_detail";
+import { Row as JsonDetailRow } from "./json_detail"
 
 export {
   ActionType,
