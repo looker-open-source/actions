@@ -6,7 +6,7 @@ export function installWorkplace(req: any, res: any) {
   if (!req.query.code) {
     return res
       .status(400)
-      .render("error", { message: "No code received." })
+      .render("workplace/error", { message: "No code received." })
   }
 
   const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
@@ -23,7 +23,7 @@ export function installWorkplace(req: any, res: any) {
         if (tokenErr) {
           return res
             .status(500)
-            .render("error", {
+            .render("workplace/error", {
               message: "Error when sending request for access token.",
             })
         }
@@ -31,7 +31,7 @@ export function installWorkplace(req: any, res: any) {
         if (tokenResponse.statusCode !== 200) {
           return res
             .status(500)
-            .render("error", {
+            .render("workplace/error", {
               message: "Access token exchange failed.",
               code: JSON.stringify(parsedTokenBody.error),
             })
@@ -41,16 +41,16 @@ export function installWorkplace(req: any, res: any) {
         if (!accessToken) {
           return res
             .status(500)
-            .render("error", {
+            .render("workplace/error", {
               message: "Response did not contain an access token.",
             })
         }
 
-        return res.render("success", { accessToken })
+        return res.render("workplace/success", { accessToken })
 
       } catch (accessTokenRequestError) {
         // console.error(accessTokenRequestError)
-        res.render("error", {
+        res.render("workplace/error", {
           message: "Facebook Graph API returned an error.",
         })
       }

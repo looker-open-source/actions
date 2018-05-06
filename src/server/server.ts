@@ -135,8 +135,8 @@ export default class Server implements Hub.RouteBuilder {
 
     // Facebook Workplace install endpoints
     // mounting this in the same namespace as the facebook-workplace action
-    this.app.get("/actions/facebook-workplace/install", installWorkplace)
-    this.app.get("/actions/facebook-workplace/uninstall", uninstallWorkplace)
+    this.app.get("/actions/workplace-facebook/install", installWorkplace)
+    this.app.get("/actions/workplace-facebook/uninstall", uninstallWorkplace)
   }
 
   actionUrl(action: Hub.Action) {
