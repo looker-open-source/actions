@@ -135,12 +135,6 @@ export class ActionRequest {
 
   /** `stream` creates and manages a stream of the request data
    *
-   * The argument is a function will be passed a Node.js `Readable` object.
-   * The readable object represents the streaming data.
-   *
-   * The stream function will call the passed function and pass through its return value.
-   * (this is useful if you need to pass the `readable` object to something that returns a promise)
-   *
    * ```ts
    * let prom = await request.stream(async (readable) => {
    *    return myService.uploadStreaming(readable).promise()
@@ -149,6 +143,11 @@ export class ActionRequest {
    *
    * Streaming generally occurs only if Looker sends the data in a streaming fashion via a push url,
    * however it will also wrap non-streaming attachment data so that actions only need a single implementation.
+   *
+   * @returns The return value of the `callback` function. This is useful for returning
+   * a promise from the `callback` function.
+   * @param callback A function will be caled with a Node.js `Readable` object.
+   * The readable object represents the streaming data.
    */
   stream<T>(callback: (readable: Readable) => T): T {
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
@@ -168,14 +167,20 @@ export class ActionRequest {
     return returnVal
   }
 
-  async streamJson(callbacks: {
-    onRow: (row: {[fieldName: string]: any}) => void,
-  }) {
+  /**
+   * A streaming helper for the "json" data format. It handles automatically parsing
+   * the JSON in a streaming fashion. You just need to implement a function that will
+   * be called for each row.
+   *
+   * @returns A promise that will be resolved when streaming is complete.
+   * @param onRow A function that will be called for each streamed row, with the row as the first argument.
+   */
+  async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
     return new Promise<void>((resolve) => {
       this.stream((readable) => {
         oboe(readable)
           .node("![*]", (row) => {
-            callbacks.onRow(row)
+            onRow(row)
             return oboe.drop
           })
           .done(() => resolve())
@@ -183,6 +188,15 @@ export class ActionRequest {
     })
   }
 
+  /**
+   * A streaming helper for the "json_detail" data format. It handles automatically parsing
+   * the JSON in a streaming fashion. You can implement an `onFields` callback to get
+   * the field metadata, and an `onRow` callback for each row of data.
+   *
+   * @returns A promise that will be resolved when streaming is complete.
+   * @param callbacks An object consisting of several callbacks that will be called
+   * when various parts of the data are parsed.
+   */
   async streamJsonDetail(callbacks: {
     onFields?: (fields: Fieldset) => void,
     onRow: (row: JsonDetailRow) => void,
