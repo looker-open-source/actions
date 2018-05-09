@@ -83,6 +83,10 @@ export abstract class Action {
 
   async validateAndExecute(request: ActionRequest) {
 
+    if (!request.type) {
+      throw `Action did not specify a "type". Valid types for this action are: ${this.supportedActionTypes.join(", ")}.`
+    }
+
     if (this.supportedActionTypes &&
       this.supportedActionTypes.indexOf(request.type) === -1
     ) {
@@ -104,8 +108,11 @@ export abstract class Action {
       }
     }
 
-    if (this.usesStreaming && (!request.scheduledPlan || !request.scheduledPlan.downloadUrl)) {
-      throw "A streaming action was sent non-streaming data."
+    if (
+      this.usesStreaming &&
+      !(request.attachment || (request.scheduledPlan && request.scheduledPlan.downloadUrl))
+    ) {
+      throw "A streaming action was sent incompatible data. The action must have a download url or an attachment."
     }
 
     return this.execute(request)

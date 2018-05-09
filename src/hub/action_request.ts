@@ -157,7 +157,7 @@ export class ActionRequest {
       httpRequest.get(url).pipe(stream)
     } else {
       if (this.attachment && this.attachment.dataBuffer) {
-        stream.write(this.attachment.dataBuffer)
+        stream.end(this.attachment.dataBuffer)
       } else {
         throw new Error(
           "startStream was called on an ActionRequest that does not have" +
