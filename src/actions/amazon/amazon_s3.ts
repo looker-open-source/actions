@@ -101,4 +101,3 @@ export class AmazonS3Action extends Hub.Action {
   }
 
 }
-
