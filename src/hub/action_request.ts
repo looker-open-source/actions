@@ -172,6 +172,12 @@ export class ActionRequest {
    * the JSON in a streaming fashion. You just need to implement a function that will
    * be called for each row.
    *
+   * ```ts
+   * await request.streamJson((row) => {
+   *   // This will be called for each row of data
+   * })
+   * ```
+   *
    * @returns A promise that will be resolved when streaming is complete.
    * @param onRow A function that will be called for each streamed row, with the row as the first argument.
    */
@@ -192,6 +198,17 @@ export class ActionRequest {
    * A streaming helper for the "json_detail" data format. It handles automatically parsing
    * the JSON in a streaming fashion. You can implement an `onFields` callback to get
    * the field metadata, and an `onRow` callback for each row of data.
+   *
+   * ```ts
+   * await request.streamJsonDetail({
+   *   onFields: (fields) => {
+   *     // This will be called when fields are available
+   *   },
+   *   onRow: (row) => {
+   *     // This will be called for each row of data
+   *   },
+   * })
+   * ```
    *
    * @returns A promise that will be resolved when streaming is complete.
    * @param callbacks An object consisting of several callbacks that will be called
