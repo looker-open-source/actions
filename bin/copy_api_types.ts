@@ -10,6 +10,12 @@ const requiredTypings = [
   "integration",
   "integration_param",
   "integration_required_field",
+  "lookml_model_explore_field",
+  "lookml_model_explore_fieldset",
+  "lookml_model_explore_field_enumeration",
+  "lookml_model_explore_field_map_layer",
+  "lookml_model_explore_field_sql_case",
+  "lookml_model_explore_field_time_interval",
 ]
 
 requiredTypings.forEach((t) => {

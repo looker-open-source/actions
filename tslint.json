@@ -18,6 +18,7 @@
       "use-default-type-parameter": true,
       "deprecation": true,
       "return-undefined": true,
+      "no-unused-expression": false,
       "interface-name": [
         true,
         "never-prefix"

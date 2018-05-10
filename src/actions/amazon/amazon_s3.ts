@@ -9,6 +9,7 @@ export class AmazonS3Action extends Hub.Action {
   iconName = "amazon/amazon_s3.png"
   description = "Write data files to an S3 bucket."
   supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
+  usesStreaming = true
   requiredFields = []
   params = [
     {
@@ -34,83 +35,69 @@ export class AmazonS3Action extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        reject("Couldn't get data from attachment.")
-        return
-      }
+    if (!request.formParams || !request.formParams.bucket) {
+      throw new Error("Need Amazon S3 bucket.")
+    }
 
-      if (!request.formParams || !request.formParams.bucket) {
-        reject("Need Amazon S3 bucket.")
-        return
-      }
+    const s3 = this.amazonS3ClientFromRequest(request)
 
-      const s3 = this.amazonS3ClientFromRequest(request)
+    const filename = request.formParams.filename || request.suggestedFilename()
 
-      const filename = request.formParams.filename || request.suggestedFilename()
+    if (!filename) {
+      throw new Error("Couldn't determine filename.")
+    }
 
-      if (!filename) {
-        reject("Couldn't determine filename.")
-        return
-      }
+    const bucket = request.formParams.bucket
 
-      const params = {
-        Bucket: request.formParams.bucket,
-        Key: filename,
-        Body: request.attachment.dataBuffer,
-      }
-
-      s3.putObject(params, (err) => {
-        if (err) {
-          resolve(new Hub.ActionResponse({ success: false, message: err.message }))
-        } else {
-          resolve(new Hub.ActionResponse({ success: true }))
+    try {
+      await request.stream(async (readable) => {
+        const params = {
+          Bucket: bucket,
+          Key: filename,
+          Body: readable,
         }
+        return s3.upload(params).promise()
       })
-    })
+      return new Hub.ActionResponse({ success: true })
+    } catch (err) {
+      return new Hub.ActionResponse({ success: false, message: err.message })
+    }
+
   }
 
   async form(request: Hub.ActionRequest) {
-    const promise = new Promise<Hub.ActionForm>((resolve, reject) => {
-      const s3 = this.amazonS3ClientFromRequest(request)
-      s3.listBuckets((err, res) => {
-        if (err || !res.Buckets) {
-          reject(err)
-        } else {
-          const form = new Hub.ActionForm()
-          form.fields = [{
-            label: "Bucket",
-            name: "bucket",
-            required: true,
-            options: res.Buckets.map((c) => {
-              return {name: c.Name!, label: c.Name!}
-            }),
-            type: "select",
-            default: res.Buckets[0].Name,
-          }, {
-            label: "Path",
-            name: "path",
-            type: "string",
-          }, {
-            label: "Filename",
-            name: "filename",
-            type: "string",
-          }]
-
-          resolve(form)
-        }
-      })
-    })
-    return promise
+    const s3 = this.amazonS3ClientFromRequest(request)
+    const res = await s3.listBuckets().promise()
+    const buckets = res.Buckets || []
+    const form = new Hub.ActionForm()
+    form.fields = [{
+      label: "Bucket",
+      name: "bucket",
+      required: true,
+      options: buckets.map((c) => {
+        return { name: c.Name!, label: c.Name! }
+      }),
+      type: "select",
+      default: buckets[0].Name,
+    }, {
+      label: "Path",
+      name: "path",
+      type: "string",
+    }, {
+      label: "Filename",
+      name: "filename",
+      type: "string",
+    }]
+    return form
   }
 
   protected amazonS3ClientFromRequest(request: Hub.ActionRequest) {
-    return new S3(({
+    return new S3({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,
       secretAccessKey: request.params.secret_access_key,
-    }))
+    })
   }
 
 }
