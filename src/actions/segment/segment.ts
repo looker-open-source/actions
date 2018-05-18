@@ -1,9 +1,9 @@
 import * as uuid from "uuid"
 
 import { LookmlModelExploreField as Field } from "../../api_types/lookml_model_explore_field"
-import { LookmlModelExploreFieldset as Fieldset } from "../../api_types/lookml_model_explore_fieldset"
 import * as Hub from "../../hub"
 import { Row as JsonDetailRow } from "../../hub/json_detail"
+import { SegmentActionError } from "./segment_error"
 
 const segment: any = require("analytics-node")
 
@@ -59,6 +59,9 @@ export class SegmentAction extends Hub.Action {
       await this.processSegment(request, SegmentCalls.Identify)
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
+      if (err instanceof SegmentActionError) {
+        throw err
+      }
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
@@ -67,7 +70,7 @@ export class SegmentAction extends Hub.Action {
     const segmentClient = this.segmentClientFromRequest(request)
 
     let segmentFields: SegmentFields
-    let fieldset: Fieldset
+    let fieldset: Field[] = []
 
     // TODO pull run_at out of json_detail
     const timestamp = Date.now()
@@ -77,43 +80,50 @@ export class SegmentAction extends Hub.Action {
         version: process.env.APP_VERSION,
       },
     }
-
-    /* tslint:disable no-console */
     await request.streamJsonDetail({
       onFields: (fields) => {
-        console.log(`onFields ${fields}`)
-        fieldset = fields
+        if (fields.dimensions) {
+          fieldset = fieldset.concat(fields.dimensions)
+        }
+        if (fields.measures) {
+          fieldset = fieldset.concat(fields.measures)
+        }
+        if (fields.filters) {
+          fieldset = fieldset.concat(fields.filters)
+        }
+        if (fields.parameters) {
+          fieldset = fieldset.concat(fields.parameters)
+        }
         segmentFields = this.segmentFields(fieldset)
         if (!segmentFields.idFieldNames || segmentFields.idFieldNames.length === 0) {
-          throw new Error(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
+          throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
         }
       },
       onRow: (row) => {
-        console.log(`onFields ${row}`)
-        if (!fieldset || !segmentFields) {
-          throw new Error(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
+        if (!segmentFields.idFieldNames || segmentFields.idFieldNames.length === 0) {
+          throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
         }
-        const {
-          traits,
-          userId,
-          anonymousId,
-          groupId,
-        } = this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields)
 
-        const payload = {
-          anonymousId,
-          context,
-          traits,
-          timestamp,
-          userId,
-          groupId,
-        }
-        if (!groupId) {
+        const payload: {
+          traits: {[key: string]: string},
+          userId: string | null,
+          anonymousId: string | null,
+          groupId: string | null,
+          timestamp: number,
+          context: {
+            app: {
+              name: string,
+              version: string | undefined,
+            },
+          },
+        } = {...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields), ...{context, timestamp}}
+        if (payload.groupId === null) {
           delete payload.groupId
         }
         segmentClient[segmentCall](payload)
       },
     })
+
     await segmentClient.flush((err: any) => {
       return new Promise((resolve, reject) => {
         if (err) {
@@ -125,20 +135,18 @@ export class SegmentAction extends Hub.Action {
     })
   }
 
-  protected taggedFields(fieldset: Fieldset, tags: string[]) {
-    let fields = fieldset.dimensions ? fieldset.dimensions : []
-    fields = fields.concat(fieldset.measures ? fieldset.measures : [])
+  protected taggedFields(fields: Field[], tags: string[]) {
     return fields.filter((f: Field) =>
       f.tags && f.tags.some((t: string) => tags.indexOf(t) !== -1),
     )
   }
 
-  protected taggedField(fieldset: Fieldset, tags: string[]) {
-    return this.taggedFields(fieldset, tags)[0]
+  protected taggedField(fields: any[], tags: string[]) {
+    return this.taggedFields(fields, tags)[0]
   }
 
-  protected segmentFields(fieldset: Fieldset): SegmentFields {
-    const idFieldNames = this.taggedFields(fieldset, [
+  protected segmentFields(fields: Field[]): SegmentFields {
+    const idFieldNames = this.taggedFields(fields, [
       SegmentTags.Email,
       SegmentTags.SegmentAnonymousId,
       SegmentTags.UserId,
@@ -147,22 +155,20 @@ export class SegmentAction extends Hub.Action {
 
     return {
       idFieldNames,
-      idField: this.taggedField(fieldset, [SegmentTags.UserId, SegmentTags.SegmentAnonymousId]),
-      userIdField: this.taggedField(fieldset, [SegmentTags.UserId]),
-      groupIdField: this.taggedField(fieldset, [SegmentTags.SegmentGroupId]),
-      emailField: this.taggedField(fieldset, [SegmentTags.Email]),
-      anonymousIdField: this.taggedField(fieldset, [SegmentTags.SegmentAnonymousId]),
+      idField: this.taggedField(fields, [SegmentTags.UserId, SegmentTags.SegmentAnonymousId]),
+      userIdField: this.taggedField(fields, [SegmentTags.UserId]),
+      groupIdField: this.taggedField(fields, [SegmentTags.SegmentGroupId]),
+      emailField: this.taggedField(fields, [SegmentTags.Email]),
+      anonymousIdField: this.taggedField(fields, [SegmentTags.SegmentAnonymousId]),
     }
   }
 
   protected prepareSegmentTraitsFromRow(
     row: JsonDetailRow,
-    fieldset: Fieldset,
+    fields: Field[],
     segmentFields: SegmentFields,
   ) {
     const traits: {[key: string]: string} = {}
-    let fields = fieldset.dimensions ? fieldset.dimensions : []
-    fields = fields.concat(fieldset.measures ? fieldset.measures : [])
     for (const field of fields) {
       const value = row[field.name].value
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {

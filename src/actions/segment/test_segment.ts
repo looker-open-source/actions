@@ -20,7 +20,7 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
   })
 }
 
-describe(`${action.constructor.name} unit tests`, () => {
+describe.only(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -30,10 +30,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["user_id"]}],
-        data: [{coolfield: {value: "funvalue"}}],
-      }}
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+          fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
+          data: [{coolfield: {value: "funvalue"}}],
+        }))}
       return expectSegmentMatch(request, {
         userId: "funvalue",
         anonymousId: null,
@@ -46,10 +46,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["email"]}],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
         data: [{coolfield: {value: "funvalue"}}],
-      }}
+      }))}
       return expectSegmentMatch(request, {
         anonymousId: "stubanon",
         userId: null,
@@ -63,10 +63,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolemail", tags: ["email"]}, {name: "coolid", tags: ["user_id"]}],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [{name: "coolemail", tags: ["email"]}, {name: "coolid", tags: ["user_id"]}]},
         data: [{coolemail: {value: "email@email.email"}, coolid: {value: "id"}}],
-      }}
+      }))}
       return expectSegmentMatch(request, {
         userId: "id",
         traits: {email: "email@email.email"},
@@ -80,13 +80,13 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [
           {name: "coolemail", tags: ["email"]},
           {name: "coolid", tags: ["user_id"]},
-          {name: "coolanonymousid", tags: ["segment_anonymous_id"]}],
+          {name: "coolanonymousid", tags: ["segment_anonymous_id"]}]},
         data: [{coolemail: {value: "email@email.email"}, coolid: {value: "id"}, coolanonymousid: {value: "anon_id"}}],
-      }}
+      }))}
       return expectSegmentMatch(request, {
         userId: "id",
         traits: {email: "email@email.email"},
@@ -100,20 +100,20 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [
           {name: "coolemail", tags: ["email"]},
           {name: "coolid", tags: ["user_id"]},
           {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
           {name: "cooltrait"},
-        ],
+        ]},
         data: [{
           coolemail: {value: "emailemail"},
           coolid: {value: "id"},
           coolanonymousid: {value: "anon_id"},
           cooltrait: {value: "funtrait"},
         }],
-      }}
+      }))}
       return expectSegmentMatch(request, {
         userId: "id",
         traits: {
@@ -130,11 +130,13 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolid", tags: ["user_id"]}, {name: "coolanonymousid", tags: ["segment_anonymous_id"]}],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [
+          {name: "coolid", tags: ["user_id"]}, {name: "coolanonymousid", tags: ["segment_anonymous_id"]}
+        ]},
         data: [
             {coolid: {value: "id"}, coolanonymousid: {value: "anon_id"}}],
-      }}
+      }))}
       return expectSegmentMatch(request, {
         userId: "id",
         anonymousId: "anon_id",
@@ -147,11 +149,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [
-            {name: "coolanonymousid", tags: ["segment_anonymous_id"]}],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [
+            {name: "coolanonymousid", tags: ["segment_anonymous_id"]}
+        ]},
         data: [{coolanonymousid: {value: "anon_id"}}],
-      }}
+      }))}
       return expectSegmentMatch(request, {
         userId: "anon_id",
         anonymousId: "anon_id",
@@ -164,10 +167,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["email"]}],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
         data: [{coolfield: {value: "funvalue"}, hiddenfield: {value: "hiddenvalue"}}],
-      }}
+      }))}
       request.scheduledPlan = {
         query: {
           vis_config: {
@@ -190,10 +193,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["user_id"]}],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
         data: [{coolfield: {value: null}}],
-      }}
+      }))}
       return expectSegmentMatch(request, {
         userId: null,
         anonymousId: "stubanon",
@@ -217,9 +220,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         data: [{coolfield: {value: "funvalue"}}],
-      }}
+      }))}
       return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
     })
@@ -230,7 +233,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataJSON: {fields: [{}], data: []}}
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [{name: "coolfield"}]},
+        data: [{coolfield: {value: "funvalue"}}],
+      }))}
       return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
     })
@@ -238,15 +244,12 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("errors if there is no write key", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
-      request.params = {
-        segment_write_key: "mykey",
-      }
-      request.attachment = {dataJSON: {
-        fields: [{name: "coolfield", tags: ["user_id"]}],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
         data: [],
-      }}
+      }))}
       return chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith("You must pass your Segment project's write key.")
+        .be.rejectedWith(`Required parameter "segment_write_key" not provided.`)
     })
 
   })
