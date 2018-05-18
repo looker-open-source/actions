@@ -20,7 +20,7 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
   })
 }
 
-describe.only(`${action.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
@@ -132,7 +132,7 @@ describe.only(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [
-          {name: "coolid", tags: ["user_id"]}, {name: "coolanonymousid", tags: ["segment_anonymous_id"]}
+          {name: "coolid", tags: ["user_id"]}, {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
         ]},
         data: [
             {coolid: {value: "id"}, coolanonymousid: {value: "anon_id"}}],
@@ -151,7 +151,7 @@ describe.only(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [
-            {name: "coolanonymousid", tags: ["segment_anonymous_id"]}
+            {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
         ]},
         data: [{coolanonymousid: {value: "anon_id"}}],
       }))}
