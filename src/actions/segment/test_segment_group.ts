@@ -13,7 +13,7 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
       return { group: groupSpy, flush: (cb: () => void) => cb()}
      })
   const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
-  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
+  return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
     chai.expect(groupSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
     stubAnon.restore()
@@ -26,43 +26,49 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
-      return chai.expect(action.execute(request)).to.eventually
+      request.type = Hub.ActionType.Query
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("No attached json")
     })
 
     it("errors if the query response has no fields", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {wrong: true}}
-      return chai.expect(action.execute(request)).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Request payload is an invalid format.")
     })
 
     it("errors if the query response is has no data", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {fields: []}}
-      return chai.expect(action.execute(request)).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Request payload is an invalid format.")
     })
 
     it("errors if there is no tag field", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {fields: [{}], data: []}}
-      return chai.expect(action.execute(request)).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Query requires a field tagged segment_group_id.")
     })
 
     it("errors if there is no write key", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {
         fields: [{ name: "coolfield", tags: ["segment_group_id"]}],
         data: [],
       }}
-      return chai.expect(action.execute(request)).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("You must pass your Segment project's write key.")
     })
 
     it("works with segment_group_id", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {
         fields: [{ name: "coolfield", tags: ["segment_group_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
@@ -76,6 +82,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("works with segment_group_id and user_id", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {
         fields: [{ name: "coolfield", tags: ["segment_group_id"]}, {name: "coolid", tags: ["user_id"]}],
         data: [{ coolfield: { value: "funvalue"}, coolid: {value: "id"}}],
@@ -89,6 +96,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("works with segment_group_id, user id and email", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {
         fields: [
           {name: "coolemail", tags: ["email"]},
@@ -118,6 +126,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("works with segment_group_id, user id and anonymous id", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {
         fields: [
           { name: "coolfield", tags: ["segment_group_id"]},
@@ -134,6 +143,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("works with segment_group_id and null user_id", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.attachment = {dataJSON: {
         fields: [{ name: "coolfield", tags: ["segment_group_id"]}, {name: "coolid", tags: ["user_id"]}],
         data: [{ coolfield: { value: "funvalue"}, coolid: {value: null}}],

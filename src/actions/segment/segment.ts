@@ -1,16 +1,19 @@
 import * as uuid from "uuid"
 
+import { LookmlModelExploreField as Field } from "../../api_types/lookml_model_explore_field"
+import { LookmlModelExploreFieldset as Fieldset } from "../../api_types/lookml_model_explore_fieldset"
 import * as Hub from "../../hub"
+import { Row as JsonDetailRow } from "../../hub/json_detail"
 
 const segment: any = require("analytics-node")
 
 interface SegmentFields {
   idFieldNames: string[],
-  idField: any,
-  userIdField: any,
-  groupIdField: any,
-  emailField: any,
-  anonymousIdField: any,
+  idField: Field,
+  userIdField: Field,
+  groupIdField: Field,
+  emailField: Field,
+  anonymousIdField: Field,
 }
 
 export enum SegmentTags {
@@ -18,6 +21,12 @@ export enum SegmentTags {
   SegmentAnonymousId = "segment_anonymous_id",
   Email = "email",
   SegmentGroupId = "segment_group_id",
+}
+
+export enum SegmentCalls {
+  Identify = "identify",
+  Track = "track",
+  Group = "group",
 }
 
 export class SegmentAction extends Hub.Action {
@@ -39,109 +48,125 @@ export class SegmentAction extends Hub.Action {
   ]
   minimumSupportedLookerVersion = "4.20.0"
   supportedActionTypes = [Hub.ActionType.Query]
+  usesStreaming = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
 
   async execute(request: Hub.ActionRequest) {
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
+    try {
+      await this.processSegment(request, SegmentCalls.Identify)
+      return new Hub.ActionResponse({ success: true })
+    } catch (err) {
+      return new Hub.ActionResponse({ success: false, message: err.message })
+    }
+  }
 
-      if (!(request.attachment && request.attachment.dataJSON)) {
-        reject("No attached json")
-        return
-      }
+  protected async processSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
+    const segmentClient = this.segmentClientFromRequest(request)
 
-      const qr = request.attachment.dataJSON
-      if (!qr.fields || !qr.data) {
-        reject("Request payload is an invalid format.")
-        return
-      }
+    let segmentFields: SegmentFields
+    let fieldset: Fieldset
 
-      const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
-      let hiddenFields = []
-      if (request.scheduledPlan &&
-          request.scheduledPlan.query &&
-          request.scheduledPlan.query.vis_config &&
-          request.scheduledPlan.query.vis_config.hidden_fields) {
-        hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
-      }
+    // TODO pull run_at out of json_detail
+    const timestamp = Date.now()
+    const context = {
+      app: {
+        name: "looker/actions",
+        version: process.env.APP_VERSION,
+      },
+    }
 
-      const segmentFields = this.segmentFields(fields)
-      if (!segmentFields.idFieldNames || segmentFields.idFieldNames.length === 0) {
-        reject(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
-        return
-      }
-      const timestamp = qr.ran_at && new Date(qr.ran_at)
-      const context = {
-        app: {
-          name: "looker/actions",
-          version: process.env.APP_VERSION,
-        },
-      }
-
-      const segmentClient = this.segmentClientFromRequest(request)
-      for (const row of qr.data) {
+    /* tslint:disable no-console */
+    await request.streamJsonDetail({
+      onFields: (fields) => {
+        console.log(`onFields ${fields}`)
+        fieldset = fields
+        segmentFields = this.segmentFields(fieldset)
+        if (!segmentFields.idFieldNames || segmentFields.idFieldNames.length === 0) {
+          throw new Error(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
+        }
+      },
+      onRow: (row) => {
+        console.log(`onFields ${row}`)
+        if (!fieldset || !segmentFields) {
+          throw new Error(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
+        }
         const {
           traits,
           userId,
           anonymousId,
-        } = this.prepareSegmentTraitsFromRow(row, fields, segmentFields, hiddenFields)
+          groupId,
+        } = this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields)
 
-        segmentClient.identify({
+        const payload = {
           anonymousId,
           context,
           traits,
           timestamp,
           userId,
-        })
-      }
-
-      segmentClient.flush((err: any) => {
+          groupId,
+        }
+        if (!groupId) {
+          delete payload.groupId
+        }
+        segmentClient[segmentCall](payload)
+      },
+    })
+    await segmentClient.flush((err: any) => {
+      return new Promise((resolve, reject) => {
         if (err) {
           reject(err)
         } else {
-          resolve(new Hub.ActionResponse())
+          resolve()
         }
       })
-
     })
   }
 
-  protected taggedFields(fields: any, tags: string[]) {
-    return fields.filter((f: any) =>
+  protected taggedFields(fieldset: Fieldset, tags: string[]) {
+    let fields = fieldset.dimensions ? fieldset.dimensions : []
+    fields = fields.concat(fieldset.measures ? fieldset.measures : [])
+    return fields.filter((f: Field) =>
       f.tags && f.tags.some((t: string) => tags.indexOf(t) !== -1),
     )
   }
 
-  protected taggedField(fields: any, tags: string[]) {
-    return this.taggedFields(fields, tags)[0]
+  protected taggedField(fieldset: Fieldset, tags: string[]) {
+    return this.taggedFields(fieldset, tags)[0]
   }
 
-  protected segmentFields(fields: any): SegmentFields {
-    const idFieldNames = this.taggedFields(fields, [
+  protected segmentFields(fieldset: Fieldset): SegmentFields {
+    const idFieldNames = this.taggedFields(fieldset, [
       SegmentTags.Email,
       SegmentTags.SegmentAnonymousId,
       SegmentTags.UserId,
       SegmentTags.SegmentGroupId,
-    ]).map((f: any) => (f.name))
+    ]).map((f: Field) => (f.name))
 
     return {
       idFieldNames,
-      idField: this.taggedField(fields, [SegmentTags.UserId, SegmentTags.SegmentAnonymousId]),
-      userIdField: this.taggedField(fields, [SegmentTags.UserId]),
-      groupIdField: this.taggedField(fields, [SegmentTags.SegmentGroupId]),
-      emailField: this.taggedField(fields, [SegmentTags.Email]),
-      anonymousIdField: this.taggedField(fields, [SegmentTags.SegmentAnonymousId]),
+      idField: this.taggedField(fieldset, [SegmentTags.UserId, SegmentTags.SegmentAnonymousId]),
+      userIdField: this.taggedField(fieldset, [SegmentTags.UserId]),
+      groupIdField: this.taggedField(fieldset, [SegmentTags.SegmentGroupId]),
+      emailField: this.taggedField(fieldset, [SegmentTags.Email]),
+      anonymousIdField: this.taggedField(fieldset, [SegmentTags.SegmentAnonymousId]),
     }
   }
 
-  protected prepareSegmentTraitsFromRow(row: any, fields: any[], segmentFields: SegmentFields, hiddenFields: any[]) {
-    const traits: any = {}
+  protected prepareSegmentTraitsFromRow(
+    row: JsonDetailRow,
+    fieldset: Fieldset,
+    segmentFields: SegmentFields,
+  ) {
+    const traits: {[key: string]: string} = {}
+    let fields = fieldset.dimensions ? fieldset.dimensions : []
+    fields = fields.concat(fieldset.measures ? fieldset.measures : [])
     for (const field of fields) {
       const value = row[field.name].value
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
-        if (hiddenFields.indexOf(field.name) === -1) {
+        if (!field.hidden) {
           traits[field.name] = value
         }
       }
@@ -149,14 +174,14 @@ export class SegmentAction extends Hub.Action {
         traits.email = value
       }
     }
-    const userId = segmentFields.idField ? row[segmentFields.idField.name].value : null
-    let anonymousId
+    const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
+    let anonymousId: string | null
     if (segmentFields.anonymousIdField) {
       anonymousId = row[segmentFields.anonymousIdField.name].value
     } else {
       anonymousId = userId ? null : this.generateAnonymousId()
     }
-    const groupId = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
+    const groupId: string | null = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
 
     return {
       traits,
