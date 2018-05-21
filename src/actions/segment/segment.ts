@@ -95,12 +95,12 @@ export class SegmentAction extends Hub.Action {
           fieldset = fieldset.concat(fields.parameters)
         }
         segmentFields = this.segmentFields(fieldset)
-        if (!segmentFields.idFieldNames || segmentFields.idFieldNames.length === 0) {
+        if (!(segmentFields && segmentFields.idFieldNames && segmentFields.idFieldNames.length > 0)) {
           throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
         }
       },
       onRow: (row) => {
-        if (!segmentFields.idFieldNames || segmentFields.idFieldNames.length === 0) {
+        if (!(segmentFields && segmentFields.idFieldNames && segmentFields.idFieldNames.length > 0)) {
           throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
         }
 
