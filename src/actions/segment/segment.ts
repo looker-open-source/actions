@@ -55,21 +55,22 @@ export class SegmentAction extends Hub.Action {
   requiredFields = [{ any_tag: this.allowedTags }]
 
   async execute(request: Hub.ActionRequest) {
-    try {
-      await this.processSegment(request, SegmentCalls.Identify)
-      return new Hub.ActionResponse({ success: true })
-    } catch (err) {
-      if (err instanceof SegmentActionError) {
-        throw err
-      }
-      return new Hub.ActionResponse({ success: false, message: err.message })
-    }
+    await this.processSegment(request, SegmentCalls.Identify)
+    return new Hub.ActionResponse({ success: true })
   }
 
   protected async processSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
     const segmentClient = this.segmentClientFromRequest(request)
 
-    let segmentFields: SegmentFields
+    let hiddenFields: string[] = []
+    if (request.scheduledPlan &&
+        request.scheduledPlan.query &&
+        request.scheduledPlan.query.vis_config &&
+        request.scheduledPlan.query.vis_config.hidden_fields) {
+      hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
+    }
+
+    let segmentFields: SegmentFields | undefined
     let fieldset: Field[] = []
 
     // TODO pull run_at out of json_detail
@@ -77,7 +78,7 @@ export class SegmentAction extends Hub.Action {
     const context = {
       app: {
         name: "looker/actions",
-        version: process.env.APP_VERSION,
+        version: process.env.APP_VERSION || "dev",
       },
     }
     await request.streamJsonDetail({
@@ -95,14 +96,10 @@ export class SegmentAction extends Hub.Action {
           fieldset = fieldset.concat(fields.parameters)
         }
         segmentFields = this.segmentFields(fieldset)
-        if (!(segmentFields && segmentFields.idFieldNames && segmentFields.idFieldNames.length > 0)) {
-          throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
-        }
+        this.unassignedSegmentFieldsCheck(segmentFields)
       },
       onRow: (row) => {
-        if (!(segmentFields && segmentFields.idFieldNames && segmentFields.idFieldNames.length > 0)) {
-          throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
-        }
+        this.unassignedSegmentFieldsCheck(segmentFields)
 
         const payload: {
           traits: {[key: string]: string},
@@ -116,14 +113,14 @@ export class SegmentAction extends Hub.Action {
               version: string | undefined,
             },
           },
-        } = {...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields), ...{context, timestamp}}
+        } = {...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields!, hiddenFields), ...{context, timestamp}}
         if (payload.groupId === null) {
           delete payload.groupId
         }
         segmentClient[segmentCall](payload)
       },
     })
-
+    this.unassignedSegmentFieldsCheck(segmentFields)
     await segmentClient.flush(async (err: any) => {
       return new Promise<any>((resolve, reject) => {
         if (err) {
@@ -133,6 +130,12 @@ export class SegmentAction extends Hub.Action {
         }
       })
     })
+  }
+
+  protected unassignedSegmentFieldsCheck(segmentFields: SegmentFields | undefined) {
+    if (!(segmentFields && segmentFields.idFieldNames && segmentFields.idFieldNames.length > 0)) {
+      throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
+    }
   }
 
   protected taggedFields(fields: Field[], tags: string[]) {
@@ -167,12 +170,13 @@ export class SegmentAction extends Hub.Action {
     row: JsonDetailRow,
     fields: Field[],
     segmentFields: SegmentFields,
+    hiddenFields: string[],
   ) {
     const traits: {[key: string]: string} = {}
     for (const field of fields) {
       const value = row[field.name].value
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
-        if (!field.hidden) {
+        if (hiddenFields.indexOf(field.name) === -1) {
           traits[field.name] = value
         }
       }

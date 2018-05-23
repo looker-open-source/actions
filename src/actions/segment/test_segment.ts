@@ -13,10 +13,25 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
       return {identify: segmentCallSpy, flush: (cb: () => void) => cb()}
      })
   const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
+  const stubNow = sinon.stub(Date as any, "now").callsFake(() => "now")
+
+  const baseMatch = {
+    traits: {},
+    context: {
+      app: {
+        name: "looker/actions",
+        version: "dev",
+      },
+    },
+    timestamp: "now",
+  }
+  const merged = {...baseMatch, ...match}
+
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-    chai.expect(segmentCallSpy).to.have.been.calledWithMatch(match)
+    chai.expect(segmentCallSpy).to.have.been.calledWithExactly(merged)
     stubClient.restore()
     stubAnon.restore()
+    stubNow.restore()
   })
 }
 
@@ -168,8 +183,17 @@ describe(`${action.constructor.name} unit tests`, () => {
         segment_write_key: "mykey",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
-        data: [{coolfield: {value: "funvalue"}, hiddenfield: {value: "hiddenvalue"}}],
+        fields: {
+          dimensions: [
+            {name: "coolfield", tags: ["email"]},
+            {name: "hiddenfield"},
+            {name: "nonhiddenfield"},
+          ]},
+        data: [{
+          coolfield: {value: "funvalue"},
+          hiddenfield: {value: "hiddenvalue"},
+          nonhiddenfield: {value: "nonhiddenvalue"},
+        }],
       }))}
       request.scheduledPlan = {
         query: {
@@ -183,8 +207,11 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectSegmentMatch(request, {
         anonymousId: "stubanon",
         userId: null,
-        traits: {email: "funvalue"},
-       })
+        traits: {
+          email: "funvalue",
+          nonhiddenfield: "nonhiddenvalue",
+        },
+      })
     })
 
     it("works with null user_ids", () => {
@@ -214,7 +241,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
     })
 
-    it("errors if the query response has no fields", () => {
+    it("errors if the query response has no fields", (done) => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
@@ -223,11 +250,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         data: [{coolfield: {value: "funvalue"}}],
       }))}
-      return chai.expect(action.validateAndExecute(request)).to.eventually
+      chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
+        .and.notify(done)
     })
 
-    it("errors if there is no tagged field", () => {
+    it("errors if there is no tagged field", (done) => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
@@ -237,8 +265,9 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: {dimensions: [{name: "coolfield"}]},
         data: [{coolfield: {value: "funvalue"}}],
       }))}
-      return chai.expect(action.validateAndExecute(request)).to.eventually
+      chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
+        .and.notify(done)
     })
 
     it("errors if there is no write key", () => {
