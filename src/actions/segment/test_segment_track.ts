@@ -17,8 +17,12 @@ describe(`${action.constructor.name} unit tests`, () => {
           return {track: segmentCallSpy, flush: (cb: () => void) => cb()}
         })
       const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
+      const stubNow = sinon.stub(Date as any, "now").callsFake(() => "now")
 
       const request = new Hub.ActionRequest()
+      request.formParams = {
+        event: "funevent",
+      }
       request.type = Hub.ActionType.Query
       request.params = {
         segment_write_key: "mykey",
@@ -29,15 +33,24 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))}
 
       return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-        chai.expect(segmentCallSpy).to.have.been.calledWithMatch({
+        chai.expect(segmentCallSpy).to.have.been.calledWithExactly({
           userId: "funvalue",
           anonymousId: null,
+          event: "funevent",
+          traits: {},
+          context: {
+            app: {
+              name: "looker/actions",
+              version: "dev",
+            },
+          },
+          timestamp: "now",
         })
         stubClient.restore()
         stubAnon.restore()
+        stubNow.restore()
       })
     })
-
   })
 
   describe("form", () => {

@@ -13,12 +13,15 @@ export class SegmentGroupAction extends SegmentAction {
   minimumSupportedLookerVersion = "5.5.0"
 
   async execute(request: Hub.ActionRequest) {
-    try {
-      await this.processSegment(request, SegmentCalls.Group)
-      return new Hub.ActionResponse({ success: true })
-    } catch (err) {
-      return new Hub.ActionResponse({ success: false, message: err.message })
+    let response: { message?: string, success?: boolean } = { success: true }
+    const errors = await this.processSegment(request, SegmentCalls.Group)
+    if (errors) {
+      response = {
+        success: false,
+        message: errors.map((e) => e.message).join(", "),
+      }
     }
+    return new Hub.ActionResponse(response)
   }
 
 }

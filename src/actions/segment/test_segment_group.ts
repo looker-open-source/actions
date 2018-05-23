@@ -13,10 +13,25 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
       return { group: groupSpy, flush: (cb: () => void) => cb()}
      })
   const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
+  const stubNow = sinon.stub(Date as any, "now").callsFake(() => "now")
+
+  const baseMatch = {
+    traits: {},
+    context: {
+      app: {
+        name: "looker/actions",
+        version: "dev",
+      },
+    },
+    timestamp: "now",
+  }
+  const merged = {...baseMatch, ...match}
+
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-    chai.expect(groupSpy).to.have.been.calledWithMatch(match)
+    chai.expect(groupSpy).to.have.been.calledWithExactly(merged)
     stubClient.restore()
     stubAnon.restore()
+    stubNow.restore()
   })
 }
 

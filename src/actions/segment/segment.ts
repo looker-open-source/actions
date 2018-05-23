@@ -55,8 +55,15 @@ export class SegmentAction extends Hub.Action {
   requiredFields = [{ any_tag: this.allowedTags }]
 
   async execute(request: Hub.ActionRequest) {
-    await this.processSegment(request, SegmentCalls.Identify)
-    return new Hub.ActionResponse({ success: true })
+    let response: { message?: string, success?: boolean } = { success: true }
+    const errors = await this.processSegment(request, SegmentCalls.Identify)
+    if (errors) {
+      response = {
+        success: false,
+        message: errors.map((e) => e.message).join(", "),
+      }
+    }
+    return new Hub.ActionResponse(response)
   }
 
   protected async processSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
@@ -72,6 +79,7 @@ export class SegmentAction extends Hub.Action {
 
     let segmentFields: SegmentFields | undefined
     let fieldset: Field[] = []
+    const errors: Error[] = []
 
     let timestamp = Date.now()
     const context = {
@@ -80,6 +88,8 @@ export class SegmentAction extends Hub.Action {
         version: process.env.APP_VERSION || "dev",
       },
     }
+    const event = request.formParams.event
+
     await request.streamJsonDetail({
       onFields: (fields) => {
         if (fields.dimensions) {
@@ -110,30 +120,44 @@ export class SegmentAction extends Hub.Action {
           userId: string | null,
           anonymousId: string | null,
           groupId: string | null,
-          timestamp: number,
+          event: string | undefined,
           context: {
             app: {
               name: string,
-              version: string | undefined,
+              version: string,
             },
           },
-        } = {...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields!, hiddenFields), ...{context, timestamp}}
+          timestamp: number,
+        } = {...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields!, hiddenFields),
+          ...{event, context, timestamp}}
         if (payload.groupId === null) {
           delete payload.groupId
         }
-        segmentClient[segmentCall](payload)
+        if (!payload.event) {
+          delete payload.event
+        }
+        try {
+          segmentClient[segmentCall](payload)
+        } catch (e) {
+          errors.push(e)
+        }
       },
     })
     this.unassignedSegmentFieldsCheck(segmentFields)
-    await segmentClient.flush(async (err: any) => {
-      return new Promise<any>((resolve, reject) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
+    try {
+      await segmentClient.flush(async (err: any) => {
+        return new Promise<any>((resolve, reject) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
       })
-    })
+    } catch (e) {
+      errors.push(e)
+    }
+    return errors
   }
 
   protected unassignedSegmentFieldsCheck(segmentFields: SegmentFields | undefined) {
