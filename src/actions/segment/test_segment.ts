@@ -230,6 +230,25 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("works with ran_at", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        segment_write_key: "mykey",
+      }
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
+        ran_at: "2017-07-28T02:25:19+00:00",
+        data: [{coolfield: {value: "funvalue"}}],
+      }))}
+      return expectSegmentMatch(request, {
+        anonymousId: "stubanon",
+        userId: null,
+        timestamp: new Date("2017-07-28T02:25:19+00:00").getTime(),
+        traits: {email: "funvalue"},
+       })
+    })
+
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query

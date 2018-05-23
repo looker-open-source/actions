@@ -73,8 +73,7 @@ export class SegmentAction extends Hub.Action {
     let segmentFields: SegmentFields | undefined
     let fieldset: Field[] = []
 
-    // TODO pull run_at out of json_detail
-    const timestamp = Date.now()
+    let timestamp = Date.now()
     const context = {
       app: {
         name: "looker/actions",
@@ -97,6 +96,11 @@ export class SegmentAction extends Hub.Action {
         }
         segmentFields = this.segmentFields(fieldset)
         this.unassignedSegmentFieldsCheck(segmentFields)
+      },
+      onRanAt: (iso8601string) => {
+        if (iso8601string) {
+          timestamp = new Date(iso8601string).getTime()
+        }
       },
       onRow: (row) => {
         this.unassignedSegmentFieldsCheck(segmentFields)

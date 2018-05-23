@@ -217,6 +217,7 @@ export class ActionRequest {
   async streamJsonDetail(callbacks: {
     onFields?: (fields: Fieldset) => void,
     onRow: (row: JsonDetailRow) => void,
+    onRanAt?: (iso8601string: string) => void,
   }) {
     return new Promise<void>((resolve) => {
       this.stream((readable) => {
@@ -228,6 +229,12 @@ export class ActionRequest {
           .node("!.fields", (fields) => {
             if (callbacks.onFields) {
               callbacks.onFields(fields)
+            }
+            return oboe.drop
+          })
+          .node("!.ran_at", (fields) => {
+            if (callbacks.onRanAt) {
+              callbacks.onRanAt(fields)
             }
             return oboe.drop
           })
