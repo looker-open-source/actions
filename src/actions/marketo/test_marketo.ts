@@ -8,15 +8,28 @@ import { MarketoAction } from "./marketo"
 const action = new MarketoAction()
 
 describe(`${action.constructor.name} unit tests`, () => {
-  describe("action", () => {
+  describe.only("action", () => {
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("No attached json.")
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "url",
+        clientID: "clientID",
+        clientSecret: "clientSecret",
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejectedWith(
+          "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
     })
 
     it("errors if there is no campaign ID", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "url",
+        clientID: "clientID",
+        clientSecret: "clientSecret",
+      }
       request.formParams = {}
       request.attachment = {dataJSON: {
         fields: {
@@ -26,14 +39,20 @@ describe(`${action.constructor.name} unit tests`, () => {
         },
         data: [{"some.field": {value: "value"}}],
       }}
-      return chai.expect(action.execute(request)).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Missing Campaign ID.")
     })
 
     it("sends all the data to Marketo", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "url",
+        clientID: "clientID",
+        clientSecret: "clientSecret",
+      }
       request.formParams = {campaignID: "1243"}
-      request.attachment = {dataJSON: {
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {
           measures: [],
           dimensions: [
@@ -57,7 +76,7 @@ describe(`${action.constructor.name} unit tests`, () => {
             "users.gender": {value: "f"},
           },
         ],
-      }}
+      }))}
 
       const leadSpy = sinon.spy(() => {
         return {result: [{id: 1}, {id: 2}, {id: 3}]}
@@ -76,8 +95,8 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
       })
-      const execute = action.execute(request)
-      return chai.expect(execute).to.be.fulfilled.then(() => {
+      const validateAndExecute = action.validateAndExecute(request)
+      return chai.expect(validateAndExecute).to.be.fulfilled.then(() => {
         chai.expect(leadSpy).to.have.been.calledWith()
         chai.expect(requestSpy).to.have.been.calledWith()
       })
