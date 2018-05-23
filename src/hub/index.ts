@@ -5,5 +5,7 @@ export * from "./action"
 export * from "./sources"
 export * from "./utils"
 
+import { LookmlModelExploreField as Field } from "../api_types/lookml_model_explore_field"
 import * as JsonDetail from "./json_detail"
-export { JsonDetail }
+
+export { JsonDetail, Field }

@@ -1,19 +1,17 @@
 import * as uuid from "uuid"
 
-import { LookmlModelExploreField as Field } from "../../api_types/lookml_model_explore_field"
 import * as Hub from "../../hub"
-import { Row as JsonDetailRow } from "../../hub/json_detail"
 import { SegmentActionError } from "./segment_error"
 
 const segment: any = require("analytics-node")
 
 interface SegmentFields {
   idFieldNames: string[],
-  idField: Field,
-  userIdField: Field,
-  groupIdField: Field,
-  emailField: Field,
-  anonymousIdField: Field,
+  idField: Hub.Field,
+  userIdField: Hub.Field,
+  groupIdField: Hub.Field,
+  emailField: Hub.Field,
+  anonymousIdField: Hub.Field,
 }
 
 export enum SegmentTags {
@@ -55,15 +53,15 @@ export class SegmentAction extends Hub.Action {
   requiredFields = [{ any_tag: this.allowedTags }]
 
   async execute(request: Hub.ActionRequest) {
-    let response: { message?: string, success?: boolean } = { success: true }
     const errors = await this.processSegment(request, SegmentCalls.Identify)
     if (errors) {
-      response = {
+      return new Hub.ActionResponse({
         success: false,
         message: errors.map((e) => e.message).join(", "),
-      }
+      })
+    } else {
+      return new Hub.ActionResponse({ success: true })
     }
-    return new Hub.ActionResponse(response)
   }
 
   protected async processSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
@@ -78,7 +76,7 @@ export class SegmentAction extends Hub.Action {
     }
 
     let segmentFields: SegmentFields | undefined
-    let fieldset: Field[] = []
+    let fieldset: Hub.Field[] = []
     const errors: Error[] = []
 
     let timestamp = Date.now()
@@ -166,8 +164,8 @@ export class SegmentAction extends Hub.Action {
     }
   }
 
-  protected taggedFields(fields: Field[], tags: string[]) {
-    return fields.filter((f: Field) =>
+  protected taggedFields(fields: Hub.Field[], tags: string[]) {
+    return fields.filter((f: Hub.Field) =>
       f.tags && f.tags.some((t: string) => tags.indexOf(t) !== -1),
     )
   }
@@ -176,13 +174,13 @@ export class SegmentAction extends Hub.Action {
     return this.taggedFields(fields, tags)[0]
   }
 
-  protected segmentFields(fields: Field[]): SegmentFields {
+  protected segmentFields(fields: Hub.Field[]): SegmentFields {
     const idFieldNames = this.taggedFields(fields, [
       SegmentTags.Email,
       SegmentTags.SegmentAnonymousId,
       SegmentTags.UserId,
       SegmentTags.SegmentGroupId,
-    ]).map((f: Field) => (f.name))
+    ]).map((f: Hub.Field) => (f.name))
 
     return {
       idFieldNames,
@@ -195,8 +193,8 @@ export class SegmentAction extends Hub.Action {
   }
 
   protected prepareSegmentTraitsFromRow(
-    row: JsonDetailRow,
-    fields: Field[],
+    row: Hub.JsonDetail.Row,
+    fields: Hub.Field[],
     segmentFields: SegmentFields,
     hiddenFields: string[],
   ) {
