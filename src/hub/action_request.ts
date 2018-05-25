@@ -185,15 +185,7 @@ export class ActionRequest {
     return new Promise<void>((resolve, reject) => {
       this.stream((readable) => {
         oboe(readable)
-          .node("![*]", function(this: oboe.Oboe, row) {
-            try {
-              onRow(row)
-              return oboe.drop
-            } catch (e) {
-              this.abort()
-              reject(e)
-            }
-          })
+          .node("![*]", this.safeOboe(readable, reject, onRow))
           .done(() => resolve())
       })
     })
@@ -227,37 +219,17 @@ export class ActionRequest {
     return new Promise<void>((resolve, reject) => {
       this.stream((readable) => {
         oboe(readable)
-          .node("data.*", function(this: oboe.Oboe, row) {
-            try {
-              callbacks.onRow(row)
-              return oboe.drop
-            } catch (e) {
-              this.abort()
-              reject(e)
+          .node("data.*", this.safeOboe(readable, reject, callbacks.onRow))
+          .node("!.fields", this.safeOboe(readable, reject, (fields) => {
+            if (callbacks.onFields) {
+              callbacks.onFields(fields)
             }
-          })
-          .node("!.fields", function(this: oboe.Oboe, fields) {
-            try {
-              if (callbacks.onFields) {
-                callbacks.onFields(fields)
-              }
-              return oboe.drop
-            } catch (e) {
-              this.abort()
-              reject(e)
+          }))
+          .node("!.ran_at", this.safeOboe(readable, reject, (ranAt) => {
+            if (callbacks.onRanAt) {
+              callbacks.onRanAt(ranAt)
             }
-          })
-          .node("!.ran_at", function(this: oboe.Oboe, ranAt) {
-            try {
-              if (callbacks.onRanAt) {
-                callbacks.onRanAt(ranAt)
-              }
-              return oboe.drop
-            } catch (e) {
-              this.abort()
-              reject(e)
-            }
-          })
+          }))
           .done(() => resolve())
       })
     })
@@ -305,6 +277,23 @@ export class ActionRequest {
       body = truncateString(body, maxCharacters)
 
       return body
+    }
+  }
+
+  private safeOboe(
+    stream: Readable,
+    reject: (reason?: any) => void,
+    callback: (node: any) => void,
+  ) {
+    return function(this: oboe.Oboe, node: any) {
+      try {
+        callback(node)
+        return oboe.drop
+      } catch (e) {
+        this.abort()
+        stream.destroy()
+        reject(e)
+      }
     }
   }
 
