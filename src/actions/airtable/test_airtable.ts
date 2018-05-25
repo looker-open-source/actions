@@ -35,7 +35,7 @@ function expectWebhookMatch(
 
 describe(`${action.constructor.name} unit tests`, () => {
 
-  describe.only("action", () => {
+  describe("action", () => {
 
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
