@@ -53,18 +53,10 @@ export class SegmentAction extends Hub.Action {
   requiredFields = [{ any_tag: this.allowedTags }]
 
   async execute(request: Hub.ActionRequest) {
-    const errors = await this.processSegment(request, SegmentCalls.Identify)
-    if (errors) {
-      return new Hub.ActionResponse({
-        success: false,
-        message: errors.map((e) => e.message).join(", "),
-      })
-    } else {
-      return new Hub.ActionResponse({ success: true })
-    }
+    return this.executeSegment(request, SegmentCalls.Identify)
   }
 
-  protected async processSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
+  protected async executeSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
     const segmentClient = this.segmentClientFromRequest(request)
 
     let hiddenFields: string[] = []
@@ -143,7 +135,15 @@ export class SegmentAction extends Hub.Action {
     } catch (e) {
       errors.push(e)
     }
-    return errors
+
+    if (errors) {
+      return new Hub.ActionResponse({
+        success: false,
+        message: errors.map((e) => e.message).join(", "),
+      })
+    } else {
+      return new Hub.ActionResponse({ success: true })
+    }
   }
 
   protected unassignedSegmentFieldsCheck(segmentFields: SegmentFields | undefined) {

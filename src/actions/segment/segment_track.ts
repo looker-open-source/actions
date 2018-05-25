@@ -10,15 +10,7 @@ export class SegmentTrackAction extends SegmentAction {
   minimumSupportedLookerVersion = "5.5.0"
 
   async execute(request: Hub.ActionRequest) {
-    let response: { message?: string, success?: boolean } = { success: true }
-    const errors = await this.processSegment(request, SegmentCalls.Track)
-    if (errors) {
-      response = {
-        success: false,
-        message: errors.map((e) => e.message).join(", "),
-      }
-    }
-    return new Hub.ActionResponse(response)
+    return this.executeSegment(request, SegmentCalls.Track)
   }
 
   async form() {
