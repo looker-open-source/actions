@@ -182,13 +182,10 @@ export class ActionRequest {
    * @param onRow A function that will be called for each streamed row, with the row as the first argument.
    */
   async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       this.stream((readable) => {
         oboe(readable)
-          .node("![*]", (row) => {
-            onRow(row)
-            return oboe.drop
-          })
+          .node("![*]", this.safeOboe(readable, reject, onRow))
           .done(() => resolve())
       })
     })
@@ -215,22 +212,24 @@ export class ActionRequest {
    * when various parts of the data are parsed.
    */
   async streamJsonDetail(callbacks: {
-    onFields?: (fields: Fieldset) => void,
     onRow: (row: JsonDetailRow) => void,
+    onFields?: (fields: Fieldset) => void,
+    onRanAt?: (iso8601string: string) => void,
   }) {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       this.stream((readable) => {
         oboe(readable)
-          .node("data.*", (row) => {
-            callbacks.onRow(row)
-            return oboe.drop
-          })
-          .node("!.fields", (fields) => {
+          .node("data.*", this.safeOboe(readable, reject, callbacks.onRow))
+          .node("!.fields", this.safeOboe(readable, reject, (fields) => {
             if (callbacks.onFields) {
               callbacks.onFields(fields)
             }
-            return oboe.drop
-          })
+          }))
+          .node("!.ran_at", this.safeOboe(readable, reject, (ranAt) => {
+            if (callbacks.onRanAt) {
+              callbacks.onRanAt(ranAt)
+            }
+          }))
           .done(() => resolve())
       })
     })
@@ -278,6 +277,23 @@ export class ActionRequest {
       body = truncateString(body, maxCharacters)
 
       return body
+    }
+  }
+
+  private safeOboe(
+    stream: Readable,
+    reject: (reason?: any) => void,
+    callback: (node: any) => void,
+  ) {
+    return function(this: oboe.Oboe, node: any) {
+      try {
+        callback(node)
+        return oboe.drop
+      } catch (e) {
+        this.abort()
+        stream.destroy()
+        reject(e)
+      }
     }
   }
 

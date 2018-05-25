@@ -10,14 +10,12 @@ export abstract class WebhookAction extends Hub.Action {
   requiredFields = []
   params = []
   supportedActionTypes = [Hub.ActionType.Query]
+  usesStreaming = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   async execute(request: Hub.ActionRequest) {
-    if (!(request.attachment && request.attachment.dataJSON)) {
-      throw "No attached json."
-    }
 
     if (!request.formParams.url) {
       throw "Missing url."
@@ -38,16 +36,14 @@ export abstract class WebhookAction extends Hub.Action {
       throw "Incorrect domain for url."
     }
 
-    let response
     try {
-      await req.post({
-        url: providedUrl,
-        form: request.attachment.dataJSON,
+      await request.stream(async (readable) => {
+        return req.post({ uri: providedUrl, body: readable } ).promise()
       })
+      return new Hub.ActionResponse({ success: true })
     } catch (e) {
-      response = {success: false, message: e.message}
+      return new Hub.ActionResponse({ success: false, message: e.message })
     }
-    return new Hub.ActionResponse(response)
   }
 
   async form() {
