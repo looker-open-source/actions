@@ -212,8 +212,8 @@ export class ActionRequest {
    * when various parts of the data are parsed.
    */
   async streamJsonDetail(callbacks: {
-    onFields?: (fields: Fieldset) => void,
     onRow: (row: JsonDetailRow) => void,
+    onFields?: (fields: Fieldset) => void,
     onRanAt?: (iso8601string: string) => void,
   }) {
     return new Promise<void>((resolve, reject) => {
