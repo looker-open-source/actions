@@ -59,7 +59,7 @@
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.1",
     "mailchimp": "^1.2.0",
-    "node-marketo-rest": "^0.3.8",
+    "node-marketo-rest": "^0.7.0",
     "nodemon": "^1.12.1",
     "oboe": "^2.1.4",
     "raven": "^2.4.0",

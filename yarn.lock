@@ -2800,9 +2800,9 @@ moment@2.19.3:
   version "2.19.3"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.19.3.tgz#bdb99d270d6d7fda78cc0fbace855e27fe7da69f"
 
-moment@2.5.x:
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.5.1.tgz#7146a3900533064ca799d5e792f4e480ee0e82bc"
+moment@2.20.x:
+  version "2.20.1"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.20.1.tgz#d6eb1a46cbcc14a2b2f9434112c1ff8907f313fd"
 
 ms@2.0.0:
   version "2.0.0"
@@ -2878,15 +2878,15 @@ node-forge@^0.7.4:
   version "0.7.5"
   resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-0.7.5.tgz#6c152c345ce11c52f465c2abd957e8639cd674df"
 
-node-marketo-rest@^0.3.8:
-  version "0.3.8"
-  resolved "https://registry.yarnpkg.com/node-marketo-rest/-/node-marketo-rest-0.3.8.tgz#fa3f9e0a265e70575b9b91b15e0427ce800a334c"
+node-marketo-rest@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/node-marketo-rest/-/node-marketo-rest-0.7.0.tgz#3939160ff077c3d18429d34144aaf530143520bf"
   dependencies:
     backoff "2.4.x"
     bluebird "2.3.x"
     bunyan "1.0.x"
     lodash "2.4.x"
-    moment "2.5.x"
+    moment "2.20.x"
     restler "3.4.x"
 
 node-pre-gyp@^0.10.0:
