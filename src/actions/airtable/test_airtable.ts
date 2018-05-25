@@ -24,8 +24,8 @@ function expectWebhookMatch(
       base: baseSpy,
     }))
 
-  const execute = action.execute(request)
-  return chai.expect(execute).to.be.fulfilled.then(() => {
+  const validateAndExecute = action.validateAndExecute(request)
+  return chai.expect(validateAndExecute).to.be.fulfilled.then(() => {
     chai.expect(baseSpy).to.have.been.calledWith(base)
     chai.expect(tableSpy).to.have.been.calledWith(table)
     chai.expect(createSpy).to.have.been.calledWith(match)
@@ -35,43 +35,56 @@ function expectWebhookMatch(
 
 describe(`${action.constructor.name} unit tests`, () => {
 
-  describe("action", () => {
+  describe.only("action", () => {
 
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("No attached json.")
+      request.type = Hub.ActionType.Query
+      request.params = {
+        airtable_api_key: "mykey",
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejectedWith(
+          "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
     })
 
     it("errors if there is no url", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        airtable_api_key: "mykey",
+      }
       request.formParams = {}
-      request.attachment = {dataJSON: {
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {
           dimensions: [
             {name: "coolview.coolfield", label_short: "cool field", tags: ["user_id"]},
           ],
         },
         data: [{"coolview.coolfield": {value: "funvalue"}}],
-      }}
-      return chai.expect(action.execute(request)).to.eventually
+      }))}
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Missing Airtable base or table.")
     })
 
     it("sends right body", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        airtable_api_key: "mykey",
+      }
       request.formParams = {
         base: "mybase",
         table: "mytable",
       }
-      request.attachment = {dataJSON: {
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {
           dimensions: [
             {name: "coolview.coolfield", tags: ["user_id"]},
           ],
         },
         data: [{"coolview.coolfield": {value: "funvalue"}}],
-      }}
+      }))}
       return expectWebhookMatch(request,
         request.formParams.base,
         request.formParams.table,
@@ -80,11 +93,15 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("sends right body with label_short if present", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        airtable_api_key: "mykey",
+      }
       request.formParams = {
         base: "mybase",
         table: "mytable",
       }
-      request.attachment = {dataJSON: {
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {
           dimensions: [{
             name: "coolview.coolfield",
@@ -94,7 +111,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           }],
         },
         data: [{"coolview.coolfield": {value: "funvalue"}}],
-      }}
+      }))}
       return expectWebhookMatch(request,
         request.formParams.base,
         request.formParams.table,
@@ -103,20 +120,22 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("returns failure on airtable create error", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        airtable_api_key: "mykey",
+      }
       request.formParams = {
         base: "mybase",
         table: "mytable",
       }
-      request.attachment = {
-        dataJSON: {
-          fields: {
-            dimensions: [
-              { name: "coolview.coolfield", tags: ["user_id"] },
-            ],
-          },
-          data: [{ "coolview.coolfield": { value: "funvalue" } }],
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {
+          dimensions: [
+            { name: "coolview.coolfield", tags: ["user_id"] },
+          ],
         },
-      }
+        data: [{ "coolview.coolfield": { value: "funvalue" } }],
+      }))}
       const tableSpy = sinon.spy(() => ({
         create: (_rec: any, cb: (err: any) => void) => {
           cb({
@@ -131,14 +150,12 @@ describe(`${action.constructor.name} unit tests`, () => {
         .callsFake(() => ({
           base: baseSpy,
         }))
-      return chai.expect(action.execute(request)).to.eventually.deep.equal({
+      return chai.expect(action.validateAndExecute(request)).to.eventually.deep.equal({
         success: false,
         message: "Could not find table Contacts123 in application app",
         refreshQuery: false,
         validationErrors: [],
-      }).then(() => {
-        stubPost.restore()
-      })
+      }).and.notify(stubPost.restore)
     })
 
   })
