@@ -182,12 +182,17 @@ export class ActionRequest {
    * @param onRow A function that will be called for each streamed row, with the row as the first argument.
    */
   async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       this.stream((readable) => {
         oboe(readable)
-          .node("![*]", (row) => {
-            onRow(row)
-            return oboe.drop
+          .node("![*]", function(this: oboe.Oboe, row) {
+            try {
+              onRow(row)
+              return oboe.drop
+            } catch (e) {
+              this.abort()
+              reject(e)
+            }
           })
           .done(() => resolve())
       })
@@ -215,21 +220,43 @@ export class ActionRequest {
    * when various parts of the data are parsed.
    */
   async streamJsonDetail(callbacks: {
-    onFields?: (fields: Fieldset) => void,
     onRow: (row: JsonDetailRow) => void,
+    onFields?: (fields: Fieldset) => void,
+    onRanAt?: (iso8601string: string) => void,
   }) {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       this.stream((readable) => {
         oboe(readable)
-          .node("data.*", (row) => {
-            callbacks.onRow(row)
-            return oboe.drop
-          })
-          .node("!.fields", (fields) => {
-            if (callbacks.onFields) {
-              callbacks.onFields(fields)
+          .node("data.*", function(this: oboe.Oboe, row) {
+            try {
+              callbacks.onRow(row)
+              return oboe.drop
+            } catch (e) {
+              this.abort()
+              reject(e)
             }
-            return oboe.drop
+          })
+          .node("!.fields", function(this: oboe.Oboe, fields) {
+            try {
+              if (callbacks.onFields) {
+                callbacks.onFields(fields)
+              }
+              return oboe.drop
+            } catch (e) {
+              this.abort()
+              reject(e)
+            }
+          })
+          .node("!.ran_at", function(this: oboe.Oboe, ranAt) {
+            try {
+              if (callbacks.onRanAt) {
+                callbacks.onRanAt(ranAt)
+              }
+              return oboe.drop
+            } catch (e) {
+              this.abort()
+              reject(e)
+            }
           })
           .done(() => resolve())
       })
