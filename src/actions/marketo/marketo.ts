@@ -1,4 +1,3 @@
-import { LookmlModelExploreField as Field } from "../../api_types/lookml_model_explore_field"
 import * as Hub from "../../hub"
 
 const MARKETO: any = require("node-marketo-rest")
@@ -43,25 +42,14 @@ export class MarketoAction extends Hub.Action {
       throw "Missing Campaign ID."
     }
 
-    let fieldset: Field[] = []
+    let fieldset: Hub.Field[] = []
     const fieldMap: any = {}
     const errors: Error[] = []
     const marketoClient = this.marketoClientFromRequest(request)
 
     await request.streamJsonDetail({
       onFields: (fields) => {
-        if (fields.dimensions) {
-          fieldset = fieldset.concat(fields.dimensions)
-        }
-        if (fields.measures) {
-          fieldset = fieldset.concat(fields.measures)
-        }
-        if (fields.filters) {
-          fieldset = fieldset.concat(fields.filters)
-        }
-        if (fields.parameters) {
-          fieldset = fieldset.concat(fields.parameters)
-        }
+        fieldset = Hub.allFields(fields)
         let hasTagMap
         for (const field of fieldset) {
           hasTagMap = field.tags.map((tag: string) => {if (tag.startsWith("marketo:")) {
@@ -85,14 +73,14 @@ export class MarketoAction extends Hub.Action {
       },
     })
 
-    let response
     if (errors) {
-      response = {
+      return new Hub.ActionResponse({
         success: false,
         message: errors.map((e) => e.message).join(", "),
-      }
+      })
+    } else {
+      return new Hub.ActionResponse({ success: true })
     }
-    return new Hub.ActionResponse(response)
   }
 
   async form() {
