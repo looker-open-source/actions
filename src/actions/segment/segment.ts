@@ -130,7 +130,6 @@ export class SegmentAction extends Hub.Action {
         }
       },
     })
-    this.unassignedSegmentFieldsCheck(segmentFields)
     try {
       await segmentClient.flush(async (err: any) => {
         return new Promise<any>((resolve, reject) => {
