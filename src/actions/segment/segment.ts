@@ -90,18 +90,7 @@ export class SegmentAction extends Hub.Action {
 
     await request.streamJsonDetail({
       onFields: (fields) => {
-        if (fields.dimensions) {
-          fieldset = fieldset.concat(fields.dimensions)
-        }
-        if (fields.measures) {
-          fieldset = fieldset.concat(fields.measures)
-        }
-        if (fields.filters) {
-          fieldset = fieldset.concat(fields.filters)
-        }
-        if (fields.parameters) {
-          fieldset = fieldset.concat(fields.parameters)
-        }
+        fieldset = Hub.allFields(fields)
         segmentFields = this.segmentFields(fieldset)
         this.unassignedSegmentFieldsCheck(segmentFields)
       },
