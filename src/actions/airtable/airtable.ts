@@ -38,18 +38,7 @@ export class AirtableAction extends Hub.Action {
 
     await request.streamJsonDetail({
       onFields: (fields) => {
-        if (fields.dimensions) {
-          fieldset = fieldset.concat(fields.dimensions)
-        }
-        if (fields.measures) {
-          fieldset = fieldset.concat(fields.measures)
-        }
-        if (fields.filters) {
-          fieldset = fieldset.concat(fields.filters)
-        }
-        if (fields.parameters) {
-          fieldset = fieldset.concat(fields.parameters)
-        }
+        fieldset = Hub.allFields(fields)
         for (const field of fieldset) {
           fieldLabelMap[field.name] = field.label_short || field.label || field.name
         }
@@ -63,8 +52,6 @@ export class AirtableAction extends Hub.Action {
           await new Promise<any>((resolve, reject) => {
             table.create(record, (err: any, rec: any) => {
               if (err) {
-                /* tslint:disable no-console */
-                console.log(`err: ${JSON.stringify(err)}`)
                 reject(err)
               } else {
                 resolve(rec)
@@ -72,19 +59,16 @@ export class AirtableAction extends Hub.Action {
             })
           })
         } catch (e) {
-          console.log(`catch e: ${JSON.stringify(e)}`)
           errors.push(e)
         }
       },
     })
     if (errors) {
-      console.log(`return: ${JSON.stringify(errors)}`)
       return new Hub.ActionResponse({
         success: false,
         message: errors.map((e) => e.message).join(", "),
       })
     } else {
-      console.log(`return`)
       return new Hub.ActionResponse({ success: true })
     }
   }
