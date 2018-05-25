@@ -93,22 +93,10 @@ export class SegmentAction extends Hub.Action {
       },
       onRow: (row) => {
         this.unassignedSegmentFieldsCheck(segmentFields)
-
-        const payload: {
-          traits: {[key: string]: string},
-          userId: string | null,
-          anonymousId: string | null,
-          groupId: string | null,
-          event: string | undefined,
-          context: {
-            app: {
-              name: string,
-              version: string,
-            },
-          },
-          timestamp: number,
-        } = {...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields!, hiddenFields),
-          ...{event, context, timestamp}}
+        const payload = {
+          ...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields!, hiddenFields),
+          ...{event, context, timestamp},
+        }
         if (payload.groupId === null) {
           delete payload.groupId
         }
@@ -122,6 +110,7 @@ export class SegmentAction extends Hub.Action {
         }
       },
     })
+
     try {
       await segmentClient.flush(async (err: any) => {
         return new Promise<any>((resolve, reject) => {
