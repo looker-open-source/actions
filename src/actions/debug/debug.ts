@@ -13,7 +13,7 @@ export class DebugAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     const url = process.env.ACTION_HUB_DEBUG_ENDPOINT!
     const sleep = +(request.formParams.sleep || 1000)
-    await req.get({url})
+    await req.get({url}).promise()
     await this.delay(sleep)
     return new Hub.ActionResponse({message: `Sent a request to ${url} and slept ${sleep} ms.`})
   }
