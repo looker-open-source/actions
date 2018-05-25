@@ -20,7 +20,7 @@ export class DigitalOceanObjectStorageAction extends AmazonS3Action {
       required: true,
       sensitive: true,
       description: "Your secret key for DigitalOcean Spaces https://cloud.digitalocean.com/settings/api/tokens.",
-    }
+    },
   ]
 
   async form(request: Hub.ActionRequest) {
