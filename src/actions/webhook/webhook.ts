@@ -43,7 +43,7 @@ export abstract class WebhookAction extends Hub.Action {
       await req.post({
         url: providedUrl,
         form: request.attachment.dataJSON,
-      })
+      }).promise()
     } catch (e) {
       response = {success: false, message: e.message}
     }
