@@ -9,6 +9,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
   iconName = "google/google_cloud_storage.svg"
   description = "Write data files to a Google Cloud Storage bucket."
   supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
+  usesStreaming = true
   requiredFields = []
   params = [
     {
@@ -34,12 +35,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
-    }
-
-    if (!request.formParams ||
-      !request.formParams.bucket) {
+    if (!request.formParams || !request.formParams.bucket) {
       throw "Need Google Cloud Storage bucket."
     }
 
@@ -47,14 +43,15 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const file = gcs.bucket(request.formParams.bucket)
       .file(request.formParams.filename || request.suggestedFilename())
 
-    let response
     try {
-      await file.save(request.attachment.dataBuffer)
+      await request.stream(async (readable) => {
+        return file.save(readable)
+      })
+      return new Hub.ActionResponse({ success: true })
     } catch (e) {
-      response = {success: false, message: e.message}
+      return new Hub.ActionResponse({success: false, message: e.message})
     }
 
-    return new Hub.ActionResponse(response)
   }
 
   async form(request: Hub.ActionRequest) {

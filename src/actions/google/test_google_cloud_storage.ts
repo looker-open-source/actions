@@ -1,22 +1,30 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
+import { Readable } from "stream"
 
 import * as Hub from "../../hub"
 
 import { GoogleCloudStorageAction } from "./google_cloud_storage"
 
-const integration = new GoogleCloudStorageAction()
+import concatStream = require("concat-stream")
+
+const action = new GoogleCloudStorageAction()
 
 function expectGoogleCloudStorageMatch(request: Hub.ActionRequest,
                                        bucketMatch: any,
                                        fileMatch: any,
-                                       fileSaveMatch: any) {
+                                       fileSaveMatch: Buffer) {
 
-  const fileSaveSpy = sinon.spy(async () => Promise.resolve())
+  const fileSaveSpy = sinon.spy((upload: Readable, callback: (err: any, data: any) => void) => {
+    upload.pipe(concatStream((buffer) => {
+      chai.expect(buffer).to.equal(fileSaveMatch)
+    }))
+    callback(null, `great success`)
+  })
   const fileSpy = sinon.spy(() => ({save: fileSaveSpy}))
   const bucketSpy = sinon.spy(() => ({file: fileSpy}))
 
-  const stubClient = sinon.stub(integration as any, "gcsClientFromRequest")
+  const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
     .callsFake(() => ({
       bucket: bucketSpy,
     }))
@@ -24,44 +32,59 @@ function expectGoogleCloudStorageMatch(request: Hub.ActionRequest,
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
 
-  const action = integration.execute(request)
-  return chai.expect(action).to.be.fulfilled.then(() => {
+  return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
     chai.expect(bucketSpy).to.have.been.calledWithMatch(bucketMatch)
     chai.expect(fileSpy).to.have.been.calledWithMatch(fileMatch)
-    chai.expect(fileSaveSpy).to.have.been.calledWithMatch(fileSaveMatch)
     stubClient.restore()
     stubSuggestedFilename.restore()
   })
 }
 
-describe(`${integration.constructor.name} unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
     it("errors if there is no bucket", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
       request.formParams = {}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-      const action = integration.execute(request)
-
-      return chai.expect(action).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Need Google Cloud Storage bucket.")
     })
 
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
       request.formParams = {
         bucket: "mybucket",
       }
 
-      return chai.expect(integration.execute(request)).to.eventually
-        .be.rejectedWith("Couldn't get data from attachment")
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejectedWith(
+          "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
     })
 
     it("sends right body to filename and bucket", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
       request.formParams = {
         bucket: "mybucket",
       }
@@ -74,6 +97,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("sends to right filename if specified", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
       request.formParams = {
         bucket: "mybucket",
         filename: "mywackyfilename",
@@ -90,12 +119,12 @@ describe(`${integration.constructor.name} unit tests`, () => {
   describe("form", () => {
 
     it("has form", () => {
-      chai.expect(integration.hasForm).equals(true)
+      chai.expect(action.hasForm).equals(true)
     })
 
     it("has form with correct buckets", (done) => {
 
-      const stubClient = sinon.stub(integration as any, "gcsClientFromRequest")
+      const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
         .callsFake(() => ({
           getBuckets: () => [[
             {id: "1", name: "A"},
@@ -104,7 +133,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
         }))
 
       const request = new Hub.ActionRequest()
-      const form = integration.validateAndFetchForm(request)
+      const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           label: "Bucket",
