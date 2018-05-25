@@ -53,7 +53,7 @@
     "body-parser": "^1.18.2",
     "datauri": "^1.0.5",
     "do-wrapper": "^3.11.1",
-    "dotenv": "^4.0.0",
+    "dotenv": "^5.0.1",
     "express": "^4.16.2",
     "express-winston": "^2.4.0",
     "hipchatter": "^1.0.0",
@@ -85,7 +85,7 @@
     "@types/chai-http": "^3.0.3",
     "@types/concat-stream": "^1.6.0",
     "@types/mocha": "^2.2.44",
-    "@types/sinon": "^4.0.0",
+    "@types/sinon": "^5.0.0",
     "@types/sinon-chai": "^2.7.29",
     "chai": "^4.1.0",
     "chai-as-promised": "^7.1.1",
@@ -93,8 +93,8 @@
     "concat-stream": "^1.6.2",
     "depcheck": "^0.6.8",
     "mocha": "^4.0.1",
-    "sinon": "^4.1.2",
-    "sinon-chai": "^2.12.0",
+    "sinon": "^5.0.10",
+    "sinon-chai": "^3.1.0",
     "tslint": "^5.9.1"
   }
 }
