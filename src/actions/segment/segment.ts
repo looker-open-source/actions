@@ -71,7 +71,7 @@ export class SegmentAction extends Hub.Action {
     let fieldset: Hub.Field[] = []
     const errors: Error[] = []
 
-    let timestamp = Date.now()
+    let timestamp = new Date()
     const context = {
       app: {
         name: "looker/actions",
@@ -88,7 +88,7 @@ export class SegmentAction extends Hub.Action {
       },
       onRanAt: (iso8601string) => {
         if (iso8601string) {
-          timestamp = new Date(iso8601string).getTime()
+          timestamp = new Date(iso8601string)
         }
       },
       onRow: (row) => {
