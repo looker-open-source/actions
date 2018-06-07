@@ -48,10 +48,15 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const gcs = this.gcsClientFromRequest(request)
     const file = gcs.bucket(request.formParams.bucket)
       .file(filename)
+    const writeStream = file.createWriteStream()
 
     try {
       await request.stream(async (readable) => {
-        return file.save(readable)
+        return new Promise<any>((resolve, reject) => {
+          readable.pipe(writeStream)
+            .on("error", reject)
+            .on("finish", resolve)
+        })
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e) {
