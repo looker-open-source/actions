@@ -126,10 +126,10 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
         .callsFake(() => ({
-          getBuckets: () => [[
-            {id: "1", name: "A"},
-            {id: "2", name: "B"},
-          ]],
+          getBuckets: async () => Promise.resolve([[
+              {id: "1", name: "A"},
+              {id: "2", name: "B"},
+            ]]),
         }))
 
       const request = new Hub.ActionRequest()
@@ -151,6 +151,21 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "string",
         }],
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("has errors with no buckets", (done) => {
+
+      const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
+        .callsFake(() => ({
+          getBuckets: async () => Promise.resolve(),
+        }))
+
+      const request = new Hub.ActionRequest()
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually
+        .be.rejectedWith("No buckets in account.")
+        .and.notify(stubClient.restore)
+        .and.notify(done)
     })
 
   })

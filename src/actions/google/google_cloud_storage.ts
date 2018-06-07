@@ -58,11 +58,12 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const form = new Hub.ActionForm()
 
     const gcs = this.gcsClientFromRequest(request)
-    const buckets = await gcs.getBuckets()[0]
-
-    if (!buckets) {
+    const results = await gcs.getBuckets()
+    if (!(results && results[0])) {
       throw "No buckets in account."
     }
+
+    const buckets = results[0]
 
     form.fields = [{
       label: "Bucket",
