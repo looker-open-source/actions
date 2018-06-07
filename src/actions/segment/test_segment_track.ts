@@ -17,7 +17,9 @@ describe(`${action.constructor.name} unit tests`, () => {
           return {track: segmentCallSpy, flush: (cb: () => void) => cb()}
         })
       const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
-      const stubNow = sinon.stub(Date as any, "now").callsFake(() => "now")
+
+      const now = new Date()
+      const clock = sinon.useFakeTimers(now.getTime())
 
       const request = new Hub.ActionRequest()
       request.formParams = {
@@ -44,11 +46,11 @@ describe(`${action.constructor.name} unit tests`, () => {
               version: "dev",
             },
           },
-          timestamp: "now",
+          timestamp: now,
         })
         stubClient.restore()
         stubAnon.restore()
-        stubNow.restore()
+        clock.restore()
       })
     })
   })
