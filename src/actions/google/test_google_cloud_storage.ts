@@ -1,27 +1,31 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
-import { Readable } from "stream"
+import { Stream } from "stream"
 
 import * as Hub from "../../hub"
 
 import { GoogleCloudStorageAction } from "./google_cloud_storage"
 
-import concatStream = require("concat-stream")
-
 const action = new GoogleCloudStorageAction()
 
 function expectGoogleCloudStorageMatch(request: Hub.ActionRequest,
-                                       bucketMatch: any,
-                                       fileMatch: any,
+                                       bucketMatch: string,
+                                       fileMatch: string,
                                        fileSaveMatch: Buffer) {
 
-  const fileSaveSpy = sinon.spy((upload: Readable, callback: (err: any, data: any) => void) => {
-    upload.pipe(concatStream((buffer) => {
-      chai.expect(buffer).to.equal(fileSaveMatch)
-    }))
-    callback(null, `great success`)
+  const createWriteStreamSpy = sinon.spy(async () => {
+    let data = Buffer.from("")
+    const stream = new Stream()
+    stream
+      .on("data", (chunk: any) => {
+        data = Buffer.concat([data, chunk])
+      })
+      .on("finish", () => {
+        chai.expect(data).to.equal(fileSaveMatch)
+      })
+    return stream
   })
-  const fileSpy = sinon.spy(() => ({save: fileSaveSpy}))
+  const fileSpy = sinon.spy(() => ({createWriteStream: createWriteStreamSpy}))
   const bucketSpy = sinon.spy(() => ({file: fileSpy}))
 
   const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
@@ -126,10 +130,10 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
         .callsFake(() => ({
-          getBuckets: () => [[
-            {id: "1", name: "A"},
-            {id: "2", name: "B"},
-          ]],
+          getBuckets: async () => Promise.resolve([[
+              {id: "1", name: "A"},
+              {id: "2", name: "B"},
+            ]]),
         }))
 
       const request = new Hub.ActionRequest()
@@ -151,6 +155,21 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "string",
         }],
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("has errors with no buckets", (done) => {
+
+      const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
+        .callsFake(() => ({
+          getBuckets: async () => Promise.resolve(),
+        }))
+
+      const request = new Hub.ActionRequest()
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually
+        .be.rejectedWith("No buckets in account.")
+        .and.notify(stubClient.restore)
+        .and.notify(done)
     })
 
   })

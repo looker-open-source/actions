@@ -39,13 +39,24 @@ export class GoogleCloudStorageAction extends Hub.Action {
       throw "Need Google Cloud Storage bucket."
     }
 
+    const filename = request.formParams.filename || request.suggestedFilename()
+
+    if (!filename) {
+      throw new Error("Couldn't determine filename.")
+    }
+
     const gcs = this.gcsClientFromRequest(request)
     const file = gcs.bucket(request.formParams.bucket)
-      .file(request.formParams.filename || request.suggestedFilename())
+      .file(filename)
+    const writeStream = file.createWriteStream()
 
     try {
       await request.stream(async (readable) => {
-        return file.save(readable)
+        return new Promise<any>((resolve, reject) => {
+          readable.pipe(writeStream)
+            .on("error", reject)
+            .on("finish", resolve)
+        })
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e) {
@@ -58,11 +69,12 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const form = new Hub.ActionForm()
 
     const gcs = this.gcsClientFromRequest(request)
-    const buckets = await gcs.getBuckets()[0]
-
-    if (!buckets) {
+    const results = await gcs.getBuckets()
+    if (!(results && results[0])) {
       throw "No buckets in account."
     }
+
+    const buckets = results[0]
 
     form.fields = [{
       label: "Bucket",
