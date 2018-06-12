@@ -9,7 +9,7 @@ const action = new SlackAttachmentAction()
 
 const stubFileName = "stubSuggestedFilename"
 
-function expectSlackMatch(request: Hub.ActionRequest, fileNameMatch: string, optionsMatch: any) {
+function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: any) {
 
   const fileUploadSpy = sinon.spy((filename: string, params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully sent ${filename} ${params}`)
@@ -26,7 +26,7 @@ function expectSlackMatch(request: Hub.ActionRequest, fileNameMatch: string, opt
     .callsFake(() => stubFileName)
 
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(fileNameMatch, optionsMatch)
+    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(optionsMatch)
     stubClient.restore()
     stubSuggestedFilename.restore()
   })
@@ -69,13 +69,9 @@ describe(`${action.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
         fileExtension: "csv",
       }
-      return expectSlackMatch(request, request.formParams.filename!, {
-        file: {
-          value: request.attachment.dataBuffer,
-          options: {
-            filename: request.formParams.filename,
-          },
-        },
+      return expectSlackMatch(request, {
+        file: request.attachment.dataBuffer,
+        filename: request.formParams.filename,
         channels: request.formParams.channel,
         filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
@@ -92,13 +88,9 @@ describe(`${action.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from("1,2,3,4", "utf8"),
         fileExtension: "csv",
       }
-      return expectSlackMatch(request, stubFileName, {
-        file: {
-          value: request.attachment.dataBuffer,
-          options: {
-            filename: stubFileName,
-          },
-        },
+      return expectSlackMatch(request, {
+        file: request.attachment.dataBuffer,
+        filename: stubFileName,
         channels: request.formParams.channel,
         filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
@@ -116,7 +108,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         fileExtension: "csv",
       }
 
-      const fileUploadSpy = sinon.spy((_filename: string, _params: any, callback: (err: any) => void) => {
+      const fileUploadSpy = sinon.spy((_params: any, callback: (err: any) => void) => {
         callback({
           type: "CHANNEL_NOT_FOUND",
           message: "Could not find channel mychannel",
