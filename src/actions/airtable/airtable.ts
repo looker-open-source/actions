@@ -18,58 +18,59 @@ export class AirtableAction extends Hub.Action {
     },
   ]
   supportedActionTypes = [Hub.ActionType.Query]
+  usesStreaming = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   async execute(request: Hub.ActionRequest) {
-    if (!(request.attachment && request.attachment.dataJSON)) {
-      throw "No attached json."
-    }
-
     if (!(request.formParams.base && request.formParams.table)) {
       throw "Missing Airtable base or table."
     }
 
-    const qr = request.attachment.dataJSON
-    if (!qr.fields || !qr.data) {
-      throw "Request payload is an invalid format."
-    }
+    let fieldset: Hub.Field[] = []
+    const errors: Error[] = []
+    const fieldLabelMap: {[name: string]: string } = {}
 
-    const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
-    const fieldMap: any = {}
-    for (const field of fields) {
-      fieldMap[field.name] = field.label_short || field.label || field.name
-    }
-    const records = qr.data.map((row: any) => {
-      const record: any = {}
-      for (const field of fields) {
-        record[fieldMap[field.name]] = row[field.name].value
-      }
-      return record
-    })
+    const airtableClient = this.airtableClientFromRequest(request)
+    const base = airtableClient.base(request.formParams.base)
+    const table = base(request.formParams.table)
 
-    let response
-    try {
-      const airtableClient = this.airtableClientFromRequest(request)
-      const base = airtableClient.base(request.formParams.base)
-      const table = base(request.formParams.table)
-
-      await Promise.all(records.map(async (record: any) => {
-        return new Promise<void>((resolve, reject) => {
-          table.create(record, (err: { message: string }, rec: any) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(rec)
-            }
+    await request.streamJsonDetail({
+      onFields: (fields) => {
+        fieldset = Hub.allFields(fields)
+        for (const field of fieldset) {
+          fieldLabelMap[field.name] = field.label_short || field.label || field.name
+        }
+      },
+      onRow: async (row) => {
+        const record: {[name: string]: any} = {}
+        for (const field of fieldset) {
+          record[fieldLabelMap[field.name]] = row[field.name].value
+        }
+        try {
+          await new Promise<any>((resolve, reject) => {
+            table.create(record, (err: any, rec: any) => {
+              if (err) {
+                reject(err)
+              } else {
+                resolve(rec)
+              }
+            })
           })
-        })
-      }))
-    } catch (e) {
-      response = { success: false, message: e.message }
+        } catch (e) {
+          errors.push(e)
+        }
+      },
+    })
+    if (errors) {
+      return new Hub.ActionResponse({
+        success: false,
+        message: errors.map((e) => e.message).join(", "),
+      })
+    } else {
+      return new Hub.ActionResponse({ success: true })
     }
-    return new Hub.ActionResponse(response)
   }
 
   async form() {
