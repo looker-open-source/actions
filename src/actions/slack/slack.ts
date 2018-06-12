@@ -1,5 +1,4 @@
 import * as Hub from "../../hub"
-import * as winston from "winston"
 
 const WebClient = require("@slack/client").WebClient
 
