@@ -52,9 +52,11 @@ export abstract class Action {
   supportedFormats?: ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
+  supportedDownloadSettings?: string[]
   requiredFields?: RequiredField[] = []
 
   abstract params: ActionParameter[]
+  actionUserMetadata?: string
 
   asJson(router: RouteBuilder) {
     return {
@@ -63,10 +65,12 @@ export abstract class Action {
       label: this.label,
       name: this.name,
       params: this.params,
+      actionUserMetadata: this.actionUserMetadata,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
       supported_formats: this.supportedFormats,
       supported_formattings: this.supportedFormattings,
+      supported_download_settings: this.supportedDownloadSettings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       icon_data_uri: this.getImageDataUri(),
       url: this.execute ? router.actionUrl(this) : null,
@@ -126,7 +130,8 @@ export abstract class Action {
 }
 
 export abstract class OAuthAction extends Action {
-  abstract async oauthUrl(redirectUri: string): Promise<string>
+  abstract async oauthCheck(request: ActionRequest): Promise<boolean>
+  abstract async oauthUrl(redirectUri: string, token: string): Promise<string>
   abstract async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string): Promise<string>
 }
 

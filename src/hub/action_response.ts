@@ -1,3 +1,5 @@
+import {ActionState} from "./action_state"
+
 export interface ValidationError {
   field: string
   message: string
@@ -9,6 +11,7 @@ export class ActionResponse {
   refreshQuery = false
   success = true
   validationErrors: ValidationError[] = []
+  state?: ActionState
 
   constructor(
     fields?: {
@@ -32,6 +35,7 @@ export class ActionResponse {
       refresh_query: this.refreshQuery,
       success: this.success,
       validation_errors: errs,
+      state: this.state,
     }
   }
 

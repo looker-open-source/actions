@@ -9,6 +9,7 @@ import * as Hub from "../hub"
 import * as apiKey from "./api_key"
 
 const expressWinston = require("express-winston")
+const uparse = require("url")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
@@ -120,30 +121,33 @@ export default class Server implements Hub.RouteBuilder {
       }
     })
 
-    this.route("/actions/:actionId/form", async (req, res) => {
-      const request = Hub.ActionRequest.fromRequest(req)
-      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action.hasForm) {
-        const form = await action.validateAndFetchForm(request)
-        res.json(form.asJson())
-      } else {
-        throw "No form defined for action."
-      }
-    })
-
     // OAuth flows
     this.app.get('/actions/:actionId/oauth', async (req, res) => {
+      winston.info("In the oauth actual: " + req.url)
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action && Hub.isOauthAction(action)) {
-        const url = await action.oauthUrl(this.oauthRedirectUrl(action))
+        const parts = uparse.parse(req.url, true)
+        const token = parts.query.token
+        const url = await action.oauthUrl(this.oauthRedirectUrl(action), token)
+        winston.info("redirect uri is: " + url)
         res.redirect(url)
       } else {
         throw "Action does not support OAuth."
       }
     })
 
+    this.app.get('/actions/:actionId/oauth_check', async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
+      if (action && Hub.isOauthAction(action)) {
+        const check = action.oauthCheck(request)
+        res.json(check)
+      }
+    })
+
     this.app.get('/actions/:actionId/oauth_redirect', async (req, res) => {
+      winston.info("In the oauth redirect: " + req.url)
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action && Hub.isOauthAction(action)) {
@@ -175,7 +179,9 @@ export default class Server implements Hub.RouteBuilder {
   }
 
   oauthRedirectUrl(action: Hub.Action) {
-    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
+    const url = this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
+    winston.info("create redirect uri:" + url)
+    return url
   }
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {

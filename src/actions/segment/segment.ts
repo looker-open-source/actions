@@ -114,7 +114,6 @@ export class SegmentAction extends Hub.Action {
           resolve(new Hub.ActionResponse())
         }
       })
-
     })
   }
 
