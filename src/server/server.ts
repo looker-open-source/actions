@@ -142,12 +142,9 @@ export default class Server implements Hub.RouteBuilder {
     this.app.post(urlPath, async (req, res) => {
       this.logInfo(req, res, "Starting request.")
 
+      let ravenTags = {}
       if (useRaven()) {
-        const data = this.requestLog(req, res)
-        Raven.setContext({
-          instanceId: data.instanceId,
-          webhookId: data.webhookId,
-        })
+        ravenTags = this.requestLog(req, res)
       }
 
       const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
@@ -171,13 +168,9 @@ export default class Server implements Hub.RouteBuilder {
           res.json({success: false, error: "Internal server error."})
           this.logError(req, res, e)
           if (useRaven()) {
-            Raven.captureException(e)
+            Raven.captureException(e, { tags: ravenTags })
           }
         }
-      }
-
-      if (useRaven()) {
-        Raven.setContext({})
       }
 
     })
