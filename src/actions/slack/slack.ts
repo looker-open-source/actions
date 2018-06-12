@@ -1,4 +1,5 @@
 import * as Hub from "../../hub"
+import * as winston from "winston"
 
 const WebClient = require("@slack/client").WebClient
 
@@ -35,12 +36,8 @@ export class SlackAttachmentAction extends Hub.Action {
     const fileName = request.formParams.filename || request.suggestedFilename()
 
     const options = {
-      file: {
-        value: request.attachment.dataBuffer,
-        options: {
-          filename: fileName,
-        },
-      },
+      file: request.attachment.dataBuffer,
+      filename: fileName,
       channels: request.formParams.channel,
       filetype: request.attachment.fileExtension,
       initial_comment: request.formParams.initial_comment,
@@ -50,7 +47,7 @@ export class SlackAttachmentAction extends Hub.Action {
     try {
       const slack = this.slackClientFromRequest(request)
       await new Promise<void>((resolve, reject) => {
-        slack.files.upload(fileName, options, (err: any) => {
+        slack.files.upload(options, (err: any) => {
           if (err) {
             reject(err)
           } else {
