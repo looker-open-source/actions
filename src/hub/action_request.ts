@@ -145,8 +145,9 @@ export class ActionRequest {
    * Streaming generally occurs only if Looker sends the data in a streaming fashion via a push url,
    * however it will also wrap non-streaming attachment data so that actions only need a single implementation.
    *
-   * @returns The return value of the `callback` function. This is useful for returning
-   * a promise from the `callback` function.
+   * @returns A promise returning the same value as the callback's return value.
+   * This promise will resolve after the stream has completed and the callback's promise
+   * has also resolved.
    * @param callback A function will be caled with a Node.js `Readable` object.
    * The readable object represents the streaming data.
    */
