@@ -4,8 +4,8 @@ import * as httpRequest from "request"
 import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
-import { truncateString } from "./utils"
 import * as winston from "winston"
+import { truncateString } from "./utils"
 
 import {
   DataWebhookPayload,
