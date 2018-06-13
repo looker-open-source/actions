@@ -5,6 +5,7 @@ import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import { truncateString } from "./utils"
+import * as winston from "winston"
 
 import {
   DataWebhookPayload,
@@ -149,22 +150,41 @@ export class ActionRequest {
    * @param callback A function will be caled with a Node.js `Readable` object.
    * The readable object represents the streaming data.
    */
-  stream<T>(callback: (readable: Readable) => T): T {
-    const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
+  async stream<T>(callback: (readable: Readable) => Promise<T>): Promise<T> {
+
     const stream = new PassThrough()
-    const returnVal = callback(stream)
-    if (url) {
-      httpRequest.get(url).pipe(stream)
-    } else {
-      if (this.attachment && this.attachment.dataBuffer) {
-        stream.end(this.attachment.dataBuffer)
+    const returnPromise = callback(stream)
+
+    const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
+
+    const streamPromise = new Promise<void>((resolve, reject) => {
+      if (url) {
+        httpRequest
+          .get(url)
+          .on("error", (err) => {
+            winston.error(`Request stream error: ${err}\n${err.stack}`)
+            reject(err)
+          })
+          .on("finish", resolve)
+          .pipe(stream)
+          .on("error", (err) => {
+            winston.error(`PassThrough stream error: ${err}\n${err.stack}`)
+            reject(err)
+          })
       } else {
-        throw new Error(
-          "startStream was called on an ActionRequest that does not have" +
-          "a streaming download url or an attachment. Ensure usesStreaming is set properly on the action.")
+        if (this.attachment && this.attachment.dataBuffer) {
+          stream.end(this.attachment.dataBuffer)
+          resolve()
+        } else {
+          reject(
+            "startStream was called on an ActionRequest that does not have" +
+            "a streaming download url or an attachment. Ensure usesStreaming is set properly on the action.")
+        }
       }
-    }
-    return returnVal
+    })
+
+    const results = await Promise.all([returnPromise, streamPromise])
+    return results[0]
   }
 
   /**
@@ -182,12 +202,12 @@ export class ActionRequest {
    * @param onRow A function that will be called for each streamed row, with the row as the first argument.
    */
   async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
-    return new Promise<void>((resolve, reject) => {
-      this.stream((readable) => {
+    return new Promise<void>(async (resolve, reject) => {
+      this.stream(async (readable) => {
         oboe(readable)
           .node("![*]", this.safeOboe(readable, reject, onRow))
           .done(() => resolve())
-      })
+      }).then(resolve).catch(reject)
     })
   }
 
@@ -216,8 +236,8 @@ export class ActionRequest {
     onFields?: (fields: Fieldset) => void,
     onRanAt?: (iso8601string: string) => void,
   }) {
-    return new Promise<void>((resolve, reject) => {
-      this.stream((readable) => {
+    return new Promise<void>(async (resolve, reject) => {
+      this.stream(async (readable) => {
         oboe(readable)
           .node("data.*", this.safeOboe(readable, reject, callbacks.onRow))
           .node("!.fields", this.safeOboe(readable, reject, (fields) => {
@@ -231,7 +251,7 @@ export class ActionRequest {
             }
           }))
           .done(() => resolve())
-      })
+      }).then(resolve).catch(reject)
     })
   }
 
