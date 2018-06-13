@@ -28,7 +28,7 @@ export default class Server implements Hub.RouteBuilder {
       Raven.config(process.env.ACTION_HUB_RAVEN_DSN, {
         captureUnhandledRejections: true,
         release: statusJson.git_commit,
-        autoBreadcrumbs: true,
+        autoBreadcrumbs: false,
         environment: process.env.ACTION_HUB_BASE_URL,
       }).install()
     }
@@ -67,10 +67,6 @@ export default class Server implements Hub.RouteBuilder {
   constructor() {
 
     this.app = express()
-    if (useRaven()) {
-      this.app.use(Raven.requestHandler())
-      this.app.use(Raven.errorHandler())
-    }
     this.app.use(bodyParser.json({limit: "250mb"}))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
@@ -160,12 +156,16 @@ export default class Server implements Hub.RouteBuilder {
       } catch (e) {
         this.logError(req, res, "Error on request")
         if (typeof(e) === "string") {
-          res.status(404)
-          res.json({success: false, error: e})
+          if (!res.headersSent) {
+            res.status(404)
+            res.json({success: false, error: e})
+          }
           this.logError(req, res, e)
         } else {
-          res.status(500)
-          res.json({success: false, error: "Internal server error."})
+          if (!res.headersSent) {
+            res.status(500)
+            res.json({ success: false, error: "Internal server error." })
+          }
           this.logError(req, res, e)
           if (useRaven()) {
             Raven.captureException(e, { tags: ravenTags })
