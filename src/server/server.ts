@@ -67,10 +67,6 @@ export default class Server implements Hub.RouteBuilder {
   constructor() {
 
     this.app = express()
-    if (useRaven()) {
-      this.app.use(Raven.requestHandler())
-      this.app.use(Raven.errorHandler())
-    }
     this.app.use(bodyParser.json({limit: "250mb"}))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
