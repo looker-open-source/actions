@@ -203,7 +203,7 @@ export class ActionRequest {
    * @param onRow A function that will be called for each streamed row, with the row as the first argument.
    */
   async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.stream(async (readable) => {
         oboe(readable)
           .node("![*]", this.safeOboe(readable, reject, onRow))
@@ -237,7 +237,7 @@ export class ActionRequest {
     onFields?: (fields: Fieldset) => void,
     onRanAt?: (iso8601string: string) => void,
   }) {
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.stream(async (readable) => {
         oboe(readable)
           .node("data.*", this.safeOboe(readable, reject, callbacks.onRow))
