@@ -39,7 +39,7 @@ export class SlackAttachmentAction extends Hub.Action {
       filename: fileName,
       channels: request.formParams.channel,
       filetype: request.attachment.fileExtension,
-      initial_comment: request.formParams.initial_comment,
+      initial_comment: request.formParams.initial_comment || "",
     }
 
     let response
