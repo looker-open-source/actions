@@ -101,6 +101,9 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
       if (action.hasExecute) {
         const actionResponse = await action.validateAndExecute(request)
+        if (!actionResponse.success) {
+          res.status(500)
+        }
         res.json(actionResponse.asJson())
       } else {
         throw "No action defined for action."
