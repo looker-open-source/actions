@@ -101,6 +101,11 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
       if (action.hasExecute) {
         const actionResponse = await action.validateAndExecute(request)
+        // Looker currently doesn't inspect the response to see and error.
+        // This is a stop gap to communicate that the action wasn't successful.
+        if (!actionResponse.success) {
+          res.status(400)
+        }
         res.json(actionResponse.asJson())
       } else {
         throw "No action defined for action."
