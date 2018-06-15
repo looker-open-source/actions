@@ -18,8 +18,8 @@ import {
   IntegrationSupportedFormattings as ActionFormatting,
   IntegrationSupportedVisualizationFormattings as ActionVisualizationFormatting,
 } from "../api_types/integration"
-import { LookmlModelExploreFieldset as Fieldset } from "../api_types/lookml_model_explore_fieldset"
 import { Query } from "../api_types/query"
+import { Fieldset } from "./index"
 import { Row as JsonDetailRow } from "./json_detail"
 
 export {

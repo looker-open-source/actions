@@ -6,8 +6,12 @@ export * from "./sources"
 export * from "./utils"
 
 import { LookmlModelExploreField as Field } from "../api_types/lookml_model_explore_field"
-import { LookmlModelExploreFieldset as Fieldset } from "../api_types/lookml_model_explore_fieldset"
+import { LookmlModelExploreFieldset as ExploreFieldset } from "../api_types/lookml_model_explore_fieldset"
 import * as JsonDetail from "./json_detail"
+
+interface Fieldset extends ExploreFieldset {
+  table_calculations: Field[] | null
+}
 
 function allFields(fields: Fieldset) {
   let all: Field[] = []
@@ -22,6 +26,9 @@ function allFields(fields: Fieldset) {
   }
   if (fields.parameters) {
     all = all.concat(fields.parameters)
+  }
+  if (fields.table_calculations) {
+    all = all.concat(fields.table_calculations)
   }
   return all
 }
