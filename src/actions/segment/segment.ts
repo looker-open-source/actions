@@ -94,7 +94,8 @@ export class SegmentAction extends Hub.Action {
       onRow: (row) => {
         this.unassignedSegmentFieldsCheck(segmentFields)
         const payload = {
-          ...this.prepareSegmentTraitsFromRow(row, fieldset, segmentFields!, hiddenFields),
+          ...this.prepareSegmentTraitsFromRow(
+            row, fieldset, segmentFields!, hiddenFields, segmentCall === SegmentCalls.Track),
           ...{event, context, timestamp},
         }
         if (payload.groupId === null) {
@@ -174,6 +175,7 @@ export class SegmentAction extends Hub.Action {
     fields: Hub.Field[],
     segmentFields: SegmentFields,
     hiddenFields: string[],
+    trackCall: boolean,
   ) {
     const traits: {[key: string]: string} = {}
     for (const field of fields) {
@@ -196,12 +198,15 @@ export class SegmentAction extends Hub.Action {
     }
     const groupId: string | null = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
 
-    return {
-      traits,
+    const dimensionName = trackCall ? "properties" : "traits"
+
+    const segmentRow: any = {
       userId,
       anonymousId,
       groupId,
     }
+    segmentRow[dimensionName] = traits
+    return segmentRow
   }
 
   protected segmentClientFromRequest(request: Hub.ActionRequest) {

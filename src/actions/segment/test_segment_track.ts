@@ -39,7 +39,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           userId: "funvalue",
           anonymousId: null,
           event: "funevent",
-          traits: {},
+          properties: {},
           context: {
             app: {
               name: "looker/actions",
