@@ -16,9 +16,9 @@ export interface ActionFormField {
   label?: string
   description?: string
   default?: string
-  type?: "string" | "textarea" | "select" | "set_params_link" | "external_link"
+  type?: "string" | "textarea" | "select" | "set_params_link" | "oauth_link"
   options?: { name: string, label: string }[]
   required?: boolean
-  url?: string
+  oauth_url?: string
   settable_params?: string[]
 }

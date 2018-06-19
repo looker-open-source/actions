@@ -18,7 +18,6 @@ export class DropboxAction extends Hub.OAuthAction {
     params = [{
       name: "dropbox_access_token",
       label: "Dropbox Access token",
-      per_user: true,
       required: false,
       sensitive: true,
     }]
@@ -59,9 +58,9 @@ export class DropboxAction extends Hub.OAuthAction {
             form.state = state
             form.fields.push({
                 name: "login",
-                type: "external_link",
+                type: "oauth_link",
                 label: "Log in with Dropbox",
-                url: "http://localhost:1337/actions/dropbox/oauth",
+                oauth_url: "http://localhost:1337/actions/dropbox/oauth",
             })
         })
     return form
