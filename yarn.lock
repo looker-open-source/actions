@@ -703,6 +703,10 @@ bl@~1.1.2:
   dependencies:
     readable-stream "~2.0.5"
 
+blocked-at@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/blocked-at/-/blocked-at-1.1.2.tgz#782a7ce7b59c2ffbea0ce71ae821743a7f0bc3e7"
+
 bluebird@2.3.x:
   version "2.3.11"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-2.3.11.tgz#15bb78ed32abf27b090640c0f85e4b91f615c8b6"

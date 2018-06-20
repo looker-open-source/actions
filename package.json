@@ -50,6 +50,7 @@
     "analytics-node": "^3.1.1",
     "aws-sdk": "^2.135.0",
     "azure-storage": "^2.6.0",
+    "blocked-at": "^1.1.2",
     "body-parser": "^1.18.2",
     "datauri": "^1.0.5",
     "do-wrapper": "^3.11.1",
