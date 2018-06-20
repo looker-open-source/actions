@@ -138,19 +138,6 @@ export default class Server implements Hub.RouteBuilder {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/execute`)
   }
 
-  async delayActionResp() {
-    return new Promise<void>((resolve) => {setInterval(resolve, 10)})
-  }
-
-  async writeResp(res: express.Response) {
-    while (!res.headersSent) {
-        await this.delayActionResp();
-        if (!res.headersSent) {
-          res.write("Beanbag")
-        }
-    }
-  }
-
   formUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
   }
