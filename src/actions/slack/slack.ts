@@ -1,6 +1,7 @@
 import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
+import * as winston from "winston"
 
 interface Channel {
   id: string,
@@ -23,6 +24,10 @@ export class SlackAttachmentAction extends Hub.Action {
     sensitive: true,
   }]
 
+  async timeout() {
+    return new Promise<void>((resolve) => {setTimeout(resolve, 61000)})
+  }
+
   async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
@@ -41,6 +46,9 @@ export class SlackAttachmentAction extends Hub.Action {
       filetype: request.attachment.fileExtension,
       initial_comment: request.formParams.initial_comment || "",
     }
+    winston.info("Right before 61 second timeout")
+    await this.timeout()
+    winston.info("Right after 61 second timeout")
 
     let response
     try {

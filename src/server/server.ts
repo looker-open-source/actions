@@ -100,13 +100,16 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
       if (action.hasExecute) {
+        const timerId = setInterval(() => {res.write("\n")}, 1000)
+        setTimeout(() => { clearInterval(timerId) }, 120000);
         const actionResponse = await action.validateAndExecute(request)
         // Looker currently doesn't inspect the response to see and error.
         // This is a stop gap to communicate that the action wasn't successful.
-        if (!actionResponse.success) {
+/*        if (!actionResponse.success) {
           res.status(400)
-        }
-        res.json(actionResponse.asJson())
+        }*/
+        res.end(JSON.stringify(actionResponse.asJson()))
+        clearInterval(timerId)
       } else {
         throw "No action defined for action."
       }
@@ -133,6 +136,19 @@ export default class Server implements Hub.RouteBuilder {
 
   actionUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/execute`)
+  }
+
+  async delayActionResp() {
+    return new Promise<void>((resolve) => {setInterval(resolve, 10)})
+  }
+
+  async writeResp(res: express.Response) {
+    while (!res.headersSent) {
+        await this.delayActionResp();
+        if (!res.headersSent) {
+          res.write("Beanbag")
+        }
+    }
   }
 
   formUrl(action: Hub.Action) {

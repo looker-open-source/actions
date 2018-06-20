@@ -8,6 +8,7 @@
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
     "copy-api-types": "./node_modules/.bin/ts-node ./bin/copy_api_types.ts",
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache --type-check -- ./src/boot.ts",
+    "debug": "./node_modules/.bin/nodemon --exec node --inspect -r ./node_modules/ts-node/register -- ./src/boot.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && ./node_modules/.bin/tsc --noEmit && yarn lint",
     "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
