@@ -80,39 +80,40 @@ export class SegmentAction extends Hub.Action {
     }
     const event = request.formParams.event
 
-    await request.streamJsonDetail({
-      onFields: (fields) => {
-        fieldset = Hub.allFields(fields)
-        segmentFields = this.segmentFields(fieldset)
-        this.unassignedSegmentFieldsCheck(segmentFields)
-      },
-      onRanAt: (iso8601string) => {
-        if (iso8601string) {
-          timestamp = new Date(iso8601string)
-        }
-      },
-      onRow: (row) => {
-        this.unassignedSegmentFieldsCheck(segmentFields)
-        const payload = {
-          ...this.prepareSegmentTraitsFromRow(
-            row, fieldset, segmentFields!, hiddenFields, segmentCall === SegmentCalls.Track),
-          ...{event, context, timestamp},
-        }
-        if (payload.groupId === null) {
-          delete payload.groupId
-        }
-        if (!payload.event) {
-          delete payload.event
-        }
-        try {
-          segmentClient[segmentCall](payload)
-        } catch (e) {
-          errors.push(e)
-        }
-      },
-    })
-
     try {
+
+      await request.streamJsonDetail({
+        onFields: (fields) => {
+          fieldset = Hub.allFields(fields)
+          segmentFields = this.segmentFields(fieldset)
+          this.unassignedSegmentFieldsCheck(segmentFields)
+        },
+        onRanAt: (iso8601string) => {
+          if (iso8601string) {
+            timestamp = new Date(iso8601string)
+          }
+        },
+        onRow: (row) => {
+          this.unassignedSegmentFieldsCheck(segmentFields)
+          const payload = {
+            ...this.prepareSegmentTraitsFromRow(
+              row, fieldset, segmentFields!, hiddenFields, segmentCall === SegmentCalls.Track),
+            ...{event, context, timestamp},
+          }
+          if (payload.groupId === null) {
+            delete payload.groupId
+          }
+          if (!payload.event) {
+            delete payload.event
+          }
+          try {
+            segmentClient[segmentCall](payload)
+          } catch (e) {
+            errors.push(e)
+          }
+        },
+      })
+
       await segmentClient.flush(async (err: any) => {
         return new Promise<any>((resolve, reject) => {
           if (err) {

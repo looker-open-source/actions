@@ -272,7 +272,12 @@ describe(`${action.constructor.name} unit tests`, () => {
         data: [{coolfield: {value: "funvalue"}}],
       }))}
       chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
+        .deep.equal({
+          message: "Query requires a field tagged email or user_id or segment_anonymous_id.",
+          success: false,
+          refreshQuery: false,
+          validationErrors: [],
+        })
         .and.notify(done)
     })
 
@@ -287,7 +292,12 @@ describe(`${action.constructor.name} unit tests`, () => {
         data: [{coolfield: {value: "funvalue"}}],
       }))}
       chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith("Query requires a field tagged email or user_id or segment_anonymous_id.")
+        .deep.equal({
+          message: "Query requires a field tagged email or user_id or segment_anonymous_id.",
+          success: false,
+          refreshQuery: false,
+          validationErrors: [],
+        })
         .and.notify(done)
     })
 
