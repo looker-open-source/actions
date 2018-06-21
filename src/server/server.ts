@@ -20,6 +20,7 @@ export default class Server implements Hub.RouteBuilder {
 
   static run() {
     dotenv.config()
+    process.env.UV_THREADPOOL_SIZE = "128";
 
     if (useRaven()) {
       let statusJson: any = {}
