@@ -106,8 +106,10 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
       if (action.hasExecute) {
         const actionResponse = await action.validateAndExecute(request)
-        // Looker currently doesn't inspect the response to see and error.
-        // This is a stop gap to communicate that the action wasn't successful.
+
+        // Some versions of Looker do not look at the "success" value in the response
+        // if the action returns a 200 status code, even though the Action API specs otherwise.
+        // So we force a non-200 status code as a workaround.
         if (!actionResponse.success) {
           res.status(400)
         }
