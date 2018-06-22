@@ -259,7 +259,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith(
-          "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
+          "The segment action requires an attachment.")
     })
 
     it("errors if the query response has no fields", (done) => {
