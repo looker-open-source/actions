@@ -57,10 +57,11 @@ export default class Server implements Hub.RouteBuilder {
       winston.debug("Debug Mode")
     }
 
-    Server.listen()
+    const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080
+    Server.listen(port)
   }
 
-  static listen(port = process.env.PORT || 8080) {
+  static listen(port: number) {
     const app = new Server().app
     app.listen(port, () => {
       winston.info(`Action Hub listening!`, {port})
@@ -110,19 +111,15 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      if (action.hasExecute) {
-        const actionResponse = await action.validateAndExecute(request)
+      const actionResponse = await action.validateAndExecute(request)
 
-        // Some versions of Looker do not look at the "success" value in the response
-        // if the action returns a 200 status code, even though the Action API specs otherwise.
-        // So we force a non-200 status code as a workaround.
-        if (!actionResponse.success) {
-          res.status(400)
-        }
-        res.json(actionResponse.asJson())
-      } else {
-        throw "No action defined for action."
+      // Some versions of Looker do not look at the "success" value in the response
+      // if the action returns a 200 status code, even though the Action API specs otherwise.
+      // So we force a non-200 status code as a workaround.
+      if (!actionResponse.success) {
+        res.status(400)
       }
+      res.json(actionResponse.asJson())
     })
 
     this.route("/actions/:actionId/form", async (req, res) => {
@@ -161,7 +158,8 @@ export default class Server implements Hub.RouteBuilder {
         ravenTags = this.requestLog(req, res)
       }
 
-      const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
+      const headerValue = req.header("authorization")
+      const tokenMatch = headerValue ? headerValue.match(TOKEN_REGEX) : undefined
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})

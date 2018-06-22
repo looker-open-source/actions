@@ -87,7 +87,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           {name: "coolfield", tags: ["segment_group_id"]},
           {name: "coolid", tags: ["user_id"]},
           {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
-          {name: "cooltrait"},
+          {name: "cooltrait", tags: []},
         ]},
         data: [{
           coolemail: {value: "emailemail"},

@@ -34,7 +34,7 @@ export class HipchatAction extends Hub.Action {
       throw "Couldn't get data from attachment."
     }
 
-    if (!request.formParams || !request.formParams.room) {
+    if (!request.formParams.room) {
       throw "Missing room."
     }
 

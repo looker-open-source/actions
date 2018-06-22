@@ -26,20 +26,26 @@ export class SendGridAction extends Hub.Action {
       throw "Couldn't get data from attachment."
     }
 
-    if (!request.formParams || !request.formParams.to) {
+    if (!request.formParams.to) {
       throw "Needs a valid email address."
     }
     const filename = request.formParams.filename || request.suggestedFilename() as string
-    const plan = request.scheduledPlan!
+    const plan = request.scheduledPlan
     const subject = request.formParams.subject || (plan && plan.title ? plan.title : "Looker")
-    const from = request.formParams.from || "Looker <noreply@lookermail.com>"
+    const from = request.formParams.from ? request.formParams.from : "Looker <noreply@lookermail.com>"
 
     const msg = new helpers.classes.Mail({
       to: request.formParams.to,
       subject,
       from,
-      text: `View this data in Looker. ${plan.url}\n Results are attached.`,
-      html: `<p><a href="${plan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
+      text: plan && plan.url ?
+          `View this data in Looker. ${plan.url}\n Results are attached.`
+        :
+          "Results are attached.",
+      html: plan && plan.url ?
+          `<p><a href="${plan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`
+        :
+          "Results are attached.",
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,

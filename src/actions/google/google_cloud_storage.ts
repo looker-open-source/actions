@@ -35,7 +35,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    if (!request.formParams || !request.formParams.bucket) {
+    if (!request.formParams.bucket) {
       throw "Need Google Cloud Storage bucket."
     }
 

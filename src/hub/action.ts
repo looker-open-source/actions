@@ -77,34 +77,24 @@ export abstract class Action {
             [ActionDownloadSettings.Push]
       ),
       icon_data_uri: this.getImageDataUri(),
-      url: this.execute ? router.actionUrl(this) : null,
+      url: router.actionUrl(this),
     }
   }
 
   async validateAndExecute(request: ActionRequest) {
 
-    if (!request.type) {
-      throw `Action did not specify a "type". Valid types for this action are: ${this.supportedActionTypes.join(", ")}.`
-    }
-
-    if (this.supportedActionTypes &&
-      this.supportedActionTypes.indexOf(request.type) === -1
-    ) {
-       throw `This action does not support requests of type "${request.type}".`
+    if (this.supportedActionTypes.indexOf(request.type) === -1) {
+      throw `This action does not support requests of type "${request.type}".`
     }
 
     const requiredParams = this.params.filter((p) => p.required)
 
     if (requiredParams.length > 0) {
-      if (request.params) {
-        for (const p of requiredParams) {
-          const param = request.params[p.name]
-          if (!param) {
-            throw `Required parameter "${p.name}" not provided.`
-          }
+      for (const p of requiredParams) {
+        const param = request.params[p.name]
+        if (!param) {
+          throw `Required parameter "${p.name}" not provided.`
         }
-      } else {
-        throw `No "params" provided but this action has required parameters.`
       }
     }
 
@@ -121,10 +111,6 @@ export abstract class Action {
 
   async validateAndFetchForm(request: ActionRequest) {
     return this.form!(request)
-  }
-
-  get hasExecute() {
-    return !!this.execute
   }
 
   get hasForm() {

@@ -41,10 +41,6 @@ export class JiraAction extends Hub.Action {
       throw "Couldn't get data from attachment"
     }
 
-    if (!request.formParams) {
-      throw "Need JIRA issue fields."
-    }
-
     const jira = this.jiraClientFromRequest(request)
 
     const issue = {
@@ -123,9 +119,9 @@ export class JiraAction extends Hub.Action {
       throw "Invalid JIRA server address."
     }
     return new jiraApi({
-      protocol: parsedUrl.protocol || "https",
+      protocol: parsedUrl.protocol ? parsedUrl.protocol : "https",
       host: parsedUrl.host,
-      port: parsedUrl.port || "443",
+      port: parsedUrl.port ? parsedUrl.port : "443",
       username: request.params.username,
       password: request.params.password,
       apiVersion,

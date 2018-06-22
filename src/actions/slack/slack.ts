@@ -28,7 +28,7 @@ export class SlackAttachmentAction extends Hub.Action {
       throw "Couldn't get data from attachment."
     }
 
-    if (!request.formParams || !request.formParams.channel) {
+    if (!request.formParams.channel) {
       throw "Missing channel."
     }
 
@@ -39,7 +39,7 @@ export class SlackAttachmentAction extends Hub.Action {
       filename: fileName,
       channels: request.formParams.channel,
       filetype: request.attachment.fileExtension,
-      initial_comment: request.formParams.initial_comment || "",
+      initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
     }
 
     let response

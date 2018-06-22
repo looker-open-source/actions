@@ -75,7 +75,7 @@ export class ActionRequest {
     return actionRequest
   }
 
-  static fromJSON(json: DataWebhookPayload) {
+  static fromJSON(json?: DataWebhookPayload) {
 
     if (!json) {
       throw "Request body must be valid JSON."
@@ -83,9 +83,13 @@ export class ActionRequest {
 
     const request = new ActionRequest()
 
-    request.type = json.type!
+    if (json.type === null) {
+      throw `Action did not specify a "type".`
+    } else {
+      request.type = json.type
+    }
 
-    if (json && json.attachment) {
+    if (json.attachment) {
       request.attachment = {}
       request.attachment.mime = json.attachment.mimetype!
       request.attachment.fileExtension = json.attachment.extension!
@@ -101,7 +105,7 @@ export class ActionRequest {
       }
     }
 
-    if (json && json.scheduled_plan) {
+    if (json.scheduled_plan) {
       request.scheduledPlan = {
         filtersDifferFromLook: json.scheduled_plan.filters_differ_from_look,
         queryId: json.scheduled_plan.query_id,
@@ -114,11 +118,11 @@ export class ActionRequest {
       }
     }
 
-    if (json && json.data) {
+    if (json.data) {
       request.params = json.data
     }
 
-    if (json && json.form_params) {
+    if (json.form_params) {
       request.formParams = json.form_params
     }
 
