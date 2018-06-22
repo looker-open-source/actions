@@ -130,7 +130,7 @@ export class SegmentAction extends Hub.Action {
     if (errors) {
       return new Hub.ActionResponse({
         success: false,
-        message: errors.map((e) => e.message).join(", "),
+        message: errors.map((e) => e.message || e).join(", "),
       })
     } else {
       return new Hub.ActionResponse({ success: true })
