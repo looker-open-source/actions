@@ -65,6 +65,7 @@ export class MarketoAction extends Hub.Action {
     const chunked = MarketoAction.chunkify(leadList, numLeadsAllowedPerCall)
     const marketoClient = this.marketoClientFromRequest(request)
     const errors: {message: string}[] = []
+
     for (const chunk of chunked) {
       try {
         const newLeads = await marketoClient.lead.createOrUpdate(chunk)
@@ -75,14 +76,14 @@ export class MarketoAction extends Hub.Action {
       }
     }
 
-    let response
-    if (errors) {
-      response = {
+    if (errors.length > 0) {
+      return new Hub.ActionResponse({
         success: false,
         message: errors.map((e) => e.message).join(", "),
-      }
+      })
+    } else {
+      return new Hub.ActionResponse({ success: true })
     }
-    return new Hub.ActionResponse(response)
   }
 
   async form() {

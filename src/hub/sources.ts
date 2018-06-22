@@ -27,9 +27,9 @@ export async function allActions(opts?: { lookerVersion?: string | null }) {
 
 export async function findAction(id: string, opts?: {lookerVersion?: string | null}) {
   const all = await allActions(opts)
-  const action = all.filter((i) => i.name === id)[0]
-  if (!action) {
+  const matching = all.filter((i) => i.name === id)
+  if (matching.length === 0) {
     throw "No action found."
   }
-  return action
+  return matching[0]
 }

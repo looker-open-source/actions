@@ -9,11 +9,11 @@ const segment: any = require("analytics-node")
 
 interface SegmentFields {
   idFieldNames: string[],
-  idField: Hub.Field,
-  userIdField: Hub.Field,
-  groupIdField: Hub.Field,
-  emailField: Hub.Field,
-  anonymousIdField: Hub.Field,
+  idField?: Hub.Field,
+  userIdField?: Hub.Field,
+  groupIdField?: Hub.Field,
+  emailField?: Hub.Field,
+  anonymousIdField?: Hub.Field,
 }
 
 export enum SegmentTags {
@@ -82,7 +82,7 @@ export class SegmentAction extends Hub.Action {
     const context = {
       app: {
         name: "looker/actions",
-        version: process.env.APP_VERSION || "dev",
+        version: process.env.APP_VERSION ? process.env.APP_VERSION : "dev",
       },
     }
     const event = request.formParams.event
@@ -134,8 +134,8 @@ export class SegmentAction extends Hub.Action {
       errors.push(e)
     }
 
-    if (errors) {
-      let msg = errors.map((e) => e.message || e).join(", ")
+    if (errors.length > 0) {
+      let msg = errors.map((e) => e.message ? e.message : e).join(", ")
       if (msg.length === 0) {
         msg = "An unknown error occurred while processing the Segment action."
         winston.warn(`Can't format Segment errors: ${util.inspect(errors)}`)
@@ -147,18 +147,18 @@ export class SegmentAction extends Hub.Action {
   }
 
   protected unassignedSegmentFieldsCheck(segmentFields: SegmentFields | undefined) {
-    if (!(segmentFields && segmentFields.idFieldNames && segmentFields.idFieldNames.length > 0)) {
+    if (!(segmentFields && segmentFields.idFieldNames.length > 0)) {
       throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
     }
   }
 
   protected taggedFields(fields: Hub.Field[], tags: string[]) {
-    return fields.filter((f: Hub.Field) =>
-      f.tags && f.tags.some((t: string) => tags.indexOf(t) !== -1),
+    return fields.filter((f) =>
+      f.tags.length > 0 && f.tags.some((t: string) => tags.indexOf(t) !== -1),
     )
   }
 
-  protected taggedField(fields: any[], tags: string[]) {
+  protected taggedField(fields: any[], tags: string[]): Hub.Field | undefined {
     return this.taggedFields(fields, tags)[0]
   }
 

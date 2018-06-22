@@ -36,7 +36,7 @@ export class AmazonS3Action extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    if (!request.formParams || !request.formParams.bucket) {
+    if (!request.formParams.bucket) {
       throw new Error("Need Amazon S3 bucket.")
     }
 
@@ -69,7 +69,7 @@ export class AmazonS3Action extends Hub.Action {
   async form(request: Hub.ActionRequest) {
     const s3 = this.amazonS3ClientFromRequest(request)
     const res = await s3.listBuckets().promise()
-    const buckets = res.Buckets || []
+    const buckets = res.Buckets ? res.Buckets : []
     const form = new Hub.ActionForm()
     form.fields = [{
       label: "Bucket",

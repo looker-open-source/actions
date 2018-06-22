@@ -122,7 +122,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           {name: "coolemail", tags: ["email"]},
           {name: "coolid", tags: ["user_id"]},
           {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
-          {name: "cooltrait"},
+          {name: "cooltrait", tags: []},
         ]},
         data: [{
           coolemail: {value: "emailemail"},
@@ -188,8 +188,8 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: {
           dimensions: [
             {name: "coolfield", tags: ["email"]},
-            {name: "hiddenfield"},
-            {name: "nonhiddenfield"},
+            {name: "hiddenfield", tags: []},
+            {name: "nonhiddenfield", tags: []},
           ]},
         data: [{
           coolfield: {value: "funvalue"},
@@ -288,7 +288,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         segment_write_key: "mykey",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield"}]},
+        fields: {dimensions: [{name: "coolfield", tags: []}]},
         data: [{coolfield: {value: "funvalue"}}],
       }))}
       chai.expect(action.validateAndExecute(request)).to.eventually
