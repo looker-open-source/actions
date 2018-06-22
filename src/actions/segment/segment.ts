@@ -1,4 +1,6 @@
+import * as util from "util"
 import * as uuid from "uuid"
+import * as winston from "winston"
 
 import * as Hub from "../../hub"
 import { SegmentActionError } from "./segment_error"
@@ -133,10 +135,12 @@ export class SegmentAction extends Hub.Action {
     }
 
     if (errors) {
-      return new Hub.ActionResponse({
-        success: false,
-        message: errors.map((e) => e.message || e).join(", "),
-      })
+      let msg = errors.map((e) => e.message || e).join(", ")
+      if (msg.length === 0) {
+        msg = "An unknown error occurred while processing the Segment action."
+        winston.warn(`Can't format Segment errors: ${util.inspect(errors)}`)
+      }
+      return new Hub.ActionResponse({success: false, message: msg})
     } else {
       return new Hub.ActionResponse({ success: true })
     }
