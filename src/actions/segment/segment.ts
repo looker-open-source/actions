@@ -48,7 +48,7 @@ export class SegmentAction extends Hub.Action {
   ]
   minimumSupportedLookerVersion = "4.20.0"
   supportedActionTypes = [Hub.ActionType.Query]
-  usesStreaming = false
+  usesStreaming = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
@@ -59,11 +59,6 @@ export class SegmentAction extends Hub.Action {
   }
 
   protected async executeSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
-
-    if (!request.attachment) {
-      throw "The segment action requires an attachment."
-    }
-
     const segmentClient = this.segmentClientFromRequest(request)
 
     let hiddenFields: string[] = []
