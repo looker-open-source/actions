@@ -149,7 +149,7 @@ export class SegmentAction extends Hub.Action {
 
   protected taggedFields(fields: Hub.Field[], tags: string[]) {
     return fields.filter((f) =>
-      f.tags.length > 0 && f.tags.some((t: string) => tags.indexOf(t) !== -1),
+      f.tags && f.tags.length > 0 && f.tags.some((t: string) => tags.indexOf(t) !== -1),
     )
   }
 
