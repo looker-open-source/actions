@@ -188,8 +188,8 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: {
           dimensions: [
             {name: "coolfield", tags: ["email"]},
-            {name: "hiddenfield", tags: []},
-            {name: "nonhiddenfield", tags: []},
+            {name: "hiddenfield"},
+            {name: "nonhiddenfield"},
           ]},
         data: [{
           coolfield: {value: "funvalue"},
