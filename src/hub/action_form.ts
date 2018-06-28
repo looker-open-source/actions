@@ -3,7 +3,7 @@ export class ActionForm {
   error?: Error | string
   asJson(): any {
     if (this.error) {
-      return {success: false, message: typeof this.error === "string" ? this.error : this.error.message}
+      return {error: typeof this.error === "string" ? this.error : this.error.message}
     }
     return this.fields
   }

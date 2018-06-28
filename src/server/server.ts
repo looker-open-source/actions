@@ -127,9 +127,6 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasForm) {
         const form = await action.validateAndFetchForm(request)
-        if (form.error) {
-          res.status(400)
-        }
         res.json(form.asJson())
       } else {
         throw "No form defined for action."
