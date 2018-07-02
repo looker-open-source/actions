@@ -85,7 +85,7 @@ export class SlackAttachmentAction extends Hub.Action {
       }]
 
     } catch (e) {
-      form.error = e
+      form.error = this.prettySlackError(e)
     }
 
     return form
@@ -130,6 +130,14 @@ export class SlackAttachmentAction extends Hub.Action {
         }
       })
     })
+  }
+
+  private prettySlackError(e: any) {
+    if (e.message === "An API error occurred: invalid_auth") {
+      return "Your Slack authentication credentials are not valid."
+    } else {
+      return e
+    }
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
