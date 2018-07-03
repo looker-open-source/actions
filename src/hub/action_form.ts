@@ -1,6 +1,10 @@
 export class ActionForm {
   fields: ActionFormField[] = []
+  error?: Error | string
   asJson(): any {
+    if (this.error) {
+      return {error: typeof this.error === "string" ? this.error : this.error.message}
+    }
     return this.fields
   }
 }
