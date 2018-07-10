@@ -89,14 +89,14 @@ export class MarketoAction extends Hub.Action {
   }
 
   async form() {
-      const form = new Hub.ActionForm()
-      form.fields = [{
-        label: "Campaign ID",
-        name: "campaignID",
-        required: true,
-        type: "string",
-      }]
-      return form
+    const form = new Hub.ActionForm()
+    form.fields = [{
+      label: "Campaign ID",
+      name: "campaignID",
+      required: true,
+      type: "string",
+    }]
+    return form
   }
 
   private tagMap(fields: Hub.Field[]) {
