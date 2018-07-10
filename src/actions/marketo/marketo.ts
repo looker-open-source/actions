@@ -14,7 +14,7 @@ export class MarketoAction extends Hub.Action {
   name = "marketo"
   label = "Marketo"
   iconName = "marketo/marketo.svg"
-  description = "Add records to Marketo"
+  description = "Update leads and add to Marketo campaign."
   params = [
     {
       description: "Identity server host URL",
@@ -59,6 +59,12 @@ export class MarketoAction extends Hub.Action {
     }
 
     const fieldMap = this.tagMap(Hub.allFields(requestJSON.fields))
+    // determine in lookupField is present in fields
+    const lookupField = request.formParams.lookupField
+    if (!lookupField ||
+      !Object.keys(fieldMap).find((name) => fieldMap[name].indexOf(lookupField) !== -1)) {
+      throw "Marketo Lookup Field not present."
+    }
     const leadList = this.leadList(fieldMap, requestJSON.data)
 
     // Push leads into Marketo and affiliate with a campaign
@@ -69,7 +75,7 @@ export class MarketoAction extends Hub.Action {
 
     for (const chunk of chunked) {
       try {
-        const newLeads = await marketoClient.lead.createOrUpdate(chunk)
+        const newLeads = await marketoClient.lead.createOrUpdate(chunk, {lookupField})
         const justIDs = newLeads.result.filter((lead: {id: any}) => lead.id !== null)
           .map((lead: {id: any}) => ({ id: lead.id }))
         await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
@@ -95,6 +101,13 @@ export class MarketoAction extends Hub.Action {
       name: "campaignID",
       required: true,
       type: "string",
+    }, {
+      label: "Lookup Field for leads.",
+      name: "lookupField",
+      type: "string",
+      description: "TODO add link to Marketo.",
+      default: "email",
+      required: true,
     }]
     return form
   }
