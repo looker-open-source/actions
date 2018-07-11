@@ -2,7 +2,7 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 import { Stream } from "stream"
 
-import * as Hub from "../../hub"
+import * as Hub from "../../../hub"
 
 import { GoogleCloudStorageAction } from "./google_cloud_storage"
 
