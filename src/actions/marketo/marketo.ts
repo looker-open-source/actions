@@ -80,7 +80,7 @@ export class MarketoAction extends Hub.Action {
         winston.info(`\n\n\n\nchunk: ${JSON.stringify(chunk)}\nnewLeads: ${JSON.stringify(newLeads)}`)
         const justIDs = newLeads.result.map((lead: {id: any}) => ({ id: lead.id }))
         const result = await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
-        winston.info(`result: ${result}\n\n`)
+        winston.info(`result: ${JSON.stringify(result)}\n\n`)
       } catch (e) {
         errors.push(e)
       }
@@ -107,7 +107,7 @@ export class MarketoAction extends Hub.Action {
       label: "Lookup Field for leads.",
       name: "lookupField",
       type: "string",
-      description: "TODO add link to Marketo.",
+      description: "Marketo field to use for lookups.",
       default: "email",
       required: true,
     }]
