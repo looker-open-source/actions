@@ -1,3 +1,4 @@
+import * as winston from "winston"
 import * as Hub from "../../hub"
 
 const MARKETO: any = require("node-marketo-rest")
@@ -76,9 +77,10 @@ export class MarketoAction extends Hub.Action {
     for (const chunk of chunked) {
       try {
         const newLeads = await marketoClient.lead.createOrUpdate(chunk, {lookupField})
-        const justIDs = newLeads.result.filter((lead: {id: any}) => lead.id !== null)
-          .map((lead: {id: any}) => ({ id: lead.id }))
-        await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
+        winston.info(`\n\n\n\nchunk: ${JSON.stringify(chunk)}\nnewLeads: ${JSON.stringify(newLeads)}`)
+        const justIDs = newLeads.result.map((lead: {id: any}) => ({ id: lead.id }))
+        const result = await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
+        winston.info(`result: ${result}\n\n`)
       } catch (e) {
         errors.push(e)
       }
