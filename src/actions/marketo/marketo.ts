@@ -75,9 +75,18 @@ export class MarketoAction extends Hub.Action {
 
     for (const chunk of chunked) {
       try {
-        const newLeads = await marketoClient.lead.createOrUpdate(chunk, {lookupField})
-        const justIDs = newLeads.result.map((lead: {id: any}) => ({ id: lead.id }))
-        await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
+        const leadResponse = await marketoClient.lead.createOrUpdate(chunk, {lookupField})
+        if (leadResponse.success && leadResponse.success === false) {
+          errors.concat(leadResponse.errors)
+          break
+        }
+        const justIDs = leadResponse.result.filter((lead: {id: any}) => lead.id !== null)
+          .map((lead: {id: any}) => ({ id: lead.id }))
+        const campaignResponse = await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
+        if (campaignResponse.success && campaignResponse.success === false) {
+          errors.concat(campaignResponse.errors)
+          break
+        }
       } catch (e) {
         errors.push(e)
       }

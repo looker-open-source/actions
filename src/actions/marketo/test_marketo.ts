@@ -121,8 +121,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         ],
       }}
 
-      const leadSpy = sinon.spy(async () => Promise.resolve({result: [{id: 1}, {id: 2}, {id: 3}]}))
-      const requestSpy = sinon.spy(async () => Promise.resolve("boomdaboom"))
+      const leadSpy = sinon.spy(async () => Promise.resolve({
+        success: true,
+        result: [{id: 1}, {id: 2}, {id: 3}],
+      }))
+      const requestSpy = sinon.spy(async () => Promise.resolve({
+        success: true,
+        result: [{id: 1}, {id: 2}, {id: 3}],
+      }))
 
       const stubClient = sinon.stub(action as any, "marketoClientFromRequest").callsFake(() => {
         return {
@@ -158,155 +164,5 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
-    it("errors with Marketo leads with null ids", () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.params = {
-        url: "myurl",
-        clientID: "myclientID",
-        clientSecret: "myclientSecret",
-      }
-      request.formParams = {
-        campaignID: "1243",
-        lookupField: "email",
-      }
-      request.attachment = {dataJSON: {
-        fields: {
-          measures: [],
-          dimensions: [
-            {label_short: "ID", name: "users.id", tags: ["user_id", "marketo:Account__c"]},
-            {label_short: "Email", name: "users.email", tags: ["email", "marketo:email"]},
-            {label_short: "Gender", name: "users.gender", tags: ["marketo:gender"]},
-            {label_short: "random", name: "users.random"},
-          ],
-        },
-        data: [
-          {
-            "users.id": {value: 4653},
-            "users.email": {value: "zoraida.gregoire@gmail.com"},
-            "users.gender": {value: "f"},
-            "users.random": {value: 7},
-          },
-          {
-            "users.id": {value: 629},
-            "users.email": {value: "zola.summers@gmail.com"},
-            "users.gender": {value: "m"},
-            "users.random": {value: 4},
-          },
-          {
-            "users.id": {value: 6980},
-            "users.email": {value: "zoe.brady@gmail.com"},
-            "users.gender": {value: "f"},
-            "users.random": {value: 5},
-          },
-        ],
-      }}
-
-      const leadSpy = sinon.spy(async () => Promise.reject(new Error("Invalid id 'null' specified")))
-      const requestSpy = sinon.spy(async () => Promise.resolve("boomdaboom"))
-
-      const stubClient = sinon.stub(action as any, "marketoClientFromRequest").callsFake(() => {
-        return {
-          lead: {
-            createOrUpdate: leadSpy,
-          },
-          campaign: {
-            request: requestSpy,
-          },
-        }
-      })
-      return chai.expect(action.validateAndExecute(request)).to.eventually
-      .deep.equal({
-        message: "Invalid id 'null' specified",
-        success: false,
-        refreshQuery: false,
-        validationErrors: [],
-      }).then(() => {
-        chai.expect(requestSpy).to.have.not.been.called
-        stubClient.restore()
-      })
-    })
-
-    // should we remove null leads or send an error?
-    it("removes Marketo leads with null ids", () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.params = {
-        url: "myurl",
-        clientID: "myclientID",
-        clientSecret: "myclientSecret",
-      }
-      request.formParams = {
-        campaignID: "1243",
-        lookupField: "email",
-      }
-      request.attachment = {dataJSON: {
-        fields: {
-          measures: [],
-          dimensions: [
-            {label_short: "ID", name: "users.id", tags: ["user_id", "marketo:Account__c"]},
-            {label_short: "Email", name: "users.email", tags: ["email", "marketo:email"]},
-            {label_short: "Gender", name: "users.gender", tags: ["marketo:gender"]},
-            {label_short: "random", name: "users.random"},
-          ],
-        },
-        data: [
-          {
-            "users.id": {value: 4653},
-            "users.email": {value: "zoraida.gregoire@gmail.com"},
-            "users.gender": {value: "f"},
-            "users.random": {value: 7},
-          },
-          {
-            "users.id": {value: 629},
-            "users.email": {value: "zola.summers@gmail.com"},
-            "users.gender": {value: "m"},
-            "users.random": {value: 4},
-          },
-          {
-            "users.id": {value: 6980},
-            "users.email": {value: "zoe.brady@gmail.com"},
-            "users.gender": {value: "f"},
-            "users.random": {value: 5},
-          },
-        ],
-      }}
-
-      const leadSpy = sinon.spy(async () => Promise.resolve({result: [{id: 1}, {id: null}, {id: 3}]}))
-      const requestSpy = sinon.spy(async () => Promise.resolve("boomdaboom"))
-
-      const stubClient = sinon.stub(action as any, "marketoClientFromRequest").callsFake(() => {
-        return {
-          lead: {
-            createOrUpdate: leadSpy,
-          },
-          campaign: {
-            request: requestSpy,
-          },
-        }
-      })
-      return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-        chai.expect(leadSpy).to.have.been.calledWith([
-          {
-            Account__c: 4653,
-            email: "zoraida.gregoire@gmail.com",
-            gender: "f",
-          },
-          {
-            Account__c: 629,
-            email: "zola.summers@gmail.com",
-            gender: "m",
-          },
-          {
-            Account__c: 6980,
-            email: "zoe.brady@gmail.com",
-            gender: "f",
-          },
-        ], {lookupField: "email"})
-        chai.expect(requestSpy).to.have.been.calledWith("1243",
-          [{id: 1}, {id: 3}])
-        stubClient.restore()
-      })
-    })
   })
 })
