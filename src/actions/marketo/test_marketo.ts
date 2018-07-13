@@ -74,7 +74,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }}
 
       return chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith("Marketo Lookup Field not present.")
+        .be.rejectedWith("Marketo Lookup Field for lead not present in query.")
     })
 
     it("sends all the data to Marketo", () => {
