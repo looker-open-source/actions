@@ -59,11 +59,11 @@ export class MarketoAction extends Hub.Action {
     }
 
     const fieldMap = this.tagMap(Hub.allFields(requestJSON.fields))
-    // determine in lookupField is present in fields
+    // determine if lookupField is present in fields
     const lookupField = request.formParams.lookupField
     if (!lookupField ||
       !Object.keys(fieldMap).find((name) => fieldMap[name].indexOf(lookupField) !== -1)) {
-      throw "Marketo Lookup Field not present."
+      throw "Marketo Lookup Field for lead not present in query."
     }
     const leadList = this.leadList(fieldMap, requestJSON.data)
 
