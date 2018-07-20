@@ -14,7 +14,7 @@ export class MarketoAction extends Hub.Action {
   name = "marketo"
   label = "Marketo"
   iconName = "marketo/marketo.svg"
-  description = "Add records to Marketo"
+  description = "Update leads and add to Marketo campaign."
   params = [
     {
       description: "Identity server host URL",
@@ -57,8 +57,15 @@ export class MarketoAction extends Hub.Action {
     if (!requestJSON.fields || !requestJSON.data) {
       throw "Request payload is an invalid format."
     }
-    const fieldMap = this.tagMap(requestJSON)
-    const leadList = this.leadList(fieldMap, requestJSON)
+
+    const fieldMap = this.tagMap(Hub.allFields(requestJSON.fields))
+    // determine if lookupField is present in fields
+    const lookupField = request.formParams.lookupField
+    if (!lookupField ||
+      !Object.keys(fieldMap).find((name) => fieldMap[name].indexOf(lookupField) !== -1)) {
+      throw "Marketo Lookup Field for lead not present in query."
+    }
+    const leadList = this.leadList(fieldMap, requestJSON.data)
 
     // Push leads into Marketo and affiliate with a campaign
     const numLeadsAllowedPerCall = 300
@@ -68,9 +75,18 @@ export class MarketoAction extends Hub.Action {
 
     for (const chunk of chunked) {
       try {
-        const newLeads = await marketoClient.lead.createOrUpdate(chunk)
-        const justIDs = newLeads.result.map((lead: {id: number}) => ({ id: lead.id }))
-        await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
+        const leadResponse = await marketoClient.lead.createOrUpdate(chunk, {lookupField})
+        if (leadResponse.success && leadResponse.success === false) {
+          errors.concat(leadResponse.errors)
+          break
+        }
+        const justIDs = leadResponse.result.filter((lead: {id: any}) => lead.id !== null)
+          .map((lead: {id: any}) => ({ id: lead.id }))
+        const campaignResponse = await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
+        if (campaignResponse.success && campaignResponse.success === false) {
+          errors.concat(campaignResponse.errors)
+          break
+        }
       } catch (e) {
         errors.push(e)
       }
@@ -87,14 +103,50 @@ export class MarketoAction extends Hub.Action {
   }
 
   async form() {
-      const form = new Hub.ActionForm()
-      form.fields = [{
-        label: "Campaign ID",
-        name: "campaignID",
-        required: true,
-        type: "string",
-      }]
-      return form
+    const form = new Hub.ActionForm()
+    form.fields = [{
+      label: "Campaign ID",
+      name: "campaignID",
+      required: true,
+      type: "string",
+    }, {
+      label: "Lead Lookup Field",
+      name: "lookupField",
+      type: "string",
+      description: "Marketo field to use for lookup.",
+      default: "email",
+      required: true,
+    }]
+    return form
+  }
+
+  private tagMap(fields: Hub.Field[]) {
+    // Map the looker columns to the Marketo columns using tags
+    const fieldMap: {[name: string]: string[]} = {}
+    let hasTagMap: string[] = []
+    for (const field of fields) {
+      if (field.tags && field.tags.find((tag: string) => tag.startsWith("marketo:"))) {
+        hasTagMap = field.tags.filter((tag) => tag.startsWith("marketo:"))
+          .map((tag) => tag.split("marketo:")[1])
+        fieldMap[field.name] = hasTagMap
+      }
+    }
+    return fieldMap
+  }
+
+  private leadList(fieldMap: {[key: string]: string[]}, rows: Hub.JsonDetail.Row[]) {
+    // Create the list of leads to be sent
+    const leadList: {[name: string]: any}[] = []
+    for (const leadRow of rows) {
+      const singleLead: {[name: string]: any} = {}
+      for (const field of Object.keys(fieldMap)) {
+        for (const tag of fieldMap[field]) {
+          singleLead[tag] = leadRow[field].value
+        }
+      }
+      leadList.push(singleLead)
+    }
+    return leadList
   }
 
   private marketoClientFromRequest(request: Hub.ActionRequest) {
@@ -104,33 +156,6 @@ export class MarketoAction extends Hub.Action {
       clientId: request.params.clientID,
       clientSecret: request.params.clientSecret,
     })
-  }
-
-  private tagMap(requestJSON: {fields: any}) {
-    // Map the looker columns to the Marketo columns using tags
-    const fields: any[] = [].concat(...Object.keys(requestJSON.fields).map((k) => requestJSON.fields[k]))
-    const fieldMap: any = {}
-    let hasTagMap
-    for (const field of fields) {
-      hasTagMap = field.tags.map((tag: string) => {if (tag.startsWith("marketo:")) {
-        return tag.split("marketo:")[1]
-      }})
-      fieldMap[field.name] = hasTagMap.find((tag: string | undefined) => tag !== undefined)
-    }
-    return fieldMap
-  }
-
-  private leadList(fieldMap: {[key: string]: string}, requestJSON: {data: any}) {
-    // Create the list of leads to be sent
-    const leadList = []
-    for (const leadRow of requestJSON.data) {
-      const singleLead: any = {}
-      for (const field of Object.keys(fieldMap)) {
-        singleLead[fieldMap[field]] = leadRow[field].value
-      }
-      leadList.push(singleLead)
-    }
-    return leadList
   }
 }
 
