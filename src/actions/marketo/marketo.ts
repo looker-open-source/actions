@@ -2,6 +2,8 @@ import * as Hub from "../../hub"
 
 const MARKETO: any = require("node-marketo-rest")
 
+const NUM_LEADS_ALLOWED_PER_CALL = 100
+
 export class MarketoAction extends Hub.Action {
   private static chunkify(toChunk: any[], chunkSize: number) {
     const arrays = []
@@ -68,8 +70,7 @@ export class MarketoAction extends Hub.Action {
     const leadList = this.leadList(fieldMap, requestJSON.data)
 
     // Push leads into Marketo and affiliate with a campaign
-    const numLeadsAllowedPerCall = 300
-    const chunked = MarketoAction.chunkify(leadList, numLeadsAllowedPerCall)
+    const chunked = MarketoAction.chunkify(leadList, NUM_LEADS_ALLOWED_PER_CALL)
     const marketoClient = this.marketoClientFromRequest(request)
     const errors: {message: string}[] = []
 
