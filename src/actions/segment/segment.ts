@@ -215,7 +215,7 @@ export class SegmentAction extends Hub.Action {
   }
 
   protected segmentClientFromRequest(request: Hub.ActionRequest) {
-    return new segment(request.params.segment_write_key)
+    return new segment(request.params.segment_write_key, {flushAt: 500})
   }
 
   protected generateAnonymousId() {

@@ -79,7 +79,7 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "8.1.4"
+    "node": "10.8.0"
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",
