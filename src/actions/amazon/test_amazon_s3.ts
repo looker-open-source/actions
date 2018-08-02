@@ -11,11 +11,12 @@ const action = new AmazonS3Action()
 
 export function expectAmazonS3Match(thisAction: AmazonS3Action, request: Hub.ActionRequest, match: any) {
 
-  const expectedBuffer = delete match.Body
+  const expectedBuffer = match.Body
+  delete match.Body
 
   const uploadSpy = sinon.spy(async (params: any) => {
     params.Body.pipe(concatStream((buffer) => {
-      chai.expect(buffer).to.equal(expectedBuffer)
+      chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
     }))
     return { promise: async () => Promise.resolve() }
   })
