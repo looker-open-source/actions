@@ -53,6 +53,7 @@ export class SegmentAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
+  rateLimited = true
 
   async execute(request: Hub.ActionRequest) {
     return this.executeSegment(request, SegmentCalls.Identify)

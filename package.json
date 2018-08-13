@@ -64,6 +64,7 @@
     "node-marketo-rest": "^0.7.0",
     "nodemon": "^1.12.1",
     "oboe": "^2.1.4",
+    "queue": "^4.4.2",
     "raven": "^2.4.0",
     "request": "^2.87.0",
     "request-promise-native": "^1.0.5",

@@ -3,6 +3,7 @@ import * as spawn from "child_process"
 import * as dotenv from "dotenv"
 import * as express from "express"
 import * as fs from "fs"
+import * as Pq from "p-queue"
 import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
@@ -17,10 +18,7 @@ const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
 const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
 
-/*async function sleeper() {
-  await new Promise<void>((resolve) => setTimeout(resolve, 5000))
-  winston.info("After sleep")
-}*/
+const queue = new Pq({concurrency: 1})
 
 export default class Server implements Hub.RouteBuilder {
 
@@ -39,6 +37,7 @@ export default class Server implements Hub.RouteBuilder {
         environment: process.env.ACTION_HUB_BASE_URL,
       }).install()
     }
+    setInterval(() => { if (queue.pending > 1) { winston.info("Queue: " + queue.pending) }}, 100)
 
     blocked((time: number, stack: string[]) => {
       winston.warn(`Event loop blocked for ${time}ms, operation started here:\n${stack.join("\n")}`)
@@ -115,26 +114,25 @@ export default class Server implements Hub.RouteBuilder {
     })
 
     this.route("/actions/:actionId/execute", async (req, res) => {
-      const child = spawn.fork(`./src/actions/actions_process.ts`)
-      child.on("message", (actionResponse) => {
-          // Some versions of Looker do not look at the "success" value in the response
-          // if the action returns a 200 status code, even though the Action API specs otherwise.
-          // So we force a non-200 status code as a workaround.
-          if (!actionResponse.success) {
-              res.status(400)
-          }
-          res.json(actionResponse)
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      if (action.rateLimited) {
+        winston.info("We are rate limited and pushing to another process")
+        await queue.add(async () => {
+            return this.asyncProcess(req, res)
+        })
+      } else {
+        winston.info("We are not rate limited - running on main thread")
+        const actionResponse = await action.validateAndExecute(request)
 
-          child.kill()
-      })
-      const data = {
-        body: req.body,
-        actionId: req.params.actionId,
-        instanceId: req.header("x-looker-instance"),
-        webhookId: req.header("x-looker-webhook-id"),
-        userAgent: req.header("user-agent"),
+        // Some versions of Looker do not look at the "success" value in the response
+        // if the action returns a 200 status code, even though the Action API specs otherwise.
+        // So we force a non-200 status code as a workaround.
+        if (!actionResponse.success) {
+            res.status(400)
+        }
+        res.json(actionResponse.asJson())
       }
-      child.send(data)
     })
 
     this.route("/actions/:actionId/form", async (req, res) => {
@@ -229,6 +227,33 @@ export default class Server implements Hub.RouteBuilder {
       instanceId: req.header("x-looker-instance"),
       webhookId: req.header("x-looker-webhook-id"),
     }
+  }
+
+  private async asyncProcess(req: express.Request, res: express.Response) {
+      return new Promise<void>((resolve, reject) => {
+          const child = spawn.fork(`./src/actions/actions_process.ts`)
+          child.on("message", (actionResponse) => {
+              // Some versions of Looker do not look at the "success" value in the response
+              // if the action returns a 200 status code, even though the Action API specs otherwise.
+              // So we force a non-200 status code as a workaround.
+              winston.info("Success? " + actionResponse.success + " || and what: " + JSON.stringify(actionResponse))
+              if (!actionResponse.success) {
+                  res.status(400)
+              }
+              res.json(actionResponse)
+
+              child.kill()
+              resolve()
+          }).on("error", (err) => { winston.warn(err.message); reject(err) })
+          const data = {
+              body: req.body,
+              actionId: req.params.actionId,
+              instanceId: req.header("x-looker-instance"),
+              webhookId: req.header("x-looker-webhook-id"),
+              userAgent: req.header("user-agent"),
+          }
+          child.send(data)
+      })
   }
 
   private absUrl(rootRelativeUrl: string) {

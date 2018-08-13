@@ -12,17 +12,12 @@ async function execute(req: any) {
         const version = userAgent.split("LookerOutgoingWebhook/")[1]
         req.lookerVersion = semver.valid(version)
     }
-    // winston.warn(JSON.stringify(request))
     const action = await Hub.findAction(req.actionId, {lookerVersion: req.lookerVersion})
     return await action.validateAndExecute(request)
 }
 
 process.on("message", (req) => {
     const response = execute(req)
-    response.then((val) => {
-        // @ts-ignore
-        process.send(val)}).catch((err) => {
-        // @ts-ignore
-        process.send(err)
-    })
+    response.then((val) => {process.send!(val)})
+        .catch((err) => {process.send!(err)})
 })
