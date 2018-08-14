@@ -165,7 +165,6 @@ export class ActionRequest {
     const streamPromise = new Promise<void>((resolve, reject) => {
       if (url) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
-        const t0 = process.hrtime()
         httpRequest
           .get(url)
           .on("error", (err) => {
@@ -177,11 +176,6 @@ export class ActionRequest {
           .on("error", (err: any) => {
             winston.error(`PassThrough stream error: ${err}\n${err.stack}`)
             reject(err)
-          })
-          .on("end", () => {
-              const diff = process.hrtime(t0)
-              const timeInSec = ((diff[0] * 1e9 + diff[1]) / 1e9).toFixed(3)
-              winston.info("TotalTime: " + timeInSec + " seconds")
           })
       } else {
         if (this.attachment && this.attachment.dataBuffer) {

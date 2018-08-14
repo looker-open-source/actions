@@ -117,12 +117,10 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.rateLimited) {
-        winston.info("We are rate limited and pushing to another process")
         await queue.add(async () => {
             return this.asyncProcess(req, res)
         })
       } else {
-        winston.info("We are not rate limited - running on main thread")
         const actionResponse = await action.validateAndExecute(request)
 
         // Some versions of Looker do not look at the "success" value in the response
