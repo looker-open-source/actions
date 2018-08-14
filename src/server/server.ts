@@ -116,7 +116,7 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action.rateLimited) {
+      if (action.rateLimited && action.usesStreaming) {
         await queue.add(async () => {
             return this.asyncProcess(req, res)
         })
