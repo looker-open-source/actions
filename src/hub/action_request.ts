@@ -173,7 +173,7 @@ export class ActionRequest {
           })
           .on("finish", resolve)
           .pipe(stream)
-          .on("error", (err: any) => {
+          .on("error", (err) => {
             winston.error(`PassThrough stream error: ${err}\n${err.stack}`)
             reject(err)
           })

@@ -13,7 +13,7 @@ async function execute(req: any) {
         req.lookerVersion = semver.valid(version)
     }
     const action = await Hub.findAction(req.actionId, {lookerVersion: req.lookerVersion})
-    return await action.validateAndExecute(request)
+    return action.validateAndExecute(request)
 }
 
 process.on("message", (req) => {

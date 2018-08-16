@@ -116,10 +116,8 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action.rateLimited && action.usesStreaming) {
-        await queue.add(async () => {
-            return this.asyncProcess(req, res)
-        })
+      if (action.expensive && action.usesStreaming) {
+        await queue.add(async () => this.asyncProcess(req, res))
       } else {
         const actionResponse = await action.validateAndExecute(request)
 
@@ -242,7 +240,17 @@ export default class Server implements Hub.RouteBuilder {
 
               child.kill()
               resolve()
-          }).on("error", (err) => { winston.warn(err.message); reject(err) })
+          }).on("error", (err) => {
+            winston.warn(err.message)
+            if (!child.killed) {
+              child.kill()
+            }
+            reject(err)
+          }).on("exit", () => {
+              if (!child.killed) {
+                  child.kill()
+              }
+          })
           const data = {
               body: req.body,
               actionId: req.params.actionId,
