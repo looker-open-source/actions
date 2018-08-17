@@ -84,19 +84,15 @@ export abstract class Action {
   async validateAndExecute(request: ActionRequest) {
 
     if (this.supportedActionTypes.indexOf(request.type) === -1) {
-      throw `This action does not support requests of type "${request.type}".`
-    }
-
-    const requiredParams = this.params.filter((p) => p.required)
-
-    if (requiredParams.length > 0) {
-      for (const p of requiredParams) {
-        const param = request.params[p.name]
-        if (!param) {
-          throw `Required parameter "${p.name}" not provided.`
-        }
+      const types = this.supportedActionTypes.map((at) => `"${at}"`).join(", ")
+      if (request.type as any) {
+        throw `This action does not support requests of type "${request.type}". The request must be of type: ${types}.`
+      } else {
+        throw `No request type specified. The request must be of type: ${types}.`
       }
     }
+
+    this.throwForMissingRequiredParameters(request)
 
     if (
       this.usesStreaming &&
@@ -110,11 +106,31 @@ export abstract class Action {
   }
 
   async validateAndFetchForm(request: ActionRequest) {
+    try {
+      this.throwForMissingRequiredParameters(request)
+    } catch (e) {
+      const errorForm = new ActionForm()
+      errorForm.error = e
+      return errorForm
+    }
     return this.form!(request)
   }
 
   get hasForm() {
     return !!this.form
+  }
+
+  private throwForMissingRequiredParameters(request: ActionRequest) {
+    const requiredParams = this.params.filter((p) => p.required)
+
+    if (requiredParams.length > 0) {
+      for (const p of requiredParams) {
+        const param = request.params[p.name]
+        if (!param) {
+          throw `Required setting "${p.label}" not specified in action settings.`
+        }
+      }
+    }
   }
 
   private getImageDataUri() {
