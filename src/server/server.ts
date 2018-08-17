@@ -35,7 +35,6 @@ export default class Server implements Hub.RouteBuilder {
         environment: process.env.ACTION_HUB_BASE_URL,
       }).install()
     }
-    setInterval(() => { if (queue.pending > 1) { winston.info("Queue: " + queue.pending) }}, 100)
 
     blocked((time: number, stack: string[]) => {
       winston.warn(`Event loop blocked for ${time}ms, operation started here:\n${stack.join("\n")}`)
