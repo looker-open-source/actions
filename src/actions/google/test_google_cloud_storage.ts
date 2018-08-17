@@ -192,6 +192,11 @@ describe(`${action.constructor.name} unit tests`, () => {
       }))
 
     const request = new Hub.ActionRequest()
+    request.params = {
+      client_email: "foo",
+      private_key: "foo",
+      project_id: "foo",
+    }
     const form = action.validateAndFetchForm(request)
     chai.expect(form).to.eventually
       .deep.eq({error: `An error occurred while fetching the bucket list.
