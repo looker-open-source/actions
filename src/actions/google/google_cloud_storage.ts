@@ -69,9 +69,22 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const form = new Hub.ActionForm()
 
     const gcs = this.gcsClientFromRequest(request)
-    const results = await gcs.getBuckets()
+    let results: any
+
+    try {
+      results = await gcs.getBuckets()
+    } catch (e) {
+      form.error = `An error occurred while fetching the bucket list.
+
+      Your Google Cloud Storage credentials may be incorrect.
+
+      Google SDK Error: "${e.message}"`
+      return form
+    }
+
     if (!(results && results[0])) {
-      throw "No buckets in account."
+      form.error = "No buckets in account."
+      return form
     }
 
     const buckets = results[0]
