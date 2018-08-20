@@ -164,7 +164,6 @@ export class ActionRequest {
 
     const streamPromise = new Promise<void>((resolve, reject) => {
       if (url) {
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
         httpRequest
           .get(url)
           .on("error", (err) => {
