@@ -1,16 +1,11 @@
 import * as spawn from "child_process"
 import * as express from "express"
-import * as Pq from "p-queue"
 import * as winston from "winston"
+import {ProcessQueue} from "./process_queue"
 
-export class AsyncProcessJob {
-    queue: Pq
+export class AsyncProcessJob extends ProcessQueue {
 
-    constructor() {
-        this.queue = new Pq({concurrency: 1})
-    }
-
-    async asyncProcess(req: express.Request, res: express.Response) {
+    async run(req: express.Request, res: express.Response) {
         return this.queue.add(async () => {
             return new Promise<void>((resolve, reject) => {
                 const child = spawn.fork(`./src/actions/actions_process.ts`)

@@ -114,7 +114,7 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.expensive && action.usesStreaming) {
-        await expensiveJobQueue.asyncProcess(req, res)
+        await expensiveJobQueue.run(req, res)
       } else {
         const actionResponse = await action.validateAndExecute(request)
 
