@@ -13,8 +13,6 @@ export class AsyncProcessJob extends ProcessQueue {
                     // Some versions of Looker do not look at the "success" value in the response
                     // if the action returns a 200 status code, even though the Action API specs otherwise.
                     // So we force a non-200 status code as a workaround.
-                    winston.info("Success? " + actionResponse.success
-                        + " || and what: " + JSON.stringify(actionResponse))
                     if (!actionResponse.success) {
                         res.status(400)
                     }
