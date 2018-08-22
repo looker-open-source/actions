@@ -114,7 +114,19 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.expensive && action.usesStreaming) {
-        await expensiveJobQueue.run(req, res)
+        const data = {
+            body: req.body,
+            actionId: req.params.actionId,
+            instanceId: req.header("x-looker-instance"),
+            webhookId: req.header("x-looker-webhook-id"),
+            userAgent: req.header("user-agent"),
+        }
+        expensiveJobQueue.run(JSON.stringify(data)).then((response: string) => {
+          res.json(response)
+        }).catch((err) => {
+          res.status(400)
+          res.json(err)
+        })
       } else {
         const actionResponse = await action.validateAndExecute(request)
 

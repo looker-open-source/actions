@@ -7,5 +7,5 @@ export abstract class ProcessQueue {
         this.queue = new Pq({concurrency: 1})
     }
 
-    abstract async run(req: Express.Request, res: Express.Response): Promise<void>
+    abstract async run(data: string): Promise<string>
 }
