@@ -2,7 +2,7 @@ import * as spawn from "child_process"
 import * as winston from "winston"
 import {ProcessQueue} from "./process_queue"
 
-export class AsyncProcessJob extends ProcessQueue {
+export class ExecuteProcessQueue extends ProcessQueue {
 
     async run(data: string) {
         return this.queue.add(async () => {

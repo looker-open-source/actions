@@ -44,7 +44,7 @@ export abstract class Action {
   abstract label: string
   abstract description: string
   usesStreaming = false
-  expensive = false
+  runInOwnProcess = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API

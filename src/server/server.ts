@@ -6,7 +6,7 @@ import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
-import * as AsyncProcessQueue from "./action_process_queue"
+import * as ExecuteProcessQueue from "./action_process_queue"
 import * as apiKey from "./api_key"
 
 const expressWinston = require("express-winston")
@@ -16,7 +16,7 @@ const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
 const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
 
-const expensiveJobQueue = new AsyncProcessQueue.AsyncProcessJob()
+const expensiveJobQueue = new ExecuteProcessQueue.ExecuteProcessQueue()
 
 export default class Server implements Hub.RouteBuilder {
 
@@ -113,7 +113,7 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action.expensive && action.usesStreaming) {
+      if (action.runInOwnProcess) {
         const data = {
             body: req.body,
             actionId: req.params.actionId,
