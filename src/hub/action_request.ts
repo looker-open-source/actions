@@ -260,6 +260,75 @@ export class ActionRequest {
     })
   }
 
+  /**
+   * A helper method to manage batching behavior. This can be used in cases where you would
+   * like to batch operations together but the data is streaming in at a different pace.
+   *
+   * You pass a batch size and a "flush" function, and this API will provide an "enqueue"
+   * mechanism and handle the batching logic for you. It will automatically call the "flush"
+   * function when `batchSize` is exceeded and ensure everything is flushed before resolving
+   * the asynchronous function.
+   *
+   * @param batchSize Number of function to batch between flushes.
+   * @param wrapFunction A function to wrap your code in. This function has a single argument
+   * – an `enqueue` function which can be used to enqueue an object into a batch.
+   *
+   * `wrapFunction` is an asynchronous function so that the body of `wrapFunction` can take
+   * asynchronous action if neccessary.
+   * @param flush An asynchronous function that will be called once for each batch.
+   * This function should implement your batch flushing logic (like calling a batch API).
+   */
+  async inBatches<T>(
+    batchSize: number,
+    wrapFunction: (enqueue: (item: T) => void) => Promise<void>,
+    flush: (batch: T[]) => Promise<void>,
+  ) {
+    const queue: T[][] = []
+    let currentBatch: T[] = []
+
+    const flushFirst = async () => {
+      const batch = queue.shift()
+      if (batch) {
+        await flush(batch)
+      }
+    }
+
+    const completeBatch = () => {
+      if (currentBatch.length > 0) {
+        queue.push(currentBatch)
+        currentBatch = []
+      }
+    }
+
+    const enqueue = (item: T) => {
+      currentBatch.push(item)
+      if (currentBatch.length >= batchSize) {
+        completeBatch()
+        flushFirst().catch((e) => {
+          // TODO: error handling here
+          console.log(`catch 1 ${e}`)
+          throw e
+        })
+      }
+    }
+
+    await wrapFunction(enqueue).catch((e) => {
+      // TODO: error handling here
+      console.log(`catch 2 ${e}`)
+      throw e
+    })
+
+    completeBatch()
+
+    for (const _batch of queue) {
+      await flushFirst().catch((e) => {
+        // TODO: error handling here
+        console.log(`catch 3 ${e}`)
+        throw e
+      })
+    }
+  }
+
   suggestedFilename() {
     if (this.attachment) {
       if (this.scheduledPlan && this.scheduledPlan.title) {
