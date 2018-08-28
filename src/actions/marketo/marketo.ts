@@ -48,6 +48,9 @@ export class MarketoAction extends Hub.Action {
   usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
+
+    console.log(Object.keys(request))
+
     await request.streamJsonDetail({
       onFields: (fields) => {
         console.log("onFields", fields)
