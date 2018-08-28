@@ -69,6 +69,8 @@ export class MarketoAction extends Hub.Action {
       },
     })
 
+    console.log("all done?")
+
     return new Hub.ActionResponse({ success: true })
   }
 
