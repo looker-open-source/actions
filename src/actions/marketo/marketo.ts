@@ -1,3 +1,4 @@
+/* tslint:disable no-console */
 import * as Hub from "../../hub"
 
 const MARKETO: any = require("node-marketo-rest")
@@ -56,6 +57,10 @@ export class MarketoAction extends Hub.Action {
     const requestJSON = request.attachment.dataJSON
     if (!requestJSON.fields || !requestJSON.data) {
       throw "Request payload is an invalid format."
+    }
+    console.log(requestJSON)
+    if (requestJSON) {
+      throw "end early"
     }
 
     const fieldMap = this.tagMap(Hub.allFields(requestJSON.fields))
