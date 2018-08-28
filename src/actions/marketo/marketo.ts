@@ -57,17 +57,17 @@ export class MarketoAction extends Hub.Action {
     console.log("============================================")
     console.log(request)
 
-    // await request.streamJsonDetail({
-    //   onFields: (fields) => {
-    //     console.log("onFields", fields)
-    //   },
-    //   onRanAt: (iso8601string) => {
-    //     console.log("onRanAt", iso8601string)
-    //   },
-    //   onRow: (row) => {
-    //     console.log("onRow", row)
-    //   },
-    // })
+    await request.streamJsonDetail({
+      onFields: (fields) => {
+        console.log("onFields", fields)
+      },
+      onRanAt: (iso8601string) => {
+        console.log("onRanAt", iso8601string)
+      },
+      onRow: (row) => {
+        console.log("onRow", JSON.stringify(row))
+      },
+    })
 
     return new Hub.ActionResponse({ success: true })
   }
