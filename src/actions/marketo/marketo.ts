@@ -49,19 +49,25 @@ export class MarketoAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    console.log(Object.keys(request))
+    console.log("request.type", request.type)
+    console.log("============================================")
+    console.log("request.scheduledPlan", request.scheduledPlan)
+    console.log("============================================")
+    console.log("request.attachment", request.attachment)
+    console.log("============================================")
+    console.log(request)
 
-    await request.streamJsonDetail({
-      onFields: (fields) => {
-        console.log("onFields", fields)
-      },
-      onRanAt: (iso8601string) => {
-        console.log("onRanAt", iso8601string)
-      },
-      onRow: (row) => {
-        console.log("onRow", row)
-      },
-    })
+    // await request.streamJsonDetail({
+    //   onFields: (fields) => {
+    //     console.log("onFields", fields)
+    //   },
+    //   onRanAt: (iso8601string) => {
+    //     console.log("onRanAt", iso8601string)
+    //   },
+    //   onRow: (row) => {
+    //     console.log("onRow", row)
+    //   },
+    // })
 
     return new Hub.ActionResponse({ success: true })
   }
