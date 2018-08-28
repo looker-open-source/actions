@@ -3,6 +3,8 @@ import * as Hub from "../../hub"
 
 // const MARKETO: any = require("node-marketo-rest")
 
+const numLeadsAllowedPerCall = 100
+
 export class MarketoAction extends Hub.Action {
   // private static chunkify(toChunk: any[], chunkSize: number) {
   //   const arrays = []
@@ -57,6 +59,8 @@ export class MarketoAction extends Hub.Action {
     console.log("============================================")
     console.log(request)
 
+    let queue: any[] = []
+
     await request.streamJsonDetail({
       onFields: (fields) => {
         console.log("onFields", fields)
@@ -66,10 +70,18 @@ export class MarketoAction extends Hub.Action {
       },
       onRow: (row) => {
         console.log("onRow", JSON.stringify(row))
+        queue.push(row)
+        if (queue.length === numLeadsAllowedPerCall) {
+          // this.sendQueue(queue)
+          queue = []
+        }
       },
     })
 
-    console.log("all done?")
+    // this.sendQueue(queue)
+    queue = []
+
+    console.log("all done")
 
     return new Hub.ActionResponse({ success: true })
   }
