@@ -115,6 +115,8 @@ export class MarketoAction extends Hub.Action {
   // }
 
   async execute(request: Hub.ActionRequest) {
+    console.log("============================================")
+
     if (!(request.attachment && request.attachment.dataJSON)) {
       throw "No attached json."
     }
@@ -127,13 +129,10 @@ export class MarketoAction extends Hub.Action {
     if (!requestJSON.fields || !requestJSON.data) {
       throw "Request payload is an invalid format."
     }
-    console.log(requestJSON)
-    if (requestJSON) {
-      throw "end early"
-    }
 
     const fieldMap = this.tagMap(Hub.allFields(requestJSON.fields))
     console.log("fieldMap", fieldMap)
+    console.log("============================================")
 
     // determine if lookupField is present in fields
     const lookupField = request.formParams.lookupField
@@ -143,6 +142,7 @@ export class MarketoAction extends Hub.Action {
     }
     const leadList = this.leadList(fieldMap, requestJSON.data)
     console.log("leadList", leadList)
+    console.log("============================================")
 
     // // Push leads into Marketo and affiliate with a campaign
     // const chunked = MarketoAction.chunkify(leadList, numLeadsAllowedPerCall)
