@@ -7,8 +7,8 @@ const numLeadsAllowedPerCall = 100
 
 function logJson(label: string, object: any) {
   console.log("\n================================")
-  console.log(`\n\n${label}:\n`)
-  const json = `${JSON.stringify(object)}\n\n`
+  console.log(`\n${label}:\n`)
+  const json = `${JSON.stringify(object, null, 2)}\n\n`
   console.log(json)
 }
 
@@ -118,7 +118,7 @@ async sendChunk(rows: Hub.JsonDetail.Row[]) {
       leadResponse = await this.marketo.lead.createOrUpdate(leadList, {
         lookupField: this.lookupField,
       })
-      logJson("leadResponse", leadResponse)
+      // logJson("leadResponse", leadResponse)
       // if (leadResponse.success && leadResponse.success === false) {
       //   errors.concat(leadResponse.errors)
       //   break
