@@ -53,6 +53,7 @@ export class MarketoAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
+    console.log("request", Object.keys(request))
     console.log("request.type", request.type)
     console.log("============================================")
     console.log("request.params", request.params)
