@@ -60,7 +60,7 @@ export default class MarketoTransaction {
 
     let counter = 0
     const min = 0
-    const max = min + 5000
+    const max = min + numLeadsAllowedPerCall
 
     await request.streamJsonDetail({
       // onFields: (fields) => {
@@ -123,6 +123,9 @@ export default class MarketoTransaction {
       const response = await this.marketo.lead.createOrUpdate(chunk, {
         lookupField,
       })
+      logJson("response", Object.keys(response))
+      logJson("response", response)
+
       if (response.errors && response.errors.length) {
         errors = errors.concat(response.errors)
       }
