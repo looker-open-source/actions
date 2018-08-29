@@ -44,7 +44,8 @@ export default class MarketoTransaction {
     this.marketo = this.marketoClientFromRequest(request)
 
     let counter = 0
-    const limit = 10
+    const min = 10
+    const max = min + 10
 
     await request.streamJsonDetail({
       // onFields: (fields) => {
@@ -58,7 +59,10 @@ export default class MarketoTransaction {
       // },
       onRow: (row) => {
         counter++
-        if (counter >= limit) {
+        if (counter < min) {
+          return
+        }
+        if (counter >= max) {
           return
         }
 
@@ -79,7 +83,8 @@ export default class MarketoTransaction {
     console.log("this.queue.length", this.queue.length)
 
     const results = await Promise.all(this.queue)
-    console.log("all done", results)
+    console.log("all done")
+    console.log(JSON.stringify(results))
 
     return new Hub.ActionResponse({ success: true })
   }
