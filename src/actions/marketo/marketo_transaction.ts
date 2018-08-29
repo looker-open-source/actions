@@ -89,53 +89,47 @@ export default class MarketoTransaction {
     const leadList = this.getLeadList(fieldMap, rows)
     const chunks = MarketoTransaction.chunkify(leadList, numLeadsAllowedPerCall)
     const result = await this.sendChunks(chunks, lookupField, campaignID)
-    if (! result) { console.log("no result?") }
 
     console.log("all done")
-    // logJson("result", result)
+    logJson("result", result)
 
     return new Hub.ActionResponse({ success: true })
   }
 
   async sendChunks(chunks: any[][], lookupField: string, campaignID: string) {
 
-    const results: any[] = []
-    for (const chunk of chunks) {
-      await this.sendChunk(chunk, lookupField, campaignID)
-      const result: any = await this.sendChunk(chunk, lookupField, campaignID)
-      results.push(result)
-      Object.keys(result).forEach((key: string) => {
-        logJson(key, result[key])
-      })
+    const result: any = {
+      skipped: [],
+      leadErrors: [],
+      campaignErrors: [],
     }
-    return results
+    for (const chunk of chunks) {
+      await this.sendChunk(chunk, lookupField, campaignID, result)
+    }
+    return result
 
   }
 
-  async sendChunk(chunk: any[], lookupField: string, campaignID: string) {
-    console.log("sendChunk")
+  async sendChunk(chunk: any[], lookupField: string, campaignID: string, result: any) {
     if (! campaignID) { return }
     // console.log("leadList", leadList)
     // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
 
-    const skipped: any[] = []
-    const ids: any[] = []
-    let leadErrors: any[] = []
-    let campaignErrors: any[] = []
     try {
       const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField })
       logJson("response", leadResponse)
 
       if (Array.isArray(leadResponse.errors)) {
-        leadErrors = leadErrors.concat(leadResponse.errors)
+        result.leadErrors = result.leadErrors.concat(leadResponse.errors)
       }
 
+      const ids: any[] = []
       leadResponse.result.forEach((lead: any, i: number) => {
         if (lead.id) {
           ids.push({ id: lead.id} )
         } else {
           chunk[i].result = lead
-          skipped.push(chunk[i])
+          result.skipped.push(chunk[i])
         }
       })
 
@@ -143,7 +137,7 @@ export default class MarketoTransaction {
       logJson("campaignResponse", campaignResponse)
 
       if (Array.isArray(campaignResponse.errors)) {
-        campaignErrors = campaignErrors.concat(campaignResponse.errors)
+        result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
       }
 
     } catch (err) {
@@ -151,12 +145,6 @@ export default class MarketoTransaction {
       // errors.push(err)
     }
 
-    return {
-      ids,
-      skipped,
-      leadErrors,
-      campaignErrors,
-    }
   }
 
   //   // // Push leads into Marketo and affiliate with a campaign
