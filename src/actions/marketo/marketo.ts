@@ -53,15 +53,15 @@ export class MarketoAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    console.log("request", Object.keys(request))
-    console.log("request.type", request.type)
+    // console.log("request", Object.keys(request))
+    // console.log("request.type", request.type)
     console.log("============================================")
-    console.log("request.params", request.params)
+    console.log("request.formParams", request.formParams)
     console.log("============================================")
-    console.log("request.scheduledPlan", request.scheduledPlan)
-    console.log("============================================")
-    console.log("request.attachment", request.attachment)
-    console.log("============================================")
+    // console.log("request.scheduledPlan", request.scheduledPlan)
+    // console.log("============================================")
+    // console.log("request.attachment", request.attachment)
+    // console.log("============================================")
     console.log(request)
 
     this.queue = []
@@ -107,7 +107,11 @@ export class MarketoAction extends Hub.Action {
   }
 
   async sendChunk(chunk: string[]) {
-    return { failed: chunk.slice(0, 2) }
+    // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
+    return {
+      success: chunk.slice(0, 2),
+      failed: chunk.slice(2, 4),
+    }
   }
 
   // async execute(request: Hub.ActionRequest) {
@@ -178,6 +182,7 @@ export class MarketoAction extends Hub.Action {
       label: "Campaign ID",
       name: "campaignID",
       required: true,
+      default: "DNR",
       type: "string",
     }, {
       label: "Lead Lookup Field",
