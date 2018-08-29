@@ -73,9 +73,9 @@ export class MarketoAction extends Hub.Action {
       onRanAt: (iso8601string) => {
         console.log("onRanAt", iso8601string)
       },
-      onRow: (row) => {
-        console.log("onRow", Object.keys(row))
-        const email = this.getEmailFromRow(row)
+      onRow: () => {
+        // console.log("onRow", Object.keys(row))
+        const email = this.getEmailFromRow()
         this.queue.push(email)
         if (this.queue.length === numLeadsAllowedPerCall) {
           this.flushQueue()
@@ -93,7 +93,8 @@ export class MarketoAction extends Hub.Action {
     return new Hub.ActionResponse({ success: true })
   }
 
-  getEmailFromRow(row: Hub.JsonDetail.Row): string {
+  // getEmailFromRow(row: Hub.JsonDetail.Row): string {
+  getEmailFromRow(): string {
     return "pascal@4mile.io"
   }
 
