@@ -48,10 +48,14 @@ export class MarketoAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   usesStreaming = true
+  queue: string[] = []
+  promises: Promise<any>[] = []
 
   async execute(request: Hub.ActionRequest) {
 
     console.log("request.type", request.type)
+    console.log("============================================")
+    console.log("request.params", request.params)
     console.log("============================================")
     console.log("request.scheduledPlan", request.scheduledPlan)
     console.log("============================================")
@@ -59,7 +63,8 @@ export class MarketoAction extends Hub.Action {
     console.log("============================================")
     console.log(request)
 
-    let queue: any[] = []
+    this.queue = []
+    this.promises = []
 
     await request.streamJsonDetail({
       onFields: (fields) => {
@@ -69,21 +74,40 @@ export class MarketoAction extends Hub.Action {
         console.log("onRanAt", iso8601string)
       },
       onRow: (row) => {
-        console.log("onRow", JSON.stringify(row))
-        queue.push(row)
-        if (queue.length === numLeadsAllowedPerCall) {
-          // this.sendQueue(queue)
-          queue = []
-        }
+        console.log("onRow", Object.keys(row))
+        const email = "pascal@pascal.com"
+        this.queueEmail(email)
       },
     })
 
-    // this.sendQueue(queue)
-    queue = []
+    this.flushQueue()
 
-    console.log("all done")
+    console.log("this.promises.length", this.promises.length)
+
+    const results = await Promise.all(this.promises)
+    console.log("all done", results)
 
     return new Hub.ActionResponse({ success: true })
+  }
+
+  queueEmail(email: string) {
+    this.queue.push(email)
+    this.checkQueue()
+  }
+
+  checkQueue() {
+    if (this.queue.length === numLeadsAllowedPerCall) {
+      this.flushQueue()
+    }
+  }
+
+  flushQueue() {
+    this.promises.push(this.sendChunk(this.queue))
+    this.queue = []
+  }
+
+  async sendChunk(chunk: string[]) {
+    return chunk.slice(0, 1)
   }
 
   // async execute(request: Hub.ActionRequest) {
