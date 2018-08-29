@@ -62,6 +62,7 @@ export default class MarketoTransaction {
     // const min = 0
     // const max = min + numLeadsAllowedPerCall
 
+    console.time("streamJsonDetail")
     await request.streamJsonDetail({
       // onFields: (fields) => {
       //   console.log("onFields", fields)
@@ -85,10 +86,19 @@ export default class MarketoTransaction {
         rows.push(row)
       },
     })
+    console.timeEnd("streamJsonDetail")
 
+    console.time("getLeadList")
     const leadList = this.getLeadList(fieldMap, rows)
+    console.timeEnd("getLeadList")
+
+    console.time("chunkify")
     const chunks = MarketoTransaction.chunkify(leadList, numLeadsAllowedPerCall)
+    console.timeEnd("chunkify")
+
+    console.time("sendChunks")
     const result = await this.sendChunks(chunks, lookupField, campaignID)
+    console.timeEnd("sendChunks")
 
     console.log("all done")
     logJson("result", result)
@@ -103,21 +113,21 @@ export default class MarketoTransaction {
       leadErrors: [],
       campaignErrors: [],
     }
+    let counter = 0
     for (const chunk of chunks) {
+      counter++
+      console.log("chunk", counter)
+      console.time(`chunk ${counter}`)
       await this.sendChunk(chunk, lookupField, campaignID, result)
+      console.timeEnd(`chunk ${counter}`)
     }
     return result
 
   }
 
   async sendChunk(chunk: any[], lookupField: string, campaignID: string, result: any) {
-    if (! campaignID) { return }
-    // console.log("leadList", leadList)
-    // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
-
     try {
       const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField })
-      logJson("response", leadResponse)
 
       if (Array.isArray(leadResponse.errors)) {
         result.leadErrors = result.leadErrors.concat(leadResponse.errors)
@@ -134,7 +144,6 @@ export default class MarketoTransaction {
       })
 
       const campaignResponse = await this.marketo.campaign.request(campaignID, ids)
-      logJson("campaignResponse", campaignResponse)
 
       if (Array.isArray(campaignResponse.errors)) {
         result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
@@ -142,7 +151,6 @@ export default class MarketoTransaction {
 
     } catch (err) {
       console.error(err)
-      // errors.push(err)
     }
 
   }
