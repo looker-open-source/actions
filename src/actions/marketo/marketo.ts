@@ -75,8 +75,11 @@ export class MarketoAction extends Hub.Action {
       },
       onRow: (row) => {
         console.log("onRow", Object.keys(row))
-        const email = "pascal@pascal.com"
-        this.queueEmail(email)
+        const email = this.getEmailFromRow(row)
+        this.queue.push(email)
+        if (this.queue.length === numLeadsAllowedPerCall) {
+          this.flushQueue()
+        }
       },
     })
 
@@ -90,11 +93,8 @@ export class MarketoAction extends Hub.Action {
     return new Hub.ActionResponse({ success: true })
   }
 
-  queueEmail(email: string) {
-    this.queue.push(email)
-    if (this.queue.length === numLeadsAllowedPerCall) {
-      this.flushQueue()
-    }
+  getEmailFromRow(row: Hub.JsonDetail.Row): string {
+    return "pascal@4mile.io"
   }
 
   flushQueue() {
@@ -105,7 +105,7 @@ export class MarketoAction extends Hub.Action {
   }
 
   async sendChunk(chunk: string[]) {
-    return chunk.slice(0, 2)
+    return { failed: chunk.slice(0, 2) }
   }
 
   // async execute(request: Hub.ActionRequest) {
