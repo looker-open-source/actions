@@ -14,11 +14,19 @@ function logJson(label: string, object: any) {
 
 export default class MarketoTransaction {
 
-  rows: Hub.JsonDetail.Row[] = []
-  queue: Promise<any>[] = []
-  fieldMap: any
+  private static chunkify(toChunk: any[], chunkSize: number) {
+    const arrays = []
+    while (toChunk.length > 0) {
+      arrays.push(toChunk.splice(0, chunkSize))
+    }
+    return arrays
+  }
+
+  // rows: Hub.JsonDetail.Row[] = []
+  // queue: Promise<any>[] = []
+  // fieldMap: any
   marketo: any
-  lookupField = ""
+  // lookupField ? = ""
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
 
@@ -35,20 +43,19 @@ export default class MarketoTransaction {
       throw "Request payload is an invalid format."
     }
 
-    this.fieldMap = this.getFieldMap(Hub.allFields(requestJSON.fields))
+    const fieldMap = this.getFieldMap(Hub.allFields(requestJSON.fields))
 
     // determine if lookupField is present in fields
-    this.lookupField = request.formParams.lookupField || ""
+    const lookupField = request.formParams.lookupField
     if (
-      ! this.lookupField
-      || ! Object.keys(this.fieldMap).find((name) => this.fieldMap[name].indexOf(this.lookupField) !== -1)
+      ! lookupField
+      || ! Object.keys(fieldMap).find((name) => fieldMap[name].indexOf(lookupField) !== -1)
     ) {
       throw "Marketo Lookup Field for lead not present in query."
     }
 
-    this.rows = []
-    this.queue = []
     this.marketo = this.marketoClientFromRequest(request)
+    const rows: Hub.JsonDetail.Row[] = []
 
     let counter = 0
     const min = 0
@@ -57,7 +64,7 @@ export default class MarketoTransaction {
     await request.streamJsonDetail({
       // onFields: (fields) => {
       //   console.log("onFields", fields)
-      //   // build this.fieldMap for getLeadtFromRow to refer to?
+      //   // build fieldMap for getLeadtFromRow to refer to?
       //   // for now constructing it above from requestJSON.fields
       //   // instead of here, cuz we need it to valid the form input
       // },
@@ -74,49 +81,42 @@ export default class MarketoTransaction {
         }
 
         // add the row to our row queue
-        this.rows.push(row)
-
-        // if the row queue has enough items to make a request,
-        // send a chunk and flush the row queue
-        if (this.rows.length === numLeadsAllowedPerCall) {
-          this.flushRows()
-        }
+        rows.push(row)
       },
     })
 
-    // if there are any unsent rows, send them now
-    this.flushRows()
+    const leadList = this.getLeadList(fieldMap, rows)
+    const chunks = MarketoTransaction.chunkify(leadList, numLeadsAllowedPerCall)
+    const result = await this.sendChunks(chunks, lookupField)
 
-    console.log("this.queue.length", this.queue.length)
-
-    const results = await Promise.all(this.queue)
     console.log("all done")
-    logJson("results", results)
+    logJson("result", result)
 
     return new Hub.ActionResponse({ success: true })
   }
 
-  flushRows() {
-    console.log("flushRows")
-    if (this.rows.length) {
-      const request = this.sendChunk(this.rows)
-      this.queue.push(request)
-      this.rows = []
+  async sendChunks(chunks: any[][], lookupField: string) {
+
+    const failures: any[] = []
+    for (const chunk of chunks) {
+      const result = await this.sendChunk(chunk, lookupField)
+      logJson("result", result)
     }
+    return failures
+
   }
 
-async sendChunk(rows: Hub.JsonDetail.Row[]) {
+  async sendChunk(chunk: any[], lookupField: string) {
     console.log("sendChunk")
-    if (! rows) { return }
-    const leadList = this.getLeadList(this.fieldMap, rows)
+    if (! chunk) { return }
     // console.log("leadList", leadList)
     // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
 
     const errors = []
     let leadResponse
     try {
-      leadResponse = await this.marketo.lead.createOrUpdate(leadList, {
-        lookupField: this.lookupField,
+      leadResponse = await this.marketo.lead.createOrUpdate(chunk, {
+        lookupField,
       })
       // logJson("leadResponse", leadResponse)
       // if (leadResponse.success && leadResponse.success === false) {
