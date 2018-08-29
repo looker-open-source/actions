@@ -5,6 +5,13 @@ const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
 
+function logJson(label: string, object: any) {
+  console.log("\n================================")
+  console.log(`\n\n${label}:\n`)
+  const json = `${JSON.stringify(object)}\n\n`
+  console.log(json)
+}
+
 export default class MarketoTransaction {
 
   rows: Hub.JsonDetail.Row[] = []
@@ -45,7 +52,7 @@ export default class MarketoTransaction {
 
     let counter = 0
     const min = 30
-    const max = min + 200
+    const max = min + 500
 
     await request.streamJsonDetail({
       // onFields: (fields) => {
@@ -84,12 +91,12 @@ export default class MarketoTransaction {
 
     const results = await Promise.all(this.queue)
     console.log("all done")
-    console.log(JSON.stringify(results))
+    logJson("results", results)
 
     return new Hub.ActionResponse({ success: true })
   }
 
-flushRows() {
+  flushRows() {
     console.log("flushRows")
     if (this.rows.length) {
       const request = this.sendChunk(this.rows)
@@ -111,7 +118,7 @@ async sendChunk(rows: Hub.JsonDetail.Row[]) {
       leadResponse = await this.marketo.lead.createOrUpdate(leadList, {
         lookupField: this.lookupField,
       })
-      console.log(JSON.stringify(leadResponse))
+      logJson("leadResponse", leadResponse)
       // if (leadResponse.success && leadResponse.success === false) {
       //   errors.concat(leadResponse.errors)
       //   break
@@ -124,7 +131,7 @@ async sendChunk(rows: Hub.JsonDetail.Row[]) {
       //   break
       // }
     } catch (err) {
-      console.log(JSON.stringify(err))
+      logJson("err", err)
       errors.push(err)
     }
 
