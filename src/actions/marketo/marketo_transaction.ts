@@ -86,9 +86,10 @@ export default class MarketoTransaction {
   }
 
   async sendChunk(rows: Hub.JsonDetail.Row[]) {
+    console.log("sendChunk")
     if (! rows) { return }
     const leadList = this.getLeadList(this.fieldMap, rows)
-    console.log("leadList", leadList)
+    // console.log("leadList", leadList)
     // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
 
     const errors = []
