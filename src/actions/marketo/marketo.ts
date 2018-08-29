@@ -130,6 +130,11 @@ export class MarketoAction extends Hub.Action {
       throw "Request payload is an invalid format."
     }
 
+    console.log("requestJSON.fields", requestJSON.fields)
+    if (requestJSON.fields) {
+      throw "testing"
+    }
+
     const fieldMap = this.tagMap(Hub.allFields(requestJSON.fields))
     console.log("fieldMap", fieldMap)
     console.log("============================================")
