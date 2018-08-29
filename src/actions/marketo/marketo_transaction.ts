@@ -8,7 +8,7 @@ const numLeadsAllowedPerCall = 100
 function logJson(label: string, object: any) {
   console.log("\n================================")
   console.log(`\n${label}:\n`)
-  const json = `${JSON.stringify(object, null, 2)}\n\n`
+  const json = `${JSON.stringify(object)}\n\n`
   console.log(json)
 }
 
@@ -51,8 +51,8 @@ export default class MarketoTransaction {
     this.marketo = this.marketoClientFromRequest(request)
 
     let counter = 0
-    const min = 30
-    const max = min + 500
+    const min = 0
+    const max = min + 5000
 
     await request.streamJsonDetail({
       // onFields: (fields) => {
