@@ -92,22 +92,20 @@ export class MarketoAction extends Hub.Action {
 
   queueEmail(email: string) {
     this.queue.push(email)
-    this.checkQueue()
-  }
-
-  checkQueue() {
     if (this.queue.length === numLeadsAllowedPerCall) {
       this.flushQueue()
     }
   }
 
   flushQueue() {
-    this.promises.push(this.sendChunk(this.queue))
-    this.queue = []
+    if (this.queue.length) {
+      this.promises.push(this.sendChunk(this.queue))
+      this.queue = []
+    }
   }
 
   async sendChunk(chunk: string[]) {
-    return chunk.slice(0, 1)
+    return chunk.slice(0, 2)
   }
 
   // async execute(request: Hub.ActionRequest) {
