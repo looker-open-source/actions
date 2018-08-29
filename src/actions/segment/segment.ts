@@ -117,14 +117,14 @@ export class SegmentAction extends Hub.Action {
         },
       })
 
-      await segmentClient.flush(async (err: any) => {
-        return new Promise<any>((resolve, reject) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
-        })
+      await new Promise<Hub.ActionResponse>(async (resolve, reject) => {
+          segmentClient.flush( (err: any) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
       })
     } catch (e) {
       errors.push(e)
@@ -138,7 +138,7 @@ export class SegmentAction extends Hub.Action {
       }
       return new Hub.ActionResponse({success: false, message: msg})
     } else {
-      return new Hub.ActionResponse({ success: true })
+      return new Hub.ActionResponse({success: true})
     }
   }
 
@@ -195,7 +195,7 @@ export class SegmentAction extends Hub.Action {
         traits.email = value
       }
     }
-    const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
+    const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value.toString() : null
     let anonymousId: string | null
     if (segmentFields.anonymousIdField) {
       anonymousId = row[segmentFields.anonymousIdField.name].value

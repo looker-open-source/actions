@@ -3,7 +3,8 @@ import * as Hub from "../hub"
 import {ActionRequest} from "../hub"
 import "./index.ts"
 
-async function execute(req: any) {
+async function execute(jsonPayload: any) {
+    const req = JSON.parse(jsonPayload)
     const request = ActionRequest.fromJSON(req.body)
     request.instanceId = req.instanceId
     request.webhookId = req.webhookId
@@ -18,6 +19,6 @@ async function execute(req: any) {
 
 process.on("message", (req) => {
     const response = execute(req)
-    response.then((val) => {process.send!(val)})
-        .catch((err) => {process.send!(err)})
+    response.then((val) => { process.send!(val)})
+        .catch((err) => { process.send!(err)})
 })
