@@ -58,9 +58,9 @@ export default class MarketoTransaction {
     this.marketo = this.marketoClientFromRequest(request)
     const rows: Hub.JsonDetail.Row[] = []
 
-    let counter = 0
-    const min = 0
-    const max = min + numLeadsAllowedPerCall
+    // let counter = 0
+    // const min = 0
+    // const max = min + numLeadsAllowedPerCall
 
     await request.streamJsonDetail({
       // onFields: (fields) => {
@@ -73,13 +73,13 @@ export default class MarketoTransaction {
       //   console.log("onRanAt", iso8601string)
       // },
       onRow: (row) => {
-        counter++
-        if (counter < min) {
-          return
-        }
-        if (counter >= max) {
-          return
-        }
+        // counter++
+        // if (counter < min) {
+        //   return
+        // }
+        // if (counter >= max) {
+        //   return
+        // }
 
         // add the row to our row queue
         rows.push(row)
