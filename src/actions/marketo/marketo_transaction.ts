@@ -126,11 +126,11 @@ export default class MarketoTransaction {
       logJson("response", Object.keys(response))
       logJson("response", response)
 
-      if (response.errors && response.errors.length) {
+      if (Array.isArray(response.errors)) {
         errors = errors.concat(response.errors)
       }
 
-      response.leadResponse.result.forEach((record: any, i: number) => {
+      response.result.forEach((record: any, i: number) => {
         if (record.id) {
           ids.push(record.id)
         } else {
@@ -155,7 +155,7 @@ export default class MarketoTransaction {
       //   break
       // }
     } catch (err) {
-      logJson("err", err)
+      console.error(err)
       // errors.push(err)
     }
 
