@@ -130,11 +130,11 @@ export default class MarketoTransaction {
         leadErrors = leadErrors.concat(leadResponse.errors)
       }
 
-      leadResponse.result.forEach((record: any, i: number) => {
-        if (record.id) {
-          ids.push(record.id)
+      leadResponse.result.forEach((lead: any, i: number) => {
+        if (lead.id) {
+          ids.push({ id: lead.id} )
         } else {
-          chunk[i].result = record
+          chunk[i].result = lead
           skipped.push(chunk[i])
         }
       })
