@@ -116,7 +116,6 @@ export default class MarketoTransaction {
     let counter = 0
     for (const chunk of chunks) {
       counter++
-      console.log("chunk", counter)
       console.time(`chunk ${counter}`)
       await this.sendChunk(chunk, lookupField, campaignID, result)
       console.timeEnd(`chunk ${counter}`)
@@ -127,7 +126,9 @@ export default class MarketoTransaction {
 
   async sendChunk(chunk: any[], lookupField: string, campaignID: string, result: any) {
     try {
+      console.time("leadResponse")
       const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField })
+      console.timeEnd("leadResponse")
 
       if (Array.isArray(leadResponse.errors)) {
         result.leadErrors = result.leadErrors.concat(leadResponse.errors)
@@ -143,7 +144,9 @@ export default class MarketoTransaction {
         }
       })
 
+      console.time("campaignResponse")
       const campaignResponse = await this.marketo.campaign.request(campaignID, ids)
+      console.timeEnd("campaignResponse")
 
       if (Array.isArray(campaignResponse.errors)) {
         result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
