@@ -195,7 +195,7 @@ export class SegmentAction extends Hub.Action {
         traits.email = value
       }
     }
-    const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value.toString() : null
+    const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
     let anonymousId: string | null
     if (segmentFields.anonymousIdField) {
       anonymousId = row[segmentFields.anonymousIdField.name].value
