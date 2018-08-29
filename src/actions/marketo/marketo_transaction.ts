@@ -44,7 +44,7 @@ export default class MarketoTransaction {
     this.marketo = this.marketoClientFromRequest(request)
 
     let counter = 0
-    const min = 10
+    const min = 20
     const max = min + 10
 
     await request.streamJsonDetail({
