@@ -60,7 +60,7 @@ export class MarketoAction extends Hub.Action {
       label: "Campaign ID",
       name: "campaignID",
       required: true,
-      default: "DNR",
+      default: "20916", // DNR
       type: "string",
     }, {
       label: "Lead Lookup Field",

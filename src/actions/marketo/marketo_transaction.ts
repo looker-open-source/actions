@@ -34,7 +34,8 @@ export default class MarketoTransaction {
       throw "No attached json."
     }
 
-    if (!request.formParams.campaignID) {
+    const campaignID = request.formParams.campaignID
+    if (!campaignID) {
       throw "Missing Campaign ID."
     }
 
@@ -87,37 +88,57 @@ export default class MarketoTransaction {
 
     const leadList = this.getLeadList(fieldMap, rows)
     const chunks = MarketoTransaction.chunkify(leadList, numLeadsAllowedPerCall)
-    const result = await this.sendChunks(chunks, lookupField)
+    const result = await this.sendChunks(chunks, lookupField, campaignID)
+    if (! result) { console.log("no result?") }
 
     console.log("all done")
-    logJson("result", result)
+    // logJson("result", result)
 
     return new Hub.ActionResponse({ success: true })
   }
 
-  async sendChunks(chunks: any[][], lookupField: string) {
+  async sendChunks(chunks: any[][], lookupField: string, campaignID: string) {
 
-    const failures: any[] = []
+    let results: any[] = []
     for (const chunk of chunks) {
-      const result = await this.sendChunk(chunk, lookupField)
-      logJson("result", result)
+      await this.sendChunk(chunk, lookupField, campaignID)
+      const result = await this.sendChunk(chunk, lookupField, campaignID)
+      results = results.concat(result)
+      // logJson("result", result)
     }
-    return failures
+    return results
 
   }
 
-  async sendChunk(chunk: any[], lookupField: string) {
+  async sendChunk(chunk: any[], lookupField: string, campaignID: string) {
     console.log("sendChunk")
-    if (! chunk) { return }
+    if (! campaignID) { return }
     // console.log("leadList", leadList)
     // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
 
-    const errors = []
-    let leadResponse
+    const skipped: any[] = []
+    const ids: any[] = []
+    let errors: any[] = []
     try {
-      leadResponse = await this.marketo.lead.createOrUpdate(chunk, {
+      const response = await this.marketo.lead.createOrUpdate(chunk, {
         lookupField,
       })
+      if (response.errors && response.errors.length) {
+        errors = errors.concat(response.errors)
+      }
+
+      response.leadResponse.result.forEach((record: any, i: number) => {
+        if (record.id) {
+          ids.push(record.id)
+        } else {
+          chunk[i].result = record
+          skipped.push(chunk[i])
+        }
+      })
+
+      logJson("ids", ids)
+      logJson("skipped", skipped)
+      logJson("errors", errors)
       // logJson("leadResponse", leadResponse)
       // if (leadResponse.success && leadResponse.success === false) {
       //   errors.concat(leadResponse.errors)
@@ -132,11 +153,11 @@ export default class MarketoTransaction {
       // }
     } catch (err) {
       logJson("err", err)
-      errors.push(err)
+      // errors.push(err)
     }
 
     return {
-      leadResponse,
+      skipped,
       errors,
     }
   }
