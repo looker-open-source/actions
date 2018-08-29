@@ -97,6 +97,7 @@ export default class MarketoTransaction {
       leadResponse = await this.marketo.lead.createOrUpdate(leadList, {
         lookupField: this.lookupField,
       })
+      console.log(JSON.stringify(leadResponse))
       // if (leadResponse.success && leadResponse.success === false) {
       //   errors.concat(leadResponse.errors)
       //   break
@@ -108,8 +109,9 @@ export default class MarketoTransaction {
       //   errors.concat(campaignResponse.errors)
       //   break
       // }
-    } catch (e) {
-      errors.push(e)
+    } catch (err) {
+      console.log(JSON.stringify(err))
+      errors.push(err)
     }
 
     return {
