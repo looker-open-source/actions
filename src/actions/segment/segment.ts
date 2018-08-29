@@ -117,7 +117,7 @@ export class SegmentAction extends Hub.Action {
         },
       })
 
-      await new Promise<Hub.ActionResponse>(async (resolve, reject) => {
+      await new Promise<void>(async (resolve, reject) => {
           segmentClient.flush( (err: any) => {
             if (err) {
               reject(err)
