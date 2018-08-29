@@ -10,7 +10,7 @@ export default class MarketoTransaction {
   rows: Hub.JsonDetail.Row[] = []
   queue: Promise<any>[] = []
   fieldMap: any
-  client: any
+  marketo: any
   lookupField = ""
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
@@ -41,7 +41,7 @@ export default class MarketoTransaction {
 
     this.rows = []
     this.queue = []
-    this.client = this.marketoClientFromRequest(request)
+    this.marketo = this.marketoClientFromRequest(request)
 
     await request.streamJsonDetail({
       // onFields: (fields) => {
@@ -68,7 +68,7 @@ export default class MarketoTransaction {
     // if there are any unsent rows, send them now
     this.flushRows()
 
-    // console.log("this.queue.length", this.queue.length)
+    console.log("this.queue.length", this.queue.length)
 
     const results = await Promise.all(this.queue)
     console.log("all done", results)
@@ -77,6 +77,7 @@ export default class MarketoTransaction {
   }
 
   flushRows() {
+    console.log("flushRows")
     if (this.rows.length) {
       const request = this.sendChunk(this.rows)
       this.queue.push(request)
@@ -87,12 +88,13 @@ export default class MarketoTransaction {
   async sendChunk(rows: Hub.JsonDetail.Row[]) {
     if (! rows) { return }
     const leadList = this.getLeadList(this.fieldMap, rows)
+    console.log("leadList", leadList)
     // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
 
     const errors = []
     let leadResponse
     try {
-      leadResponse = await this.client.lead.createOrUpdate(leadList, {
+      leadResponse = await this.marketo.lead.createOrUpdate(leadList, {
         lookupField: this.lookupField,
       })
       // if (leadResponse.success && leadResponse.success === false) {
