@@ -11,6 +11,7 @@ export default class MarketoTransaction {
   queue: Promise<any>[] = []
   fieldMap: any
   client: any
+  lookupField = ""
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
 
@@ -30,10 +31,10 @@ export default class MarketoTransaction {
     this.fieldMap = this.getFieldMap(Hub.allFields(requestJSON.fields))
 
     // determine if lookupField is present in fields
-    const lookupField = request.formParams.lookupField
+    this.lookupField = request.formParams.lookupField || ""
     if (
-      ! lookupField
-      || ! Object.keys(this.fieldMap).find((name) => this.fieldMap[name].indexOf(lookupField) !== -1)
+      ! this.lookupField
+      || ! Object.keys(this.fieldMap).find((name) => this.fieldMap[name].indexOf(this.lookupField) !== -1)
     ) {
       throw "Marketo Lookup Field for lead not present in query."
     }
@@ -43,15 +44,15 @@ export default class MarketoTransaction {
     this.client = this.marketoClientFromRequest(request)
 
     await request.streamJsonDetail({
-      onFields: (fields) => {
-        console.log("onFields", fields)
-        // build this.fieldMap for getLeadtFromRow to refer to?
-        // for now constructing it above from requestJSON.fields
-        // instead of here, cuz we need it to valid the form input
-      },
-      onRanAt: (iso8601string) => {
-        console.log("onRanAt", iso8601string)
-      },
+      // onFields: (fields) => {
+      //   console.log("onFields", fields)
+      //   // build this.fieldMap for getLeadtFromRow to refer to?
+      //   // for now constructing it above from requestJSON.fields
+      //   // instead of here, cuz we need it to valid the form input
+      // },
+      // onRanAt: (iso8601string) => {
+      //   console.log("onRanAt", iso8601string)
+      // },
       onRow: (row) => {
         // add the row to our row queue
         this.rows.push(row)
@@ -67,7 +68,7 @@ export default class MarketoTransaction {
     // if there are any unsent rows, send them now
     this.flushRows()
 
-    console.log("this.queue.length", this.queue.length)
+    // console.log("this.queue.length", this.queue.length)
 
     const results = await Promise.all(this.queue)
     console.log("all done", results)
@@ -87,7 +88,32 @@ export default class MarketoTransaction {
     if (! rows) { return }
     const leadList = this.getLeadList(this.fieldMap, rows)
     // TODO wrap Marketo API in a promise that resolves with { success: [], failed: [] }
-    return leadList
+
+    const errors = []
+    let leadResponse
+    try {
+      leadResponse = await this.client.lead.createOrUpdate(leadList, {
+        lookupField: this.lookupField,
+      })
+      // if (leadResponse.success && leadResponse.success === false) {
+      //   errors.concat(leadResponse.errors)
+      //   break
+      // }
+      // const justIDs = leadResponse.result.filter((lead: {id: any}) => lead.id !== null)
+      //   .map((lead: {id: any}) => ({ id: lead.id }))
+      // const campaignResponse = await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
+      // if (campaignResponse.success && campaignResponse.success === false) {
+      //   errors.concat(campaignResponse.errors)
+      //   break
+      // }
+    } catch (e) {
+      errors.push(e)
+    }
+
+    return {
+      leadResponse,
+      errors,
+    }
   }
 
   //   // // Push leads into Marketo and affiliate with a campaign
