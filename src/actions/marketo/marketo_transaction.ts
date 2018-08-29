@@ -7,7 +7,7 @@ const numLeadsAllowedPerCall = 100
 
 function logJson(label: string, object: any) {
   console.log("\n================================")
-  console.log(`\n${label}:\n`)
+  console.log(`${label}:\n`)
   const json = `${JSON.stringify(object)}\n\n`
   console.log(json)
 }
@@ -99,12 +99,14 @@ export default class MarketoTransaction {
 
   async sendChunks(chunks: any[][], lookupField: string, campaignID: string) {
 
-    let results: any[] = []
+    const results: any[] = []
     for (const chunk of chunks) {
       await this.sendChunk(chunk, lookupField, campaignID)
-      const result = await this.sendChunk(chunk, lookupField, campaignID)
-      results = results.concat(result)
-      // logJson("result", result)
+      const result: any = await this.sendChunk(chunk, lookupField, campaignID)
+      results.push(result)
+      Object.keys(result).forEach((key: string) => {
+        logJson(key, result[key])
+      })
     }
     return results
 
@@ -118,19 +120,17 @@ export default class MarketoTransaction {
 
     const skipped: any[] = []
     const ids: any[] = []
-    let errors: any[] = []
+    let leadErrors: any[] = []
+    let campaignErrors: any[] = []
     try {
-      const response = await this.marketo.lead.createOrUpdate(chunk, {
-        lookupField,
-      })
-      logJson("response", Object.keys(response))
-      logJson("response", response)
+      const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField })
+      logJson("response", leadResponse)
 
-      if (Array.isArray(response.errors)) {
-        errors = errors.concat(response.errors)
+      if (Array.isArray(leadResponse.errors)) {
+        leadErrors = leadErrors.concat(leadResponse.errors)
       }
 
-      response.result.forEach((record: any, i: number) => {
+      leadResponse.result.forEach((record: any, i: number) => {
         if (record.id) {
           ids.push(record.id)
         } else {
@@ -139,29 +139,23 @@ export default class MarketoTransaction {
         }
       })
 
-      logJson("ids", ids)
-      logJson("skipped", skipped)
-      logJson("errors", errors)
-      // logJson("leadResponse", leadResponse)
-      // if (leadResponse.success && leadResponse.success === false) {
-      //   errors.concat(leadResponse.errors)
-      //   break
-      // }
-      // const justIDs = leadResponse.result.filter((lead: {id: any}) => lead.id !== null)
-      //   .map((lead: {id: any}) => ({ id: lead.id }))
-      // const campaignResponse = await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
-      // if (campaignResponse.success && campaignResponse.success === false) {
-      //   errors.concat(campaignResponse.errors)
-      //   break
-      // }
+      const campaignResponse = await this.marketo.campaign.request(campaignID, ids)
+      logJson("campaignResponse", campaignResponse)
+
+      if (Array.isArray(campaignResponse.errors)) {
+        campaignErrors = campaignErrors.concat(campaignResponse.errors)
+      }
+
     } catch (err) {
       console.error(err)
       // errors.push(err)
     }
 
     return {
+      ids,
       skipped,
-      errors,
+      leadErrors,
+      campaignErrors,
     }
   }
 
