@@ -113,31 +113,20 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action.runInOwnProcess) {
-        const data = {
-            body: req.body,
-            actionId: req.params.actionId,
-            instanceId: req.header("x-looker-instance"),
-            webhookId: req.header("x-looker-webhook-id"),
-            userAgent: req.header("user-agent"),
-        }
-        expensiveJobQueue.run(JSON.stringify(data)).then((response: string) => {
-          res.json(response)
-        }).catch((err) => {
+      const actionResponse = await action.validateAndExecuteFancy(request, expensiveJobQueue)
+      // Some versions of Looker do not look at the "success" value in the response
+      // if the action returns a 200 status code, even though the Action API specs otherwise.
+      // So we force a non-200 status code as a workaround.
+      if (actionResponse && !actionResponse.success) {
           res.status(400)
-          res.json(err)
-        })
-      } else {
-        const actionResponse = await action.validateAndExecute(request)
-
-        // Some versions of Looker do not look at the "success" value in the response
-        // if the action returns a 200 status code, even though the Action API specs otherwise.
-        // So we force a non-200 status code as a workaround.
-        if (!actionResponse.success) {
-            res.status(400)
-        }
-        res.json(actionResponse.asJson())
       }
+      let jsonResp
+      if (actionResponse) {
+        jsonResp = actionResponse.asJson()
+      } else {
+        jsonResp = "[]"
+      }
+      res.json(jsonResp)
     })
 
     this.route("/actions/:actionId/form", async (req, res) => {
