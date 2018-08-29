@@ -43,6 +43,9 @@ export default class MarketoTransaction {
     this.queue = []
     this.marketo = this.marketoClientFromRequest(request)
 
+    let counter = 0
+    const limit = 10
+
     await request.streamJsonDetail({
       // onFields: (fields) => {
       //   console.log("onFields", fields)
@@ -54,6 +57,11 @@ export default class MarketoTransaction {
       //   console.log("onRanAt", iso8601string)
       // },
       onRow: (row) => {
+        counter++
+        if (counter >= limit) {
+          return
+        }
+
         // add the row to our row queue
         this.rows.push(row)
 
@@ -76,7 +84,7 @@ export default class MarketoTransaction {
     return new Hub.ActionResponse({ success: true })
   }
 
-  flushRows() {
+flushRows() {
     console.log("flushRows")
     if (this.rows.length) {
       const request = this.sendChunk(this.rows)
@@ -85,7 +93,7 @@ export default class MarketoTransaction {
     }
   }
 
-  async sendChunk(rows: Hub.JsonDetail.Row[]) {
+async sendChunk(rows: Hub.JsonDetail.Row[]) {
     console.log("sendChunk")
     if (! rows) { return }
     const leadList = this.getLeadList(this.fieldMap, rows)
