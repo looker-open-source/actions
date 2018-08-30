@@ -30,6 +30,8 @@ export default class MarketoTransaction {
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
 
+    logJson("request", request)
+
     console.time("all done")
 
     if (!(request.attachment && request.attachment.dataJSON)) {
