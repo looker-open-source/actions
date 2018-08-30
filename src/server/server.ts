@@ -113,7 +113,7 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      const actionResponse = await action.validateAndExecuteFancy(request, expensiveJobQueue)
+      const actionResponse = await action.validateAndExecute(request, expensiveJobQueue)
       // Some versions of Looker do not look at the "success" value in the response
       // if the action returns a 200 status code, even though the Action API specs otherwise.
       // So we force a non-200 status code as a workaround.
