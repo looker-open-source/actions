@@ -58,7 +58,7 @@ export class MarketoAction extends Hub.Action {
     const form = new Hub.ActionForm()
     form.fields = [{
       label: "Campaign ID",
-      name: "campaignID",
+      name: "campaignId",
       required: true,
       default: "20916", // DNR
       type: "string",
