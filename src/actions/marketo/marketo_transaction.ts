@@ -30,6 +30,8 @@ export default class MarketoTransaction {
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
 
+    console.time("all done")
+
     if (!(request.attachment && request.attachment.dataJSON)) {
       throw "No attached json."
     }
@@ -97,34 +99,45 @@ export default class MarketoTransaction {
     console.timeEnd("chunkify")
 
     console.time("sendChunks")
-    const result = await this.sendChunks(chunks, lookupField, campaignID)
+    const result = await this.sendChunks(chunks, lookupField)
     console.timeEnd("sendChunks")
 
-    console.log("all done")
+    console.time("campaignResponse")
+    try {
+      const campaignResponse = await this.marketo.campaign.request(campaignID, result.ids.map((id: string) => { id }))
+      if (Array.isArray(campaignResponse.errors)) {
+        result.campaignErrors = campaignResponse.errors
+      }
+    } catch (err) {
+      console.error(err)
+    }
+    console.timeEnd("campaignResponse")
+
+    console.timeEnd("all done")
     logJson("result", result)
 
     return new Hub.ActionResponse({ success: true })
   }
 
-  async sendChunks(chunks: any[][], lookupField: string, campaignID: string) {
+  async sendChunks(chunks: any[][], lookupField: string) {
 
     const result: any = {
+      ids: [],
       skipped: [],
       leadErrors: [],
-      campaignErrors: [],
     }
     let counter = 0
     for (const chunk of chunks) {
       counter++
       console.time(`chunk ${counter}`)
-      await this.sendChunk(chunk, lookupField, campaignID, result)
+      await this.sendChunk(chunk, lookupField, result)
       console.timeEnd(`chunk ${counter}`)
     }
     return result
 
   }
 
-  async sendChunk(chunk: any[], lookupField: string, campaignID: string, result: any) {
+  async sendChunk(chunk: any[], lookupField: string, result: any) {
     try {
       console.time("leadResponse")
       const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField })
@@ -134,23 +147,14 @@ export default class MarketoTransaction {
         result.leadErrors = result.leadErrors.concat(leadResponse.errors)
       }
 
-      const ids: any[] = []
       leadResponse.result.forEach((lead: any, i: number) => {
         if (lead.id) {
-          ids.push({ id: lead.id} )
+          result.ids.push(lead.id)
         } else {
           chunk[i].result = lead
           result.skipped.push(chunk[i])
         }
       })
-
-      console.time("campaignResponse")
-      const campaignResponse = await this.marketo.campaign.request(campaignID, ids)
-      console.timeEnd("campaignResponse")
-
-      if (Array.isArray(campaignResponse.errors)) {
-        result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
-      }
 
     } catch (err) {
       console.error(err)
