@@ -144,7 +144,7 @@ export default class MarketoTransaction {
       })
 
       console.time("campaignResponse")
-      const campaignResponse = await this.marketo.campaign.request(campaignId, result.ids.map((id: string) => { id }))
+      const campaignResponse = await this.marketo.campaign.request(campaignId, ids)
       console.timeEnd("campaignResponse")
       if (Array.isArray(campaignResponse.errors)) {
         result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
