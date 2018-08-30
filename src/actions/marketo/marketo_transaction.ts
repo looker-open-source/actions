@@ -105,7 +105,7 @@ export default class MarketoTransaction {
     console.timeEnd("all done")
     logJson("result", result)
 
-    return new Hub.ActionResponse({ success: true })
+    return new Hub.ActionResponse({ success: false, message: "A message" })
   }
 
   async sendChunks(chunks: any[][], lookupField: string, campaignId: string) {
