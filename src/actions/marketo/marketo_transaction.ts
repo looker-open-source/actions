@@ -90,6 +90,12 @@ export default class MarketoTransaction {
     })
     console.timeEnd("streamJsonDetail")
 
+    console.log("rows.length", rows.length)
+
+    if (rows) {
+      return new Hub.ActionResponse({ success: false, message: "A message" })
+    }
+
     console.time("getLeadList")
     const leadList = this.getLeadList(fieldMap, rows)
     console.timeEnd("getLeadList")
@@ -105,7 +111,7 @@ export default class MarketoTransaction {
     console.timeEnd("all done")
     logJson("result", result)
 
-    return new Hub.ActionResponse({ success: false, message: "A message" })
+    return new Hub.ActionResponse({ success: true })
   }
 
   async sendChunks(chunks: any[][], lookupField: string, campaignId: string) {
