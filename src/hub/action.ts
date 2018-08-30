@@ -84,45 +84,45 @@ export abstract class Action {
   }
 
   async validateAndExecute(request: ActionRequest, queue?: ExecuteProcessQueue) {
-      if (this.supportedActionTypes.indexOf(request.type) === -1) {
-          throw `This action does not support requests of type "${request.type}".`
-      }
+    if (this.supportedActionTypes.indexOf(request.type) === -1) {
+      throw `This action does not support requests of type "${request.type}".`
+    }
 
-      const requiredParams = this.params.filter((p) => p.required)
+    const requiredParams = this.params.filter((p) => p.required)
 
-      if (requiredParams.length > 0) {
-          for (const p of requiredParams) {
-              const param = request.params[p.name]
-              if (!param) {
-                  throw `Required parameter "${p.name}" not provided.`
-              }
-          }
+    if (requiredParams.length > 0) {
+      for (const p of requiredParams) {
+        const param = request.params[p.name]
+        if (!param) {
+            throw `Required parameter "${p.name}" not provided.`
+        }
       }
+    }
 
-      if (
-          this.usesStreaming &&
-          !(request.attachment || (request.scheduledPlan && request.scheduledPlan.downloadUrl))
-      ) {
-          throw "A streaming action was sent incompatible data. The action must have a download url or an attachment."
-      }
+    if (
+      this.usesStreaming &&
+      !(request.attachment || (request.scheduledPlan && request.scheduledPlan.downloadUrl))
+    ) {
+      throw "A streaming action was sent incompatible data. The action must have a download url or an attachment."
+    }
 
-      if (this.runInOwnProcess) {
-          if (!queue) {
-              throw "An action marked for being executed on a separate process needs a ExecuteProcessQueue."
-          }
-          request.actionId = this.name
-          return new Promise<ActionResponse>((resolve, reject) => {
-            queue.run(JSON.stringify(request)).then((response: string) => {
-                  const actionResponse = new ActionResponse()
-                  Object.assign(actionResponse, response)
-                  resolve(actionResponse)
-              }).catch((err) => {
-                  reject(err)
-              })
-          })
-      } else {
-          return this.execute(request)
+    if (this.runInOwnProcess) {
+      if (!queue) {
+        throw "An action marked for being executed on a separate process needs a ExecuteProcessQueue."
       }
+      request.actionId = this.name
+      return new Promise<ActionResponse>((resolve, reject) => {
+        queue.run(JSON.stringify(request)).then((response: string) => {
+          const actionResponse = new ActionResponse()
+          Object.assign(actionResponse, response)
+          resolve(actionResponse)
+        }).catch((err) => {
+          reject(err)
+        })
+      })
+    } else {
+      return this.execute(request)
+    }
 
   }
 
