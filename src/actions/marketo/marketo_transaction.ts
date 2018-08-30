@@ -110,9 +110,9 @@ export default class MarketoTransaction {
 
   async sendChunks(chunks: any[][], lookupField: string, campaignId: string) {
     const result: any = {
-      ids: [],
       skipped: [],
       leadErrors: [],
+      campaignErrors: [],
     }
     let counter = 0
     for (const chunk of chunks) {
@@ -147,7 +147,7 @@ export default class MarketoTransaction {
       const campaignResponse = await this.marketo.campaign.request(campaignId, result.ids.map((id: string) => { id }))
       console.timeEnd("campaignResponse")
       if (Array.isArray(campaignResponse.errors)) {
-        result.campaignErrors = campaignResponse.errors
+        result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
       }
 
     } catch (err) {
