@@ -5,6 +5,7 @@ import * as Hub from "../../hub"
 import { SegmentGroupAction } from "./segment_group"
 
 const action = new SegmentGroupAction()
+action.runInOwnProcess = false
 
 function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
   const groupSpy = sinon.spy()
