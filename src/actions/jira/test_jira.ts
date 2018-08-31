@@ -75,6 +75,11 @@ describe(`${action.constructor.name} unit tests`, () => {
           }
         })
       const request = new Hub.ActionRequest()
+      request.params = {
+        address: "foo",
+        username: "foo",
+        password: "foo",
+      }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
