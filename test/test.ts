@@ -12,6 +12,7 @@ winston.remove(winston.transports.Console)
 
 import "../src/actions/index"
 
+import "./test_actions"
 import "./test_server"
 import "./test_smoke"
 
