@@ -1,10 +1,9 @@
 import * as Hub from "../hub"
-import {ActionRequest} from "../hub"
 import "./index.ts"
 
 async function execute(jsonPayload: any) {
     const req = JSON.parse(jsonPayload)
-    const request = ActionRequest.fromIPC(req)
+    const request = Hub.ActionRequest.fromIPC(req)
     const action = await Hub.findAction(req.actionId, {lookerVersion: req.lookerVersion})
     return action.execute(request)
 }

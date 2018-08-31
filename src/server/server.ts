@@ -117,16 +117,10 @@ export default class Server implements Hub.RouteBuilder {
       // Some versions of Looker do not look at the "success" value in the response
       // if the action returns a 200 status code, even though the Action API specs otherwise.
       // So we force a non-200 status code as a workaround.
-      if (actionResponse && !actionResponse.success) {
+      if (!actionResponse.success) {
           res.status(400)
       }
-      let jsonResp
-      if (actionResponse) {
-        jsonResp = actionResponse.asJson()
-      } else {
-        jsonResp = "[]"
-      }
-      res.json(jsonResp)
+      res.json(actionResponse.asJson())
     })
 
     this.route("/actions/:actionId/form", async (req, res) => {
