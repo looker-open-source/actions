@@ -27,13 +27,13 @@ describe(`${action.constructor.name} unit tests for ProcessQueue`, () => {
             request.type = Hub.ActionType.Query
             request.attachment = {dataBuffer: Buffer.from(JSON.stringify({ success: true }))}
             return expectResponse(request, true)
-        }).timeout(10000)
+        }).timeout(30000)
 
         it("returns failure on failed response", () => {
             const request = new Hub.ActionRequest()
             request.type = Hub.ActionType.Query
             request.attachment = {dataBuffer: Buffer.from(JSON.stringify({ success: false }))}
             return expectResponse(request, false)
-        }).timeout(10000)
+        }).timeout(30000)
     })
 })
