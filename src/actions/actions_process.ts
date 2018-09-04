@@ -11,5 +11,5 @@ async function execute(jsonPayload: any) {
 process.on("message", (req) => {
     const response = execute(req)
     response.then((val) => { process.send!(val)})
-        .catch((err) => { process.send!(err)})
+        .catch((err) => { process.send!({success: false, message: JSON.stringify(err)})})
 })
