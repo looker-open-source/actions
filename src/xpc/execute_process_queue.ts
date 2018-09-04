@@ -7,7 +7,7 @@ export class ExecuteProcessQueue extends ProcessQueue {
     async run(data: string) {
         return this.queue.add(async () => {
             return new Promise<string>((resolve, reject) => {
-                const child = spawn.fork(`./src/xpc/actions_process.ts`)
+                const child = spawn.fork(`./src/xpc/execute_process.ts`)
                 child.on("message", (actionResponse) => {
                     child.kill()
                     resolve(actionResponse)
