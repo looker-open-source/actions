@@ -2,7 +2,7 @@ import * as chai from "chai"
 import * as Hub from "../../hub"
 
 import {ExecuteProcessQueue} from "../../../lib/server/action_process_queue"
-import {QueueTestAction} from "./queue_test_action"
+import {QueueTestAction} from "./queue_action_for_testing"
 
 const action = new QueueTestAction()
 const queue = new ExecuteProcessQueue()
