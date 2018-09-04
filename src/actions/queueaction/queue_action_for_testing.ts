@@ -1,4 +1,3 @@
-
 import * as Hub from "../../hub"
 
 export class QueueTestAction extends Hub.Action {
