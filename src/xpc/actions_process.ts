@@ -1,5 +1,5 @@
-import * as Hub from "../hub/index"
 import "../actions/index.ts"
+import * as Hub from "../hub/index"
 
 async function execute(jsonPayload: any) {
     const req = JSON.parse(jsonPayload)
