@@ -1,6 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
-import {ExecuteProcessQueue} from "../server/execute_process_queue"
+import {ExecuteProcessQueue} from "../xpc/execute_process_queue"
 
 import {
   ActionDownloadSettings,
