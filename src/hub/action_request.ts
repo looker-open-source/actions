@@ -75,6 +75,16 @@ export class ActionRequest {
     return actionRequest
   }
 
+  // Used to turn json back into an actionRequest
+  static fromIPC(json: any) {
+    const actionRequest = new ActionRequest()
+    Object.assign(actionRequest, json)
+    if (actionRequest.attachment && actionRequest.attachment.dataBuffer) {
+        actionRequest.attachment.dataBuffer = Buffer.from(json.attachment.dataBuffer)
+    }
+    return actionRequest
+  }
+
   static fromJSON(json?: DataWebhookPayload) {
 
     if (!json) {
@@ -134,6 +144,7 @@ export class ActionRequest {
   params: ParamMap = {}
   scheduledPlan?: ActionScheduledPlan
   type!: ActionType
+  actionId?: string
   instanceId?: string
   webhookId?: string
   lookerVersion: string | null = null

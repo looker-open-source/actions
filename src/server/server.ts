@@ -5,8 +5,8 @@ import * as fs from "fs"
 import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
-
 import * as Hub from "../hub"
+import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
 
 const expressWinston = require("express-winston")
@@ -15,6 +15,8 @@ const blocked = require("blocked-at")
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
 const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
+
+const expensiveJobQueue = new ExecuteProcessQueue.ExecuteProcessQueue()
 
 export default class Server implements Hub.RouteBuilder {
 
@@ -110,14 +112,13 @@ export default class Server implements Hub.RouteBuilder {
 
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
-      const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      const actionResponse = await action.validateAndExecute(request)
-
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      const actionResponse = await action.validateAndExecute(request, expensiveJobQueue)
       // Some versions of Looker do not look at the "success" value in the response
       // if the action returns a 200 status code, even though the Action API specs otherwise.
       // So we force a non-200 status code as a workaround.
       if (!actionResponse.success) {
-        res.status(400)
+          res.status(400)
       }
       res.json(actionResponse.asJson())
     })

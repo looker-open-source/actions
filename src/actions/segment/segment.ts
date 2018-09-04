@@ -53,6 +53,7 @@ export class SegmentAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
+  executeInOwnProcess = true
 
   async execute(request: Hub.ActionRequest) {
     return this.executeSegment(request, SegmentCalls.Identify)
@@ -116,14 +117,14 @@ export class SegmentAction extends Hub.Action {
         },
       })
 
-      await segmentClient.flush(async (err: any) => {
-        return new Promise<any>((resolve, reject) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
-        })
+      await new Promise<void>(async (resolve, reject) => {
+          segmentClient.flush( (err: any) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
       })
     } catch (e) {
       errors.push(e)
@@ -137,7 +138,7 @@ export class SegmentAction extends Hub.Action {
       }
       return new Hub.ActionResponse({success: false, message: msg})
     } else {
-      return new Hub.ActionResponse({ success: true })
+      return new Hub.ActionResponse({success: true})
     }
   }
 
