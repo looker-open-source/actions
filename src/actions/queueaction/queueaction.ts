@@ -1,7 +1,7 @@
 
 import * as Hub from "../../hub"
 
-export class Queueaction extends Hub.Action {
+export class QueueAction extends Hub.Action {
     name = "queue_action"
     label = "Test Queue"
     description = "Used to test process queue in unit tests"
@@ -10,7 +10,15 @@ export class Queueaction extends Hub.Action {
     runInOwnProcess = true
 
     async execute(request: Hub.ActionRequest) {
-        const result = JSON.parse(JSON.stringify(request.attachment!.dataBuffer))
-        return new Hub.ActionResponse(result)
+        try {
+            const result = JSON.parse(request.attachment!.dataBuffer!.toString())
+            return new Hub.ActionResponse({success: result.success})
+        } catch (e) {
+            return new Hub.ActionResponse({success: false, message: "Nope"})
+        }
     }
+}
+
+if (process.env.CHILD_TEST) {
+    Hub.addAction(new QueueAction())
 }
