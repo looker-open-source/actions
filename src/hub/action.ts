@@ -1,6 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
-import {ExecuteProcessQueue} from "../server/action_process_queue"
+import {ExecuteProcessQueue} from "../server/execute_process_queue"
 
 import {
   ActionDownloadSettings,
@@ -45,7 +45,7 @@ export abstract class Action {
   abstract label: string
   abstract description: string
   usesStreaming = false
-  runInOwnProcess = false
+  executeInOwnProcess = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
@@ -102,7 +102,7 @@ export abstract class Action {
       throw "A streaming action was sent incompatible data. The action must have a download url or an attachment."
     }
 
-    if (this.runInOwnProcess) {
+    if (this.executeInOwnProcess) {
       if (!queue) {
         throw "An action marked for being executed on a separate process needs a ExecuteProcessQueue."
       }

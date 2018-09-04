@@ -2,9 +2,9 @@ import * as chai from "chai"
 import * as Hub from "../../hub"
 
 import {ExecuteProcessQueue} from "../../../lib/server/action_process_queue"
-import {QueueAction} from "./queueaction"
+import {QueueTestAction} from "./queue_test_action"
 
-const action = new QueueAction()
+const action = new QueueTestAction()
 const queue = new ExecuteProcessQueue()
 process.execArgv = ["./node_modules/ts-node/dist/bin.js"]
 process.argv = ["node", "./integrations/src/boot.ts"]

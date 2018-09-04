@@ -1,13 +1,13 @@
 
 import * as Hub from "../../hub"
 
-export class QueueAction extends Hub.Action {
+export class QueueTestAction extends Hub.Action {
     name = "queue_action"
     label = "Test Queue"
     description = "Used to test process queue in unit tests"
     params = []
     supportedActionTypes = [Hub.ActionType.Query]
-    runInOwnProcess = true
+    executeInOwnProcess = true
 
     async execute(request: Hub.ActionRequest) {
         try {
@@ -20,5 +20,5 @@ export class QueueAction extends Hub.Action {
 }
 
 if (process.env.CHILD_TEST) {
-    Hub.addAction(new QueueAction())
+    Hub.addAction(new QueueTestAction())
 }

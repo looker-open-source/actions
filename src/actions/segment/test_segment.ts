@@ -5,7 +5,7 @@ import * as Hub from "../../hub"
 import { SegmentAction } from "./segment"
 
 const action = new SegmentAction()
-action.runInOwnProcess = false
+action.executeInOwnProcess = false
 
 function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
   const segmentCallSpy = sinon.spy()

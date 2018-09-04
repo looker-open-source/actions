@@ -5,7 +5,7 @@ import * as Hub from "../../hub"
 import { SegmentTrackAction } from "./segment_track"
 
 const action = new SegmentTrackAction()
-action.runInOwnProcess = false
+action.executeInOwnProcess = false
 
 describe(`${action.constructor.name} unit tests`, () => {
 

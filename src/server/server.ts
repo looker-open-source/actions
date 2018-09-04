@@ -6,7 +6,7 @@ import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
-import * as ExecuteProcessQueue from "./action_process_queue"
+import * as ExecuteProcessQueue from "./execute_process_queue"
 import * as apiKey from "./api_key"
 
 const expressWinston = require("express-winston")
