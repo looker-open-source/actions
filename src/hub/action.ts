@@ -2,6 +2,7 @@ import * as fs from "fs"
 import * as path from "path"
 import {ExecuteProcessQueue} from "../xpc/execute_process_queue"
 
+import * as winston from "winston"
 import {
   ActionDownloadSettings,
   ActionForm,
@@ -113,6 +114,7 @@ export abstract class Action {
           Object.assign(actionResponse, response)
           resolve(actionResponse)
         }).catch((err) => {
+          winston.error(JSON.stringify(err))
           reject(err)
         })
       })
