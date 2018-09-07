@@ -1,3 +1,4 @@
+import * as winston from "winston"
 import "../actions/index.ts"
 import * as Hub from "../hub/index"
 
@@ -11,5 +12,9 @@ async function execute(jsonPayload: any) {
 process.on("message", (req) => {
     execute(req)
         .then((val) => { process.send!(val)})
-        .catch((err) => { process.send!({success: false, message: JSON.stringify(err)})})
+        .catch((err) => {
+            const stringErr = JSON.stringify(err)
+            winston.error("Error on child: " + stringErr)
+            process.send!({success: false, message: stringErr})
+        })
 })
