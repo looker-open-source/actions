@@ -25,9 +25,22 @@ export class DataRobotAction extends Hub.Action {
       sensitive: true,
     },
   ]
+  minimumSupportedLookerVersion = "5.24.0"
 
   async execute(request: Hub.ActionRequest) {
-    const options = this.getRequestOptions(request)
+    const options = {
+      url: `${DR_API_URL}/projects/`,
+      headers: {
+        Authorization: `Token ${request.params.datarobot_api_token}`,
+      },
+      body: {
+        projectName: request.formParams.projectName,
+        url: request.scheduledPlan && request.scheduledPlan.downloadUrl,
+      },
+      json: true,
+      resolveWithFullResponse: true,
+    }
+
     try {
       await httpRequest.post(options).promise()
       return new Hub.ActionResponse({ success: true })
@@ -60,39 +73,6 @@ export class DataRobotAction extends Hub.Action {
     }
 
     return form
-  }
-
-  private getRequestOptions(request: Hub.ActionRequest) {
-    const options = {
-      url: `${DR_API_URL}/projects/`,
-      headers: {
-        Authorization: `Token ${request.params.datarobot_api_token}`,
-      },
-    }
-
-    const url = request.scheduledPlan && request.scheduledPlan.downloadUrl
-    if (url) {
-      return Object.assign(options, {
-        body: {
-          projectName: request.formParams.projectName,
-          url: request.scheduledPlan && request.scheduledPlan.downloadUrl,
-        },
-        json: true,
-      })
-    }
-
-    return Object.assign(options, {
-      formData: {
-        file: {
-          value: request.attachment && request.attachment.dataBuffer,
-          options: {
-            filename: request.suggestedFilename(),
-            contentType: "text/csv",
-          },
-        },
-        projectName: request.formParams.projectName,
-      },
-    })
   }
 
   private async validateDataRobotToken(token: string) {

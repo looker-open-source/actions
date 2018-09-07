@@ -44,34 +44,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
-    it("sends the right body with formData", async () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.params.datarobot_api_token = "token"
-      request.formParams = {
-        projectName: "DR Project from Looker",
-      }
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-
-      const postSpy = sinon.spy((params: any) => {
-        chai.expect(params.url).to.equal("https://app.datarobot.com/api/v2/projects/")
-        chai.expect(params.headers.Authorization).to.equal("Token token")
-        chai.expect(params.formData.projectName).to.equal("DR Project from Looker")
-        chai.expect(params.formData.value).to.equal(Buffer.from("1,2,3,4", "utf8"))
-        return {
-          promise: async () => new Promise<void>((resolve: any) => resolve()),
-        }
-      })
-      stubHttpPost = sinon.stub(httpRequest, "post").callsFake(postSpy)
-
-      chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-        chai.expect(postSpy).to.have.been.called
-      })
-    })
-
   })
 
   describe("form", () => {
