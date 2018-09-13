@@ -8,8 +8,10 @@ export class ExecuteProcessQueue extends ProcessQueue {
         return this.queue.add(async () => {
             return new Promise<string>((resolve, reject) => {
                 const child = spawn.fork(`./src/xpc/execute_process.ts`)
+                let succeeded = false
                 child.on("message", (actionResponse) => {
                     resolve(actionResponse)
+                    succeeded = true
                     child.kill()
                 }).on("error", (err) => {
                     winston.warn(`ChildProcess sent error message: ${err.message}`)
@@ -18,19 +20,23 @@ export class ExecuteProcessQueue extends ProcessQueue {
                     }
                     reject(err)
                 }).on("exit", (code: number, signal: string) => {
-                    winston.info(`ChildProcess exited with code: ${code}, signal: ${signal}`)
+                    if (!succeeded) {
+                        winston.warn(`ChildProcess exited with code: ${code}, signal: ${signal}`)
+                    }
                     if (!child.killed) {
                         child.kill()
                     }
                     reject(signal)
                 }).on("disconnect", () => {
-                    winston.warn(`ChildProcess disconnected`)
+                    if (!succeeded) {
+                        winston.info(`ChildProcess disconnected`)
+                    }
                     if (!child.killed) {
                         child.kill()
                     }
                     reject("Child Disconnected")
                 }).on("close", (code: number, signal: string) => {
-                    if (signal !== "SIGTERM") {
+                    if (!succeeded) {
                         winston.warn(`ChildProcess closed with code: ${code}, signal: ${signal}`)
                     }
                     if (!child.killed) {
