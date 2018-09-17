@@ -201,10 +201,10 @@ export class ActionRequest {
             reject(err)
           })
           .on("finish", () => {
-            winston.error(`PassThrough stream finished`, this.logInfo)
+            winston.info(`PassThrough stream finished`, this.logInfo)
           })
           .on("close", () => {
-            winston.error(`PassThrough stream closed`, this.logInfo)
+            winston.info(`PassThrough stream closed`, this.logInfo)
           })
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
