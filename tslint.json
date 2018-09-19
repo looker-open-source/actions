@@ -15,9 +15,11 @@
       "no-floating-promises": true,
       "no-inferred-empty-object-type": true,
       "strict-type-predicates": true,
+      "strict-boolean-expressions": [true, "allow-undefined-union", "allow-null-union", "allow-mix", "allow-string"],
       "use-default-type-parameter": true,
       "deprecation": true,
       "return-undefined": true,
+      "no-unused-expression": false,
       "interface-name": [
         true,
         "never-prefix"

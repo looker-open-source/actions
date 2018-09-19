@@ -151,6 +151,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("has form with base and table param", (done) => {
       const request = new Hub.ActionRequest()
+      request.params = { airtable_api_key: "foo" }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

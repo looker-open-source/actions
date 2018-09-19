@@ -1,21 +1,34 @@
 import * as express from "express"
+import * as oboe from "oboe"
+import * as httpRequest from "request"
 import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
+import { PassThrough, Readable } from "stream"
+import * as winston from "winston"
 import { truncateString } from "./utils"
 
 import {
+  DataWebhookPayload,
   DataWebhookPayloadType as ActionType,
-  WireResponseDataWebhookPayload,
 } from "../api_types/data_webhook_payload"
 import { DataWebhookPayloadScheduledPlanType } from "../api_types/data_webhook_payload_scheduled_plan"
 import {
+  IntegrationSupportedDownloadSettings as ActionDownloadSettings,
   IntegrationSupportedFormats as ActionFormat,
   IntegrationSupportedFormattings as ActionFormatting,
   IntegrationSupportedVisualizationFormattings as ActionVisualizationFormatting,
 } from "../api_types/integration"
-import { WireResponseQuery } from "../api_types/query"
+import { Query } from "../api_types/query"
+import { Fieldset } from "./index"
+import { Row as JsonDetailRow } from "./json_detail"
 
-export { ActionType, ActionFormat, ActionFormatting, ActionVisualizationFormatting }
+export {
+  ActionType,
+  ActionFormat,
+  ActionFormatting,
+  ActionVisualizationFormatting,
+  ActionDownloadSettings,
+}
 
 export interface ParamMap {
   [name: string]: string | undefined
@@ -41,9 +54,11 @@ export interface ActionScheduledPlan {
   /** ID of the query that the data payload represents. */
   queryId?: number | null
   /** Query that was run (not available for dashboards) */
-  query?: WireResponseQuery | null
+  query?: Query | null
   /** A boolean representing whether this schedule payload has customized the filter values. */
   filtersDifferFromLook?: boolean
+  /** A string to be included in scheduled integrations if this scheduled plan is a download query */
+  downloadUrl?: string | null
 }
 
 export class ActionRequest {
@@ -60,7 +75,17 @@ export class ActionRequest {
     return actionRequest
   }
 
-  static fromJSON(json: WireResponseDataWebhookPayload) {
+  // Used to turn json back into an actionRequest
+  static fromIPC(json: any) {
+    const actionRequest = new ActionRequest()
+    Object.assign(actionRequest, json)
+    if (actionRequest.attachment && actionRequest.attachment.dataBuffer) {
+        actionRequest.attachment.dataBuffer = Buffer.from(json.attachment.dataBuffer)
+    }
+    return actionRequest
+  }
+
+  static fromJSON(json?: DataWebhookPayload) {
 
     if (!json) {
       throw "Request body must be valid JSON."
@@ -68,9 +93,13 @@ export class ActionRequest {
 
     const request = new ActionRequest()
 
-    request.type = json.type!
+    if (json.type === null) {
+      throw `Action did not specify a "type".`
+    } else {
+      request.type = json.type
+    }
 
-    if (json && json.attachment) {
+    if (json.attachment) {
       request.attachment = {}
       request.attachment.mime = json.attachment.mimetype!
       request.attachment.fileExtension = json.attachment.extension!
@@ -86,7 +115,7 @@ export class ActionRequest {
       }
     }
 
-    if (json && json.scheduled_plan) {
+    if (json.scheduled_plan) {
       request.scheduledPlan = {
         filtersDifferFromLook: json.scheduled_plan.filters_differ_from_look,
         queryId: json.scheduled_plan.query_id,
@@ -95,14 +124,15 @@ export class ActionRequest {
         title: json.scheduled_plan.title,
         type: json.scheduled_plan.type,
         url: json.scheduled_plan.url,
+        downloadUrl: json.scheduled_plan.download_url,
       }
     }
 
-    if (json && json.data) {
+    if (json.data) {
       request.params = json.data
     }
 
-    if (json && json.form_params) {
+    if (json.form_params) {
       request.formParams = json.form_params
     }
 
@@ -114,9 +144,132 @@ export class ActionRequest {
   params: ParamMap = {}
   scheduledPlan?: ActionScheduledPlan
   type!: ActionType
+  actionId?: string
   instanceId?: string
   webhookId?: string
   lookerVersion: string | null = null
+
+  /** `stream` creates and manages a stream of the request data
+   *
+   * ```ts
+   * let prom = await request.stream(async (readable) => {
+   *    return myService.uploadStreaming(readable).promise()
+   * })
+   * ```
+   *
+   * Streaming generally occurs only if Looker sends the data in a streaming fashion via a push url,
+   * however it will also wrap non-streaming attachment data so that actions only need a single implementation.
+   *
+   * @returns A promise returning the same value as the callback's return value.
+   * This promise will resolve after the stream has completed and the callback's promise
+   * has also resolved.
+   * @param callback A function will be caled with a Node.js `Readable` object.
+   * The readable object represents the streaming data.
+   */
+  async stream<T>(callback: (readable: Readable) => Promise<T>): Promise<T> {
+
+    const stream = new PassThrough()
+    const returnPromise = callback(stream)
+
+    const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
+
+    const streamPromise = new Promise<void>((resolve, reject) => {
+      if (url) {
+        httpRequest
+          .get(url)
+          .on("error", (err) => {
+            winston.error(`Request stream error: ${err}\n${err.stack}`)
+            reject(err)
+          })
+          .on("finish", resolve)
+          .pipe(stream)
+          .on("error", (err) => {
+            winston.error(`PassThrough stream error: ${err}\n${err.stack}`)
+            reject(err)
+          })
+      } else {
+        if (this.attachment && this.attachment.dataBuffer) {
+          stream.end(this.attachment.dataBuffer)
+          resolve()
+        } else {
+          reject(
+            "startStream was called on an ActionRequest that does not have" +
+            "a streaming download url or an attachment. Ensure usesStreaming is set properly on the action.")
+        }
+      }
+    })
+
+    const results = await Promise.all([returnPromise, streamPromise])
+    return results[0]
+  }
+
+  /**
+   * A streaming helper for the "json" data format. It handles automatically parsing
+   * the JSON in a streaming fashion. You just need to implement a function that will
+   * be called for each row.
+   *
+   * ```ts
+   * await request.streamJson((row) => {
+   *   // This will be called for each row of data
+   * })
+   * ```
+   *
+   * @returns A promise that will be resolved when streaming is complete.
+   * @param onRow A function that will be called for each streamed row, with the row as the first argument.
+   */
+  async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
+    return new Promise<void>((resolve, reject) => {
+      this.stream(async (readable) => {
+        oboe(readable)
+          .node("![*]", this.safeOboe(readable, reject, onRow))
+          .done(() => resolve())
+      }).then(resolve).catch(reject)
+    })
+  }
+
+  /**
+   * A streaming helper for the "json_detail" data format. It handles automatically parsing
+   * the JSON in a streaming fashion. You can implement an `onFields` callback to get
+   * the field metadata, and an `onRow` callback for each row of data.
+   *
+   * ```ts
+   * await request.streamJsonDetail({
+   *   onFields: (fields) => {
+   *     // This will be called when fields are available
+   *   },
+   *   onRow: (row) => {
+   *     // This will be called for each row of data
+   *   },
+   * })
+   * ```
+   *
+   * @returns A promise that will be resolved when streaming is complete.
+   * @param callbacks An object consisting of several callbacks that will be called
+   * when various parts of the data are parsed.
+   */
+  async streamJsonDetail(callbacks: {
+    onRow: (row: JsonDetailRow) => void,
+    onFields?: (fields: Fieldset) => void,
+    onRanAt?: (iso8601string: string) => void,
+  }) {
+    return new Promise<void>((resolve, reject) => {
+      this.stream(async (readable) => {
+        oboe(readable)
+          .node("data.*", this.safeOboe(readable, reject, callbacks.onRow))
+          .node("!.fields", this.safeOboe(readable, reject, (fields) => {
+            if (callbacks.onFields) {
+              callbacks.onFields(fields)
+            }
+          }))
+          .node("!.ran_at", this.safeOboe(readable, reject, (ranAt) => {
+            if (callbacks.onRanAt) {
+              callbacks.onRanAt(ranAt)
+            }
+          }))
+          .done(() => resolve())
+      }).then(resolve).catch(reject)
+    })
+  }
 
   suggestedFilename() {
     if (this.attachment) {
@@ -160,6 +313,23 @@ export class ActionRequest {
       body = truncateString(body, maxCharacters)
 
       return body
+    }
+  }
+
+  private safeOboe(
+    stream: Readable,
+    reject: (reason?: any) => void,
+    callback: (node: any) => void,
+  ) {
+    return function(this: oboe.Oboe, node: any) {
+      try {
+        callback(node)
+        return oboe.drop
+      } catch (e) {
+        this.abort()
+        stream.destroy()
+        reject(e)
+      }
     }
   }
 

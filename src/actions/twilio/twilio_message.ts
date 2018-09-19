@@ -38,7 +38,7 @@ export class TwilioMessageAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    if (!request.formParams || !request.formParams.message) {
+    if (!request.formParams.message) {
       throw "Need a message."
     }
 

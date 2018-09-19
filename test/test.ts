@@ -12,6 +12,7 @@ winston.remove(winston.transports.Console)
 
 import "../src/actions/index"
 
+import "./test_actions"
 import "./test_server"
 import "./test_smoke"
 
@@ -25,7 +26,10 @@ import "../src/actions/google/test_google_cloud_storage"
 import "../src/actions/hipchat/test_hipchat"
 import "../src/actions/jira/test_jira"
 import "../src/actions/marketo/test_marketo"
+import "../src/actions/queueaction/test_queue_action"
 import "../src/actions/segment/test_segment"
+import "../src/actions/segment/test_segment_group"
+import "../src/actions/segment/test_segment_track"
 import "../src/actions/sendgrid/test_sendgrid"
 import "../src/actions/sftp/test_sftp"
 import "../src/actions/slack/test_slack"

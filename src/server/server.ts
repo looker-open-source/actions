@@ -4,16 +4,19 @@ import * as fs from "fs"
 import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
-
 import * as Hub from "../hub"
+import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
 
 const expressWinston = require("express-winston")
 const uparse = require("url")
+const blocked = require("blocked-at")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
 const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
+
+const expensiveJobQueue = new ExecuteProcessQueue.ExecuteProcessQueue()
 
 export default class Server implements Hub.RouteBuilder {
 
@@ -27,10 +30,14 @@ export default class Server implements Hub.RouteBuilder {
       Raven.config(process.env.ACTION_HUB_RAVEN_DSN, {
         captureUnhandledRejections: true,
         release: statusJson.git_commit,
-        autoBreadcrumbs: true,
+        autoBreadcrumbs: false,
         environment: process.env.ACTION_HUB_BASE_URL,
       }).install()
     }
+
+    blocked((time: number, stack: string[]) => {
+      winston.warn(`Event loop blocked for ${time}ms, operation started here:\n${stack.join("\n")}`)
+    }, {threshold: 100})
 
     if (!process.env.ACTION_HUB_BASE_URL) {
       throw new Error("No ACTION_HUB_BASE_URL environment variable set.")
@@ -51,25 +58,30 @@ export default class Server implements Hub.RouteBuilder {
       winston.debug("Debug Mode")
     }
 
-    Server.listen()
+    const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080
+
+    // Default to 0 to prevent Node from applying timeout to sockets
+    // Load balancers in front of the app may still timeout
+    const timeout = process.env.ACTION_HUB_TIMEOUT ? parseInt(process.env.ACTION_HUB_TIMEOUT, 10) : 0
+
+    Server.listen(port, timeout)
   }
 
-  static listen(port = process.env.PORT || 8080) {
+  static listen(port: number, timeout: number) {
     const app = new Server().app
-    app.listen(port, () => {
+    const nodeServer = app.listen(port, () => {
       winston.info(`Action Hub listening!`, {port})
     })
+    nodeServer.timeout = timeout
   }
 
   app: express.Application
 
+  private actionList?: string = undefined
+
   constructor() {
 
     this.app = express()
-    if (useRaven()) {
-      this.app.use(Raven.requestHandler())
-      this.app.use(Raven.errorHandler())
-    }
     this.app.use(bodyParser.json({limit: "250mb"}))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
@@ -83,14 +95,18 @@ export default class Server implements Hub.RouteBuilder {
     this.app.use(express.static("public"))
 
     this.route("/", async (req, res) => {
-      const request = Hub.ActionRequest.fromRequest(req)
-      const actions = await Hub.allActions({ lookerVersion: request.lookerVersion })
-      const response = {
-        integrations: actions.map((d) => d.asJson(this)),
-        label: process.env.ACTION_HUB_LABEL,
+      if (!this.actionList) {
+        const request = Hub.ActionRequest.fromRequest(req)
+        const actions = await Hub.allActions({ lookerVersion: request.lookerVersion })
+        const response = {
+          integrations: actions.map((d) => d.asJson(this)),
+          label: process.env.ACTION_HUB_LABEL,
+        }
+        this.actionList = JSON.stringify(response)
       }
-      res.json(response)
-      winston.debug(`response: ${JSON.stringify(response)}`)
+      res.type("json")
+      res.send(this.actionList)
+      winston.debug(`response: ${this.actionList}`)
     })
 
     this.route("/actions/:actionId", async (req, res) => {
@@ -101,13 +117,15 @@ export default class Server implements Hub.RouteBuilder {
 
     this.route("/actions/:actionId/execute", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
-      const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      if (action.hasExecute) {
-        const actionResponse = await action.validateAndExecute(request)
-        res.json(actionResponse.asJson())
-      } else {
-        throw "No action defined for action."
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      const actionResponse = await action.validateAndExecute(request, expensiveJobQueue)
+      // Some versions of Looker do not look at the "success" value in the response
+      // if the action returns a 200 status code, even though the Action API specs otherwise.
+      // So we force a non-200 status code as a workaround.
+      if (!actionResponse.success) {
+          res.status(400)
       }
+      res.json(actionResponse.asJson())
     })
 
     this.route("/actions/:actionId/form", async (req, res) => {
@@ -188,15 +206,13 @@ export default class Server implements Hub.RouteBuilder {
     this.app.post(urlPath, async (req, res) => {
       this.logInfo(req, res, "Starting request.")
 
+      let ravenTags = {}
       if (useRaven()) {
-        const data = this.requestLog(req, res)
-        Raven.setContext({
-          instanceId: data.instanceId,
-          webhookId: data.webhookId,
-        })
+        ravenTags = this.requestLog(req, res)
       }
 
-      const tokenMatch = (req.header("authorization") || "").match(TOKEN_REGEX)
+      const headerValue = req.header("authorization")
+      const tokenMatch = headerValue ? headerValue.match(TOKEN_REGEX) : undefined
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})
@@ -207,11 +223,23 @@ export default class Server implements Hub.RouteBuilder {
       try {
         await fn(req, res)
       } catch (e) {
-        this.logPromiseFail(req, res, e)
-      }
-
-      if (useRaven()) {
-        Raven.setContext({})
+        this.logError(req, res, "Error on request")
+        if (typeof(e) === "string") {
+          if (!res.headersSent) {
+            res.status(404)
+            res.json({success: false, error: e})
+          }
+          this.logError(req, res, e)
+        } else {
+          if (!res.headersSent) {
+            res.status(500)
+            res.json({ success: false, error: "Internal server error." })
+          }
+          this.logError(req, res, e)
+          if (useRaven()) {
+            Raven.captureException(e, { tags: ravenTags })
+          }
+        }
       }
 
     })

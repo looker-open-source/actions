@@ -27,8 +27,10 @@ export class ActionResponse {
 
   asJson(): any {
     const errs: any = {}
-    for (const error of (this.validationErrors || [])) {
-      errs[error.field] = error.message
+    if (this.validationErrors) {
+      for (const error of this.validationErrors) {
+        errs[error.field] = error.message
+      }
     }
     return {
       message: this.message,
