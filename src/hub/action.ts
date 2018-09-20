@@ -75,7 +75,6 @@ export abstract class Action {
       supported_action_types: this.supportedActionTypes,
       supported_formats: this.supportedFormats,
       supported_formattings: this.supportedFormattings,
-      supported_download_settings: this.supportedDownloadSettings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       supported_download_settings: (
         this.usesStreaming

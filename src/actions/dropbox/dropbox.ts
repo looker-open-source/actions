@@ -13,7 +13,7 @@ export class DropboxAction extends Hub.OAuthAction {
     iconName = "dropbox/dropbox.png"
     description = "Send query results directly to a file in your Dropbox."
     supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
-    supportedDownloadSettings = ["url"]
+    usesStreaming = true
     requiredFields = []
     params = [{
       name: "dropbox_access_token",
