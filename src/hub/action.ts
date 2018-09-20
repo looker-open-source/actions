@@ -107,7 +107,10 @@ export abstract class Action {
       throw "A streaming action was sent incompatible data. The action must have a download url or an attachment."
     }
 
-    if (this.executeInOwnProcess) {
+    // Forking is on by default but can be disabled by setting ACTION_HUB_ENABLE_FORKING=false
+    const executeInOwnProcessEnabled = process.env.ACTION_HUB_ENABLE_FORKING !== "false"
+
+    if (this.executeInOwnProcess && executeInOwnProcessEnabled) {
       if (!queue) {
         throw "An action marked for being executed on a separate process needs a ExecuteProcessQueue."
       }
