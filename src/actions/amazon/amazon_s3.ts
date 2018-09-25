@@ -101,5 +101,3 @@ export class AmazonS3Action extends Hub.Action {
   }
 
 }
-
-Hub.addAction(new AmazonS3Action())
