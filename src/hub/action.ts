@@ -174,7 +174,7 @@ export abstract class Action {
 
 export abstract class OAuthAction extends Action {
   abstract async oauthCheck(request: ActionRequest): Promise<boolean>
-  abstract async oauthUrl(redirectUri: string, token: string): Promise<string>
+  abstract async oauthUrl(redirectUri: string, stateUrl: string): Promise<string>
   abstract async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string): Promise<string>
 }
 

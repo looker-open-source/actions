@@ -146,9 +146,8 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action && Hub.isOauthAction(action)) {
         const parts = uparse.parse(req.url, true)
-        const token = parts.query.token
-        const url = await action.oauthUrl(this.oauthRedirectUrl(action), token)
-        winston.info("redirect uri is: " + url)
+        const stateUrl = parts.query.stateUrl
+        const url = await action.oauthUrl(this.oauthRedirectUrl(action), stateUrl)
         res.redirect(url)
       } else {
         throw "Action does not support OAuth."
@@ -165,13 +164,11 @@ export default class Server implements Hub.RouteBuilder {
     })
 
     this.app.get('/actions/:actionId/oauth_redirect', async (req, res) => {
-      winston.info("In the oauth redirect: " + req.url)
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action && Hub.isOauthAction(action)) {
         try {
-          const data = await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
-          res.json({ success: true, data: data })
+          await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
         } catch (e) {
           this.logPromiseFail(req, res, e)
         }
@@ -198,7 +195,6 @@ export default class Server implements Hub.RouteBuilder {
 
   oauthRedirectUrl(action: Hub.Action) {
     const url = this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
-    winston.info("create redirect uri:" + url)
     return url
   }
 
