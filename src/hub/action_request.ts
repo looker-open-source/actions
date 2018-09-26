@@ -192,7 +192,6 @@ export class ActionRequest {
           })
           .on("finish", () => {
             winston.info(`[stream] streaming via download url finished`, this.logInfo)
-            resolve()
           })
           .on("abort", () => {
             winston.info(`[stream] streaming via download url aborted`, this.logInfo)
@@ -214,6 +213,7 @@ export class ActionRequest {
           })
           .on("finish", () => {
             winston.info(`[stream] PassThrough stream finished`, this.logInfo)
+            resolve()
           })
           .on("close", () => {
             winston.info(`[stream] PassThrough stream closed`, this.logInfo)
