@@ -39,6 +39,8 @@ export class DropboxAction extends Hub.OAuthAction {
     const fileBuf = request.attachment!.dataBuffer || Buffer.from("")
     await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then( (_dropResp) => {
       resp.success = true
+      resp.state = new Hub.ActionState()
+      resp.state.data = "reset"
     }).catch( (err) => {
       winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
       resp.success = false

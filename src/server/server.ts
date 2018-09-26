@@ -139,9 +139,8 @@ export default class Server implements Hub.RouteBuilder {
       }
     })
 
-    // OAuth flows
-    this.app.get('/actions/:actionId/oauth', async (req, res) => {
-      winston.info("In the oauth actual: " + req.url)
+    // Initial OAuth flow request from Resource Owner
+    this.app.get("/actions/:actionId/oauth", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action && Hub.isOauthAction(action)) {
@@ -154,7 +153,7 @@ export default class Server implements Hub.RouteBuilder {
       }
     })
 
-    this.app.get('/actions/:actionId/oauth_check', async (req, res) => {
+    this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
       if (action && Hub.isOauthAction(action)) {
@@ -163,14 +162,17 @@ export default class Server implements Hub.RouteBuilder {
       }
     })
 
-    this.app.get('/actions/:actionId/oauth_redirect', async (req, res) => {
+    // Response from Authorization Server with response from OAuth flow
+    this.app.get("/actions/:actionId/oauth_redirect", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action && Hub.isOauthAction(action)) {
         try {
           await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
+          res.statusCode = 200
         } catch (e) {
           this.logPromiseFail(req, res, e)
+          res.statusCode = 400
         }
       } else {
         throw "Action does not support OAuth."
