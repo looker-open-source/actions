@@ -259,7 +259,6 @@ export class ActionRequest {
             onRow(row)
           }))
           .done(() => {
-            resolve()
             winston.info(`[streamJson] oboe reports done`, {...this.logInfo, rows})
           })
       }).then(() => {
@@ -318,7 +317,6 @@ export class ActionRequest {
             }
           }))
           .done(() => {
-            resolve()
             winston.info(`[streamJsonDetail] oboe reports done`, {...this.logInfo, rows})
           })
       }).then(() => {
