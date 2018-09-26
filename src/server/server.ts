@@ -63,7 +63,7 @@ export default class Server implements Hub.RouteBuilder {
 
     // Default to 0 to prevent Node from applying timeout to sockets
     // Load balancers in front of the app may still timeout
-    const timeout = process.env.ACTION_HUB_TIMEOUT ? parseInt(process.env.ACTION_HUB_TIMEOUT, 10) : 0
+    const timeout = process.env.ACTION_HUB_SOCKET_TIMEOUT ? parseInt(process.env.ACTION_HUB_SOCKET_TIMEOUT, 10) : 0
 
     Server.listen(port, timeout)
   }

@@ -170,6 +170,10 @@ export class ActionRequest {
 
     const stream = new PassThrough()
     const returnPromise = callback(stream)
+    const timeout = process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT ?
+        parseInt(process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT, 10)
+      :
+        13 * 60 * 1000
 
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
 
@@ -177,7 +181,7 @@ export class ActionRequest {
       if (url) {
         winston.info(`beginning stream via download URL`, this.logInfo)
         httpRequest
-          .get(url)
+          .get(url, {timeout})
           .on("error", (err) => {
             winston.error(`Request stream error: ${err}\n${err.stack}`, this.logInfo)
             reject(err)
