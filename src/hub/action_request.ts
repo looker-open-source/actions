@@ -180,15 +180,20 @@ export class ActionRequest {
     const streamPromise = new Promise<void>((resolve, reject) => {
       if (url) {
         winston.info(`[stream] beginning stream via download url`, this.logInfo)
+        let hasResolved = false
         httpRequest
           .get(url, {timeout})
           .on("error", (err) => {
-            winston.error(`[stream] request stream error`, {
-              ...this.logInfo,
-              error: err,
-              stack: err.stack,
-            })
-            reject(err)
+            if (hasResolved && (err as any).code === "ECONNRESET") {
+              winston.info(`[stream] ignoring ECONNRESET that occured after streaming finished`, this.logInfo)
+            } else {
+              winston.error(`[stream] request stream error`, {
+                ...this.logInfo,
+                error: err.message,
+                stack: err.stack,
+              })
+              reject(err)
+            }
           })
           .on("finish", () => {
             winston.info(`[stream] streaming via download url finished`, this.logInfo)
@@ -214,6 +219,7 @@ export class ActionRequest {
           .on("finish", () => {
             winston.info(`[stream] PassThrough stream finished`, this.logInfo)
             resolve()
+            hasResolved = true
           })
           .on("close", () => {
             winston.info(`[stream] PassThrough stream closed`, this.logInfo)
