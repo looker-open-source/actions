@@ -170,41 +170,59 @@ export class ActionRequest {
 
     const stream = new PassThrough()
     const returnPromise = callback(stream)
+    const timeout = process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT ?
+        parseInt(process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT, 10)
+      :
+        13 * 60 * 1000
 
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
 
     const streamPromise = new Promise<void>((resolve, reject) => {
       if (url) {
-        winston.info(`beginning stream via download URL`, this.logInfo)
+        winston.info(`[stream] beginning stream via download url`, this.logInfo)
+        let hasResolved = false
         httpRequest
-          .get(url)
+          .get(url, {timeout})
           .on("error", (err) => {
-            winston.error(`Request stream error: ${err}\n${err.stack}`, this.logInfo)
-            reject(err)
+            if (hasResolved && (err as any).code === "ECONNRESET") {
+              winston.info(`[stream] ignoring ECONNRESET that occured after streaming finished`, this.logInfo)
+            } else {
+              winston.error(`[stream] request stream error`, {
+                ...this.logInfo,
+                error: err.message,
+                stack: err.stack,
+              })
+              reject(err)
+            }
           })
           .on("finish", () => {
-            winston.info(`streaming via download URL finished`, this.logInfo)
-            resolve()
+            winston.info(`[stream] streaming via download url finished`, this.logInfo)
           })
           .on("abort", () => {
-            winston.info(`streaming via download URL aborted`, this.logInfo)
+            winston.info(`[stream] streaming via download url aborted`, this.logInfo)
           })
           .on("response", () => {
-            winston.info(`got response from download url`, this.logInfo)
+            winston.info(`[stream] got response from download url`, this.logInfo)
           })
           .on("close", () => {
-            winston.info(`request stream closed`, this.logInfo)
+            winston.info(`[stream] request stream closed`, this.logInfo)
           })
           .pipe(stream)
           .on("error", (err) => {
-            winston.error(`PassThrough stream error: ${err}\n${err.stack}`, this.logInfo)
+            winston.error(`[stream] PassThrough stream error`, {
+              ...this.logInfo,
+              error: err,
+              stack: err.stack,
+            })
             reject(err)
           })
           .on("finish", () => {
-            winston.info(`PassThrough stream finished`, this.logInfo)
+            winston.info(`[stream] PassThrough stream finished`, this.logInfo)
+            resolve()
+            hasResolved = true
           })
           .on("close", () => {
-            winston.info(`PassThrough stream closed`, this.logInfo)
+            winston.info(`[stream] PassThrough stream closed`, this.logInfo)
           })
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
@@ -239,15 +257,23 @@ export class ActionRequest {
    */
   async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
     return new Promise<void>((resolve, reject) => {
+      let rows = 0
       this.stream(async (readable) => {
         oboe(readable)
-          .node("![*]", this.safeOboe(readable, reject, onRow))
+          .node("![*]", this.safeOboe(readable, reject, (row) => {
+            rows++
+            onRow(row)
+          }))
           .done(() => {
-            winston.info(`streamJson: oboe reports done`, this.logInfo)
-            resolve()
+            winston.info(`[streamJson] oboe reports done`, {...this.logInfo, rows})
           })
-      }).then(resolve).catch((error) => {
-        winston.info(`streamJson reported an error`, this.logInfo)
+      }).then(() => {
+        winston.info(`[streamJson] complete`, {...this.logInfo, rows})
+        resolve()
+      }).catch((error) => {
+        // This error should not be logged as it could come from an action
+        // which might decide to include user information in the error message
+        winston.info(`[streamJson] reported an error`, {...this.logInfo, rows})
         reject(error)
       })
     })
@@ -279,9 +305,13 @@ export class ActionRequest {
     onRanAt?: (iso8601string: string) => void,
   }) {
     return new Promise<void>((resolve, reject) => {
+      let rows = 0
       this.stream(async (readable) => {
         oboe(readable)
-          .node("data.*", this.safeOboe(readable, reject, callbacks.onRow))
+          .node("data.*", this.safeOboe(readable, reject, (row) => {
+            rows++
+            callbacks.onRow(row)
+          }))
           .node("!.fields", this.safeOboe(readable, reject, (fields) => {
             if (callbacks.onFields) {
               callbacks.onFields(fields)
@@ -293,11 +323,15 @@ export class ActionRequest {
             }
           }))
           .done(() => {
-            winston.info(`streamJsonDetail: oboe reports done`, this.logInfo)
-            resolve()
+            winston.info(`[streamJsonDetail] oboe reports done`, {...this.logInfo, rows})
           })
-      }).then(resolve).catch((error) => {
-        winston.info(`streamJsonDetail reported an error`, this.logInfo)
+      }).then(() => {
+        winston.info(`[streamJsonDetail] complete`, {...this.logInfo, rows})
+        resolve()
+      }).catch((error) => {
+        // This error should not be logged as it could come from an action
+        // which might decide to include user information in the error message
+        winston.info(`[streamJsonDetail] reported an error`, {...this.logInfo, rows})
         reject(error)
       })
     })
