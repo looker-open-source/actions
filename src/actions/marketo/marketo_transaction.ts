@@ -24,9 +24,10 @@ export default class MarketoTransaction {
 
   // rows: Hub.JsonDetail.Row[] = []
   // queue: Promise<any>[] = []
-  // fieldMap: any
+  fieldMap: any
   marketo: any
-  // lookupField ? = ""
+  campaignId?: string
+  lookupField?: string
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
 
@@ -34,29 +35,15 @@ export default class MarketoTransaction {
 
     console.time("all done")
 
-    if (!(request.attachment && request.attachment.dataJSON)) {
-      throw "No attached json."
-    }
-
-    const campaignId = request.formParams.campaignId
-    if (!campaignId) {
+    this.campaignId = request.formParams.campaignId
+    if (!this.campaignId) {
       throw "Missing Campaign ID."
     }
 
-    const requestJSON = request.attachment.dataJSON
-    if (!requestJSON.fields || !requestJSON.data) {
-      throw "Request payload is an invalid format."
-    }
-
-    const fieldMap = this.getFieldMap(Hub.allFields(requestJSON.fields))
-
     // determine if lookupField is present in fields
-    const lookupField = request.formParams.lookupField
-    if (
-      ! lookupField
-      || ! Object.keys(fieldMap).find((name) => fieldMap[name].indexOf(lookupField) !== -1)
-    ) {
-      throw "Marketo Lookup Field for lead not present in query."
+    this.lookupField = request.formParams.lookupField
+    if (!this.lookupField) {
+      throw "Missing Lookup Field."
     }
 
     this.marketo = this.marketoClientFromRequest(request)
@@ -68,16 +55,20 @@ export default class MarketoTransaction {
 
     console.time("streamJsonDetail")
     await request.streamJsonDetail({
-      // onFields: (fields) => {
-      //   console.log("onFields", fields)
-      //   // build fieldMap for getLeadtFromRow to refer to?
-      //   // for now constructing it above from requestJSON.fields
-      //   // instead of here, cuz we need it to valid the form input
-      // },
+      onFields: (fields) => {
+        console.log("onFields", fields)
+        this.fieldMap = this.getFieldMap(Hub.allFields(fields))
+
+        if (! Object.keys(this.fieldMap).find((name) => this.fieldMap[name].indexOf(this.lookupField) !== -1)) {
+          throw "Marketo Lookup Field for lead not present in query."
+        }
+      },
       // onRanAt: (iso8601string) => {
       //   console.log("onRanAt", iso8601string)
       // },
       onRow: (row) => {
+        console.log("row", row)
+        if (! this.fieldMap) { return }
         // counter++
         // if (counter < min) {
         //   return
@@ -95,7 +86,7 @@ export default class MarketoTransaction {
     console.log("rows.length", rows.length)
 
     console.time("getLeadList")
-    const leadList = this.getLeadList(fieldMap, rows)
+    const leadList = this.getLeadList(rows)
     console.timeEnd("getLeadList")
 
     console.time("chunkify")
@@ -103,7 +94,7 @@ export default class MarketoTransaction {
     console.timeEnd("chunkify")
 
     console.time("sendChunks")
-    const result = await this.sendChunks(chunks, lookupField, campaignId)
+    const result = await this.sendChunks(chunks)
     console.timeEnd("sendChunks")
 
     console.timeEnd("all done")
@@ -112,7 +103,7 @@ export default class MarketoTransaction {
     return new Hub.ActionResponse({ success: true })
   }
 
-  async sendChunks(chunks: any[][], lookupField: string, campaignId: string) {
+  async sendChunks(chunks: any[][]) {
     const result: any = {
       skipped: [],
       leadErrors: [],
@@ -122,16 +113,16 @@ export default class MarketoTransaction {
     for (const chunk of chunks) {
       counter++
       console.time(`chunk ${counter}`)
-      await this.sendChunk(chunk, lookupField, campaignId, result)
+      await this.sendChunk(chunk, result)
       console.timeEnd(`chunk ${counter}`)
     }
     return result
   }
 
-  async sendChunk(chunk: any[], lookupField: string, campaignId: string, result: any) {
+  async sendChunk(chunk: any[], result: any) {
     try {
       console.time("leadResponse")
-      const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField })
+      const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField: this.lookupField })
       console.timeEnd("leadResponse")
       if (Array.isArray(leadResponse.errors)) {
         result.leadErrors = result.leadErrors.concat(leadResponse.errors)
@@ -148,7 +139,7 @@ export default class MarketoTransaction {
       })
 
       console.time("campaignResponse")
-      const campaignResponse = await this.marketo.campaign.request(campaignId, ids)
+      const campaignResponse = await this.marketo.campaign.request(this.campaignId, ids)
       console.timeEnd("campaignResponse")
       if (Array.isArray(campaignResponse.errors)) {
         result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
@@ -207,13 +198,13 @@ export default class MarketoTransaction {
     return fieldMap
   }
 
-  private getLeadList(fieldMap: {[key: string]: string[]}, rows: Hub.JsonDetail.Row[]) {
+  private getLeadList(rows: Hub.JsonDetail.Row[]) {
     // Create the list of leads to be sent
     const leadList: {[name: string]: any}[] = []
     for (const leadRow of rows) {
       const singleLead: {[name: string]: any} = {}
-      for (const field of Object.keys(fieldMap)) {
-        for (const tag of fieldMap[field]) {
+      for (const field of Object.keys(this.fieldMap)) {
+        for (const tag of this.fieldMap[field]) {
           singleLead[tag] = leadRow[field].value
         }
       }
