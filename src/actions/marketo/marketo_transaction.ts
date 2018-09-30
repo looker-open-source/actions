@@ -94,10 +94,6 @@ export default class MarketoTransaction {
 
     console.log("rows.length", rows.length)
 
-    if (rows) {
-      return new Hub.ActionResponse({ success: false, message: "A message" })
-    }
-
     console.time("getLeadList")
     const leadList = this.getLeadList(fieldMap, rows)
     console.timeEnd("getLeadList")
