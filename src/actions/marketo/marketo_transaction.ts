@@ -83,6 +83,18 @@ export default class MarketoTransaction {
     })
     console.timeEnd("streamJsonDetail")
 
+    rows.push({
+      "marketo_license_users.email": { value: "acliffordhubspot.com" },
+      "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
+      "marketo_license_users.is_admin": { value: "false" },
+      "marketo_license_users.is_current_user": { value: "true" },
+      "marketo_license_users.is_mailable": { value: "true" },
+      "marketo_license_users.is_technical_contact": { value: "false" },
+      "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b3" },
+      "marketo_license_users.subscribed_to_marketing": { value: "true" },
+      "marketo_license_users.subscribed_to_release": { value: "true" },
+    })
+
     console.log("rows.length", rows.length)
 
     console.time("getLeadList")
