@@ -66,11 +66,9 @@ export default class MarketoTransaction {
         }
       },
       onRow: (row) => {
-        console.log("row", row)
-        if (! this.fieldMap) { return }
-
         // add the row to our row queue
         rows.push(row)
+        console.log(rows.length)
       },
     })
     console.timeEnd("streamJsonDetail")
@@ -213,26 +211,39 @@ export default class MarketoTransaction {
       result.skipped.length
       || result.leadErrors.length
       || result.campaignErrors.length
-      )
-    }
+    )
+  }
 
-    private getErrorMessage(result: Result) {
-      const condensed: any = {}
-      if (result.skipped.length) {
-        condensed.skipped = result.skipped.map((item: any) => {
-          // return email and first reason for each skipped item
-          return {
-            email: item.email,
-            reason: item.result.reasons[0].message,
-          }
-        })
-      }
-      if (result.leadErrors.length) {
-        condensed.leadErrors = result.leadErrors
-      }
-      if (result.campaignErrors.length) {
-        condensed.campaignErrors = result.campaignErrors
-      }
-      return JSON.stringify(condensed)
+  private getErrorMessage(result: Result) {
+    const condensed: any = {}
+    if (result.skipped.length) {
+      condensed.skipped = this.getSkippedReasons(result.skipped)
     }
+    if (result.leadErrors.length) {
+      condensed.leadErrors = result.leadErrors
+    }
+    if (result.campaignErrors.length) {
+      condensed.campaignErrors = result.campaignErrors
+    }
+    return JSON.stringify(condensed)
+  }
+
+  private getSkippedReasons(skipped: any[]) {
+    const condensed = skipped.map((item: any) => {
+      // return email and first reason for each skipped item
+      return {
+        email: item.email,
+        reason: item.result.reasons[0].message,
+      }
+    })
+    const reasons: any = {}
+    condensed.forEach((item: any) => {
+      if (! reasons[item.reason]) {
+        reasons[item.reason] = []
+      }
+      reasons[item.reason].push(item.email)
+    })
+    return reasons
+  }
+
 }
