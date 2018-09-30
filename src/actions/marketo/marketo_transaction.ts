@@ -128,12 +128,13 @@ export default class MarketoTransaction {
     console.timeEnd("sendChunks")
 
     console.timeEnd("all done")
-    logJson("result", result)
 
     if (this.hasErrors(result)) {
+      const message = this.getErrorMessage(result)
+      console.log("message", message)
       return new Hub.ActionResponse({
         success: false,
-        message: this.getErrorMessage(result),
+        message,
       })
     }
 
