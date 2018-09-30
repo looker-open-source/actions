@@ -12,6 +12,12 @@ function logJson(label: string, object: any) {
   console.log(json)
 }
 
+interface Result {
+  skipped: any[],
+  leadErrors: any[],
+  campaignErrors: any[]
+}
+
 export default class MarketoTransaction {
 
   private static chunkify(toChunk: any[], chunkSize: number) {
@@ -95,6 +101,18 @@ export default class MarketoTransaction {
       "marketo_license_users.subscribed_to_release": { value: "true" },
     })
 
+    rows.push({
+      "marketo_license_users.email": { value: "nickfoo@.com" },
+      "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
+      "marketo_license_users.is_admin": { value: "false" },
+      "marketo_license_users.is_current_user": { value: "true" },
+      "marketo_license_users.is_mailable": { value: "true" },
+      "marketo_license_users.is_technical_contact": { value: "false" },
+      "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b4" },
+      "marketo_license_users.subscribed_to_marketing": { value: "true" },
+      "marketo_license_users.subscribed_to_release": { value: "true" },
+    })
+
     console.log("rows.length", rows.length)
 
     console.time("getLeadList")
@@ -112,11 +130,18 @@ export default class MarketoTransaction {
     console.timeEnd("all done")
     logJson("result", result)
 
+    if (this.hasErrors(result)) {
+      return new Hub.ActionResponse({
+        success: false,
+        message: this.getErrorMessage(result),
+      })
+    }
+
     return new Hub.ActionResponse({ success: true })
   }
 
   async sendChunks(chunks: any[][]) {
-    const result: any = {
+    const result: Result = {
       skipped: [],
       leadErrors: [],
       campaignErrors: [],
@@ -162,40 +187,6 @@ export default class MarketoTransaction {
     }
   }
 
-  //   // // Push leads into Marketo and affiliate with a campaign
-  //   // const chunked = MarketoAction.chunkify(leadList, numLeadsAllowedPerCall)
-  //   // const marketoClient = this.marketoClientFromRequest(request)
-  //   // const errors: {message: string}[] = []
-
-  //   // for (const chunk of chunked) {
-  //   //   try {
-  //   //     const leadResponse = await marketoClient.lead.createOrUpdate(chunk, {lookupField})
-  //   //     if (leadResponse.success && leadResponse.success === false) {
-  //   //       errors.concat(leadResponse.errors)
-  //   //       break
-  //   //     }
-  //   //     const justIDs = leadResponse.result.filter((lead: {id: any}) => lead.id !== null)
-  //   //       .map((lead: {id: any}) => ({ id: lead.id }))
-  //   //     const campaignResponse = await marketoClient.campaign.request(request.formParams.campaignID, justIDs)
-  //   //     if (campaignResponse.success && campaignResponse.success === false) {
-  //   //       errors.concat(campaignResponse.errors)
-  //   //       break
-  //   //     }
-  //   //   } catch (e) {
-  //   //     errors.push(e)
-  //   //   }
-  //   // }
-
-  //   // if (errors.length > 0) {
-  //   //   return new Hub.ActionResponse({
-  //   //     success: false,
-  //   //     message: errors.map((e) => e.message).join(", "),
-  //   //   })
-  //   // } else {
-  //   return new Hub.ActionResponse({ success: true })
-  //   // }
-  // }
-
   private getFieldMap(fields: Hub.Field[]) {
     // Map the looker columns to the Marketo columns using tags
     const fieldMap: {[name: string]: string[]} = {}
@@ -234,4 +225,31 @@ export default class MarketoTransaction {
     })
   }
 
+  private hasErrors(result: Result) {
+    return (
+      result.skipped.length
+      || result.leadErrors.length
+      || result.campaignErrors.length
+      )
+    }
+
+    private getErrorMessage(result: Result) {
+      const condensed: any = {}
+      if (result.skipped.length) {
+        condensed.skipped = result.skipped.map((item: any) => {
+          // return email and first reason for each skipped item
+          return {
+            email: item.email,
+            reason: item.result.reasons[0].message,
+          }
+        })
+      }
+      if (result.leadErrors.length) {
+        condensed.leadErrors = result.leadErrors
+      }
+      if (result.campaignErrors.length) {
+        condensed.campaignErrors = result.campaignErrors
+      }
+      return JSON.stringify(condensed)
+    }
 }
