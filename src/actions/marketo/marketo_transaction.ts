@@ -46,7 +46,6 @@ export default class MarketoTransaction {
       throw "Missing Campaign ID."
     }
 
-    // determine if lookupField is present in fields
     this.lookupField = request.formParams.lookupField
     if (!this.lookupField) {
       throw "Missing Lookup Field."
@@ -55,33 +54,20 @@ export default class MarketoTransaction {
     this.marketo = this.marketoClientFromRequest(request)
     const rows: Hub.JsonDetail.Row[] = []
 
-    // let counter = 0
-    // const min = 0
-    // const max = min + numLeadsAllowedPerCall
-
     console.time("streamJsonDetail")
     await request.streamJsonDetail({
       onFields: (fields) => {
         console.log("onFields", fields)
         this.fieldMap = this.getFieldMap(Hub.allFields(fields))
 
+        // determine if lookupField is present in fields
         if (! Object.keys(this.fieldMap).find((name) => this.fieldMap[name].indexOf(this.lookupField) !== -1)) {
           throw "Marketo Lookup Field for lead not present in query."
         }
       },
-      // onRanAt: (iso8601string) => {
-      //   console.log("onRanAt", iso8601string)
-      // },
       onRow: (row) => {
         console.log("row", row)
         if (! this.fieldMap) { return }
-        // counter++
-        // if (counter < min) {
-        //   return
-        // }
-        // if (counter >= max) {
-        //   return
-        // }
 
         // add the row to our row queue
         rows.push(row)
@@ -89,29 +75,29 @@ export default class MarketoTransaction {
     })
     console.timeEnd("streamJsonDetail")
 
-    rows.push({
-      "marketo_license_users.email": { value: "acliffordhubspot.com" },
-      "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
-      "marketo_license_users.is_admin": { value: "false" },
-      "marketo_license_users.is_current_user": { value: "true" },
-      "marketo_license_users.is_mailable": { value: "true" },
-      "marketo_license_users.is_technical_contact": { value: "false" },
-      "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b3" },
-      "marketo_license_users.subscribed_to_marketing": { value: "true" },
-      "marketo_license_users.subscribed_to_release": { value: "true" },
-    })
+    // rows.push({
+    //   "marketo_license_users.email": { value: "acliffordhubspot.com" },
+    //   "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
+    //   "marketo_license_users.is_admin": { value: "false" },
+    //   "marketo_license_users.is_current_user": { value: "true" },
+    //   "marketo_license_users.is_mailable": { value: "true" },
+    //   "marketo_license_users.is_technical_contact": { value: "false" },
+    //   "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b3" },
+    //   "marketo_license_users.subscribed_to_marketing": { value: "true" },
+    //   "marketo_license_users.subscribed_to_release": { value: "true" },
+    // })
 
-    rows.push({
-      "marketo_license_users.email": { value: "nickfoo@.com" },
-      "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
-      "marketo_license_users.is_admin": { value: "false" },
-      "marketo_license_users.is_current_user": { value: "true" },
-      "marketo_license_users.is_mailable": { value: "true" },
-      "marketo_license_users.is_technical_contact": { value: "false" },
-      "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b4" },
-      "marketo_license_users.subscribed_to_marketing": { value: "true" },
-      "marketo_license_users.subscribed_to_release": { value: "true" },
-    })
+    // rows.push({
+    //   "marketo_license_users.email": { value: "nickfoo@.com" },
+    //   "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
+    //   "marketo_license_users.is_admin": { value: "false" },
+    //   "marketo_license_users.is_current_user": { value: "true" },
+    //   "marketo_license_users.is_mailable": { value: "true" },
+    //   "marketo_license_users.is_technical_contact": { value: "false" },
+    //   "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b4" },
+    //   "marketo_license_users.subscribed_to_marketing": { value: "true" },
+    //   "marketo_license_users.subscribed_to_release": { value: "true" },
+    // })
 
     console.log("rows.length", rows.length)
 
@@ -147,12 +133,8 @@ export default class MarketoTransaction {
       leadErrors: [],
       campaignErrors: [],
     }
-    let counter = 0
     for (const chunk of chunks) {
-      counter++
-      console.time(`chunk ${counter}`)
       await this.sendChunk(chunk, result)
-      console.timeEnd(`chunk ${counter}`)
     }
     return result
   }
