@@ -229,20 +229,17 @@ export default class MarketoTransaction {
   }
 
   private getSkippedReasons(skipped: any[]) {
-    const condensed = skipped.map((item: any) => {
-      // return email and first reason for each skipped item
-      return {
-        email: item.email,
-        reason: item.result.reasons[0].message,
-      }
-    })
     const reasons: any = {}
-    condensed.forEach((item: any) => {
-      if (! reasons[item.reason]) {
-        reasons[item.reason] = []
-      }
-      reasons[item.reason].push(item.email)
+
+    skipped.forEach((item: any) => {
+      // get the reason item was skipped
+      const reason = item.result.reasons[0].message
+      // get the list of emails with that same reason
+      // or create the list if this is the first one
+      const list = reasons[reason] || (reasons[reason] = [])
+      list.push(item.email)
     })
+
     return reasons
   }
 
