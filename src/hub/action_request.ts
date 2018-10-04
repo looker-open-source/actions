@@ -174,6 +174,10 @@ export class ActionRequest {
         parseInt(process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT, 10)
       :
         13 * 60 * 1000
+    const maxSockets = process.env.ACTION_HUB_STREAM_REQUEST_MAX_SOCKETS ?
+        parseInt(process.env.ACTION_HUB_STREAM_REQUEST_MAX_SOCKETS, 10)
+      :
+        100
 
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
 
@@ -182,7 +186,10 @@ export class ActionRequest {
         winston.info(`[stream] beginning stream via download url`, this.logInfo)
         let hasResolved = false
         httpRequest
-          .get(url, {timeout})
+          .get(url, {
+            timeout,
+            pool: {maxSockets},
+          })
           .on("error", (err) => {
             if (hasResolved && (err as any).code === "ECONNRESET") {
               winston.info(`[stream] ignoring ECONNRESET that occured after streaming finished`, this.logInfo)
