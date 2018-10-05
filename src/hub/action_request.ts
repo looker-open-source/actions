@@ -198,6 +198,10 @@ export class ActionRequest {
           .on("finish", () => {
             winston.info(`[stream] streaming via download url finished`, this.logInfo)
           })
+          .on("socket", (socket) => {
+            winston.info(`[stream] setting keepalive on socket`, this.logInfo)
+            socket.setKeepAlive(true)
+          })
           .on("abort", () => {
             winston.info(`[stream] streaming via download url aborted`, this.logInfo)
           })
