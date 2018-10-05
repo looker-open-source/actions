@@ -14,9 +14,10 @@ function logJson(label: string, object: any) {
 }
 
 interface Result {
+  leads: any[],
   skipped: any[],
   leadErrors: any[],
-  campaignErrors: any[]
+  campaignErrors: any[],
 }
 
 export default class MarketoTransaction {
@@ -120,16 +121,16 @@ export default class MarketoTransaction {
 
   async sendChunk(chunk: any[]) {
     const result: Result = {
+      leads: this.getLeadList(chunk),
       skipped: [],
       leadErrors: [],
       campaignErrors: [],
     }
 
-    const leads = this.getLeadList(chunk)
     try {
-      const leadResponse = await this.marketo.lead.createOrUpdate(leads, { lookupField: this.lookupField })
-      if (Array.isArray(leadResponse.errors)) {
-        result.leadErrors = result.leadErrors.concat(leadResponse.errors)
+      const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
+      if (Array.isArray(leadResponse.errors) && leadResponse.errors.length) {
+        result.leadErrors = leadResponse.errors
       }
 
       const ids: any[] = []
@@ -137,21 +138,19 @@ export default class MarketoTransaction {
         if (lead.id) {
           ids.push({id: lead.id})
         } else {
-          chunk[i].result = lead
+          result.leads[i].result = lead
           result.skipped.push(chunk[i])
         }
       })
 
       const campaignResponse = await this.marketo.campaign.request(this.campaignId, ids)
-      if (Array.isArray(campaignResponse.errors)) {
-        result.campaignErrors = result.campaignErrors.concat(campaignResponse.errors)
+      if (Array.isArray(campaignResponse.errors) && campaignResponse.errors.length) {
+        result.campaignErrors = campaignResponse.errors
       }
 
     } catch (err) {
       console.error(err)
     }
-
-    logJson("result", result)
 
     return result
   }
