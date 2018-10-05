@@ -23,9 +23,14 @@ class ActionHubTaskSet(TaskSet):
         headers['X-Looker-Webhook-Id'] = "looker-actions-load-test-simulation"
         headers['Authorization'] = 'Token token="' + os.getenv('ACTION_HUB_LOAD_TESTING_API_KEY') + '"'
 
-        response = self.client.post(uri, json=data, headers=headers)
-        print("Response status code:", response.status_code)
-        print("Response content:", response.text)
+        with self.client.post(uri, catch_response=True, json=data, headers=headers) as response:
+            if response.status_code == 200:
+                rj = json.loads(response.text)
+                if not rj['looker']['success']:
+                    response.failure(rj['looker']['message'] or response.text)
+
+            print("Response status:", response.status_code)
+            print("Response:", response.text)
 
 class MyLocust(HttpLocust):
     task_set = ActionHubTaskSet
