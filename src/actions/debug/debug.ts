@@ -3,6 +3,12 @@ import * as winston from "winston"
 
 import * as Hub from "../../hub"
 
+export function registerDebugAction() {
+  if (process.env.ACTION_HUB_DEBUG_ENDPOINT) {
+    Hub.addAction(new DebugAction())
+  }
+}
+
 export class DebugAction extends Hub.Action {
 
   name = "debug"
@@ -10,6 +16,7 @@ export class DebugAction extends Hub.Action {
   description = "Sends data to a sample website and optionally sleeps."
   supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Dashboard, Hub.ActionType.Query]
   params = []
+  executeInOwnProcess = true
 
   async execute(request: Hub.ActionRequest) {
 
