@@ -100,6 +100,7 @@ export default class MarketoTransaction {
     const results = await queue.finish()
 
     logJson("results", results)
+    logJson("results[0]", results[0])
 
     // if (this.hasErrors(result)) {
     //   const message = this.getErrorMessage(result)
