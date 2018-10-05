@@ -1,5 +1,6 @@
 /* tslint:disable no-console */
 import * as Hub from "../../hub"
+import { Queue } from "./queue"
 
 const MARKETO: any = require("node-marketo-rest")
 
@@ -20,13 +21,13 @@ interface Result {
 
 export default class MarketoTransaction {
 
-  private static chunkify(toChunk: any[], chunkSize: number) {
-    const arrays = []
-    while (toChunk.length > 0) {
-      arrays.push(toChunk.splice(0, chunkSize))
-    }
-    return arrays
-  }
+  // private static chunkify(toChunk: any[], chunkSize: number) {
+  //   const arrays = []
+  //   while (toChunk.length > 0) {
+  //     arrays.push(toChunk.splice(0, chunkSize))
+  //   }
+  //   return arrays
+  // }
 
   // rows: Hub.JsonDetail.Row[] = []
   // queue: Promise<any>[] = []
@@ -52,7 +53,20 @@ export default class MarketoTransaction {
     }
 
     this.marketo = this.marketoClientFromRequest(request)
-    const rows: Hub.JsonDetail.Row[] = []
+
+    const queue = new Queue()
+
+    let rows: Hub.JsonDetail.Row[] = []
+
+    const makeTask = (chunk: Hub.JsonDetail.Row[]) => {
+      return () => this.sendChunk(chunk)
+    }
+
+    function sendChunk() {
+      const task = makeTask(rows)
+      rows = []
+      queue.addTask(task)
+    }
 
     console.time("streamJsonDetail")
     await request.streamJsonDetail({
@@ -68,50 +82,36 @@ export default class MarketoTransaction {
       onRow: (row) => {
         // add the row to our row queue
         rows.push(row)
-        console.log(rows.length)
+        if (rows.length === numLeadsAllowedPerCall) {
+          sendChunk()
+        }
       },
     })
     console.timeEnd("streamJsonDetail")
 
-    // rows.push({
-    //   "marketo_license_users.email": { value: "acliffordhubspot.com" },
-    //   "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
-    //   "marketo_license_users.is_admin": { value: "false" },
-    //   "marketo_license_users.is_current_user": { value: "true" },
-    //   "marketo_license_users.is_mailable": { value: "true" },
-    //   "marketo_license_users.is_technical_contact": { value: "false" },
-    //   "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b3" },
-    //   "marketo_license_users.subscribed_to_marketing": { value: "true" },
-    //   "marketo_license_users.subscribed_to_release": { value: "true" },
-    // })
+    // we awaited streamJsonDetail, so we've got all our rows now
 
-    // rows.push({
-    //   "marketo_license_users.email": { value: "nickfoo@.com" },
-    //   "marketo_license_users.instance_host_url": { value: "https://looker.hubspotcentral.net" },
-    //   "marketo_license_users.is_admin": { value: "false" },
-    //   "marketo_license_users.is_current_user": { value: "true" },
-    //   "marketo_license_users.is_mailable": { value: "true" },
-    //   "marketo_license_users.is_technical_contact": { value: "false" },
-    //   "marketo_license_users.uuid": { value: "cfccf04303fd9b823beed1bf3ecf9cb828b99753bf9834620fad29a4356428b4" },
-    //   "marketo_license_users.subscribed_to_marketing": { value: "true" },
-    //   "marketo_license_users.subscribed_to_release": { value: "true" },
-    // })
+    // if any rows are left, send one more chunk
+    if (rows.length) {
+      sendChunk()
+    }
 
-    console.log("rows.length", rows.length)
+    // tell the queue we're finished adding rows and await the result
+    const result = await queue.finish()
 
-    console.time("getLeadList")
-    const leadList = this.getLeadList(rows)
-    console.timeEnd("getLeadList")
+    // console.time("getLeadList")
+    // const leadList = this.getLeadList(rows)
+    // console.timeEnd("getLeadList")
 
-    console.time("chunkify")
-    const chunks = MarketoTransaction.chunkify(leadList, numLeadsAllowedPerCall)
-    console.timeEnd("chunkify")
+    // console.time("chunkify")
+    // const chunks = MarketoTransaction.chunkify(leadList, numLeadsAllowedPerCall)
+    // console.timeEnd("chunkify")
 
-    console.time("sendChunks")
-    const result = await this.sendChunks(chunks)
-    console.timeEnd("sendChunks")
+    // console.time("sendChunks")
+    // const result = await this.sendChunks(chunks)
+    // console.timeEnd("sendChunks")
 
-    console.timeEnd("all done")
+    // console.timeEnd("all done")
 
     if (this.hasErrors(result)) {
       const message = this.getErrorMessage(result)
@@ -125,22 +125,17 @@ export default class MarketoTransaction {
     return new Hub.ActionResponse({ success: true })
   }
 
-  async sendChunks(chunks: any[][]) {
+  async sendChunk(chunk: any[]) {
     const result: Result = {
       skipped: [],
       leadErrors: [],
       campaignErrors: [],
     }
-    for (const chunk of chunks) {
-      await this.sendChunk(chunk, result)
-    }
-    return result
-  }
 
-  async sendChunk(chunk: any[], result: any) {
+    const leads = this.getLeadList(chunk)
     try {
       console.time("leadResponse")
-      const leadResponse = await this.marketo.lead.createOrUpdate(chunk, { lookupField: this.lookupField })
+      const leadResponse = await this.marketo.lead.createOrUpdate(leads, { lookupField: this.lookupField })
       console.timeEnd("leadResponse")
       if (Array.isArray(leadResponse.errors)) {
         result.leadErrors = result.leadErrors.concat(leadResponse.errors)
@@ -166,6 +161,8 @@ export default class MarketoTransaction {
     } catch (err) {
       console.error(err)
     }
+
+    return result
   }
 
   private getFieldMap(fields: Hub.Field[]) {
