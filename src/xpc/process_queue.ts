@@ -4,7 +4,9 @@ export abstract class ProcessQueue {
     queue: Pq
 
     constructor() {
-        this.queue = new Pq({concurrency: 1})
+        const concurrency = process.env.ACTION_HUB_HEAVY_PROCESS_COUNT ?
+            parseInt(process.env.ACTION_HUB_HEAVY_PROCESS_COUNT, 10) : 1
+        this.queue = new Pq({concurrency})
     }
 
     abstract async run(data: string): Promise<string>
