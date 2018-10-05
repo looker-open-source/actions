@@ -59,7 +59,7 @@ export default class MarketoTransaction {
     let rows: Hub.JsonDetail.Row[] = []
 
     const makeTask = (chunk: Hub.JsonDetail.Row[]) => {
-      return () => this.sendChunk(chunk)
+      return async () => this.sendChunk(chunk)
     }
 
     function sendChunk() {
