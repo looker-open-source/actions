@@ -4,6 +4,13 @@ function log(...args: any[]) {
   console.log(...args)
 }
 
+function logJson(label: string, object: any) {
+  console.log("\n================================")
+  console.log(`${label}:\n`)
+  const json = `${JSON.stringify(object)}\n\n`
+  console.log(json)
+}
+
 export class Queue {
 
   finished = false
@@ -64,7 +71,8 @@ export class Queue {
     const running = task()
     this.channels.push(running)
 
-    running.then(() => {
+    running.then((result: any) => {
+      logJson("result", result)
       this.endTask(running)
     })
   }

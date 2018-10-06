@@ -129,7 +129,6 @@ export default class MarketoTransaction {
 
     try {
       const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
-      logJson("leadResponse", leadResponse)
       if (Array.isArray(leadResponse.errors) && leadResponse.errors.length) {
         result.leadErrors = leadResponse.errors
       }
@@ -152,8 +151,6 @@ export default class MarketoTransaction {
     } catch (err) {
       console.error(err)
     }
-
-    logJson("result", result)
 
     return result
   }
