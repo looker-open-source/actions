@@ -129,14 +129,14 @@ export default class MarketoTransaction {
 
     console.timeEnd("all done")
 
-    // if (this.hasErrors(result)) {
-    //   const message = this.getErrorMessage(result)
-    //   console.log("error message", message)
-    //   return new Hub.ActionResponse({
-    //     success: false,
-    //     message,
-    //   })
-    // }
+    if (this.hasErrors(result)) {
+      const message = this.getErrorMessage(result)
+      console.log("error message", message)
+      return new Hub.ActionResponse({
+        success: false,
+        message,
+      })
+    }
 
     return new Hub.ActionResponse({ success: true })
   }
@@ -216,41 +216,41 @@ export default class MarketoTransaction {
     })
   }
 
-  // private hasErrors(result: Result) {
-  //   return (
-  //     result.skipped.length
-  //     || result.leadErrors.length
-  //     || result.campaignErrors.length
-  //   )
-  // }
+  private hasErrors(result: Result) {
+    return (
+      result.skipped.length
+      || result.leadErrors.length
+      || result.campaignErrors.length
+    )
+  }
 
-  // private getErrorMessage(result: Result) {
-  //   const condensed: any = {}
-  //   if (result.skipped.length) {
-  //     condensed.skipped = this.getSkippedReasons(result.skipped)
-  //   }
-  //   if (result.leadErrors.length) {
-  //     condensed.leadErrors = result.leadErrors
-  //   }
-  //   if (result.campaignErrors.length) {
-  //     condensed.campaignErrors = result.campaignErrors
-  //   }
-  //   return JSON.stringify(condensed)
-  // }
+  private getErrorMessage(result: Result) {
+    const condensed: any = {}
+    if (result.skipped.length) {
+      condensed.skipped = this.getSkippedReasons(result.skipped)
+    }
+    if (result.leadErrors.length) {
+      condensed.leadErrors = result.leadErrors
+    }
+    if (result.campaignErrors.length) {
+      condensed.campaignErrors = result.campaignErrors
+    }
+    return JSON.stringify(condensed)
+  }
 
-  // private getSkippedReasons(skipped: any[]) {
-  //   const reasons: any = {}
+  private getSkippedReasons(skipped: any[]) {
+    const reasons: any = {}
 
-  //   skipped.forEach((item: any) => {
-  //     // get the reason item was skipped
-  //     const reason = item.result.reasons[0].message
-  //     // get the list of emails with that same reason
-  //     // or create the list if this is the first one
-  //     const list = reasons[reason] || (reasons[reason] = [])
-  //     list.push(item.email)
-  //   })
+    skipped.forEach((item: any) => {
+      // get the reason item was skipped
+      const reason = item.result.reasons[0].message
+      // get the list of emails with that same reason
+      // or create the list if this is the first one
+      const list = reasons[reason] || (reasons[reason] = [])
+      list.push(item.email)
+    })
 
-  //   return reasons
-  // }
+    return reasons
+  }
 
 }
