@@ -106,10 +106,10 @@ export default class MarketoTransaction {
     const results = await queue.finish()
 
     // sort results by chunk id so they're in the same order we sent them
-    results.sort((a: Result, b: Result) => b.id - a.id)
+    results.sort((a: Result, b: Result) => a.id - b.id)
 
-    logJson("results", results.map((r: Result) => r.id))
-    logJson("results[0]", results[0])
+    logJson("result ids", results.map((r: Result) => r.id))
+    // logJson("results[0]", results[0])
 
     // if (this.hasErrors(result)) {
     //   const message = this.getErrorMessage(result)
