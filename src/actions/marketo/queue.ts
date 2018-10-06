@@ -4,12 +4,12 @@ function log(...args: any[]) {
   console.log(...args)
 }
 
-function logJson(label: string, object: any) {
-  console.log("\n================================")
-  console.log(`${label}:\n`)
-  const json = `${JSON.stringify(object)}\n\n`
-  console.log(json)
-}
+// function logJson(label: string, object: any) {
+//   console.log("\n================================")
+//   console.log(`${label}:\n`)
+//   const json = `${JSON.stringify(object)}\n\n`
+//   console.log(json)
+// }
 
 export class Queue {
 
@@ -68,19 +68,14 @@ export class Queue {
 
   startTask(task: any) {
     if (! task) { return }
-    const running = task()
-    this.channels.push(running)
+    this.channels.push(task)
 
-    running.then((result: any) => {
-      logJson("result", result)
-      this.endTask(running)
+    task().then((result: any) => {
+      // TODO need to ensure completed items are kept in order
+      this.completed.push(result)
+      this.channels = this.channels.filter((item) => item !== task)
+      this.checkQueue()
     })
-  }
-
-  endTask(task: any) {
-    this.completed.push(task)
-    this.channels = this.channels.filter((item) => item !== task)
-    this.checkQueue()
   }
 
   finish() {
