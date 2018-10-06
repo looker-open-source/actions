@@ -14,6 +14,7 @@ function logJson(label: string, object: any) {
 }
 
 interface Result {
+  id: number,
   leads: any[],
   skipped: any[],
   leadErrors: any[],
@@ -58,10 +59,12 @@ export default class MarketoTransaction {
     const queue = new Queue()
 
     let rows: Hub.JsonDetail.Row[] = []
+    let chunkId = 0
 
     const makeTask = (chunk: Hub.JsonDetail.Row[]) => {
+      const id = chunkId++
       return () => {
-        return this.sendChunk(chunk)
+        return this.processChunk(chunk, id)
       }
     }
 
@@ -102,7 +105,10 @@ export default class MarketoTransaction {
     // tell the queue we're finished adding rows and await the results
     const results = await queue.finish()
 
-    logJson("results", results)
+    // sort results by chunk id so they're in the same order we sent them
+    results.sort((a: Result, b: Result) => b.id - a.id)
+
+    logJson("results", results.map((r: Result) => r.id))
     logJson("results[0]", results[0])
 
     // if (this.hasErrors(result)) {
@@ -119,8 +125,9 @@ export default class MarketoTransaction {
     return new Hub.ActionResponse({ success: true })
   }
 
-  async sendChunk(chunk: any[]) {
+  async processChunk(chunk: any[], id: number) {
     const result: Result = {
+      id,
       leads: this.getLeadList(chunk),
       skipped: [],
       leadErrors: [],
