@@ -105,10 +105,12 @@ export default class MarketoTransaction {
     // tell the queue we're finished adding rows and await the results
     const results = await queue.finish()
 
+    logJson("result ids", results.map((r: Result) => r.id))
+
     // sort results by chunk id so they're in the same order we sent them
     results.sort((a: Result, b: Result) => a.id - b.id)
 
-    logJson("result ids", results.map((r: Result) => r.id))
+    logJson("result ids sorted", results.map((r: Result) => r.id))
     // logJson("results[0]", results[0])
 
     // if (this.hasErrors(result)) {
