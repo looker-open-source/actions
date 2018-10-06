@@ -162,7 +162,7 @@ export default class MarketoTransaction {
           ids.push({id: lead.id})
         } else {
           result.leads[i].result = lead
-          result.skipped.push(chunk[i])
+          result.skipped.push(result.leads[i])
         }
       })
 
