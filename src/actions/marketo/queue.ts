@@ -11,27 +11,41 @@ function log(...args: any[]) {
 //   console.log(json)
 // }
 
+interface Task {
+  id: number
+  run: any
+  result?: any
+  error?: any
+}
+
 export class Queue {
 
-  finished = false
   channelSize = 10
-  queue: any[]
-  channels: any[]
-  completed: any[]
+  counter: number
+  queue: Task[]
+  channels: Task[]
+  completed: Task[]
+  finished: boolean
   promise: any
   resolve: any
 
   constructor() {
+    this.counter = 0
     this.queue = []
     this.channels = []
     this.completed = []
+    this.finished = false
 
     this.promise = new Promise((resolve) => {
       this.resolve = resolve
     })
   }
 
-  addTask(task: any) {
+  addTask(run: any) {
+    const task: Task = {
+      id: this.counter++,
+      run,
+    }
     this.queue.push(task)
     this.checkQueue()
   }
@@ -44,6 +58,8 @@ export class Queue {
       && this.channels.length === 0
     ) {
       this.logState()
+      // sort completed items by id so they're in the same order as we received them
+      this.completed.sort((a: Task, b: Task) => a.id - b.id)
       this.resolve(this.completed)
       return
     }
@@ -56,7 +72,9 @@ export class Queue {
     ) {
       // pull a task off the queue
       const task = this.queue.shift()
-      this.startTask(task)
+      if (task) {
+        this.startTask(task)
+      }
     }
 
     this.logState()
@@ -66,13 +84,18 @@ export class Queue {
     log("- queue:", this.queue.length, "- channels", this.channels.length, "- completed", this.completed.length)
   }
 
-  startTask(task: any) {
-    if (! task) { return }
+  startTask(task: Task) {
     this.channels.push(task)
 
-    task().then((result: any) => {
-      // TODO need to ensure completed items are kept in order
-      this.completed.push(result)
+    task.run()
+    .then((result: any) => {
+      task.result = result
+    })
+    .catch((error: any) => {
+      task.error = error
+    })
+    .finally(() => {
+      this.completed.push(task)
       this.channels = this.channels.filter((item) => item !== task)
       this.checkQueue()
     })

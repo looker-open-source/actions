@@ -1,21 +1,9 @@
-/* tslint:disable no-console */
 import * as Hub from "../../hub"
 import { Queue } from "./queue"
 
 const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
-
-function log(...args: any[]) {
-  console.log(...args)
-}
-
-function logJson(label: string, object: any) {
-  console.log("\n================================")
-  console.log(`${label}:\n`)
-  const json = `${JSON.stringify(object)}\n\n`
-  console.log(json)
-}
 
 interface Result {
   id: number,
@@ -27,26 +15,12 @@ interface Result {
 
 export default class MarketoTransaction {
 
-  // private static chunkify(toChunk: any[], chunkSize: number) {
-  //   const arrays = []
-  //   while (toChunk.length > 0) {
-  //     arrays.push(toChunk.splice(0, chunkSize))
-  //   }
-  //   return arrays
-  // }
-
-  // rows: Hub.JsonDetail.Row[] = []
-  // queue: Promise<any>[] = []
   fieldMap: any
   marketo: any
   campaignId?: string
   lookupField?: string
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
-
-    logJson("request", request)
-
-    console.time("all done")
 
     this.campaignId = request.formParams.campaignId
     if (!this.campaignId) {
@@ -78,10 +52,8 @@ export default class MarketoTransaction {
       queue.addTask(task)
     }
 
-    console.time("streamJsonDetail")
     await request.streamJsonDetail({
       onFields: (fields) => {
-        console.log("onFields", fields)
         this.fieldMap = this.getFieldMap(Hub.allFields(fields))
 
         // determine if lookupField is present in fields
@@ -97,7 +69,6 @@ export default class MarketoTransaction {
         }
       },
     })
-    console.timeEnd("streamJsonDetail")
 
     // we awaited streamJsonDetail, so we've got all our rows now
 
@@ -107,10 +78,14 @@ export default class MarketoTransaction {
     }
 
     // tell the queue we're finished adding rows and await the results
-    const results = await queue.finish()
+    const completed = await queue.finish()
 
-    // sort results by chunk id so they're in the same order we sent them
-    results.sort((a: Result, b: Result) => a.id - b.id)
+    // TODO this ignores any completed items with no result (errors)
+    const results = (
+      completed
+      .filter((task: any) => task.result)
+      .map((task: any) => task.result)
+    )
 
     // concatenate results into a single result
     const result: any = {
@@ -120,18 +95,8 @@ export default class MarketoTransaction {
       campaignErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.campaignErrors), []),
     }
 
-    log("leads", result.leads.length)
-    log("skipped", result.skipped.length)
-    log("leadErrors", result.leadErrors.length)
-    log("campaignErrors", result.campaignErrors.length)
-
-    logJson("skipped[0]", result.skipped[0])
-
-    console.timeEnd("all done")
-
     if (this.hasErrors(result)) {
       const message = this.getErrorMessage(result)
-      console.log("error message", message)
       return new Hub.ActionResponse({
         success: false,
         message,
@@ -150,29 +115,24 @@ export default class MarketoTransaction {
       campaignErrors: [],
     }
 
-    try {
-      const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
-      if (Array.isArray(leadResponse.errors) && leadResponse.errors.length) {
-        result.leadErrors = leadResponse.errors
+    const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
+    if (Array.isArray(leadResponse.errors) && leadResponse.errors.length) {
+      result.leadErrors = leadResponse.errors
+    }
+
+    const ids: any[] = []
+    leadResponse.result.forEach((lead: any, i: number) => {
+      if (lead.id) {
+        ids.push({id: lead.id})
+      } else {
+        result.leads[i].result = lead
+        result.skipped.push(result.leads[i])
       }
+    })
 
-      const ids: any[] = []
-      leadResponse.result.forEach((lead: any, i: number) => {
-        if (lead.id) {
-          ids.push({id: lead.id})
-        } else {
-          result.leads[i].result = lead
-          result.skipped.push(result.leads[i])
-        }
-      })
-
-      const campaignResponse = await this.marketo.campaign.request(this.campaignId, ids)
-      if (Array.isArray(campaignResponse.errors) && campaignResponse.errors.length) {
-        result.campaignErrors = campaignResponse.errors
-      }
-
-    } catch (err) {
-      console.error(err)
+    const campaignResponse = await this.marketo.campaign.request(this.campaignId, ids)
+    if (Array.isArray(campaignResponse.errors) && campaignResponse.errors.length) {
+      result.campaignErrors = campaignResponse.errors
     }
 
     return result
@@ -192,6 +152,15 @@ export default class MarketoTransaction {
     return fieldMap
   }
 
+  private marketoClientFromRequest(request: Hub.ActionRequest) {
+    return new MARKETO({
+      endpoint: `${request.params.url}/rest`,
+      identity: `${request.params.url}/identity`,
+      clientId: request.params.clientID,
+      clientSecret: request.params.clientSecret,
+    })
+  }
+
   private getLeadList(rows: Hub.JsonDetail.Row[]) {
     // Create the list of leads to be sent
     const leadList: {[name: string]: any}[] = []
@@ -205,15 +174,6 @@ export default class MarketoTransaction {
       leadList.push(singleLead)
     }
     return leadList
-  }
-
-  private marketoClientFromRequest(request: Hub.ActionRequest) {
-    return new MARKETO({
-      endpoint: `${request.params.url}/rest`,
-      identity: `${request.params.url}/identity`,
-      clientId: request.params.clientID,
-      clientSecret: request.params.clientSecret,
-    })
   }
 
   private hasErrors(result: Result) {
