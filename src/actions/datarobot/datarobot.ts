@@ -10,7 +10,7 @@ export class DataRobotAction extends Hub.Action {
   label = "DataRobot - Create New Project"
   iconName = "datarobot/dr-head.svg"
   description = "Send data to DataRobot and create a new project."
-  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
