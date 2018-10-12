@@ -6,15 +6,14 @@ const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
 
-function logJson(label: string, object: any) {
-  console.log("\n================================")
-  console.log(`${label}:\n`)
-  const json = `${JSON.stringify(object)}\n\n`
-  console.log(json)
-}
+// function logJson(label: string, object: any) {
+//   console.log("\n================================")
+//   console.log(`${label}:\n`)
+//   const json = `${JSON.stringify(object)}\n\n`
+//   console.log(json)
+// }
 
 interface Result {
-  id: number,
   leads: any[],
   skipped: any[],
   leadErrors: any[],
@@ -45,17 +44,9 @@ export default class MarketoTransaction {
     const queue = new Queue()
 
     let rows: Hub.JsonDetail.Row[] = []
-    let chunkId = 0
 
-    const makeTask = (chunk: Hub.JsonDetail.Row[]) => {
-      const id = chunkId++
-      return () => {
-        return this.processChunk(chunk, id)
-      }
-    }
-
-    function sendChunk() {
-      const task = makeTask(rows)
+    const sendChunk = () => {
+      const task = () => this.processChunk(rows)
       rows = []
       queue.addTask(task)
     }
@@ -88,26 +79,27 @@ export default class MarketoTransaction {
     // tell the queue we're finished adding rows and await the results
     const completed = await queue.finish()
 
-    // TODO this ignores any completed items with no result (rejects)
+    // filter all the successful results
     const results = (
       completed
       .filter((task: any) => task.result)
       .map((task: any) => task.result)
     )
 
+    // filter all the request errors
     const errors = (
       completed
       .filter((task: any) => task.error)
       .map((task: any) => task.error)
     )
-    logJson("errors", errors)
 
-    // concatenate results into a single result
+    // concatenate results and errors into a single result
     const result: any = {
       leads: results.reduce((memo: any[], r: Result) => memo.concat(r.leads), []),
       skipped: results.reduce((memo: any[], r: Result) => memo.concat(r.skipped), []),
       leadErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.leadErrors), []),
       campaignErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.campaignErrors), []),
+      requestErrors: errors,
     }
 
     if (this.hasErrors(result)) {
@@ -121,9 +113,8 @@ export default class MarketoTransaction {
     return new Hub.ActionResponse({ success: true })
   }
 
-  async processChunk(chunk: any[], id: number) {
+  async processChunk(chunk: any[]) {
     const result: Result = {
-      id,
       leads: this.getLeadList(chunk),
       skipped: [],
       leadErrors: [],
@@ -195,11 +186,12 @@ export default class MarketoTransaction {
     return leadList
   }
 
-  private hasErrors(result: Result) {
+  private hasErrors(result: any) {
     return (
       result.skipped.length
       || result.leadErrors.length
       || result.campaignErrors.length
+      || result.requestErrors.length
     )
   }
 
