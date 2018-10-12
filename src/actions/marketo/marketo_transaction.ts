@@ -49,7 +49,9 @@ export default class MarketoTransaction {
     let rows: Hub.JsonDetail.Row[] = []
 
     const sendChunk = () => {
-      const task = () => this.processChunk(rows.slice(0))
+      const chunk = rows.slice(0)
+      log("chunk.length", chunk.length)
+      const task = () => this.processChunk(chunk)
       rows = []
       queue.addTask(task)
     }
@@ -128,6 +130,8 @@ export default class MarketoTransaction {
 
     if (! result.leads.length) {
       logJson("No leads in these rows", chunk)
+    } else {
+      log("Got leads", result.leads.length)
     }
 
     const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
