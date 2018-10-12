@@ -6,12 +6,12 @@ const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
 
-// function logJson(label: string, object: any) {
-//   console.log("\n================================")
-//   console.log(`${label}:\n`)
-//   const json = `${JSON.stringify(object)}\n\n`
-//   console.log(json)
-// }
+function logJson(label: string, object: any) {
+  console.log("\n================================")
+  console.log(`${label}:\n`)
+  const json = `${JSON.stringify(object)}\n\n`
+  console.log(json)
+}
 
 interface Result {
   leads: any[],
@@ -101,6 +101,8 @@ export default class MarketoTransaction {
       campaignErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.campaignErrors), []),
       requestErrors: errors,
     }
+
+    logJson("result", result)
 
     if (this.hasErrors(result)) {
       const message = this.getErrorMessage(result)
