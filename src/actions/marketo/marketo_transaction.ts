@@ -46,7 +46,7 @@ export default class MarketoTransaction {
     let rows: Hub.JsonDetail.Row[] = []
 
     const sendChunk = () => {
-      const task = () => this.processChunk(rows)
+      const task = () => this.processChunk(rows.slice(0))
       rows = []
       queue.addTask(task)
     }
@@ -121,10 +121,6 @@ export default class MarketoTransaction {
       skipped: [],
       leadErrors: [],
       campaignErrors: [],
-    }
-
-    if (Math.random() > 0.8) {
-      throw "Fake rejection"
     }
 
     const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
