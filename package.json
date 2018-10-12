@@ -8,6 +8,8 @@
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
     "copy-api-types": "./node_modules/.bin/ts-node ./bin/copy_api_types.ts",
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache --type-check -- ./src/boot.ts",
+    "debug": "./node_modules/.bin/nodemon --exec node --inspect --trace-warnings -r ./node_modules/ts-node/register -- ./src/boot.ts",
+    "debug-trace": "./node_modules/.bin/nodemon --exec node --inspect --trace-sync-io -r ./node_modules/ts-node/register -- ./src/boot.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && ./node_modules/.bin/tsc --noEmit && yarn lint",
     "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
@@ -35,7 +37,7 @@
     "@types/body-parser": "^1.16.5",
     "@types/dotenv": "^4.0.1",
     "@types/express": "^4.0.37",
-    "@types/node": "^8.0.45",
+    "@types/node": "^10.7.0",
     "@types/oboe": "^2.0.28",
     "@types/raven": "^2.1.4",
     "@types/request": "^2.0.6",
@@ -47,7 +49,7 @@
     "@types/uuid": "^3.4.3",
     "@types/winston": "^2.3.6",
     "airtable": "^0.5.0",
-    "analytics-node": "^3.1.1",
+    "analytics-node": "^3.3.0",
     "aws-sdk": "^2.135.0",
     "azure-storage": "^2.6.0",
     "blocked-at": "^1.1.2",
@@ -63,6 +65,7 @@
     "node-marketo-rest": "^0.7.0",
     "nodemon": "^1.12.1",
     "oboe": "^2.1.4",
+    "queue": "^4.4.2",
     "raven": "^2.4.0",
     "request": "^2.87.0",
     "request-promise-native": "^1.0.5",
@@ -72,13 +75,13 @@
     "ts-node": "^6.0.5",
     "tslint-language-service": "^0.9.8",
     "twilio": "^3.8.0",
-    "typescript": "^2.8.3",
+    "typescript": "^3.0.1",
     "uuid": "^3.1.0",
     "winston": "^2.3.1"
   },
   "typings": "lib/index",
   "engines": {
-    "node": "8.1.4"
+    "node": "10.8.0"
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",
@@ -96,6 +99,6 @@
     "mocha": "^4.0.1",
     "sinon": "^5.0.10",
     "sinon-chai": "^3.1.0",
-    "tslint": "^5.9.1"
+    "tslint": "^5.11.0"
   }
 }

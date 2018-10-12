@@ -137,6 +137,11 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
 
       const request = new Hub.ActionRequest()
+      request.params = {
+        client_email: "foo",
+        private_key: "foo",
+        project_id: "foo",
+      }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
@@ -157,7 +162,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
-    it("has errors with no buckets", (done) => {
+    it("has friendly error with no buckets", (done) => {
 
       const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
         .callsFake(() => ({
@@ -165,13 +170,42 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
 
       const request = new Hub.ActionRequest()
+      request.params = {
+        client_email: "foo",
+        private_key: "foo",
+        project_id: "foo",
+      }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually
-        .be.rejectedWith("No buckets in account.")
+        .deep.eq({error: "No buckets in account.", fields: []})
         .and.notify(stubClient.restore)
         .and.notify(done)
     })
 
+  })
+
+  it("has a friendly error when SDK chokes", (done) => {
+
+    const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
+      .callsFake(() => ({
+        getBuckets: async () => Promise.reject(new Error("something weird from your friends at google")),
+      }))
+
+    const request = new Hub.ActionRequest()
+    request.params = {
+      client_email: "foo",
+      private_key: "foo",
+      project_id: "foo",
+    }
+    const form = action.validateAndFetchForm(request)
+    chai.expect(form).to.eventually
+      .deep.eq({error: `An error occurred while fetching the bucket list.
+
+      Your Google Cloud Storage credentials may be incorrect.
+
+      Google SDK Error: "something weird from your friends at google"`, fields: []})
+      .and.notify(stubClient.restore)
+      .and.notify(done)
   })
 
 })

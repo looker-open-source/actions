@@ -115,10 +115,13 @@ describe(`${action.constructor.name} unit tests`, () => {
       }))
 
       const request = new Hub.ActionRequest()
+      request.params = {
+        hipchat_api_key: "foo",
+      }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          description: "Name of the Hipchat room you would like to post to.",
+          description: "Name of the HipChat room you would like to post to.",
           label: "Share In",
           name: "room",
           options: [

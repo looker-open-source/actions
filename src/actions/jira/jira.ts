@@ -67,9 +67,9 @@ export class JiraAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
 
-    const jira = this.jiraClientFromRequest(request)
     const form = new Hub.ActionForm()
     try {
+      const jira = this.jiraClientFromRequest(request)
 
       const [projects, issueTypes] = await Promise.all([
         jira.listProjects(),
@@ -107,10 +107,10 @@ export class JiraAction extends Hub.Action {
           }),
         required: true,
       }]
-      return form
     } catch (e) {
-      throw e.message
+      form.error = e
     }
+    return form
   }
 
   private jiraClientFromRequest(request: Hub.ActionRequest) {

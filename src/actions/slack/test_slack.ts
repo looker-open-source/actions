@@ -169,6 +169,9 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }))
       const request = new Hub.ActionRequest()
+      request.params = {
+        slack_api_token: "foo",
+      }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

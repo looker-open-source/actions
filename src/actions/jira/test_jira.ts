@@ -75,6 +75,11 @@ describe(`${action.constructor.name} unit tests`, () => {
           }
         })
       const request = new Hub.ActionRequest()
+      request.params = {
+        address: "foo",
+        username: "foo",
+        password: "foo",
+      }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
@@ -102,6 +107,24 @@ describe(`${action.constructor.name} unit tests`, () => {
           options: [{name: "1", label: "Bug"}],
           required: true,
         }],
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("properly surfaces client errors", (done) => {
+      const stubClient = sinon.stub(action as any, "jiraClientFromRequest")
+        .callsFake(() => {
+          throw "hahaha i failed"
+        })
+      const request = new Hub.ActionRequest()
+      request.params = {
+        address: "foo",
+        username: "foo",
+        password: "foo",
+      }
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        error: "hahaha i failed",
+        fields: [],
       }).and.notify(stubClient.restore).and.notify(done)
     })
   })

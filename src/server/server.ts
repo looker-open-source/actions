@@ -5,8 +5,8 @@ import * as fs from "fs"
 import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
-
 import * as Hub from "../hub"
+import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
 
 const expressWinston = require("express-winston")
@@ -15,6 +15,8 @@ const blocked = require("blocked-at")
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
 const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
+
+const expensiveJobQueue = new ExecuteProcessQueue.ExecuteProcessQueue()
 
 export default class Server implements Hub.RouteBuilder {
 
@@ -58,14 +60,20 @@ export default class Server implements Hub.RouteBuilder {
     }
 
     const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080
-    Server.listen(port)
+
+    // Default to 0 to prevent Node from applying timeout to sockets
+    // Load balancers in front of the app may still timeout
+    const timeout = process.env.ACTION_HUB_SOCKET_TIMEOUT ? parseInt(process.env.ACTION_HUB_SOCKET_TIMEOUT, 10) : 0
+
+    Server.listen(port, timeout)
   }
 
-  static listen(port: number) {
+  static listen(port: number, timeout: number) {
     const app = new Server().app
-    app.listen(port, () => {
+    const nodeServer = app.listen(port, () => {
       winston.info(`Action Hub listening!`, {port})
     })
+    nodeServer.timeout = timeout
   }
 
   app: express.Application
@@ -108,30 +116,23 @@ export default class Server implements Hub.RouteBuilder {
       res.json(action.asJson(this))
     })
 
-    this.route("/actions/:actionId/execute", async (req, res) => {
+    this.route("/actions/:actionId/execute", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
-      const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      const actionResponse = await action.validateAndExecute(request)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      const actionResponse = await action.validateAndExecute(request, expensiveJobQueue)
+      complete(actionResponse.asJson())
+    }))
 
-      // Some versions of Looker do not look at the "success" value in the response
-      // if the action returns a 200 status code, even though the Action API specs otherwise.
-      // So we force a non-200 status code as a workaround.
-      if (!actionResponse.success) {
-        res.status(400)
-      }
-      res.json(actionResponse.asJson())
-    })
-
-    this.route("/actions/:actionId/form", async (req, res) => {
+    this.route("/actions/:actionId/form", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasForm) {
         const form = await action.validateAndFetchForm(request)
-        res.json(form.asJson())
+        complete(form.asJson())
       } else {
         throw "No form defined for action."
       }
-    })
+    }))
 
     // To provide a health or version check endpoint you should place a status.json file
     // into the project root, which will get served by this endpoint (or 404 otherwise).
@@ -147,6 +148,34 @@ export default class Server implements Hub.RouteBuilder {
 
   formUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
+  }
+
+  /**
+   * For JSON responses that take a long time without sending any data,
+   * we periodically send a newline character to prevent the connection from being
+   * dropped by proxies or other services (like the AWS NAT Gateway).
+   */
+  private jsonKeepAlive(fn: (req: express.Request, complete: (data: any) => void) => Promise<void>):
+  (req: express.Request, res: express.Response) => Promise<void> {
+    const interval = process.env.ACTION_HUB_JSON_KEEPALIVE_SEC ?
+        parseInt(process.env.ACTION_HUB_JSON_KEEPALIVE_SEC, 10)
+      :
+        30
+    return async (req, res) => {
+      res.status(200)
+      res.setHeader("Content-Type", "application/json")
+      const timer = setInterval(() => {
+        res.write("\n")
+      }, interval * 1000)
+      try {
+        await fn(req, (data) => {
+          res.write(JSON.stringify(data))
+          res.end()
+        })
+      } finally {
+        clearInterval(timer)
+      }
+    }
   }
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {

@@ -1,6 +1,8 @@
 import * as fs from "fs"
 import * as path from "path"
+import {ExecuteProcessQueue} from "../xpc/execute_process_queue"
 
+import * as winston from "winston"
 import {
   ActionDownloadSettings,
   ActionForm,
@@ -44,6 +46,7 @@ export abstract class Action {
   abstract label: string
   abstract description: string
   usesStreaming = false
+  executeInOwnProcess = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
@@ -81,22 +84,17 @@ export abstract class Action {
     }
   }
 
-  async validateAndExecute(request: ActionRequest) {
-
+  async validateAndExecute(request: ActionRequest, queue?: ExecuteProcessQueue) {
     if (this.supportedActionTypes.indexOf(request.type) === -1) {
-      throw `This action does not support requests of type "${request.type}".`
-    }
-
-    const requiredParams = this.params.filter((p) => p.required)
-
-    if (requiredParams.length > 0) {
-      for (const p of requiredParams) {
-        const param = request.params[p.name]
-        if (!param) {
-          throw `Required parameter "${p.name}" not provided.`
-        }
+      const types = this.supportedActionTypes.map((at) => `"${at}"`).join(", ")
+      if (request.type as any) {
+        throw `This action does not support requests of type "${request.type}". The request must be of type: ${types}.`
+      } else {
+        throw `No request type specified. The request must be of type: ${types}.`
       }
     }
+
+    this.throwForMissingRequiredParameters(request)
 
     if (
       this.usesStreaming &&
@@ -105,16 +103,56 @@ export abstract class Action {
       throw "A streaming action was sent incompatible data. The action must have a download url or an attachment."
     }
 
-    return this.execute(request)
+    // Forking is on by default but can be disabled by setting ACTION_HUB_ENABLE_FORKING=false
+    const executeInOwnProcessEnabled = process.env.ACTION_HUB_ENABLE_FORKING !== "false"
+
+    if (this.executeInOwnProcess && executeInOwnProcessEnabled) {
+      if (!queue) {
+        throw "An action marked for being executed on a separate process needs a ExecuteProcessQueue."
+      }
+      request.actionId = this.name
+      return new Promise<ActionResponse>((resolve, reject) => {
+        queue.run(JSON.stringify(request)).then((response: string) => {
+          const actionResponse = new ActionResponse()
+          Object.assign(actionResponse, response)
+          resolve(actionResponse)
+        }).catch((err) => {
+          winston.error(JSON.stringify(err))
+          reject(err)
+        })
+      })
+    } else {
+      return this.execute(request)
+    }
 
   }
 
   async validateAndFetchForm(request: ActionRequest) {
+    try {
+      this.throwForMissingRequiredParameters(request)
+    } catch (e) {
+      const errorForm = new ActionForm()
+      errorForm.error = e
+      return errorForm
+    }
     return this.form!(request)
   }
 
   get hasForm() {
     return !!this.form
+  }
+
+  private throwForMissingRequiredParameters(request: ActionRequest) {
+    const requiredParams = this.params.filter((p) => p.required)
+
+    if (requiredParams.length > 0) {
+      for (const p of requiredParams) {
+        const param = request.params[p.name]
+        if (!param) {
+          throw `Required setting "${p.label}" not specified in action settings.`
+        }
+      }
+    }
   }
 
   private getImageDataUri() {

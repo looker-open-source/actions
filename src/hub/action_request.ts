@@ -75,6 +75,16 @@ export class ActionRequest {
     return actionRequest
   }
 
+  // Used to turn json back into an actionRequest
+  static fromIPC(json: any) {
+    const actionRequest = new ActionRequest()
+    Object.assign(actionRequest, json)
+    if (actionRequest.attachment && actionRequest.attachment.dataBuffer) {
+        actionRequest.attachment.dataBuffer = Buffer.from(json.attachment.dataBuffer)
+    }
+    return actionRequest
+  }
+
   static fromJSON(json?: DataWebhookPayload) {
 
     if (!json) {
@@ -134,6 +144,7 @@ export class ActionRequest {
   params: ParamMap = {}
   scheduledPlan?: ActionScheduledPlan
   type!: ActionType
+  actionId?: string
   instanceId?: string
   webhookId?: string
   lookerVersion: string | null = null
@@ -159,25 +170,67 @@ export class ActionRequest {
 
     const stream = new PassThrough()
     const returnPromise = callback(stream)
+    const timeout = process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT ?
+        parseInt(process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT, 10)
+      :
+        13 * 60 * 1000
 
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
 
     const streamPromise = new Promise<void>((resolve, reject) => {
       if (url) {
+        winston.info(`[stream] beginning stream via download url`, this.logInfo)
+        let hasResolved = false
         httpRequest
-          .get(url)
+          .get(url, {timeout})
           .on("error", (err) => {
-            winston.error(`Request stream error: ${err}\n${err.stack}`)
-            reject(err)
+            if (hasResolved && (err as any).code === "ECONNRESET") {
+              winston.info(`[stream] ignoring ECONNRESET that occured after streaming finished`, this.logInfo)
+            } else {
+              winston.error(`[stream] request stream error`, {
+                ...this.logInfo,
+                error: err.message,
+                stack: err.stack,
+              })
+              reject(err)
+            }
           })
-          .on("finish", resolve)
+          .on("finish", () => {
+            winston.info(`[stream] streaming via download url finished`, this.logInfo)
+          })
+          .on("socket", (socket) => {
+            winston.info(`[stream] setting keepalive on socket`, this.logInfo)
+            socket.setKeepAlive(true)
+          })
+          .on("abort", () => {
+            winston.info(`[stream] streaming via download url aborted`, this.logInfo)
+          })
+          .on("response", () => {
+            winston.info(`[stream] got response from download url`, this.logInfo)
+          })
+          .on("close", () => {
+            winston.info(`[stream] request stream closed`, this.logInfo)
+          })
           .pipe(stream)
           .on("error", (err) => {
-            winston.error(`PassThrough stream error: ${err}\n${err.stack}`)
+            winston.error(`[stream] PassThrough stream error`, {
+              ...this.logInfo,
+              error: err,
+              stack: err.stack,
+            })
             reject(err)
+          })
+          .on("finish", () => {
+            winston.info(`[stream] PassThrough stream finished`, this.logInfo)
+            resolve()
+            hasResolved = true
+          })
+          .on("close", () => {
+            winston.info(`[stream] PassThrough stream closed`, this.logInfo)
           })
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
+          winston.info(`Using "fake" streaming because request contained attachment data.`, this.logInfo)
           stream.end(this.attachment.dataBuffer)
           resolve()
         } else {
@@ -208,11 +261,25 @@ export class ActionRequest {
    */
   async streamJson(onRow: (row: { [fieldName: string]: any }) => void) {
     return new Promise<void>((resolve, reject) => {
+      let rows = 0
       this.stream(async (readable) => {
         oboe(readable)
-          .node("![*]", this.safeOboe(readable, reject, onRow))
-          .done(() => resolve())
-      }).then(resolve).catch(reject)
+          .node("![*]", this.safeOboe(readable, reject, (row) => {
+            rows++
+            onRow(row)
+          }))
+          .done(() => {
+            winston.info(`[streamJson] oboe reports done`, {...this.logInfo, rows})
+          })
+      }).then(() => {
+        winston.info(`[streamJson] complete`, {...this.logInfo, rows})
+        resolve()
+      }).catch((error) => {
+        // This error should not be logged as it could come from an action
+        // which might decide to include user information in the error message
+        winston.info(`[streamJson] reported an error`, {...this.logInfo, rows})
+        reject(error)
+      })
     })
   }
 
@@ -242,9 +309,13 @@ export class ActionRequest {
     onRanAt?: (iso8601string: string) => void,
   }) {
     return new Promise<void>((resolve, reject) => {
+      let rows = 0
       this.stream(async (readable) => {
         oboe(readable)
-          .node("data.*", this.safeOboe(readable, reject, callbacks.onRow))
+          .node("data.*", this.safeOboe(readable, reject, (row) => {
+            rows++
+            callbacks.onRow(row)
+          }))
           .node("!.fields", this.safeOboe(readable, reject, (fields) => {
             if (callbacks.onFields) {
               callbacks.onFields(fields)
@@ -255,8 +326,18 @@ export class ActionRequest {
               callbacks.onRanAt(ranAt)
             }
           }))
-          .done(() => resolve())
-      }).then(resolve).catch(reject)
+          .done(() => {
+            winston.info(`[streamJsonDetail] oboe reports done`, {...this.logInfo, rows})
+          })
+      }).then(() => {
+        winston.info(`[streamJsonDetail] complete`, {...this.logInfo, rows})
+        resolve()
+      }).catch((error) => {
+        // This error should not be logged as it could come from an action
+        // which might decide to include user information in the error message
+        winston.info(`[streamJsonDetail] reported an error`, {...this.logInfo, rows})
+        reject(error)
+      })
     })
   }
 
@@ -305,16 +386,22 @@ export class ActionRequest {
     }
   }
 
+  private get logInfo() {
+    return {webhookId: this.webhookId}
+  }
+
   private safeOboe(
     stream: Readable,
     reject: (reason?: any) => void,
     callback: (node: any) => void,
   ) {
+    const logInfo = this.logInfo
     return function(this: oboe.Oboe, node: any) {
       try {
         callback(node)
         return oboe.drop
       } catch (e) {
+        winston.info(`safeOboe callback produced an error, aborting stream`, logInfo)
         this.abort()
         stream.destroy()
         reject(e)

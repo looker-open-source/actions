@@ -5,6 +5,7 @@ import * as Hub from "../../hub"
 import { SegmentAction } from "./segment"
 
 const action = new SegmentAction()
+action.executeInOwnProcess = false
 
 function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
   const segmentCallSpy = sinon.spy()
@@ -309,7 +310,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         data: [],
       }))}
       return chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith(`Required parameter "segment_write_key" not provided.`)
+        .be.rejectedWith(`Required setting "Segment Write Key" not specified in action settings.`)
     })
 
   })
