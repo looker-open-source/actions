@@ -90,15 +90,18 @@ export class Queue {
     task.run()
     .then((result: any) => {
       task.result = result
+      this.completeTask(task)
     })
     .catch((error: any) => {
       task.error = error
+      this.completeTask(task)
     })
-    .finally(() => {
-      this.completed.push(task)
-      this.channels = this.channels.filter((item) => item !== task)
-      this.checkQueue()
-    })
+  }
+
+  completeTask(task: Task) {
+    this.completed.push(task)
+    this.channels = this.channels.filter((item) => item !== task)
+    this.checkQueue()
   }
 
   finish() {
