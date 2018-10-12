@@ -3,14 +3,6 @@ import * as Hub from "../../hub"
 import MarketoTransaction from "./marketo_transaction"
 
 export class MarketoAction extends Hub.Action {
-  // private static chunkify(toChunk: any[], chunkSize: number) {
-  //   const arrays = []
-  //   while (toChunk.length > 0) {
-  //     arrays.push(toChunk.splice(0, chunkSize))
-  //   }
-  //   return arrays
-  // }
-
   name = "marketo"
   label = "Marketo"
   iconName = "marketo/marketo.svg"
@@ -43,7 +35,6 @@ export class MarketoAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-
   usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
