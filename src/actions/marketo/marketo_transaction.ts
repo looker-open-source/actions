@@ -80,7 +80,7 @@ export default class MarketoTransaction {
     // tell the queue we're finished adding rows and await the results
     const completed = await queue.finish()
 
-    // TODO this ignores any completed items with no result (errors)
+    // TODO this ignores any completed items with no result (rejects)
     const results = (
       completed
       .filter((task: any) => task.result)
@@ -113,6 +113,10 @@ export default class MarketoTransaction {
       skipped: [],
       leadErrors: [],
       campaignErrors: [],
+    }
+
+    if (Math.random() > 0.8) {
+      throw "Fake rejection"
     }
 
     const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
