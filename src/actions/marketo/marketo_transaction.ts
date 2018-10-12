@@ -6,6 +6,9 @@ const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
 
+function log(...args: any[]) {
+  console.log(...args)
+}
 function logJson(label: string, object: any) {
   console.log("\n================================")
   console.log(`${label}:\n`)
@@ -123,6 +126,10 @@ export default class MarketoTransaction {
       campaignErrors: [],
     }
 
+    if (! result.leads.length) {
+      logJson("No leads in these rows", chunk)
+    }
+
     const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
     if (Array.isArray(leadResponse.errors) && leadResponse.errors.length) {
       result.leadErrors = leadResponse.errors
@@ -137,6 +144,12 @@ export default class MarketoTransaction {
         result.skipped.push(result.leads[i])
       }
     })
+
+    if (! ids.length) {
+      log("No ids!")
+      log("chunk.length", chunk.length)
+      log("result.skipped.length", result.skipped.length)
+    }
 
     const campaignResponse = await this.marketo.campaign.request(this.campaignId, ids)
     if (Array.isArray(campaignResponse.errors) && campaignResponse.errors.length) {
