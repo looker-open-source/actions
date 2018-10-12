@@ -13,9 +13,9 @@ const HIPCHAT_MAX_MESSAGE_BODY = 10000
 export class HipchatAction extends Hub.Action {
 
   name = "hipchat"
-  label = "Hipchat"
+  label = "HipChat"
   iconName = "hipchat/hipchat.png"
-  description = "Send a message to a Hipchat room referencing data."
+  description = "Send a message to a HipChat room referencing data."
   supportedActionTypes = [Hub.ActionType.Query]
   requiredFields = []
   params = [
@@ -69,7 +69,7 @@ export class HipchatAction extends Hub.Action {
     try {
       const rooms = await this.usableRooms(request)
       form.fields = [{
-        description: "Name of the Hipchat room you would like to post to.",
+        description: "Name of the HipChat room you would like to post to.",
         label: "Share In",
         name: "room",
         options: rooms.map((room) => ({name: room.id, label: room.label})),
@@ -85,7 +85,7 @@ export class HipchatAction extends Hub.Action {
 
   private prettyError(e: any) {
     if (e.message === "Invalid OAuth session") {
-      return "Your Hipchat authentication credentials are not valid."
+      return "Your HipChat authentication credentials are not valid."
     } else {
       return e
     }
