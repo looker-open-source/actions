@@ -1,9 +1,17 @@
+/* tslint:disable no-console */
 import * as Hub from "../../hub"
 import { Queue } from "./queue"
 
 const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
+
+function logJson(label: string, object: any) {
+  console.log("\n================================")
+  console.log(`${label}:\n`)
+  const json = `${JSON.stringify(object)}\n\n`
+  console.log(json)
+}
 
 interface Result {
   id: number,
@@ -86,6 +94,13 @@ export default class MarketoTransaction {
       .filter((task: any) => task.result)
       .map((task: any) => task.result)
     )
+
+    const errors = (
+      completed
+      .filter((task: any) => task.error)
+      .map((task: any) => task.error)
+    )
+    logJson("errors", errors)
 
     // concatenate results into a single result
     const result: any = {
