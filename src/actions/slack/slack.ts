@@ -1,6 +1,6 @@
 import * as Hub from "../../hub"
 
-const WebClient = require("@slack/client").WebClient
+import { WebClient } from "@slack/client"
 
 interface Channel {
   id: string,
@@ -19,38 +19,37 @@ export class SlackAttachmentAction extends Hub.Action {
     name: "slack_api_token",
     label: "Slack API Token",
     required: true,
-    description: "https://api.slack.com/custom-integrations/legacy-tokens",
+    description: `A Slack API token that includes the permissions "channels:read", \
+"users:read", and "files:write:user". You can follow the instructions to get a token at \
+https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     sensitive: true,
   }]
 
   async execute(request: Hub.ActionRequest) {
+
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
 
-    if (!request.formParams || !request.formParams.channel) {
+    if (!request.formParams.channel) {
       throw "Missing channel."
     }
 
     const fileName = request.formParams.filename || request.suggestedFilename()
 
     const options = {
-      file: {
-        value: request.attachment.dataBuffer,
-        options: {
-          filename: fileName,
-        },
-      },
+      file: request.attachment.dataBuffer,
+      filename: fileName,
       channels: request.formParams.channel,
       filetype: request.attachment.fileExtension,
-      initial_comment: request.formParams.initial_comment,
+      initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
     }
 
     let response
     try {
       const slack = this.slackClientFromRequest(request)
       await new Promise<void>((resolve, reject) => {
-        slack.files.upload(fileName, options, (err: any) => {
+        slack.files.upload(options, (err: any) => {
           if (err) {
             reject(err)
           } else {
@@ -66,24 +65,30 @@ export class SlackAttachmentAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    const channels = await this.usableChannels(request)
 
-    form.fields = [{
-      description: "Name of the Slack channel you would like to post to.",
-      label: "Share In",
-      name: "channel",
-      options: channels.map((channel) => ({name: channel.id, label: channel.label})),
-      required: true,
-      type: "select",
-    }, {
-      label: "Comment",
-      type: "string",
-      name: "initial_comment",
-    }, {
-      label: "Filename",
-      name: "filename",
-      type: "string",
-    }]
+    try {
+      const channels = await this.usableChannels(request)
+
+      form.fields = [{
+        description: "Name of the Slack channel you would like to post to.",
+        label: "Share In",
+        name: "channel",
+        options: channels.map((channel) => ({ name: channel.id, label: channel.label })),
+        required: true,
+        type: "select",
+      }, {
+        label: "Comment",
+        type: "string",
+        name: "initial_comment",
+      }, {
+        label: "Filename",
+        name: "filename",
+        type: "string",
+      }]
+
+    } catch (e) {
+      form.error = this.prettySlackError(e)
+    }
 
     return form
   }
@@ -98,8 +103,8 @@ export class SlackAttachmentAction extends Hub.Action {
     return new Promise<Channel[]>((resolve, reject) => {
       const slack = this.slackClientFromRequest(request)
       slack.channels.list({
-        exclude_archived: 1,
-        exclude_members: 1,
+        exclude_archived: true,
+        exclude_members: true,
       }, (err: any, response: any) => {
         if (err || !response.ok) {
           reject(err)
@@ -127,6 +132,14 @@ export class SlackAttachmentAction extends Hub.Action {
         }
       })
     })
+  }
+
+  private prettySlackError(e: any) {
+    if (e.message === "An API error occurred: invalid_auth") {
+      return "Your Slack authentication credentials are not valid."
+    } else {
+      return e
+    }
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {

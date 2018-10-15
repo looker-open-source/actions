@@ -9,6 +9,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
   iconName = "google/google_cloud_storage.svg"
   description = "Write data files to a Google Cloud Storage bucket."
   supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
+  usesStreaming = true
   requiredFields = []
   params = [
     {
@@ -34,38 +35,59 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
+    if (!request.formParams.bucket) {
+      throw "Need Google Cloud Storage bucket."
     }
 
-    if (!request.formParams ||
-      !request.formParams.bucket) {
-      throw "Need Google Cloud Storage bucket."
+    const filename = request.formParams.filename || request.suggestedFilename()
+
+    if (!filename) {
+      throw new Error("Couldn't determine filename.")
     }
 
     const gcs = this.gcsClientFromRequest(request)
     const file = gcs.bucket(request.formParams.bucket)
-      .file(request.formParams.filename || request.suggestedFilename())
+      .file(filename)
+    const writeStream = file.createWriteStream()
 
-    let response
     try {
-      await file.save(request.attachment.dataBuffer)
+      await request.stream(async (readable) => {
+        return new Promise<any>((resolve, reject) => {
+          readable.pipe(writeStream)
+            .on("error", reject)
+            .on("finish", resolve)
+        })
+      })
+      return new Hub.ActionResponse({ success: true })
     } catch (e) {
-      response = {success: false, message: e.message}
+      return new Hub.ActionResponse({success: false, message: e.message})
     }
 
-    return new Hub.ActionResponse(response)
   }
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
 
     const gcs = this.gcsClientFromRequest(request)
-    const buckets = await gcs.getBuckets()[0]
+    let results: any
 
-    if (!buckets) {
-      throw "No buckets in account."
+    try {
+      results = await gcs.getBuckets()
+    } catch (e) {
+      form.error = `An error occurred while fetching the bucket list.
+
+      Your Google Cloud Storage credentials may be incorrect.
+
+      Google SDK Error: "${e.message}"`
+      return form
     }
+
+    if (!(results && results[0])) {
+      form.error = "No buckets in account."
+      return form
+    }
+
+    const buckets = results[0]
 
     form.fields = [{
       label: "Bucket",

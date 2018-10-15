@@ -21,7 +21,7 @@ export class SFTPAction extends Hub.Action {
         return
       }
 
-      if (!request.formParams || !request.formParams.address) {
+      if (!request.formParams.address) {
         reject("Needs a valid SFTP address.")
         return
       }
@@ -79,7 +79,7 @@ export class SFTPAction extends Hub.Action {
         host: parsedUrl.hostname,
         username: request.formParams.username,
         password: request.formParams.password,
-        port: +(parsedUrl.port || 22),
+        port: +(parsedUrl.port ? parsedUrl.port : 22),
       })
     } catch (e) {
       throw e

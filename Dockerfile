@@ -1,11 +1,13 @@
-FROM node:8.1.4
+FROM node:10.8.0
+RUN npm install -g -s --no-progress yarn@1.9.4
+
 RUN mkdir -p /code
 WORKDIR /code
-ADD . /code
 
-RUN npm install -g -s --no-progress yarn
-RUN yarn install --production
+COPY . /code
+
+RUN yarn install --production && yarn cache clean
 
 CMD ["yarn","start"]
 
-EXPOSE 80
+EXPOSE 8080

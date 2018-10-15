@@ -5,26 +5,9 @@ import * as Hub from "../../hub"
 
 import { DigitalOceanObjectStorageAction } from "./digitalocean_object_storage"
 
+import { expectAmazonS3Match } from "../amazon/test_amazon_s3"
+
 const action = new DigitalOceanObjectStorageAction()
-
-function expectAmazonS3Match(request: Hub.ActionRequest, match: any) {
-
-    const putObjectSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
-      callback(null, `successfully put item ${params} in database`)
-    })
-    const stubClient = sinon.stub(action as any, "amazonS3ClientFromRequest")
-      .callsFake(() => ({
-        putObject: putObjectSpy,
-      }))
-    const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
-      .callsFake(() => "stubSuggestedFilename")
-
-    return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-      chai.expect(putObjectSpy).to.have.been.calledWithMatch(match)
-      stubClient.restore()
-      stubSuggestedFilename.restore()
-    })
-  }
 
 describe(`${action.constructor.name} unit tests`, () => {
 
@@ -33,6 +16,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
         it("errors if there is no bucket", () => {
           const request = new Hub.ActionRequest()
+          request.type = Hub.ActionType.Dashboard
           request.params = {
             access_key_id: "mykey",
             secret_access_key: "mysecret",
@@ -42,33 +26,44 @@ describe(`${action.constructor.name} unit tests`, () => {
           request.attachment = {}
           request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-          return chai.expect(action.execute(request)).to.eventually
+          return chai.expect(action.validateAndExecute(request)).to.eventually
             .be.rejectedWith("Need Amazon S3 bucket.")
         })
 
         it("errors if the input has no attachment", () => {
           const request = new Hub.ActionRequest()
+          request.type = Hub.ActionType.Dashboard
           request.formParams = {
             bucket: "mybucket",
             access_key_id: "mykey",
             secret_access_key: "mysecret",
             region: "us-east-1",
           }
+          request.params = {
+            access_key_id: "mykey",
+            secret_access_key: "mysecret",
+            region: "us-east-1",
+          }
 
-          return chai.expect(action.execute(request)).to.eventually
-            .be.rejectedWith("Couldn't get data from attachment")
+          return chai.expect(action.validateAndExecute(request)).to.eventually
+            .be.rejectedWith(
+              "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
+
         })
 
         it("sends right body to key and bucket", () => {
           const request = new Hub.ActionRequest()
+          request.type = Hub.ActionType.Dashboard
           request.formParams = {
             bucket: "mybucket",
+          }
+          request.params = {
             access_key_id: "mykey",
             secret_access_key: "mysecret",
             region: "us-east-1",
           }
           request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-          return expectAmazonS3Match(request, {
+          return expectAmazonS3Match(action, request, {
             Bucket: "mybucket",
             Key: "stubSuggestedFilename",
             Body: Buffer.from("1,2,3,4", "utf8"),
@@ -77,15 +72,18 @@ describe(`${action.constructor.name} unit tests`, () => {
 
         it("sends to right filename if specified", () => {
           const request = new Hub.ActionRequest()
+          request.type = Hub.ActionType.Dashboard
           request.formParams = {
             bucket: "mybucket",
+            filename: "mywackyfilename",
+          }
+          request.params = {
             access_key_id: "mykey",
             secret_access_key: "mysecret",
             region: "us-east-1",
-            filename: "mywackyfilename",
           }
           request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-          return expectAmazonS3Match(request, {
+          return expectAmazonS3Match(action, request, {
             Bucket: "mybucket",
             Key: "mywackyfilename",
             Body: Buffer.from("1,2,3,4", "utf8"),
@@ -104,14 +102,19 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       const stubClient = sinon.stub(action as any, "amazonS3ClientFromRequest")
         .callsFake(() => ({
-          listBuckets: (cb: (err: any, res: any) => void) => {
-            const response = {
-              Buckets: [
-                {Name: "A"},
-                {Name: "B"},
-              ],
+          listBuckets: () => {
+            return {
+              promise: async () => {
+                return new Promise<any>((resolve) => {
+                  resolve({
+                    Buckets: [
+                      { Name: "A" },
+                      { Name: "B" },
+                    ],
+                  })
+                })
+              },
             }
-            cb(null, response)
           },
         }))
 

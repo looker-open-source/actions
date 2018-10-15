@@ -13,5 +13,5 @@ export function validate(key: string) {
   if (!nonce || !providedDigest) {
     return false
   }
-  return crypto.timingSafeEqual(new Buffer(providedDigest), new Buffer(digest(nonce)))
+  return crypto.timingSafeEqual(Buffer.from(providedDigest), Buffer.from(digest(nonce)))
 }

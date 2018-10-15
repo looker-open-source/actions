@@ -6,6 +6,8 @@ import * as Hub from "../../hub"
 
 import { WebhookAction } from "./webhook"
 
+import concatStream = require("concat-stream")
+
 class GoodWebhookAction extends WebhookAction {
 
   name = "webhook"
@@ -27,11 +29,17 @@ class GoodWebhookAction extends WebhookAction {
 
 const action = new GoodWebhookAction()
 
-function expectWebhookMatch(request: Hub.ActionRequest, match: any) {
-  const postSpy = sinon.spy(async () => null)
+function expectWebhookMatch(request: Hub.ActionRequest, match: {url: string, body: Buffer}) {
+  const postSpy = sinon.spy((params: any, callback: (err: any, response: any) => void) => {
+    chai.expect(params.url).to.equal(match.url)
+    params.body.pipe(concatStream((buffer) => {
+      chai.expect(buffer).to.equal(match.body)
+    }))
+    callback(null, `post success`)
+  })
   const stubPost = sinon.stub(req, "post").callsFake(postSpy)
-  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(postSpy).to.have.been.calledWith(match)
+  return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
+    chai.expect(postSpy).to.have.been.called
     stubPost.restore()
   })
 }
@@ -40,25 +48,21 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
-    it("errors if the input has no attachment", () => {
-      const request = new Hub.ActionRequest()
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("No attached json.")
-    })
-
     it("errors if there is no url", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.formParams = {}
       request.attachment = {dataJSON: {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
-      return chai.expect(action.execute(request)).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Missing url.")
     })
 
     it("errors if there is wrong domain for url", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.formParams = {
         url: "http://abc.com/",
       }
@@ -66,12 +70,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: [{name: "coolfield", tags: ["user_id"]}],
         data: [{coolfield: {value: "funvalue"}}],
       }}
-      return chai.expect(action.execute(request)).to.eventually
+      return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith("Incorrect domain for url.")
     })
 
     it("sends right body", () => {
       const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
       request.formParams = {
         url: "http://abc.example.com/",
       }
@@ -81,7 +86,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }}
       return expectWebhookMatch(request, {
         url: "http://abc.example.com/",
-        form: request.attachment.dataJSON,
+        body: request.attachment.dataJSON,
       })
     })
 

@@ -1,17 +1,42 @@
+import * as util from "util"
 import * as uuid from "uuid"
+import * as winston from "winston"
 
 import * as Hub from "../../hub"
+import { SegmentActionError } from "./segment_error"
 
 const segment: any = require("analytics-node")
 
+interface SegmentFields {
+  idFieldNames: string[],
+  idField?: Hub.Field,
+  userIdField?: Hub.Field,
+  groupIdField?: Hub.Field,
+  emailField?: Hub.Field,
+  anonymousIdField?: Hub.Field,
+}
+
+export enum SegmentTags {
+  UserId = "user_id",
+  SegmentAnonymousId = "segment_anonymous_id",
+  Email = "email",
+  SegmentGroupId = "segment_group_id",
+}
+
+export enum SegmentCalls {
+  Identify = "identify",
+  Track = "track",
+  Group = "group",
+}
+
 export class SegmentAction extends Hub.Action {
 
-  allowedTags = ["email", "user_id", "segment_anonymous_id"]
+  allowedTags = [SegmentTags.Email, SegmentTags.UserId, SegmentTags.SegmentAnonymousId]
 
   name = "segment_event"
-  label = "Segment"
+  label = "Segment Identify"
   iconName = "segment/segment.png"
-  description = "Add traits to your Segment users."
+  description = "Add traits via identify to your Segment users."
   params = [
     {
       description: "A write key for Segment.",
@@ -23,106 +48,178 @@ export class SegmentAction extends Hub.Action {
   ]
   minimumSupportedLookerVersion = "4.20.0"
   supportedActionTypes = [Hub.ActionType.Query]
+  usesStreaming = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
+  executeInOwnProcess = true
 
   async execute(request: Hub.ActionRequest) {
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
-
-      if (!(request.attachment && request.attachment.dataJSON)) {
-        reject("No attached json")
-        return
-      }
-
-      const qr = request.attachment.dataJSON
-      if (!qr.fields || !qr.data) {
-        reject("Request payload is an invalid format.")
-        return
-      }
-
-      const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
-      let hiddenFields = []
-      if (request.scheduledPlan &&
-          request.scheduledPlan.query &&
-          request.scheduledPlan.query.vis_config &&
-          request.scheduledPlan.query.vis_config.hidden_fields) {
-        hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
-      }
-
-      const identifiableFields = fields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => this.allowedTags.indexOf(t) !== -1),
-      )
-      if (identifiableFields.length === 0) {
-        reject(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
-        return
-      }
-
-      const idField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "user_id" || t === "segment_anonymous_id"),
-      )[0]
-
-      const emailField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "email"),
-      )[0]
-
-      const anonymousIdField = identifiableFields.filter((f: any) =>
-        f.tags && f.tags.some((t: string) => t === "segment_anonymous_id"),
-      )[0]
-
-      const anonymousId = this.generateAnonymousId()
-
-      const segmentClient = this.segmentClientFromRequest(request)
-
-      const ranAt = qr.ran_at && new Date(qr.ran_at)
-
-      const context = {
-        app: {
-          name: "looker/actions",
-          version: process.env.APP_VERSION,
-        },
-      }
-
-      for (const row of qr.data) {
-        const traits: any = {}
-        for (const field of fields) {
-          const value = row[field.name].value
-          if (!idField || field.name !== idField.name) {
-            if (!hiddenFields.includes(field.name)) {
-              traits[field.name] = value
-            }
-          }
-          if (emailField && field.name === emailField.name) {
-            traits.email = value
-          }
-        }
-
-        segmentClient.identify({
-          anonymousId: anonymousIdField ? row[anonymousIdField.name].value : idField ? null : anonymousId,
-          context,
-          traits,
-          timestamp: ranAt,
-          userId: idField ? row[idField.name].value : null,
-        })
-      }
-
-      segmentClient.flush((err: any) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(new Hub.ActionResponse())
-        }
-      })
-
-    })
+    return this.executeSegment(request, SegmentCalls.Identify)
   }
 
-  private segmentClientFromRequest(request: Hub.ActionRequest) {
+  protected async executeSegment(request: Hub.ActionRequest, segmentCall: SegmentCalls) {
+    const segmentClient = this.segmentClientFromRequest(request)
+
+    let hiddenFields: string[] = []
+    if (request.scheduledPlan &&
+        request.scheduledPlan.query &&
+        request.scheduledPlan.query.vis_config &&
+        request.scheduledPlan.query.vis_config.hidden_fields) {
+      hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
+    }
+
+    let segmentFields: SegmentFields | undefined
+    let fieldset: Hub.Field[] = []
+    const errors: Error[] = []
+
+    let timestamp = new Date()
+    const context = {
+      app: {
+        name: "looker/actions",
+        version: process.env.APP_VERSION ? process.env.APP_VERSION : "dev",
+      },
+    }
+    const event = request.formParams.event
+
+    try {
+
+      await request.streamJsonDetail({
+        onFields: (fields) => {
+          fieldset = Hub.allFields(fields)
+          segmentFields = this.segmentFields(fieldset)
+          this.unassignedSegmentFieldsCheck(segmentFields)
+        },
+        onRanAt: (iso8601string) => {
+          if (iso8601string) {
+            timestamp = new Date(iso8601string)
+          }
+        },
+        onRow: (row) => {
+          this.unassignedSegmentFieldsCheck(segmentFields)
+          const payload = {
+            ...this.prepareSegmentTraitsFromRow(
+              row, fieldset, segmentFields!, hiddenFields, segmentCall === SegmentCalls.Track),
+            ...{event, context, timestamp},
+          }
+          if (payload.groupId === null) {
+            delete payload.groupId
+          }
+          if (!payload.event) {
+            delete payload.event
+          }
+          try {
+            segmentClient[segmentCall](payload)
+          } catch (e) {
+            errors.push(e)
+          }
+        },
+      })
+
+      await new Promise<void>(async (resolve, reject) => {
+          segmentClient.flush( (err: any) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
+      })
+    } catch (e) {
+      errors.push(e)
+    }
+
+    if (errors.length > 0) {
+      let msg = errors.map((e) => e.message ? e.message : e).join(", ")
+      if (msg.length === 0) {
+        msg = "An unknown error occurred while processing the Segment action."
+        winston.warn(`Can't format Segment errors: ${util.inspect(errors)}`)
+      }
+      return new Hub.ActionResponse({success: false, message: msg})
+    } else {
+      return new Hub.ActionResponse({success: true})
+    }
+  }
+
+  protected unassignedSegmentFieldsCheck(segmentFields: SegmentFields | undefined) {
+    if (!(segmentFields && segmentFields.idFieldNames.length > 0)) {
+      throw new SegmentActionError(`Query requires a field tagged ${this.allowedTags.join(" or ")}.`)
+    }
+  }
+
+  protected taggedFields(fields: Hub.Field[], tags: string[]) {
+    return fields.filter((f) =>
+      f.tags && f.tags.length > 0 && f.tags.some((t: string) => tags.indexOf(t) !== -1),
+    )
+  }
+
+  protected taggedField(fields: any[], tags: string[]): Hub.Field | undefined {
+    return this.taggedFields(fields, tags)[0]
+  }
+
+  protected segmentFields(fields: Hub.Field[]): SegmentFields {
+    const idFieldNames = this.taggedFields(fields, [
+      SegmentTags.Email,
+      SegmentTags.SegmentAnonymousId,
+      SegmentTags.UserId,
+      SegmentTags.SegmentGroupId,
+    ]).map((f: Hub.Field) => (f.name))
+
+    return {
+      idFieldNames,
+      idField: this.taggedField(fields, [SegmentTags.UserId, SegmentTags.SegmentAnonymousId]),
+      userIdField: this.taggedField(fields, [SegmentTags.UserId]),
+      groupIdField: this.taggedField(fields, [SegmentTags.SegmentGroupId]),
+      emailField: this.taggedField(fields, [SegmentTags.Email]),
+      anonymousIdField: this.taggedField(fields, [SegmentTags.SegmentAnonymousId]),
+    }
+  }
+
+  protected prepareSegmentTraitsFromRow(
+    row: Hub.JsonDetail.Row,
+    fields: Hub.Field[],
+    segmentFields: SegmentFields,
+    hiddenFields: string[],
+    trackCall: boolean,
+  ) {
+    const traits: {[key: string]: string} = {}
+    for (const field of fields) {
+      const value = row[field.name].value
+      if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
+        if (hiddenFields.indexOf(field.name) === -1) {
+          traits[field.name] = value
+        }
+      }
+      if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
+        traits.email = value
+      }
+    }
+    const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
+    let anonymousId: string | null
+    if (segmentFields.anonymousIdField) {
+      anonymousId = row[segmentFields.anonymousIdField.name].value
+    } else {
+      anonymousId = userId ? null : this.generateAnonymousId()
+    }
+    const groupId: string | null = segmentFields.groupIdField ? row[segmentFields.groupIdField.name].value : null
+
+    const dimensionName = trackCall ? "properties" : "traits"
+
+    const segmentRow: any = {
+      userId,
+      anonymousId,
+      groupId,
+    }
+    segmentRow[dimensionName] = traits
+    return segmentRow
+  }
+
+  protected segmentClientFromRequest(request: Hub.ActionRequest) {
     return new segment(request.params.segment_write_key)
   }
 
-  private generateAnonymousId() {
+  protected generateAnonymousId() {
     return uuid.v4()
   }
 

@@ -34,7 +34,7 @@ export class AzureStorageAction extends Hub.Action {
         return
       }
 
-      if (!request.formParams || !request.formParams.container) {
+      if (!request.formParams.container) {
         reject("Need Azure container.")
         return
       }
@@ -51,12 +51,12 @@ export class AzureStorageAction extends Hub.Action {
         request.formParams.container,
         fileName,
         request.attachment.dataBuffer,
-        (e) => {
-          let response
+        (e?: Error) => {
           if (e) {
-            response = {success: false, message: e.message}
+            resolve(new Hub.ActionResponse({ success: false, message: e.message }))
+          } else {
+            resolve(new Hub.ActionResponse({ success: true }))
           }
-          resolve(new Hub.ActionResponse(response))
         })
     })
   }

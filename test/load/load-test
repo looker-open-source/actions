@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+AH_HOST=$(grep -m 1 ACTION_HUB_LOAD_TESTING_HOST ./.env | cut -d '=' -f2)
+
+echo "open http://localhost:8089 in your browser"
+pipenv run locust -f ./locustfile.py --host=$AH_HOST

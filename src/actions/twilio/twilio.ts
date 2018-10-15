@@ -41,7 +41,7 @@ export class TwilioAction extends Hub.Action {
       throw "Couldn't get data from attachment."
     }
 
-    if (!request.formParams || !request.formParams.to) {
+    if (!request.formParams.to) {
       throw "Need a destination phone number."
     }
 
