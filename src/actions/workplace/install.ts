@@ -9,7 +9,12 @@ export function installWorkplace(req: any, res: any) {
       .render("workplace/error", { message: "No code received." })
   }
 
-  const baseURL = process.env.FACEBOOK_GRAPH_URL || "https://graph.facebook.com"
+  const baseURL = (
+    process.env.FACEBOOK_GRAPH_URL
+    ? process.env.FACEBOOK_GRAPH_URL
+    : "https://graph.facebook.com"
+  )
+
   const tokenQueryString = qs.stringify({
     client_id: process.env.WORKPLACE_APP_ID,
     client_secret: process.env.WORKPLACE_APP_SECRET,

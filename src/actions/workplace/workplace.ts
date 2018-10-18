@@ -93,7 +93,7 @@ export class WorkplaceAction extends Hub.Action {
     const buffer = request.attachment.dataBuffer
     const bufferType = this.getFileType(buffer)
 
-    if (!request.formParams || !request.formParams.destination) {
+    if (!request.formParams.destination) {
       throw "Missing destination."
     }
     const groupId = encodeURIComponent(request.formParams.destination)
