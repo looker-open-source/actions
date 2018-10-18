@@ -88,7 +88,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
   })
 
-  describe.only("form", () => {
+  describe("form", () => {
 
     before(() => {
       apiStub = sinon.stub()
