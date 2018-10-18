@@ -13,15 +13,15 @@ export interface Destination {
 // tslint:disable-next-line max-line-length
 const description = "Install the Looker app for Facebook Workplace (https://workplace.facebook.com/work/admin/?section=apps&app_id=188384231761746), and enter the provided token in this field."
 
-function logRequest(request: Hub.ActionRequest) {
-  const requestInfo = Object.assign({}, request)
-  requestInfo.attachment = Object.assign({}, request.attachment)
-  delete requestInfo.attachment.dataBuffer
-  delete requestInfo.attachment.dataJSON
-  console.log("-".repeat(40))
-  console.log(JSON.stringify(requestInfo, null, 2))
-  console.log("-".repeat(40))
-}
+// function logRequest(request: Hub.ActionRequest) {
+//   const requestInfo = Object.assign({}, request)
+//   requestInfo.attachment = Object.assign({}, request.attachment)
+//   delete requestInfo.attachment.dataBuffer
+//   delete requestInfo.attachment.dataJSON
+//   console.log("-".repeat(40))
+//   console.log(JSON.stringify(requestInfo, null, 2))
+//   console.log("-".repeat(40))
+// }
 
 export class WorkplaceAction extends Hub.Action {
 
@@ -53,7 +53,7 @@ export class WorkplaceAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    logRequest(request)
+    // logRequest(request)
     let response
 
     const photoResponse = await this.postToFacebook(request)
@@ -128,7 +128,7 @@ export class WorkplaceAction extends Hub.Action {
   }
 
   async form(request: Hub.ActionRequest) {
-    logRequest(request)
+    // logRequest(request)
 
     const destinations = await this.usableDestinations(request)
 

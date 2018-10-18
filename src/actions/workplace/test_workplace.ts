@@ -88,7 +88,7 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
   })
 
-  describe("form", () => {
+  describe.only("form", () => {
 
     before(() => {
       apiStub = sinon.stub()
@@ -105,8 +105,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
 
     it("has form with correct destinations", (done) => {
 
-      apiStub.withArgs("/community").returns({ id: "mycommunity" })
-      apiStub.withArgs("/mycommunity/groups").returns({
+      const stubEmail = "user@user.com"
+      const stubId = "userId"
+
+      apiStub.withArgs(`/${stubEmail}`).returns({ id: stubId })
+      apiStub.withArgs(`/${stubId}/managed_groups`).returns({
         data: [
           { id: "1", name: "A" },
           { id: "2", name: "B" },
@@ -114,6 +117,11 @@ describe(`${integration.constructor.name} unit tests`, () => {
       })
 
       const request = new Hub.ActionRequest()
+      request.params = {
+        facebook_app_access_token: "facebook_app_access_token",
+        user_email: stubEmail,
+      }
+
       const form = integration.validateAndFetchForm(request)
 
       chai.expect(form).to.eventually.deep.equal({
