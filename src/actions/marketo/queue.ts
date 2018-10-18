@@ -36,7 +36,7 @@ export class Queue {
     this.completed = []
     this.finished = false
 
-    this.promise = new Promise((resolve) => {
+    this.promise = new Promise<Task[]>((resolve) => {
       this.resolve = resolve
     })
   }
@@ -67,7 +67,7 @@ export class Queue {
     // check if we have task in the queue
     // and room to start a new one
     if (
-      this.queue.length
+      this.queue.length > 0
       && this.channels.length < this.channelSize
     ) {
       // pull a task off the queue

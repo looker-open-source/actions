@@ -51,7 +51,7 @@ export default class MarketoTransaction {
     const sendChunk = () => {
       const chunk = rows.slice(0)
       log("chunk.length", chunk.length)
-      const task = () => this.processChunk(chunk)
+      const task = async () => this.processChunk(chunk)
       rows = []
       queue.addTask(task)
     }
@@ -77,7 +77,7 @@ export default class MarketoTransaction {
     // we awaited streamJsonDetail, so we've got all our rows now
 
     // if any rows are left, send one more chunk
-    if (rows.length) {
+    if (rows.length > 0) {
       sendChunk()
     }
 
@@ -221,10 +221,14 @@ export default class MarketoTransaction {
     skipped.forEach((item: any) => {
       // get the reason item was skipped
       const reason = item.result.reasons[0].message
-      // get the list of emails with that same reason
-      // or create the list if this is the first one
-      const list = reasons[reason] || (reasons[reason] = [])
-      list.push(item.email)
+
+      // create the list of reasons if this is the first one
+      if (! reasons[reason]) {
+        reasons[reason] = []
+      }
+
+      // add the email to the list
+      reasons[reason].push(item.email)
     })
 
     return reasons
