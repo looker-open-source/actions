@@ -4,7 +4,7 @@ import * as httpRequest from "request-promise-native"
 
 const DR_API_URL = "https://app.datarobot.com/api/v2"
 
-export class DataRobotAction extends Hub.Action {
+export class DataRobotAction extends Hub.UrlPassthroughAction {
 
   name = "datarobot"
   label = "DataRobot - Create New Project"
@@ -15,7 +15,6 @@ export class DataRobotAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = []
-  usesStreaming = true
   params = [
     {
       name: "datarobot_api_token",
@@ -25,9 +24,8 @@ export class DataRobotAction extends Hub.Action {
       sensitive: true,
     },
   ]
-  minimumSupportedLookerVersion = "5.24.0"
 
-  async execute(request: Hub.ActionRequest) {
+  async executeUrlPassthrough(downloadUrl: string, request: Hub.ActionRequest) {
     const options = {
       url: `${DR_API_URL}/projects/`,
       headers: {
@@ -35,7 +33,7 @@ export class DataRobotAction extends Hub.Action {
       },
       body: {
         projectName: request.formParams.projectName,
-        url: request.scheduledPlan && request.scheduledPlan.downloadUrl,
+        url: downloadUrl,
       },
       json: true,
       resolveWithFullResponse: true,
