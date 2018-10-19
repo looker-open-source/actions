@@ -1,4 +1,3 @@
-/* tslint:disable no-console */
 import * as Hub from "../../hub"
 import { MarketoTransaction } from "./marketo_transaction"
 
@@ -51,7 +50,6 @@ export class MarketoAction extends Hub.Action {
       label: "Campaign ID",
       name: "campaignId",
       required: true,
-      default: "20916", // DNR
       type: "string",
     }, {
       label: "Lead Lookup Field",
