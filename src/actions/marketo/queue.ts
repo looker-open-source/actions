@@ -127,7 +127,7 @@ export class Queue {
     this.checkQueue()
   }
 
-  finish() {
+  async finish() {
     this.finished = true
     return this.promise
   }
