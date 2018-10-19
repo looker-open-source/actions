@@ -1,8 +1,8 @@
 /* tslint:disable no-console */
 
-function log(...args: any[]) {
-  console.log(...args)
-}
+// function log(...args: any[]) {
+//   console.log(...args)
+// }
 
 // function logJson(label: string, object: any) {
 //   console.log("\n================================")
@@ -81,7 +81,7 @@ export class Queue {
   }
 
   logState() {
-    log("- queue:", this.queue.length, "- channels", this.channels.length, "- completed", this.completed.length)
+    // log("- queue:", this.queue.length, "- channels", this.channels.length, "- completed", this.completed.length)
   }
 
   startTask(task: Task) {

@@ -1,6 +1,6 @@
 /* tslint:disable no-console */
 import * as Hub from "../../hub"
-import MarketoTransaction from "./marketo_transaction"
+import { MarketoTransaction } from "./marketo_transaction"
 
 export class MarketoAction extends Hub.Action {
   name = "marketo"

@@ -6,15 +6,15 @@ const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
 
-function log(...args: any[]) {
-  console.log(...args)
-}
-function logJson(label: string, object: any) {
-  console.log("\n================================")
-  console.log(`${label}:\n`)
-  const json = `${JSON.stringify(object)}\n\n`
-  console.log(json)
-}
+// function log(...args: any[]) {
+//   console.log(...args)
+// }
+// function logJson(label: string, object: any) {
+//   console.log("\n================================")
+//   console.log(`${label}:\n`)
+//   const json = `${JSON.stringify(object)}\n\n`
+//   console.log(json)
+// }
 
 interface Result {
   leads: any[],
@@ -23,7 +23,7 @@ interface Result {
   campaignErrors: any[],
 }
 
-export default class MarketoTransaction {
+export class MarketoTransaction {
 
   fieldMap: any
   marketo: any
@@ -50,7 +50,6 @@ export default class MarketoTransaction {
 
     const sendChunk = () => {
       const chunk = rows.slice(0)
-      log("chunk.length", chunk.length)
       const task = async () => this.processChunk(chunk)
       rows = []
       queue.addTask(task)
@@ -107,7 +106,7 @@ export default class MarketoTransaction {
       requestErrors: errors,
     }
 
-    logJson("result", result)
+    // logJson("result", result)
 
     if (this.hasErrors(result)) {
       const message = this.getErrorMessage(result)
@@ -151,6 +150,15 @@ export default class MarketoTransaction {
     return result
   }
 
+  marketoClientFromRequest(request: Hub.ActionRequest) {
+    return new MARKETO({
+      endpoint: `${request.params.url}/rest`,
+      identity: `${request.params.url}/identity`,
+      clientId: request.params.clientID,
+      clientSecret: request.params.clientSecret,
+    })
+  }
+
   private getFieldMap(fields: Hub.Field[]) {
     // Map the looker columns to the Marketo columns using tags
     const fieldMap: {[name: string]: string[]} = {}
@@ -163,15 +171,6 @@ export default class MarketoTransaction {
       }
     }
     return fieldMap
-  }
-
-  private marketoClientFromRequest(request: Hub.ActionRequest) {
-    return new MARKETO({
-      endpoint: `${request.params.url}/rest`,
-      identity: `${request.params.url}/identity`,
-      clientId: request.params.clientID,
-      clientSecret: request.params.clientSecret,
-    })
   }
 
   private getLeadList(rows: Hub.JsonDetail.Row[]) {
