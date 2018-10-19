@@ -1,5 +1,3 @@
-/* tslint:disable no-console */
-
 // function log(...args: any[]) {
 //   console.log(...args)
 // }
@@ -41,23 +39,27 @@ interface Task {
  */
 export class Queue {
 
-  channelSize = 10 // TODO make this configurable?
+  channelSize: number
   counter: number
   queue: Task[]
   channels: Task[]
   completed: Task[]
   finished: boolean
-  promise: any
+  promise: Promise<Task[]>
   resolve: any
 
   constructor() {
+    this.channelSize = 10 // TODO make this configurable?
     this.counter = 0
     this.queue = []
     this.channels = []
     this.completed = []
     this.finished = false
 
-    this.promise = new Promise<Task[]>((resolve) => {
+    // create our promise which will get returned when the consumer calls queue.finish()
+    // stash the resolver so we can use it later
+    // is there a better way to do this?
+    this.promise = new Promise((resolve) => {
       this.resolve = resolve
     })
   }
@@ -85,7 +87,7 @@ export class Queue {
       return
     }
 
-    // check if we have task in the queue
+    // check if we have any tasks in the queue
     // and room to start a new one
     if (
       this.queue.length > 0
