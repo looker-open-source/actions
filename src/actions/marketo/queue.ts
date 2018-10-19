@@ -18,9 +18,30 @@ interface Task {
   error?: any
 }
 
+/**
+ * Queue
+ * helper to run 10 tasks at a time
+ *
+ * Usage:
+ *
+ * const queue = new Queue()
+ *
+ * queue.addTask(async fn)
+ * queue.addTask(async fn)
+ * queue.addTask(async fn)
+ * queue.addTask(async fn)
+ * ... add as many tasks as needed
+ *
+ * const completed = await queue.finish()
+ *
+ * `completed` is an array of objects with { result } or { error }
+ * (the resolved result of each task or the rejected result)
+ * the completed results will be in the same order as they were added
+ *
+ */
 export class Queue {
 
-  channelSize = 10
+  channelSize = 10 // TODO make this configurable?
   counter: number
   queue: Task[]
   channels: Task[]
