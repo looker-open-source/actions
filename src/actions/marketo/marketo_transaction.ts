@@ -1,20 +1,10 @@
-/* tslint:disable no-console */
+import * as winston from "winston"
 import * as Hub from "../../hub"
 import { Queue } from "./queue"
 
 const MARKETO: any = require("node-marketo-rest")
 
 const numLeadsAllowedPerCall = 100
-
-// function log(...args: any[]) {
-//   console.log(...args)
-// }
-// function logJson(label: string, object: any) {
-//   console.log("\n================================")
-//   console.log(`${label}:\n`)
-//   const json = `${JSON.stringify(object)}\n\n`
-//   console.log(json)
-// }
 
 interface Result {
   leads: any[],
@@ -106,7 +96,7 @@ export class MarketoTransaction {
       requestErrors: errors,
     }
 
-    // logJson("result", result)
+    winston.debug("result", result)
 
     if (this.hasErrors(result)) {
       const message = this.getErrorMessage(result)

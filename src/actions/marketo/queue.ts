@@ -1,13 +1,4 @@
-// function log(...args: any[]) {
-//   console.log(...args)
-// }
-
-// function logJson(label: string, object: any) {
-//   console.log("\n================================")
-//   console.log(`${label}:\n`)
-//   const json = `${JSON.stringify(object)}\n\n`
-//   console.log(json)
-// }
+import * as winston from "winston"
 
 interface Task {
   id: number
@@ -104,7 +95,14 @@ export class Queue {
   }
 
   logState() {
-    // log("- queue:", this.queue.length, "- channels", this.channels.length, "- completed", this.completed.length)
+    winston.debug(
+      "- queue:",
+      this.queue.length,
+      "- channels",
+      this.channels.length,
+      "- completed",
+      this.completed.length,
+    )
   }
 
   startTask(task: Task) {
