@@ -96,7 +96,8 @@ export class MarketoTransaction {
       requestErrors: errors,
     }
 
-    winston.debug("result", result)
+    winston.debug("result")
+    winston.debug(JSON.stringify(result, null, 2))
 
     if (this.hasErrors(result)) {
       const message = this.getErrorMessage(result)
