@@ -133,7 +133,7 @@ export class DropboxAction extends Hub.OAuthAction {
       let res = false
       const drop = new Dropbox({accessToken: token})
       await drop.filesListFolder({path: ""})
-          .then((resp) => {
+          .then(() => {
               res = true
           })
           .catch((error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
