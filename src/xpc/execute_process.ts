@@ -1,6 +1,12 @@
+import * as dotenv from "dotenv"
 import * as winston from "winston"
+
+import { registerDebugAction } from "../actions/debug/debug"
 import "../actions/index.ts"
 import * as Hub from "../hub/index"
+
+dotenv.config()
+registerDebugAction()
 
 async function execute(jsonPayload: any) {
     const req = JSON.parse(jsonPayload)

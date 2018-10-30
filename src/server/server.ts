@@ -62,7 +62,7 @@ export default class Server implements Hub.RouteBuilder {
 
     // Default to 0 to prevent Node from applying timeout to sockets
     // Load balancers in front of the app may still timeout
-    const timeout = process.env.ACTION_HUB_TIMEOUT ? parseInt(process.env.ACTION_HUB_TIMEOUT, 10) : 0
+    const timeout = process.env.ACTION_HUB_SOCKET_TIMEOUT ? parseInt(process.env.ACTION_HUB_SOCKET_TIMEOUT, 10) : 0
 
     Server.listen(port, timeout)
   }
@@ -115,29 +115,23 @@ export default class Server implements Hub.RouteBuilder {
       res.json(action.asJson(this))
     })
 
-    this.route("/actions/:actionId/execute", async (req, res) => {
+    this.route("/actions/:actionId/execute", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       const actionResponse = await action.validateAndExecute(request, expensiveJobQueue)
-      // Some versions of Looker do not look at the "success" value in the response
-      // if the action returns a 200 status code, even though the Action API specs otherwise.
-      // So we force a non-200 status code as a workaround.
-      if (!actionResponse.success) {
-          res.status(400)
-      }
-      res.json(actionResponse.asJson())
-    })
+      complete(actionResponse.asJson())
+    }))
 
-    this.route("/actions/:actionId/form", async (req, res) => {
+    this.route("/actions/:actionId/form", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action.hasForm) {
         const form = await action.validateAndFetchForm(request)
-        res.json(form.asJson())
+        complete(form.asJson())
       } else {
         throw "No form defined for action."
       }
-    })
+    }))
 
     // Initial OAuth flow request from Resource Owner
     this.app.get("/actions/:actionId/oauth", async (req, res) => {
@@ -198,6 +192,33 @@ export default class Server implements Hub.RouteBuilder {
   oauthRedirectUrl(action: Hub.Action) {
     const url = this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
     return url
+  }
+  /**
+   * For JSON responses that take a long time without sending any data,
+   * we periodically send a newline character to prevent the connection from being
+   * dropped by proxies or other services (like the AWS NAT Gateway).
+   */
+  private jsonKeepAlive(fn: (req: express.Request, complete: (data: any) => void) => Promise<void>):
+  (req: express.Request, res: express.Response) => Promise<void> {
+    const interval = process.env.ACTION_HUB_JSON_KEEPALIVE_SEC ?
+        parseInt(process.env.ACTION_HUB_JSON_KEEPALIVE_SEC, 10)
+      :
+        30
+    return async (req, res) => {
+      res.status(200)
+      res.setHeader("Content-Type", "application/json")
+      const timer = setInterval(() => {
+        res.write("\n")
+      }, interval * 1000)
+      try {
+        await fn(req, (data) => {
+          res.write(JSON.stringify(data))
+          res.end()
+        })
+      } finally {
+        clearInterval(timer)
+      }
+    }
   }
 
   private route(urlPath: string, fn: (req: express.Request, res: express.Response) => Promise<void>): void {
