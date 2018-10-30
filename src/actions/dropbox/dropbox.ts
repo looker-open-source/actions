@@ -81,7 +81,6 @@ export class DropboxAction extends Hub.OAuthAction {
             }]
         })
         .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
-            winston.info(`OAUTH: ${process.env.ACTION_HUB_BASE_URL}/dropbox/oauth`)
             const state = new Hub.ActionState()
             form.state = state
             form.fields.push({
@@ -135,7 +134,6 @@ export class DropboxAction extends Hub.OAuthAction {
       const drop = new Dropbox({accessToken: token})
       await drop.filesListFolder({path: ""})
           .then((resp) => {
-              winston.info(resp.entries[0].name)
               res = true
           })
           .catch((error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
