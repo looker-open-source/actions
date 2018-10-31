@@ -36,17 +36,20 @@ export class DropboxAction extends Hub.OAuthAction {
     }
     const drop = new Dropbox({ accessToken: token })
     const resp = new Hub.ActionResponse()
-    const fileBuf = request.attachment!.dataBuffer || Buffer.from("")
-    await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then( (_dropResp) => {
-      resp.success = true
-      resp.state = new Hub.ActionState()
-      resp.state.data = "reset"
-    }).catch( (err) => {
-      winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
+    if (request.attachment && request.attachment.dataBuffer) {
+      const fileBuf = request.attachment.dataBuffer
+      await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then((_dropResp) => {
+        resp.success = true
+      }).catch((err) => {
+        winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
+        resp.success = false
+        resp.state = new Hub.ActionState()
+        resp.state.data = "reset"
+      })
+    } else {
       resp.success = false
-      resp.state = new Hub.ActionState()
-      resp.state.data = "reset"
-    })
+      resp.message = "No data sent from Looker to be sent to Dropbox"
+    }
     return resp
   }
 
@@ -113,7 +116,7 @@ export class DropboxAction extends Hub.OAuthAction {
       client_id: process.env.DROPBOX_ACTION_APP_KEY,
       client_secret: process.env.DROPBOX_ACTION_APP_SECRET,
     })
-    const res = await req.post(url.toString(), { json: true })
+    const res = await req.post(url.toString(), { json: true }).catch()
     const https = require("request")
     await https.get({
         url: urlParams.state,

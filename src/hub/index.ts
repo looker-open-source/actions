@@ -3,6 +3,7 @@ export * from "./action_request"
 export * from "./action_state"
 export * from "./action_response"
 export * from "./action"
+export * from "./oauth_action"
 export * from "./sources"
 export * from "./utils"
 

@@ -137,7 +137,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action && Hub.isOauthAction(action)) {
+      if (Hub.isOauthAction(action)) {
         const parts = uparse.parse(req.url, true)
         const stateUrl = parts.query.stateUrl
         const url = await action.oauthUrl(this.oauthRedirectUrl(action), stateUrl)
@@ -150,7 +150,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      if (action && Hub.isOauthAction(action)) {
+      if (Hub.isOauthAction(action)) {
         const check = action.oauthCheck(request)
         res.json(check)
       }
@@ -160,7 +160,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_redirect", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action && Hub.isOauthAction(action)) {
+      if (Hub.isOauthAction(action)) {
         try {
           await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
           res.statusCode = 200
