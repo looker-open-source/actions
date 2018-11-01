@@ -5,9 +5,9 @@ import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
+import {OAuthAction} from "../hub"
 import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
-import {OAuthAction} from "../hub"
 
 const expressWinston = require("express-winston")
 const uparse = require("url")
