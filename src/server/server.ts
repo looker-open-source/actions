@@ -7,6 +7,7 @@ import * as winston from "winston"
 import * as Hub from "../hub"
 import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
+import {OAuthAction} from "../hub"
 
 const expressWinston = require("express-winston")
 const uparse = require("url")
@@ -137,7 +138,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (Hub.isOauthAction(action)) {
+      if (action instanceof OAuthAction) {
         const parts = uparse.parse(req.url, true)
         const stateUrl = parts.query.stateUrl
         const url = await action.oauthUrl(this.oauthRedirectUrl(action), stateUrl)
@@ -150,7 +151,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      if (Hub.isOauthAction(action)) {
+      if (action instanceof OAuthAction) {
         const check = action.oauthCheck(request)
         res.json(check)
       }
@@ -160,7 +161,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_redirect", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (Hub.isOauthAction(action)) {
+      if (action instanceof OAuthAction) {
         try {
           await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
           res.statusCode = 200
