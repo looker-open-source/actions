@@ -14,13 +14,9 @@ export class DropboxAction extends Hub.OAuthAction {
     description = "Send query results directly to a file in your Dropbox."
     supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
+    minimumSupportedLookerVersion = "6.2.0"
     requiredFields = []
-    params = [{
-      name: "dropbox_access_token",
-      label: "Dropbox Access token",
-      required: false,
-      sensitive: true,
-    }]
+    params = []
   async execute(request: Hub.ActionRequest) {
     let token = ""
     const filename = request.formParams.filename
@@ -69,7 +65,6 @@ export class DropboxAction extends Hub.OAuthAction {
     const drop = new Dropbox({ accessToken: token})
     await drop.filesListFolder({path: ""})
         .then( (resp) => {
-            winston.info(JSON.stringify(resp))
             form.fields = [{
                 description: "Dropbox directory where file will be saved",
                 label: "Save in",
@@ -84,6 +79,7 @@ export class DropboxAction extends Hub.OAuthAction {
             }]
         })
         .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
+            winston.info("Could not list Dropbox folders")
             const state = new Hub.ActionState()
             form.state = state
             form.fields.push({
