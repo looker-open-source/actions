@@ -12,7 +12,7 @@ This action allows you to push rows from a query in Looker to a campaign in Mark
     
 2. Tell Looker how columns in Looker map to fields in Marketo.
     - For every dimension/measure that you want Looker to be able to send to Marketo, you must map it in the LookML to a Marketo field.
-    - The tag should follow the form `marketo:\<marketo field name\>` and should use the REST API name that Marketo gives the field. **IMPORTANT: You must use the REST API name of the field, not the display name or SOAP API name.**
+    - The tag should follow the form `marketo:<marketo field name>` and should use the REST API name that Marketo gives the field. **IMPORTANT: You must use the REST API name of the field, not the display name or SOAP API name.**
     - You can read how to find Marketo API field names [here](https://docs.marketo.com/display/public/DOCS/Export+a+List+of+All+Marketo+API+Field+Names).
     - You can add as many tags as you'd like to a Looker field, as long as it has the Marketo field. ![](marketo_tag.png)
 
