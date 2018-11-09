@@ -1,20 +1,20 @@
 # Marketo
 ## Send leads from an Explore into a campaign in Marketo
 
-This action allows you to push rows from an explore in Looker to a campaign in Marketo. 
+This action allows you to push rows from a query in Looker to a campaign in Marketo. 
 
 ## SETUP
 
 1. Enable Marketo in your Looker Administration page for Actions (/admin/actions).
     - If you haven't already set up the REST API for your Marketo instance, [do that first](http://developers.marketo.com/rest-api/).
-    - Get the endpoint URL for your Marketo API and enter it into the Looker Action Hub. *IMPORTANT: You must remove `/rest` from the end of the address. Only enter the part of the endpoint that looks like `https://123-ABC-456.mktorest.com`.*
-    - Get the Client ID and Client Secret for your Marketo API user and enter them in the Looker Action Hub.
+    - Get the endpoint URL for your Marketo API and enter it into the Looker Action Hub. **IMPORTANT: You must remove `/rest` from the end of the address. Only enter the part of the endpoint that looks like `https://123-ABC-456.mktorest.com`.**
+    - Get the Client ID and Client Secret for your Marketo API user and enter them in the Looker Action Hub. ![](marketo_settings.png)
     
 2. Tell Looker how columns in Looker map to fields in Marketo.
     - For every dimension/measure that you want Looker to be able to send to Marketo, you must map it in the LookML to a Marketo field.
-    - The tag should follow the form "marketo:\<marketo field name\>" and should use the REST API name that Marketo gives the field. *IMPORTANT: You must use the REST API name of the field, not the display name or SOAP API name.*
+    - The tag should follow the form `marketo:\<marketo field name\>` and should use the REST API name that Marketo gives the field. **IMPORTANT: You must use the REST API name of the field, not the display name or SOAP API name.**
     - You can read how to find Marketo API field names [here](https://docs.marketo.com/display/public/DOCS/Export+a+List+of+All+Marketo+API+Field+Names).
-    - You can add as many tags as you'd like to a field, as long as it has the Marketo field. ![](marketo_tag.png)
+    - You can add as many tags as you'd like to a Looker field, as long as it has the Marketo field. ![](marketo_tag.png)
 
 ## USING THE MARKETO ACTION
 
@@ -36,4 +36,5 @@ To use this Action, run a query in Looker with all the fields that you want to s
 
 - Any fields in your query that are not tagged in the LookML will not be sent to Marketo.
 - The maximum number of rows you can send will be affected by Marketo's rate limits. The Action has been tested up to 50,000 rows successfully but likely can send more.
-- A very common error you may receive is listed on the scheduled jobs page (admin/scheduled_jobs/) and indicates that certain leads were skipped. This looks like `{"skipped":{"Multiple lead match lookup criteria":["test@test.com"]}}` and occurs when one of the leads you send to Marketo matches multiple leads in the Marketo database. In this case, Marketo can't tell which of the leads you want to operate on and so skips that lead entirely. All of the other leads that you send will go through successfully, but the ones listed in the error will be skipped. To address this error, you must deduplicate the records in Marketo.
+- A very common error you may receive is listed on the scheduled jobs page (admin/scheduled_jobs/) and indicates that certain leads were skipped. This looks like `{"skipped":{"Multiple lead match lookup criteria":["test@test.com"]}}` and occurs when a lead you send to Marketo matches multiple leads in the Marketo database. Because Marketo can't tell which of the leads you want to operate on, it skips that lead entirely. All of the other leads that you send will still be processed, but the ones listed in the error will be skipped. To address this error, you must deduplicate the records in Marketo.
+- In addition to sending query results to Marketo manually, you can also schedule a Look to send to Marketo automatically. Follow the same procedures above, but under the gear icon, choose Schedule...
