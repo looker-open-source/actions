@@ -61,3 +61,6 @@ lib
 
 # For IdeaStorm
 .idea/
+
+# Mac OS X metadata
+.DS_Store
