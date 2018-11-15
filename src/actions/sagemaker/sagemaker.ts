@@ -98,3 +98,5 @@ export class SageMakerAction extends Hub.Action {
   // }
 
 }
+
+Hub.addAction(new SageMakerAction())
