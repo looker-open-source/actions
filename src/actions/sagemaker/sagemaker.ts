@@ -6,7 +6,7 @@ export class SageMakerAction extends Hub.Action {
 
   name = "amazon_sagemaker"
   label = "Amazon SageMaker"
-  iconName = "sagemaker/sagemaker.jpg"
+  iconName = "sagemaker/sagemaker.png"
   description = "Send training data to Amazon SageMaker."
   supportedActionTypes = [Hub.ActionType.Query]
   usesStreaming = true
