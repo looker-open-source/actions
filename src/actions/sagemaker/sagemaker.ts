@@ -1,5 +1,6 @@
 import * as Hub from "../../hub"
 
+import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
 
 export class SageMakerAction extends Hub.Action {
@@ -67,10 +68,14 @@ export class SageMakerAction extends Hub.Action {
   }
 
   async form(request: Hub.ActionRequest) {
-    const client = this.getSageMakerClientFromRequest(request)
-    const params = {} // not sure if we need any params? we get results without it
-    const res = await client.listNotebookInstances(params).promise()
-    const notebooks = res.NotebookInstances ? res.NotebookInstances : []
+    const sagemaker = this.getSageMakerClientFromRequest(request)
+    const sagemakerRes = await sagemaker.listNotebookInstances().promise()
+    const notebooks = sagemakerRes.NotebookInstances ? sagemakerRes.NotebookInstances : []
+
+    const s3 = this.getS3ClientFromRequest(request)
+    const s3Res = await s3.listBuckets().promise()
+    const buckets = s3Res.Buckets ? s3Res.Buckets : []
+
     const form = new Hub.ActionForm()
     form.fields = [
       {
@@ -79,12 +84,25 @@ export class SageMakerAction extends Hub.Action {
         required: true,
         options: notebooks.map((notebook) => {
           return {
-            name: notebook.NotebookInstanceArn,
-            label: notebook.NotebookInstanceName,
+            name: notebook.NotebookInstanceArn!,
+            label: notebook.NotebookInstanceName!,
           }
         }),
         type: "select",
-        // default: notebooks[0].NotebookInstanceName,
+        description: "Choose the notebook where training data should be sent",
+      },
+      {
+        label: "Bucket",
+        name: "bucket",
+        required: true,
+        options: buckets.map((bucket) => {
+          return {
+            name: bucket.Name!,
+            label: bucket.Name!,
+          }
+        }),
+        type: "select",
+        description: "Choose the bucket where training data should be stored",
       },
     ]
     return form
@@ -92,6 +110,14 @@ export class SageMakerAction extends Hub.Action {
 
   protected getSageMakerClientFromRequest(request: Hub.ActionRequest) {
     return new SageMaker({
+      region: request.params.region,
+      accessKeyId: request.params.access_key_id,
+      secretAccessKey: request.params.secret_access_key,
+    })
+  }
+
+  protected getS3ClientFromRequest(request: Hub.ActionRequest) {
+    return new S3({
       region: request.params.region,
       accessKeyId: request.params.access_key_id,
       secretAccessKey: request.params.secret_access_key,
