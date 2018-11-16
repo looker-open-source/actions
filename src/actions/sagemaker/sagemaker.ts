@@ -1,6 +1,6 @@
 import * as Hub from "../../hub"
 
-// import * as SageMaker from "aws-sdk/clients/sagemaker"
+import * as SageMaker from "aws-sdk/clients/sagemaker"
 
 export class SageMakerAction extends Hub.Action {
 
@@ -24,6 +24,13 @@ export class SageMakerAction extends Hub.Action {
       required: true,
       sensitive: true,
       description: "Your secret key for SageMaker.",
+    }, {
+      name: "region",
+      label: "Region",
+      required: true,
+      sensitive: false,
+      description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
+        "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
     },
   ]
 
@@ -60,7 +67,7 @@ export class SageMakerAction extends Hub.Action {
   }
 
   async form(_request: Hub.ActionRequest) {
-    // const s3 = this.amazonS3ClientFromRequest(request)
+    // const client = this.getSageMakerClientFromRequest(request)
     // const res = await s3.listBuckets().promise()
     // const buckets = res.Buckets ? res.Buckets : []
     const buckets: any[] = [
@@ -89,13 +96,13 @@ export class SageMakerAction extends Hub.Action {
     return form
   }
 
-  // protected amazonS3ClientFromRequest(request: Hub.ActionRequest) {
-  //   return new S3({
-  //     region: request.params.region,
-  //     accessKeyId: request.params.access_key_id,
-  //     secretAccessKey: request.params.secret_access_key,
-  //   })
-  // }
+  protected getSageMakerClientFromRequest(request: Hub.ActionRequest) {
+    return new SageMaker({
+      region: request.params.region,
+      accessKeyId: request.params.access_key_id,
+      secretAccessKey: request.params.secret_access_key,
+    })
+  }
 
 }
 
