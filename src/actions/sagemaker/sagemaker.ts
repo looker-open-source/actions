@@ -84,7 +84,7 @@ export class SageMakerAction extends Hub.Action {
           }
         }),
         type: "select",
-        default: notebooks[0].NotebookInstanceName,
+        // default: notebooks[0].NotebookInstanceName,
       },
     ]
     return form
