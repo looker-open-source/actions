@@ -66,33 +66,27 @@ export class SageMakerAction extends Hub.Action {
 
   }
 
-  async form(_request: Hub.ActionRequest) {
-    // const client = this.getSageMakerClientFromRequest(request)
-    // const res = await s3.listBuckets().promise()
-    // const buckets = res.Buckets ? res.Buckets : []
-    const buckets: any[] = [
-      { Name: "Bucket One" },
-      { Name: "Bucket Two" },
-    ]
+  async form(request: Hub.ActionRequest) {
+    const client = this.getSageMakerClientFromRequest(request)
+    const params = {} // not sure if we need any params? we get results without it
+    const res = await client.listNotebookInstances(params).promise()
+    const notebooks = res.NotebookInstances ? res.NotebookInstances : []
     const form = new Hub.ActionForm()
-    form.fields = [{
-      label: "Bucket",
-      name: "bucket",
-      required: true,
-      options: buckets.map((c) => {
-        return { name: c.Name!, label: c.Name! }
-      }),
-      type: "select",
-      default: buckets[0].Name,
-    }, {
-      label: "Path",
-      name: "path",
-      type: "string",
-    }, {
-      label: "Filename",
-      name: "filename",
-      type: "string",
-    }]
+    form.fields = [
+      {
+        label: "Notebook",
+        name: "notebook",
+        required: true,
+        options: notebooks.map((notebook) => {
+          return {
+            name: notebook.NotebookInstanceArn,
+            label: notebook.NotebookInstanceName,
+          }
+        }),
+        type: "select",
+        default: notebooks[0].NotebookInstanceName,
+      },
+    ]
     return form
   }
 
