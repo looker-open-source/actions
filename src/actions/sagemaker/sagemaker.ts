@@ -98,8 +98,8 @@ export class SageMakerAction extends Hub.Action {
         description: "Choose the notebook where training data should be sent",
       },
       {
-        label: "Bucket",
-        name: "bucket",
+        label: "Input Bucket",
+        name: "input_bucket",
         required: true,
         options: buckets.map((bucket) => {
           return {
@@ -108,7 +108,31 @@ export class SageMakerAction extends Hub.Action {
           }
         }),
         type: "select",
-        description: "Choose the bucket where training data should be stored",
+        description: "The S3 bucket where SageMaker input training data should be stored",
+      },
+      {
+        label: "Output Bucket",
+        name: "output_bucket",
+        required: true,
+        options: buckets.map((bucket) => {
+          return {
+            name: bucket.Name!,
+            label: bucket.Name!,
+          }
+        }),
+        type: "select",
+        description: "The S3 bucket where SageMaker training result should be stored",
+      },
+      {
+        label: "Algorithm",
+        name: "algorithm",
+        required: true,
+        options: [{
+            name: "xgboost",
+            label: "XGBoost",
+          }],
+        type: "select",
+        description: "The algorithm for SageMaker training",
       },
     ]
     return form
