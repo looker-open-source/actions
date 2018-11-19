@@ -32,6 +32,12 @@ export class SageMakerAction extends Hub.Action {
       sensitive: false,
       description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
         "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
+    }, {
+      name: "role_arn",
+      label: "Role ARN",
+      required: true,
+      sensitive: false,
+      description: "Role ARN for accessing SageMaker and S3",
     },
   ]
 
