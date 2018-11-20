@@ -136,6 +136,7 @@ export class SageMakerAction extends Hub.Action {
       return new Hub.ActionResponse({ success: true })
 
     } catch (err) {
+      winston.error(err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
