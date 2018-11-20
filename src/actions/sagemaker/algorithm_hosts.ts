@@ -15,7 +15,7 @@ const hostsXgBoost: { [key: string]: string } = {
   "eu-west-2": "644912444149.dkr.ecr.eu-west-2.amazonaws.com",
 }
 
-const hostsLinearLearner = {
+const hostsLinearLearner: { [key: string]: string } = {
   "us-west-1": "632365934929.dkr.ecr.us-west-1.amazonaws.com",
   "us-west-2": "174872318107.dkr.ecr.us-west-2.amazonaws.com",
   "us-east-1": "382416733822.dkr.ecr.us-east-1.amazonaws.com",

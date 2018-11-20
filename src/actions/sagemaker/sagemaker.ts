@@ -89,7 +89,9 @@ export class SageMakerAction extends Hub.Action {
       const sagemaker = this.getSageMakerClientFromRequest(request)
 
       const s3OutputPath = `s3://${output_bucket}/${prefix}`
+      winston.debug("region", region)
       const trainingImageHost = ecrHosts[algorithm][region]
+      winston.debug("trainingImageHost", trainingImageHost)
       const trainingImagePath = `${trainingImageHost}/${algorithm}:1`
 
       const trainingParams = {
