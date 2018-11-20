@@ -94,7 +94,7 @@ export class SageMakerAction extends Hub.Action {
 
       const trainingParams = {
         // should we ask the user to name the training job?
-        TrainingJobName: `training-job-${Date.now()}`,
+        TrainingJobName: `training-job-${date}`,
         RoleArn: role_arn,
         AlgorithmSpecification: { // required
           TrainingInputMode: "File", // required
