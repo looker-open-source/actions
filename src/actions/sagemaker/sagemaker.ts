@@ -146,6 +146,7 @@ export class SageMakerAction extends Hub.Action {
     const s3 = this.getS3ClientFromRequest(request)
     const s3Res = await s3.listBuckets().promise()
     const buckets = s3Res.Buckets ? s3Res.Buckets : []
+    winston.debug("buckets", buckets)
 
     const form = new Hub.ActionForm()
     form.fields = [
