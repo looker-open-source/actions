@@ -69,7 +69,7 @@ export class SageMakerAction extends Hub.Action {
     try {
       // set up variables required for API calls
       const channelName = "train"
-      const date = (new Date()).toISOString()
+      const date = Date.now()
       const prefix = `${algorithm}-${date}`
 
       // store data in input_bucket on S3
