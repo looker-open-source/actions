@@ -109,10 +109,6 @@ export class SageMakerAction extends Hub.Action {
                 S3Uri: storage.Location, // required
               },
             },
-            CompressionType: "None",
-            ContentType: "csv",
-            InputMode: "File",
-            RecordWrapperType: "None",
           },
         ],
         OutputDataConfig: {
