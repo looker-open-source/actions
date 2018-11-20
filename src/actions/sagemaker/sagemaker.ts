@@ -2,6 +2,8 @@ import * as Hub from "../../hub"
 
 import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
+import * as winston from "winston"
+
 import { ecrHosts } from "./algorithm_hosts"
 
 export class SageMakerAction extends Hub.Action {
@@ -81,6 +83,7 @@ export class SageMakerAction extends Hub.Action {
         }
         return s3.upload(storageParams).promise()
       })
+      winston.debug("storage", storage)
 
       // make createTrainingJob API call
       const sagemaker = this.getSageMakerClientFromRequest(request)
@@ -124,8 +127,10 @@ export class SageMakerAction extends Hub.Action {
           MaxRuntimeInSeconds: 10,
         },
       }
+      winston.debug("trainingParams", trainingParams)
 
-      await sagemaker.createTrainingJob(trainingParams).promise()
+      const result = await sagemaker.createTrainingJob(trainingParams).promise()
+      winston.debug("result", result)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
