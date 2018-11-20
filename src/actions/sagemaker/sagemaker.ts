@@ -88,10 +88,12 @@ export class SageMakerAction extends Hub.Action {
       // make createTrainingJob API call
       const sagemaker = this.getSageMakerClientFromRequest(request)
 
+      const s3Uri = `s3://${input_bucket}/${prefix}/${channelName}`
+      winston.debug("s3Uri", s3Uri)
       const s3OutputPath = `s3://${output_bucket}/${prefix}`
-      winston.debug("region", region)
+      winston.debug("s3OutputPath", s3OutputPath)
+
       const trainingImageHost = ecrHosts[algorithm][region]
-      winston.debug("trainingImageHost", trainingImageHost)
       const trainingImagePath = `${trainingImageHost}/${algorithm}:1`
 
       const trainingParams = {
@@ -108,7 +110,7 @@ export class SageMakerAction extends Hub.Action {
             DataSource: { // required
               S3DataSource: { // required
                 S3DataType: "S3Prefix", // required
-                S3Uri: storage.Location, // required
+                S3Uri: s3Uri, // required
               },
             },
           },
