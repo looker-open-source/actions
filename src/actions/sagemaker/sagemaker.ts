@@ -6,6 +6,10 @@ import * as winston from "winston"
 
 import { ecrHosts } from "./algorithm_hosts"
 
+function logJson(label: string, obj: any) {
+  winston.debug(label, JSON.stringify(obj, null, 2))
+}
+
 export class SageMakerAction extends Hub.Action {
 
   name = "amazon_sagemaker"
@@ -83,7 +87,7 @@ export class SageMakerAction extends Hub.Action {
         }
         return s3.upload(storageParams).promise()
       })
-      winston.debug("storage", storage)
+      logJson("storage", storage)
 
       // make createTrainingJob API call
       const sagemaker = this.getSageMakerClientFromRequest(request)
@@ -130,7 +134,7 @@ export class SageMakerAction extends Hub.Action {
       winston.debug("trainingParams", trainingParams)
 
       const result = await sagemaker.createTrainingJob(trainingParams).promise()
-      winston.debug("result", result)
+      logJson("result", result)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
@@ -146,7 +150,7 @@ export class SageMakerAction extends Hub.Action {
     const s3 = this.getS3ClientFromRequest(request)
     const s3Res = await s3.listBuckets().promise()
     const buckets = s3Res.Buckets ? s3Res.Buckets : []
-    winston.debug("buckets", buckets)
+    logJson("buckets", buckets)
 
     const form = new Hub.ActionForm()
     form.fields = [
