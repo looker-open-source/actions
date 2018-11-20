@@ -2,6 +2,7 @@ import * as Hub from "../../hub"
 
 import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
+import { ecrHosts } from "./algorithm_hosts"
 
 export class SageMakerAction extends Hub.Action {
 
@@ -41,42 +42,100 @@ export class SageMakerAction extends Hub.Action {
     },
   ]
 
-  async execute(_request: Hub.ActionRequest) {
+  async execute(request: Hub.ActionRequest) {
 
-    // if (!request.formParams.bucket) {
-    //   throw new Error("Need Amazon S3 bucket.")
-    // }
+    const {region, role_arn} = request.params
+    const {input_bucket, output_bucket, algorithm} = request.formParams
 
-    // const s3 = this.amazonS3ClientFromRequest(request)
+    // validate input
+    if (!input_bucket) {
+      throw new Error("Need Amazon S3 input bucket.")
+    }
+    if (!output_bucket) {
+      throw new Error("Need Amazon S3 output bucket.")
+    }
+    if (!algorithm) {
+      throw new Error("Need SageMaker algorithm for training.")
+    }
+    if (!region) {
+      throw new Error("Need AWS region.")
+    }
+    if (!role_arn) {
+      throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
+    }
 
-    // const filename = request.formParams.filename || request.suggestedFilename()
+    try {
+      // set up variables required for API calls
+      const channelName = "train"
+      const date = (new Date()).toISOString()
+      const prefix = `${algorithm}-${date}`
 
-    // if (!filename) {
-    //   throw new Error("Couldn't determine filename.")
-    // }
+      // store data in input_bucket on S3
+      const s3 = this.getS3ClientFromRequest(request)
 
-    // const bucket = request.formParams.bucket
+      const storage = await request.stream(async (readable) => {
+        const storageParams = {
+          Bucket: input_bucket,
+          Key: `${prefix}/${channelName}`,
+          Body: readable,
+        }
+        return s3.upload(storageParams).promise()
+      })
 
-    // try {
-    //   await request.stream(async (readable) => {
-    //     const params = {
-    //       Bucket: bucket,
-    //       Key: filename,
-    //       Body: readable,
-    //     }
-    //     return s3.upload(params).promise()
-    //   })
-    return new Hub.ActionResponse({ success: true })
-    // } catch (err) {
-    //   return new Hub.ActionResponse({ success: false, message: err.message })
-    // }
+      // make createTrainingJob API call
+      const sagemaker = this.getSageMakerClientFromRequest(request)
 
+      const s3OutputPath = `s3://${output_bucket}/${prefix}`
+      const trainingImageHost = ecrHosts[algorithm][region]
+      const trainingImagePath = `${trainingImageHost}/${algorithm}:1`
+
+      const trainingParams = {
+        // should we ask the user to name the training job?
+        TrainingJobName: `training-job-${Date.now()}`,
+        RoleArn: role_arn,
+        AlgorithmSpecification: { // required
+          TrainingInputMode: "File", // required
+          TrainingImage: trainingImagePath,
+        },
+        InputDataConfig: [
+          {
+            ChannelName: channelName, // required
+            DataSource: { // required
+              S3DataSource: { // required
+                S3DataType: "S3Prefix", // required
+                S3Uri: storage.Location, // required
+              },
+            },
+            CompressionType: "None",
+            ContentType: "csv",
+            InputMode: "File",
+            RecordWrapperType: "None",
+          },
+        ],
+        OutputDataConfig: {
+          S3OutputPath: s3OutputPath,
+        },
+        ResourceConfig: {
+          InstanceCount: 1,
+          InstanceType: "ml.m4.xlarge",
+          VolumeSizeInGB: 1,
+        },
+        StoppingCondition: {
+          MaxRuntimeInSeconds: 10,
+        },
+      }
+
+      await sagemaker.createTrainingJob(trainingParams).promise()
+
+      // return success response
+      return new Hub.ActionResponse({ success: true })
+
+    } catch (err) {
+      return new Hub.ActionResponse({ success: false, message: err.message })
+    }
   }
 
   async form(request: Hub.ActionRequest) {
-    const sagemaker = this.getSageMakerClientFromRequest(request)
-    const sagemakerRes = await sagemaker.listNotebookInstances().promise()
-    const notebooks = sagemakerRes.NotebookInstances ? sagemakerRes.NotebookInstances : []
 
     const s3 = this.getS3ClientFromRequest(request)
     const s3Res = await s3.listBuckets().promise()
@@ -84,19 +143,6 @@ export class SageMakerAction extends Hub.Action {
 
     const form = new Hub.ActionForm()
     form.fields = [
-      {
-        label: "Notebook",
-        name: "notebook",
-        required: true,
-        options: notebooks.map((notebook) => {
-          return {
-            name: notebook.NotebookInstanceArn!,
-            label: notebook.NotebookInstanceName!,
-          }
-        }),
-        type: "select",
-        description: "Choose the notebook where training data should be sent",
-      },
       {
         label: "Input Bucket",
         name: "input_bucket",
@@ -127,10 +173,16 @@ export class SageMakerAction extends Hub.Action {
         label: "Algorithm",
         name: "algorithm",
         required: true,
-        options: [{
+        options: [
+          {
             name: "xgboost",
             label: "XGBoost",
-          }],
+          },
+          {
+            name: "linearlearner",
+            label: "Linear Learner",
+          },
+        ],
         type: "select",
         description: "The algorithm for SageMaker training",
       },
