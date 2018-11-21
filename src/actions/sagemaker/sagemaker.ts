@@ -2,7 +2,10 @@ import * as Hub from "../../hub"
 
 import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
+import { PassThrough } from "stream"
 import * as winston from "winston"
+
+const striplines = require("striplines")
 
 import { ecrHosts } from "./algorithm_hosts"
 
@@ -17,6 +20,7 @@ export class SageMakerAction extends Hub.Action {
   iconName = "sagemaker/sagemaker.png"
   description = "Send training data to Amazon SageMaker."
   supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.Csv]
   usesStreaming = true
   requiredFields = []
   params = [
@@ -75,19 +79,10 @@ export class SageMakerAction extends Hub.Action {
       const channelName = "train"
       const date = Date.now()
       const prefix = `${algorithm}-${date}`
+      const uploadKey = `${prefix}/${channelName}`
 
       // store data in input_bucket on S3
-      const s3 = this.getS3ClientFromRequest(request)
-
-      const storage = await request.stream(async (readable) => {
-        const storageParams = {
-          Bucket: input_bucket,
-          Key: `${prefix}/${channelName}`,
-          Body: readable,
-        }
-        return s3.upload(storageParams).promise()
-      })
-      logJson("storage", storage)
+      await this.uploadToS3(request, input_bucket, uploadKey)
 
       // make createTrainingJob API call
       const sagemaker = this.getSageMakerClientFromRequest(request)
@@ -219,6 +214,36 @@ export class SageMakerAction extends Hub.Action {
       region: request.params.region,
       accessKeyId: request.params.access_key_id,
       secretAccessKey: request.params.secret_access_key,
+    })
+  }
+
+  private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
+    return new Promise((resolve, reject) => {
+      const s3 = this.getS3ClientFromRequest(request)
+
+      function uploadFromStream() {
+        const passthrough = new PassThrough()
+
+        const params = {
+          Bucket: bucket,
+          Key: key,
+          Body: passthrough,
+        }
+        s3.upload(params, (err: any, data: any) => {
+          if (err) {
+            return reject(err)
+          }
+          resolve(data)
+        })
+
+        return passthrough
+      }
+
+      request.stream(async (readable) => {
+        readable
+          .pipe(striplines(1))
+          .pipe(uploadFromStream())
+      })
     })
   }
 
