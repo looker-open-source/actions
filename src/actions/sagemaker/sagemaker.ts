@@ -128,7 +128,7 @@ export class SageMakerAction extends Hub.Action {
           VolumeSizeInGB: 1,
         },
         StoppingCondition: {
-          MaxRuntimeInSeconds: 10,
+          MaxRuntimeInSeconds: 43200,
         },
       }
       winston.debug("trainingParams", trainingParams)
@@ -150,7 +150,7 @@ export class SageMakerAction extends Hub.Action {
     const s3 = this.getS3ClientFromRequest(request)
     const s3Res = await s3.listBuckets().promise()
     const buckets = s3Res.Buckets ? s3Res.Buckets : []
-    logJson("buckets", buckets)
+    // logJson("buckets", buckets)
 
     const form = new Hub.ActionForm()
     form.fields = [
