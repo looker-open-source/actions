@@ -108,6 +108,10 @@ export class SageMakerAction extends Hub.Action {
           TrainingInputMode: "File", // required
           TrainingImage: trainingImagePath,
         },
+        HyperParameters: {
+          num_round: "100",
+          objective: "binary:logistic",
+        },
         InputDataConfig: [
           {
             ChannelName: channelName, // required
@@ -117,6 +121,7 @@ export class SageMakerAction extends Hub.Action {
                 S3Uri: s3Uri, // required
               },
             },
+            ContentType: "csv",
           },
         ],
         OutputDataConfig: {
@@ -125,7 +130,7 @@ export class SageMakerAction extends Hub.Action {
         ResourceConfig: {
           InstanceCount: 1,
           InstanceType: "ml.m4.xlarge",
-          VolumeSizeInGB: 1,
+          VolumeSizeInGB: 10,
         },
         StoppingCondition: {
           MaxRuntimeInSeconds: 43200,
