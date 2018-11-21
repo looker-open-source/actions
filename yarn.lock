@@ -4076,6 +4076,11 @@ strip-json-comments@~2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
 
+striplines@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/striplines/-/striplines-1.0.2.tgz#142900359c19c6ccd5ab224806e01cee51de375d"
+  integrity sha1-FCkANZwZxszVqyJIBuAc7lHeN10=
+
 stubs@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/stubs/-/stubs-3.0.0.tgz#e8d2ba1fa9c90570303c030b6900f7d5f89abe5b"
