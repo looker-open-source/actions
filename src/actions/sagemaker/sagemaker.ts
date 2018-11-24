@@ -37,13 +37,6 @@ export class SageMakerAction extends Hub.Action {
       sensitive: true,
       description: "Your secret key for SageMaker.",
     }, {
-      name: "region",
-      label: "Region",
-      required: true,
-      sensitive: false,
-      description: "S3 Region e.g. us-east-1, us-west-1, ap-south-1 from " +
-        "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
-    }, {
       name: "role_arn",
       label: "Role ARN",
       required: true,
@@ -54,46 +47,46 @@ export class SageMakerAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    const {region, role_arn} = request.params
-    const {input_bucket, output_bucket, algorithm} = request.formParams
-
-    // validate input
-    if (!input_bucket) {
-      throw new Error("Need Amazon S3 input bucket.")
-    }
-    if (!output_bucket) {
-      throw new Error("Need Amazon S3 output bucket.")
-    }
-    if (!algorithm) {
-      throw new Error("Need SageMaker algorithm for training.")
-    }
-    if (!region) {
-      throw new Error("Need AWS region.")
-    }
-    if (!role_arn) {
-      throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
-    }
+    const {role_arn} = request.params
+    const {bucket, algorithm} = request.formParams
 
     try {
+      // validate input
+      if (!bucket) {
+        throw new Error("Need Amazon S3 bucket.")
+      }
+      if (!algorithm) {
+        throw new Error("Need SageMaker algorithm for training.")
+      }
+      if (!role_arn) {
+        throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
+      }
+
+      // get region for bucket
+      const region = await this.getBucketLocation(request, bucket)
+      if (! region) {
+        throw new Error("Unable to determine bucket region.")
+      }
+      winston.debug("region", region)
+
       // set up variables required for API calls
       const channelName = "train"
       const date = Date.now()
       const prefix = `${algorithm}-${date}`
       const uploadKey = `${prefix}/${channelName}`
 
-      // store data in input_bucket on S3
-      await this.uploadToS3(request, input_bucket, uploadKey)
+      // store data in S3 bucket
+      await this.uploadToS3(request, bucket, uploadKey)
 
       // make createTrainingJob API call
-      const sagemaker = this.getSageMakerClientFromRequest(request)
+      const sagemaker = this.getSageMakerClientFromRequest(request, region)
 
-      const s3Uri = `s3://${input_bucket}/${prefix}/${channelName}`
-      winston.debug("s3Uri", s3Uri)
-      const s3OutputPath = `s3://${output_bucket}/${prefix}`
-      winston.debug("s3OutputPath", s3OutputPath)
-
+      const s3Uri = `s3://${bucket}/${prefix}/${channelName}`
+      const s3OutputPath = `s3://${bucket}/${prefix}`
       const trainingImageHost = ecrHosts[algorithm][region]
       const trainingImagePath = `${trainingImageHost}/${algorithm}:1`
+      winston.debug("s3Uri", s3Uri)
+      winston.debug("s3OutputPath", s3OutputPath)
 
       const trainingParams = {
         // should we ask the user to name the training job?
@@ -155,8 +148,8 @@ export class SageMakerAction extends Hub.Action {
     const form = new Hub.ActionForm()
     form.fields = [
       {
-        label: "Input Bucket",
-        name: "input_bucket",
+        label: "Bucket",
+        name: "bucket",
         required: true,
         options: buckets.map((bucket) => {
           return {
@@ -166,19 +159,6 @@ export class SageMakerAction extends Hub.Action {
         }),
         type: "select",
         description: "The S3 bucket where SageMaker input training data should be stored",
-      },
-      {
-        label: "Output Bucket",
-        name: "output_bucket",
-        required: true,
-        options: buckets.map((bucket) => {
-          return {
-            name: bucket.Name!,
-            label: bucket.Name!,
-          }
-        }),
-        type: "select",
-        description: "The S3 bucket where SageMaker training result should be stored",
       },
       {
         label: "Algorithm",
@@ -201,9 +181,9 @@ export class SageMakerAction extends Hub.Action {
     return form
   }
 
-  protected getSageMakerClientFromRequest(request: Hub.ActionRequest) {
+  protected getSageMakerClientFromRequest(request: Hub.ActionRequest, region: string) {
     return new SageMaker({
-      region: request.params.region,
+      region,
       accessKeyId: request.params.access_key_id,
       secretAccessKey: request.params.secret_access_key,
     })
@@ -211,10 +191,20 @@ export class SageMakerAction extends Hub.Action {
 
   protected getS3ClientFromRequest(request: Hub.ActionRequest) {
     return new S3({
-      region: request.params.region,
       accessKeyId: request.params.access_key_id,
       secretAccessKey: request.params.secret_access_key,
     })
+  }
+
+  private async getBucketLocation(request: Hub.ActionRequest, bucket: string) {
+    const s3 = this.getS3ClientFromRequest(request)
+
+    const params = {
+      Bucket: bucket,
+    }
+    const response = await s3.getBucketLocation(params).promise()
+
+    return response.LocationConstraint
   }
 
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
