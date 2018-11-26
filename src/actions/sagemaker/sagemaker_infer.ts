@@ -31,6 +31,16 @@ export class SageMakerInferAction extends Hub.Action {
       sensitive: true,
       description: "Your secret key for SageMaker.",
     }, {
+      name: "region",
+      label: "Region",
+      required: true,
+      sensitive: false,
+      type: "select",
+      options: [
+        { name: "us-west-2", label: "us-west-2" },
+      ],
+      description: "AWS Region accessing SageMaker",
+    }, {
       name: "role_arn",
       label: "Role ARN",
       required: true,
