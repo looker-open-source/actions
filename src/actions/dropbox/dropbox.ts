@@ -14,7 +14,7 @@ export class DropboxAction extends Hub.OAuthAction {
     description = "Send query results directly to a file in your Dropbox."
     supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
-    minimumSupportedLookerVersion = "6.2.0"
+    minimumSupportedLookerVersion = "6.0.0"
     requiredFields = []
     params = []
   async execute(request: Hub.ActionRequest) {
