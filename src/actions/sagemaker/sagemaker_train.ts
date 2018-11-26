@@ -112,7 +112,7 @@ export class SageMakerTrainAction extends Hub.Action {
                 S3Uri: s3Uri, // required
               },
             },
-            ContentType: "csv",
+            ContentType: "text/csv",
           },
         ],
         OutputDataConfig: {
