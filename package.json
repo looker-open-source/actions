@@ -59,7 +59,6 @@
     "dotenv": "^5.0.1",
     "express": "^4.16.2",
     "express-winston": "^2.4.0",
-    "event-stream": "^3.3.4",
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.1",
     "mailchimp": "^1.2.0",
@@ -83,6 +82,9 @@
   "typings": "lib/index",
   "engines": {
     "node": "10.8.0"
+  },
+  "resolutions": {
+    "**/event-stream": "3.3.4"
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",
