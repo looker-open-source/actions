@@ -97,7 +97,7 @@ export class SageMakerInferAction extends Hub.Action {
         },
         TransformResources: {
           InstanceCount: 1,
-          InstanceType: "m1.m4.xlarge",
+          InstanceType: "ml.m4.xlarge",
         },
       }
       const transformResponse = await sagemaker.createTransformJob(transformParams).promise()
