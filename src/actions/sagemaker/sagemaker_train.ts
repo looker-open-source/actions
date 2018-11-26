@@ -58,6 +58,9 @@ export class SageMakerTrainAction extends Hub.Action {
       if (!algorithm) {
         throw new Error("Need SageMaker algorithm for training.")
       }
+      // if (!trainingJobName) {
+      //   throw new Error("Need SageMaker training job name.")
+      // }
       if (!role_arn) {
         throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
       }
@@ -140,10 +143,10 @@ export class SageMakerTrainAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
 
-    const s3 = this.getS3ClientFromRequest(request)
-    const s3Res = await s3.listBuckets().promise()
-    const buckets = s3Res.Buckets ? s3Res.Buckets : []
-    // logJson("buckets", buckets)
+    const buckets = await this.listBuckets(request)
+    if (! Array.isArray(buckets)) {
+      throw new Error("Unable to retrieve buckets")
+    }
 
     const form = new Hub.ActionForm()
     form.fields = [
@@ -177,6 +180,14 @@ export class SageMakerTrainAction extends Hub.Action {
         type: "select",
         description: "The algorithm for SageMaker training",
       },
+      // {
+      //   label: "Training Job Name",
+      //   name: "trainingJobName",
+      //   required: true,
+      //   type: "string",
+      //   default: `TrainingJob-${Date.now()}`,
+      //   description: "The algorithm for SageMaker training",
+      // },
     ]
     return form
   }
@@ -194,6 +205,12 @@ export class SageMakerTrainAction extends Hub.Action {
       accessKeyId: request.params.access_key_id,
       secretAccessKey: request.params.secret_access_key,
     })
+  }
+
+  private async listBuckets(request: Hub.ActionRequest) {
+    const s3 = this.getS3ClientFromRequest(request)
+    const response = await s3.listBuckets().promise()
+    return response.Buckets
   }
 
   private async getBucketLocation(request: Hub.ActionRequest, bucket: string) {
