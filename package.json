@@ -59,6 +59,7 @@
     "dotenv": "^5.0.1",
     "express": "^4.16.2",
     "express-winston": "^2.4.0",
+    "event-stream": "^4.0.1",
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.1",
     "mailchimp": "^1.2.0",
