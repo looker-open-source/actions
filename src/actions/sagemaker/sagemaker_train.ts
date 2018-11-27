@@ -129,8 +129,8 @@ export class SageMakerTrainAction extends Hub.Action {
       }
       winston.debug("trainingParams", trainingParams)
 
-      const result = await sagemaker.createTrainingJob(trainingParams).promise()
-      logJson("result", result)
+      const trainingResponse = await sagemaker.createTrainingJob(trainingParams).promise()
+      logJson("trainingResponse", trainingResponse)
 
       // return success response
       return new Hub.ActionResponse({ success: true })

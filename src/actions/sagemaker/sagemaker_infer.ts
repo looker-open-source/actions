@@ -79,6 +79,8 @@ export class SageMakerInferAction extends Hub.Action {
 
       const s3Uri = `s3://${bucket}/${prefix}/transform-input`
       const s3OutputPath = `s3://${bucket}/${prefix}`
+      winston.debug("s3Uri", s3Uri)
+      winston.debug("s3OutputPath", s3OutputPath)
 
       const transformParams = {
         ModelName: model,
@@ -100,6 +102,8 @@ export class SageMakerInferAction extends Hub.Action {
           InstanceType: "ml.m4.xlarge",
         },
       }
+      winston.debug("transformParams", transformParams)
+
       const transformResponse = await sagemaker.createTransformJob(transformParams).promise()
       logJson("transformResponse", transformResponse)
 
