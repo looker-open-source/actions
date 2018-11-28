@@ -14,29 +14,21 @@ export class DropboxAction extends Hub.OAuthAction {
     description = "Send query results directly to a file in your Dropbox."
     supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
-    minimumSupportedLookerVersion = "6.0.0"
+    minimumSupportedLookerVersion = "6.2.0"
     requiredFields = []
     params = []
   async execute(request: Hub.ActionRequest) {
-    let token = ""
     const filename = request.formParams.filename
     const directory = request.formParams.directory
     const ext = request.attachment!.fileExtension
-    if (request.params.state_json) {
-        try {
-            const json = JSON.parse(request.params.state_json)
-            token = json.access_token
-        } catch (er) {
-            winston.error("cannot parse")
-        }
-    }
-    const drop = new Dropbox({ accessToken: token })
+
+    const drop = this.dropboxClientFromRequest(request)
     const resp = new Hub.ActionResponse()
     if (request.attachment && request.attachment.dataBuffer) {
       const fileBuf = request.attachment.dataBuffer
       await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then((_dropResp) => {
         resp.success = true
-      }).catch((err) => {
+      }).catch((err: any) => {
         winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
         resp.success = false
         resp.state = new Hub.ActionState()
@@ -52,43 +44,34 @@ export class DropboxAction extends Hub.OAuthAction {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     form.fields = []
-    let token = ""
-    if (request.params.state_json) {
-        try {
-            const json = JSON.parse(request.params.state_json)
-            token = json.access_token
-        } catch (er) {
-            winston.error("cannot parse")
-        }
-    }
 
-    const drop = new Dropbox({ accessToken: token})
+    const drop = this.dropboxClientFromRequest(request)
     await drop.filesListFolder({path: ""})
-        .then( (resp) => {
-            form.fields = [{
-                description: "Dropbox directory where file will be saved",
-                label: "Save in",
-                name: "directory",
-                options: resp.entries.map((entries) => ({ name: entries.name, label: entries.name })),
-                required: true,
-                type: "select",
-            }, {
-              label: "Filename",
-              name: "filename",
-              type: "string",
-            }]
+      .then( (resp) => {
+        form.fields = [{
+          description: "Dropbox directory where file will be saved",
+          label: "Save in",
+          name: "directory",
+          options: resp.entries.map((entries) => ({ name: entries.name, label: entries.name })),
+          required: true,
+          type: "select",
+        }, {
+          label: "Filename",
+          name: "filename",
+          type: "string",
+        }]
+      })
+      .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
+        winston.info("Could not list Dropbox folders")
+        const state = new Hub.ActionState()
+        form.state = state
+        form.fields.push({
+          name: "login",
+          type: "oauth_link",
+          label: "Log in with Dropbox",
+          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth`,
         })
-        .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
-            winston.info("Could not list Dropbox folders")
-            const state = new Hub.ActionState()
-            form.state = state
-            form.fields.push({
-                name: "login",
-                type: "oauth_link",
-                label: "Log in with Dropbox",
-                oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth`,
-            })
-        })
+      })
     return form
   }
 
@@ -115,30 +98,43 @@ export class DropboxAction extends Hub.OAuthAction {
     const res = await req.post(url.toString(), { json: true }).catch()
     const https = require("request")
     await https.get({
-        url: urlParams.state,
-        rejectUnauthorized: false,
-        strictSSL: false,
-        body: JSON.stringify({access_token: res.access_token}),
+      url: urlParams.state,
+      rejectUnauthorized: false,
+      strictSSL: false,
+      body: JSON.stringify({access_token: res.access_token}),
     })
     return JSON.stringify({ token: res.access_token, state: urlParams.state })
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
-      let token = ""
-      if (request.params.state_json) {
-          const json = JSON.parse(request.params.state_json)
-          token = json.access_token
+    let token = ""
+    if (request.params.state_json) {
+      const json = JSON.parse(request.params.state_json)
+      token = json.access_token
+    }
+    let res = false
+    const drop = new Dropbox({accessToken: token})
+    await drop.filesListFolder({path: ""})
+      .then(() => {
+        res = true
+      })
+      .catch((error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
+        winston.error(error.error.toString())
+      })
+    return res
+  }
+
+  protected dropboxClientFromRequest(request: Hub.ActionRequest) {
+    let token = ""
+    if (request.params.state_json) {
+      try {
+        const json = JSON.parse(request.params.state_json)
+        token = json.access_token
+      } catch (er) {
+        winston.error("cannot parse")
       }
-      let res = false
-      const drop = new Dropbox({accessToken: token})
-      await drop.filesListFolder({path: ""})
-          .then(() => {
-              res = true
-          })
-          .catch((error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
-              winston.error(error.error.toString())
-          })
-      return res
+    }
+    return new Dropbox({accessToken: token})
   }
 }
 
