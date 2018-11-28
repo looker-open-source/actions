@@ -28,12 +28,30 @@ function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any) {
 describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
-    it("returns an oauth form on bad login", () => {
+    it("successfully interprets execute request params", () => {
       const request = new Hub.ActionRequest()
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
       return expectDropboxMatch(request,
         {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
+    })
+
+    it("sets state to reset if error in fileUpload", (done) => {
+      const request = new Hub.ActionRequest()
+      request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, directory: stubDirectory}
+      request.type = Hub.ActionType.Query
+      const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
+        .callsFake(() => ({
+          filesUpload: async () => Promise.reject("reject"),
+        }))
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually.deep.equal({
+        success: false,
+        state: {data: "reset"},
+        refreshQuery: false,
+        validationErrors: [],
+      }).and.notify(stubClient.restore).and.notify(done)
     })
   })
 
@@ -102,6 +120,20 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "string",
         }],
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+  })
+
+  describe("oauth", () => {
+    it("returns correct redirect url", () => {
+      process.env.DROPBOX_ACTION_APP_KEY = "fakeApp"
+      // @ts-ignore
+      return chai.expect(action.oauthUrl("https://actionhub.com/actions/dropbox/oauth_redirect",
+        "https://somelooker.com/secret_state/token")).to.eventually.equal("https://www.dropbox.com/oauth2/authorize?response_type=code&client_id=lol&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fdropbox%2Foauth_redirect&state=https%3A%2F%2Fsomelooker.com%2Fsecret_state%2Ftoken")
+    })
+
+    it("correctly handles redirect from authorization server", () => {
+      // Lots of stubbing to come
+      return true
     })
   })
 })

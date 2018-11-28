@@ -99,8 +99,6 @@ export class DropboxAction extends Hub.OAuthAction {
     const https = require("request")
     await https.get({
       url: urlParams.state,
-      rejectUnauthorized: false,
-      strictSSL: false,
       body: JSON.stringify({access_token: res.access_token}),
     })
     return JSON.stringify({ token: res.access_token, state: urlParams.state })
