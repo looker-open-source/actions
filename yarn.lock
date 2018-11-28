@@ -234,6 +234,11 @@
   version "9.6.18"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-9.6.18.tgz#092e13ef64c47e986802c9c45a61c1454813b31d"
 
+"@types/normalize-url@3.3.0":
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/@types/normalize-url/-/normalize-url-3.3.0.tgz#23bf583d7ef1f53d6be1922739501cdf8f49e679"
+  integrity sha512-l3Jn4S6930TqfjYXHdvAhHlVrCbT5gYrka8HoDAzJfiBp8tz3Q41pMK5pJg/2qd1MNMZ2n/W8S+Hr+a2lvcMOA==
+
 "@types/oboe@^2.0.28":
   version "2.0.28"
   resolved "https://registry.yarnpkg.com/@types/oboe/-/oboe-2.0.28.tgz#3afcb0cc949fcdf777861d96e8571f3b486f0fa7"
@@ -2962,6 +2967,11 @@ normalize-url@2.0.1:
     prepend-http "^2.0.0"
     query-string "^5.0.1"
     sort-keys "^2.0.0"
+
+normalize-url@4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-4.0.0.tgz#6c2214dde2fc8ea88509ec79774ccbd1d426c1ea"
+  integrity sha512-OrtNzJOeI9+UaF8KfvPoqh8ZVjLiun+fggtLzrpPsmdOU01eIp3vYXDfeFv4KwqJxcmmrW/ubNCN+9iIQRVtfw==
 
 npm-bundled@^1.0.1:
   version "1.0.3"

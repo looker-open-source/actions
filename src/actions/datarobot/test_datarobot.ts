@@ -1,5 +1,5 @@
 import * as chai from "chai"
-import * as httpRequest from "request-promise-native"
+// import * as httpRequest from "request-promise-native"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
@@ -11,10 +11,10 @@ const action = new DataRobotAction()
 describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
-    let stubHttpPost: sinon.SinonStub
+    // const stubHttpPost: sinon.SinonStub
 
     afterEach(() => {
-      stubHttpPost.restore()
+      // stubHttpPost.restore()
     })
 
     it("sends the right body with URL", async () => {
@@ -37,7 +37,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           promise: async () => new Promise<void>((resolve: any) => resolve()),
         }
       })
-      stubHttpPost = sinon.stub(httpRequest, "post").callsFake(postSpy)
+      // stubHttpPost = sinon.stub(httpRequest, "post").callsFake(postSpy)
 
       chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
         chai.expect(postSpy).to.have.been.called
@@ -53,13 +53,14 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("has form with projectName param", () => {
-      const stubGet = sinon.stub(action, "validateDataRobotToken" as any).callsFake(async () => {
-        return new Promise<any>((resolve: any) => resolve())
-      })
+      // const stubGet = sinon.stub(action, "validateDataRobotToken" as any).callsFake(async () => {
+      //   return new Promise<any>((resolve: any) => resolve())
+      // })
 
       const request = new Hub.ActionRequest()
       request.params.datarobot_api_token = "token"
       const form = action.validateAndFetchForm(request)
+      request.params.datarobot_url = "empty"
 
       chai.expect(form).to.eventually.deep.equal({
         fields: [
@@ -72,7 +73,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         ],
       })
 
-      stubGet.restore()
+      // stubGet.restore()
     })
 
   })
