@@ -1,5 +1,5 @@
 import * as querystring from "querystring"
-import * as req from "request-promise-native"
+import * as https from "request-promise-native"
 import { URL } from "url"
 
 import Dropbox = require("dropbox")
@@ -95,23 +95,17 @@ export class DropboxAction extends Hub.OAuthAction {
       client_id: process.env.DROPBOX_ACTION_APP_KEY,
       client_secret: process.env.DROPBOX_ACTION_APP_SECRET,
     })
-    const res = await req.post(url.toString(), { json: true }).catch()
-    const https = require("request")
+    const response = await https.post(url.toString(), { json: true }).catch()
     await https.get({
       url: urlParams.state,
-      body: JSON.stringify({access_token: res.access_token}),
-    })
-    return JSON.stringify({ token: res.access_token, state: urlParams.state })
+      body: JSON.stringify({access_token: response.access_token}),
+    }).catch()
+    return JSON.stringify({ token: response.access_token, state: urlParams.state })
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
-    let token = ""
-    if (request.params.state_json) {
-      const json = JSON.parse(request.params.state_json)
-      token = json.access_token
-    }
     let res = false
-    const drop = new Dropbox({accessToken: token})
+    const drop = this.dropboxClientFromRequest(request)
     await drop.filesListFolder({path: ""})
       .then(() => {
         res = true

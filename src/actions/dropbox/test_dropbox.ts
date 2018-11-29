@@ -1,4 +1,5 @@
 import * as chai from "chai"
+import * as https from "request-promise-native"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
@@ -126,14 +127,18 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("oauth", () => {
     it("returns correct redirect url", () => {
       process.env.DROPBOX_ACTION_APP_KEY = "fakeApp"
+      const prom = action.oauthUrl("https://actionhub.com/actions/dropbox/oauth_redirect",
+        "https://somelooker.com/secret_state/token")
       // @ts-ignore
-      return chai.expect(action.oauthUrl("https://actionhub.com/actions/dropbox/oauth_redirect",
-        "https://somelooker.com/secret_state/token")).to.eventually.equal("https://www.dropbox.com/oauth2/authorize?response_type=code&client_id=lol&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fdropbox%2Foauth_redirect&state=https%3A%2F%2Fsomelooker.com%2Fsecret_state%2Ftoken")
+      return chai.expect(prom).to.eventually.equal("https://www.dropbox.com/oauth2/authorize?response_type=code&client_id=fakeApp&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fdropbox%2Foauth_redirect&state=https%3A%2F%2Fsomelooker.com%2Fsecret_state%2Ftoken")
     })
 
-    it("correctly handles redirect from authorization server", () => {
-      // Lots of stubbing to come
-      return true
+    it("correctly handles redirect from authorization server", (done) => {
+      const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
+      const stubGet = sinon.stub(https, "get").callsFake(async () => Promise.resolve({access_token: "token"}))
+      const result = action.oauthFetchInfo({code: "code", state: "state"}, "redirect")
+      chai.expect(result).to.eventually.equal("{\"token\":\"token\",\"state\":\"state\"}")
+        .and.notify(stubReq.restore).and.notify(stubGet.restore).and.notify(done)
     })
   })
 })
