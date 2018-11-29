@@ -2,8 +2,11 @@ import * as util from "util"
 import * as uuid from "uuid"
 import * as winston from "winston"
 
+import * as semver from "semver"
 import * as Hub from "../../hub"
-import { SegmentActionError } from "./segment_error"
+import {ActionDownloadSettings} from "../../hub"
+import {RouteBuilder} from "../../hub"
+import {SegmentActionError} from "./segment_error"
 
 const segment: any = require("analytics-node")
 
@@ -54,6 +57,34 @@ export class SegmentAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
   executeInOwnProcess = true
+
+  asJson(router: RouteBuilder, request: Hub.ActionRequest): any {
+    let formats = this.supportedFormats
+    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
+      formats = [Hub.ActionFormat.JsonDetailLiteStream]
+    }
+    return {
+      description: this.description,
+      form_url: this.form ? router.formUrl(this) : null,
+      label: this.label,
+      name: this.name,
+      params: this.params,
+      required_fields: this.requiredFields,
+      supported_action_types: this.supportedActionTypes,
+      supported_formats: formats,
+      supported_formattings: this.supportedFormattings,
+      supported_visualization_formattings: this.supportedVisualizationFormattings,
+      supported_download_settings: (
+        this.usesStreaming
+          ?
+          [ActionDownloadSettings.Url]
+          :
+          [ActionDownloadSettings.Push]
+      ),
+      icon_data_uri: this.getImageDataUri(),
+      url: router.actionUrl(this),
+    }
+  }
 
   async execute(request: Hub.ActionRequest) {
     return this.executeSegment(request, SegmentCalls.Identify)

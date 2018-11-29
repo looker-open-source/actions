@@ -42,6 +42,10 @@ export interface RouteBuilder {
 
 export abstract class Action {
 
+  get hasForm() {
+    return !!this.form
+  }
+
   abstract name: string
   abstract label: string
   abstract description: string
@@ -60,7 +64,7 @@ export abstract class Action {
 
   abstract params: ActionParameter[]
 
-  asJson(router: RouteBuilder) {
+  asJson(router: RouteBuilder, _request: ActionRequest) {
     return {
       description: this.description,
       form_url: this.form ? router.formUrl(this) : null,
@@ -138,8 +142,15 @@ export abstract class Action {
     return this.form!(request)
   }
 
-  get hasForm() {
-    return !!this.form
+  getImageDataUri() {
+    if (!this.iconName) {
+      return null
+    }
+    const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
+    if (fs.existsSync(iconPath)) {
+      return new datauri(iconPath).content
+    }
+    return null
   }
 
   private throwForMissingRequiredParameters(request: ActionRequest) {
@@ -153,17 +164,6 @@ export abstract class Action {
         }
       }
     }
-  }
-
-  private getImageDataUri() {
-    if (!this.iconName) {
-      return null
-    }
-    const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
-    if (fs.existsSync(iconPath)) {
-      return new datauri(iconPath).content
-    }
-    return null
   }
 
 }
