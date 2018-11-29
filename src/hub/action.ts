@@ -64,7 +64,7 @@ export abstract class Action {
 
   abstract params: ActionParameter[]
 
-  asJson(router: RouteBuilder, _request: ActionRequest) {
+  asJson(router: RouteBuilder, _request?: any) {
     return {
       description: this.description,
       form_url: this.form ? router.formUrl(this) : null,

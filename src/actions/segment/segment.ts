@@ -58,9 +58,9 @@ export class SegmentAction extends Hub.Action {
   requiredFields = [{ any_tag: this.allowedTags }]
   executeInOwnProcess = true
 
-  asJson(router: RouteBuilder, request: Hub.ActionRequest): any {
+  asJson(router: RouteBuilder, request?: any): any {
     let formats = this.supportedFormats
-    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
+    if (request && request.lookerVersion !== undefined && semver.gte(request.lookerVersion, "6.2.0")) {
       formats = [Hub.ActionFormat.JsonDetailLiteStream]
     }
     return {
