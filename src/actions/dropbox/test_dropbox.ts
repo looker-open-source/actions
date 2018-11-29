@@ -129,8 +129,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       process.env.DROPBOX_ACTION_APP_KEY = "fakeApp"
       const prom = action.oauthUrl("https://actionhub.com/actions/dropbox/oauth_redirect",
         "https://somelooker.com/secret_state/token")
-      // @ts-ignore
-      return chai.expect(prom).to.eventually.equal("https://www.dropbox.com/oauth2/authorize?response_type=code&client_id=fakeApp&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fdropbox%2Foauth_redirect&state=https%3A%2F%2Fsomelooker.com%2Fsecret_state%2Ftoken")
+      return chai.expect(prom).to.eventually.equal("https://www.dropbox.com/oauth2/authorize?response" +
+        "_type=code&client_id=fakeApp&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fdropbox%2Foauth_redirect&" +
+        "state=https%3A%2F%2Fsomelooker.com%2Fsecret_state%2Ftoken")
     })
 
     it("correctly handles redirect from authorization server", (done) => {
