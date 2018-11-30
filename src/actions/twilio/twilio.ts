@@ -12,6 +12,7 @@ export class TwilioAction extends Hub.Action {
   iconName = "twilio/twilio.svg"
   description = "Send data from a Look to a phone number via Twilio."
   supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.Csv]
   requiredFields = []
   params = [
     {
@@ -34,7 +35,6 @@ export class TwilioAction extends Hub.Action {
       description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
     },
   ]
-  supportedFormats = [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {
