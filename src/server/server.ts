@@ -100,7 +100,7 @@ export default class Server implements Hub.RouteBuilder {
         const request = Hub.ActionRequest.fromRequest(req)
         const actions = await Hub.allActions({ lookerVersion: request.lookerVersion })
         const response = {
-          integrations: actions.map((d) => d.asJson(this, req)),
+          integrations: actions.map((d) => d.asJson(this, request)),
           label: process.env.ACTION_HUB_LABEL,
         }
         this.actionList = JSON.stringify(response)

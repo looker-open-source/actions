@@ -35,8 +35,8 @@ export class MarketoAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   usesStreaming = true
-  supportedFormats = (request: any) => {
-    if (request && request.lookerVersion !== undefined && semver.gte(request.lookerVersion, "6.2.0")) {
+  supportedFormats = (request: Hub.ActionRequest) => {
+    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
       return [Hub.ActionFormat.JsonDetailLiteStream]
     } else {
       return [Hub.ActionFormat.JsonDetail]
