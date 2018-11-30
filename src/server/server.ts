@@ -78,7 +78,7 @@ export default class Server implements Hub.RouteBuilder {
 
   app: express.Application
 
-  private actionList?: string = undefined
+  private actionList: {[key: string]: string} = {}
 
   constructor() {
 
@@ -96,18 +96,19 @@ export default class Server implements Hub.RouteBuilder {
     this.app.use(express.static("public"))
 
     this.route("/", async (req, res) => {
-      if (!this.actionList) {
-        const request = Hub.ActionRequest.fromRequest(req)
+      const request = Hub.ActionRequest.fromRequest(req)
+      const version = request.lookerVersion || "default"
+      if (!this.actionList[version]) {
         const actions = await Hub.allActions({ lookerVersion: request.lookerVersion })
         const response = {
           integrations: actions.map((d) => d.asJson(this, request)),
           label: process.env.ACTION_HUB_LABEL,
         }
-        this.actionList = JSON.stringify(response)
+        this.actionList[version] = JSON.stringify(response)
       }
       res.type("json")
-      res.send(this.actionList)
-      winston.debug(`response: ${this.actionList}`)
+      res.send(this.actionList[version])
+      winston.debug(`version: ${version}, response: ${this.actionList[version]}`)
     })
 
     this.route("/actions/:actionId", async (req, res) => {
