@@ -11,7 +11,7 @@
       "no-inferrable-types": true,
       "promise-function-async": true,
       "no-unnecessary-type-assertion": true,
-      "await-promise": true,
+      "await-promise": [true, "Bluebird"],
       "no-floating-promises": true,
       "no-inferred-empty-object-type": true,
       "strict-type-predicates": true,

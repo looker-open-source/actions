@@ -37,14 +37,13 @@ export class FTPAction extends Hub.Action {
     let response
     try {
       await client.put(data, remotePath)
-
       response = { success: true }
     } catch (err) {
       response = { success: false, message: err.message }
     } finally {
       await client.end()
     }
-    
+   
     return new Hub.ActionResponse(response)
   }
 

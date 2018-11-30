@@ -16,7 +16,7 @@ function expectFTPMatch(request: Hub.ActionRequest, dataMatch: any, pathMatch: a
   const stubClient = sinon.stub(action as any, "ftpClientFromRequest")
     .callsFake(() => ({
       put: putSpy,
-      end: putEnd
+      end: putEnd,
     }))
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
