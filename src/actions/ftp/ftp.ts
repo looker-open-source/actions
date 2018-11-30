@@ -43,7 +43,7 @@ export class FTPAction extends Hub.Action {
     } finally {
       await client.end()
     }
-  
+
     return new Hub.ActionResponse(response)
   }
 
