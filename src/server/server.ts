@@ -97,7 +97,7 @@ export default class Server implements Hub.RouteBuilder {
 
     this.route("/", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
-      const version = request.lookerVersion || "default"
+      const version = request.lookerVersion ? request.lookerVersion : "5.5.0"
       if (!this.actionList[version]) {
         const actions = await Hub.allActions({ lookerVersion: request.lookerVersion })
         const response = {
