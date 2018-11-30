@@ -78,7 +78,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectFTPMatch(request,
-        request.attachment.dataBuffer, "\\path\\stubSuggestedFilename")
+        request.attachment.dataBuffer, "/path/stubSuggestedFilename")
     })
 
     it("sends to right filename if specified", () => {
@@ -89,7 +89,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectFTPMatch(request,
-        request.attachment.dataBuffer, "\\path\\mywackyfilename")
+        request.attachment.dataBuffer, "/path/mywackyfilename")
     })
 
   })
