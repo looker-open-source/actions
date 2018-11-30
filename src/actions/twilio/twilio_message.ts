@@ -34,7 +34,7 @@ export class TwilioMessageAction extends Hub.Action {
       description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
     },
   ]
-  supportedFormats = (_request: any) => [Hub.ActionFormat.JsonDetail]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
 
   async execute(request: Hub.ActionRequest) {
 

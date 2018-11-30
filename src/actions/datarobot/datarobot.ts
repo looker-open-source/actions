@@ -25,7 +25,7 @@ export class DataRobotAction extends Hub.Action {
     },
   ]
   minimumSupportedLookerVersion = "5.24.0"
-  supportedFormats = (_request: any) => [Hub.ActionFormat.Csv]
+  supportedFormats = [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
     const options = {

@@ -57,7 +57,7 @@ export abstract class Action {
   minimumSupportedLookerVersion = "5.5.0"
 
   abstract supportedActionTypes: ActionType[]
-  supportedFormats?: (_request: ActionRequest) => ActionFormat[]
+  supportedFormats?: ((_request: ActionRequest) => ActionFormat[]) | ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
   requiredFields?: RequiredField[] = []
@@ -73,7 +73,8 @@ export abstract class Action {
       params: this.params,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
-      supported_formats: this.supportedFormats ? this.supportedFormats(request) : null,
+      supported_formats: (this.supportedFormats instanceof Function)
+        ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       supported_download_settings: (

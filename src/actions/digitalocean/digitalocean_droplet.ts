@@ -21,7 +21,7 @@ export class DigitalOceanDropletAction extends Hub.Action {
   ]
   supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
   requiredFields = [{tag: TAG}]
-  supportedFormats = (_request: any) => [Hub.ActionFormat.JsonDetail]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
 
   async execute(request: Hub.ActionRequest) {
     return new Promise<Hub.ActionResponse>((resolve , reject) => {
