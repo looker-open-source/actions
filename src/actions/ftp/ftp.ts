@@ -1,7 +1,7 @@
 import * as Hub from "../../hub"
 
 import * as Path from "path"
-const Client: any = require('promise-ftp');
+import * as Client from "promise-ftp"
 import * as URL from "url"
 
 export class FTPAction extends Hub.Action {
@@ -27,24 +27,25 @@ export class FTPAction extends Hub.Action {
     const parsedUrl = URL.parse(request.formParams.address)
 
     if (!parsedUrl.pathname) {
-      throw "Needs a valid FTP address."
+      throw new Error("Needs a valid FTP address.")
     }
 
     const data = request.attachment.dataBuffer
     const fileName = request.formParams.filename || request.suggestedFilename() as string
     const remotePath = Path.join(parsedUrl.pathname, fileName)
 
+    let response
     try {
-      await client.put(data, remotePath);
-    }
-    catch (err) {
-      return new Hub.ActionResponse({ success: false, message: err.message })
-    }
-    finally {
-      await client.end();
+      await client.put(data, remotePath)
+
+      response = { success: true }
+    } catch (err) {
+      response = { success: false, message: err.message }
+    } finally {
+      await client.end()
     }
     
-    return new Hub.ActionResponse({ success: true })
+    return new Hub.ActionResponse(response)
   }
 
   async form() {

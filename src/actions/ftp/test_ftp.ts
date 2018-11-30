@@ -56,7 +56,6 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("errors with bad paths", async () => {
       const bumAddresses = [
         "ftp:/host/path/",
-        "sftp://host/path/",
         "http://host/path/",
         "ftp/host/path/",
         "/host/path/",
