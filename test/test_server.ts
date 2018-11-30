@@ -107,4 +107,29 @@ describe("the action hub", () => {
       })
   })
 
+  it("returns a correct list of actions on POST // Looker version 6.2", (done) => {
+    const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+    let response60 = {}
+    let response62 = {}
+    chai.request(new Server().app)
+      .post("/")
+      .set("Authorization", 'Token token="foo"')
+      .set("User-Agent", "LookerOutgoingWebhook/6.0.0")
+      .end((_err, res) => {
+        chai.expect(res).to.have.status(200)
+        response60 = res.body
+      })
+    chai.request(new Server().app)
+      .post("/")
+      .set("Authorization", 'Token token="foo"')
+      .set("User-Agent", "LookerOutgoingWebhook/6.2.0")
+      .end((_err, res) => {
+        chai.expect(res).to.have.status(200)
+        response62 = res.body
+        chai.expect(JSON.stringify(response60)).to.not.equal(JSON.stringify(response62))
+        stub.restore()
+        done()
+      })
+  })
+
 })

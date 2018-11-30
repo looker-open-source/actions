@@ -23,7 +23,7 @@ before(async () => {
             formUrl(i) {
               return `baseurl/${i.name}`
             },
-          })
+          }, new Hub.ActionRequest())
           chai.assert.typeOf(json.url, "string")
         })
 
