@@ -12,7 +12,6 @@ export class TwilioMessageAction extends Hub.Action {
   iconName = "twilio/twilio.svg"
   description = "Send a message to phone numbers via Twilio."
   supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
   requiredFields = [{ tag: TAG }]
   params = [
     {
@@ -35,6 +34,7 @@ export class TwilioMessageAction extends Hub.Action {
       description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
     },
   ]
+  supportedFormats = (_request: any) => [Hub.ActionFormat.JsonDetail]
 
   async execute(request: Hub.ActionRequest) {
 

@@ -33,8 +33,8 @@ export class AmazonEC2Action extends Hub.Action {
     },
   ]
   supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query]
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
   requiredFields = [{ tag: TAG }]
+  supportedFormats = (_request: any) => [Hub.ActionFormat.JsonDetail]
 
   async execute(request: Hub.ActionRequest) {
     let instanceIds: string[] = []

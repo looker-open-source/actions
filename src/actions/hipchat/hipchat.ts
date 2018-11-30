@@ -27,7 +27,7 @@ export class HipchatAction extends Hub.Action {
       description: "API Key generated at https://hipchat.com/account/api",
     },
   ]
-  supportedFormats = [Hub.ActionFormat.Csv]
+  supportedFormats = (_request: any) => [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
     if (!request.attachment || !request.attachment.dataBuffer) {

@@ -11,7 +11,6 @@ export class DataRobotAction extends Hub.Action {
   iconName = "datarobot/dr-head.svg"
   description = "Send data to DataRobot and create a new project."
   supportedActionTypes = [Hub.ActionType.Query]
-  supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = []
@@ -26,6 +25,7 @@ export class DataRobotAction extends Hub.Action {
     },
   ]
   minimumSupportedLookerVersion = "5.24.0"
+  supportedFormats = (_request: any) => [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
     const options = {

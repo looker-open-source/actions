@@ -57,14 +57,14 @@ export abstract class Action {
   minimumSupportedLookerVersion = "5.5.0"
 
   abstract supportedActionTypes: ActionType[]
-  supportedFormats?: ActionFormat[]
+  supportedFormats?: (_request: any) => ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
   requiredFields?: RequiredField[] = []
 
   abstract params: ActionParameter[]
 
-  asJson(router: RouteBuilder, _request?: any) {
+  asJson(router: RouteBuilder, request?: any) {
     return {
       description: this.description,
       form_url: this.form ? router.formUrl(this) : null,
@@ -73,7 +73,7 @@ export abstract class Action {
       params: this.params,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
-      supported_formats: this.supportedFormats,
+      supported_formats: this.supportedFormats ? this.supportedFormats(request) : null,
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       supported_download_settings: (

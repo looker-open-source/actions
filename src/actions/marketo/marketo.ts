@@ -1,3 +1,4 @@
+import * as semver from "semver"
 import * as Hub from "../../hub"
 import { MarketoTransaction } from "./marketo_transaction"
 
@@ -31,10 +32,16 @@ export class MarketoAction extends Hub.Action {
 
   ]
   supportedActionTypes = [Hub.ActionType.Query]
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   usesStreaming = true
+  supportedFormats = (request: any) => {
+    if (request && request.lookerVersion !== undefined && semver.gte(request.lookerVersion, "6.2.0")) {
+      return [Hub.ActionFormat.JsonDetailLiteStream]
+    } else {
+      return [Hub.ActionFormat.JsonDetail]
+    }
+  }
 
   async execute(request: Hub.ActionRequest) {
     // create a stateful object to manage the transaction

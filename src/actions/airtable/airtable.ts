@@ -18,9 +18,9 @@ export class AirtableAction extends Hub.Action {
     },
   ]
   supportedActionTypes = [Hub.ActionType.Query]
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  supportedFormats = (_request: any) => [Hub.ActionFormat.JsonDetail]
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
