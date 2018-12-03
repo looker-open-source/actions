@@ -43,6 +43,10 @@ export interface RouteBuilder {
 
 export abstract class Action {
 
+  get hasForm() {
+    return !!this.form
+  }
+
   abstract name: string
   abstract label: string
   abstract description: string
@@ -54,7 +58,7 @@ export abstract class Action {
   minimumSupportedLookerVersion = "5.5.0"
 
   abstract supportedActionTypes: ActionType[]
-  supportedFormats?: ActionFormat[]
+  supportedFormats?: ((_request: ActionRequest) => ActionFormat[]) | ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
   supportedDownloadSettings?: string[]
@@ -63,7 +67,7 @@ export abstract class Action {
   abstract params: ActionParameter[]
   actionUserMetadata?: string
 
-  asJson(router: RouteBuilder) {
+  asJson(router: RouteBuilder, request: ActionRequest) {
     return {
       description: this.description,
       form_url: this.form ? router.formUrl(this) : null,
@@ -73,7 +77,8 @@ export abstract class Action {
       actionUserMetadata: this.actionUserMetadata,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
-      supported_formats: this.supportedFormats,
+      supported_formats: (this.supportedFormats instanceof Function)
+        ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       supported_download_settings: (
@@ -142,8 +147,15 @@ export abstract class Action {
     return this.form!(request)
   }
 
-  get hasForm() {
-    return !!this.form
+  getImageDataUri() {
+    if (!this.iconName) {
+      return null
+    }
+    const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
+    if (fs.existsSync(iconPath)) {
+      return new datauri(iconPath).content
+    }
+    return null
   }
 
   private throwForMissingRequiredParameters(request: ActionRequest) {
@@ -157,17 +169,6 @@ export abstract class Action {
         }
       }
     }
-  }
-
-  private getImageDataUri() {
-    if (!this.iconName) {
-      return null
-    }
-    const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
-    if (fs.existsSync(iconPath)) {
-      return new datauri(iconPath).content
-    }
-    return null
   }
 
 }

@@ -20,6 +20,7 @@ export enum IntegrationSupportedFormats {
   InlineJson = 'inline_json',
   Json = 'json',
   JsonDetail = 'json_detail',
+  JsonDetailLiteStream = 'json_detail_lite_stream',
   Xlsx = 'xlsx',
   Html = 'html',
   WysiwygPdf = 'wysiwyg_pdf',

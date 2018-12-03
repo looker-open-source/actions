@@ -2,8 +2,9 @@ import * as util from "util"
 import * as uuid from "uuid"
 import * as winston from "winston"
 
+import * as semver from "semver"
 import * as Hub from "../../hub"
-import { SegmentActionError } from "./segment_error"
+import {SegmentActionError} from "./segment_error"
 
 const segment: any = require("analytics-node")
 
@@ -49,11 +50,17 @@ export class SegmentAction extends Hub.Action {
   minimumSupportedLookerVersion = "4.20.0"
   supportedActionTypes = [Hub.ActionType.Query]
   usesStreaming = true
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
   executeInOwnProcess = true
+  supportedFormats = (request: Hub.ActionRequest) => {
+    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
+      return [Hub.ActionFormat.JsonDetailLiteStream]
+    } else {
+      return [Hub.ActionFormat.JsonDetail]
+    }
+  }
 
   async execute(request: Hub.ActionRequest) {
     return this.executeSegment(request, SegmentCalls.Identify)
