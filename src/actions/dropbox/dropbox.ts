@@ -1,5 +1,6 @@
 import * as querystring from "querystring"
 import * as https from "request-promise-native"
+// import * as AWS from "aws-sdk"
 import { URL } from "url"
 
 import Dropbox = require("dropbox")
@@ -12,11 +13,27 @@ export class DropboxAction extends Hub.OAuthAction {
     label = "Dropbox"
     iconName = "dropbox/dropbox.png"
     description = "Send query results directly to a file in your Dropbox."
-    supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Query, Hub.ActionType.Dashboard]
+    supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
     minimumSupportedLookerVersion = "6.2.0"
     requiredFields = []
-    params = []
+    params = [
+      {
+        description: "Dropbox Application Key",
+        label: "Application Key",
+        name: "appKey",
+        required: true,
+        sensitive: true,
+      },
+      {
+        description: "Dropbox Secret Key",
+        label: "Secret Key",
+        name: "secretKey",
+        required: true,
+        sensitive: true,
+      },
+    ]
+
   async execute(request: Hub.ActionRequest) {
     const filename = request.formParams.filename
     const directory = request.formParams.directory
@@ -28,6 +45,8 @@ export class DropboxAction extends Hub.OAuthAction {
       const fileBuf = request.attachment.dataBuffer
       await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then((_dropResp) => {
         resp.success = true
+        resp.state = new Hub.ActionState()
+        resp.state.data = "reset"
       }).catch((err: any) => {
         winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
         resp.success = false
@@ -63,6 +82,7 @@ export class DropboxAction extends Hub.OAuthAction {
       })
       .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
         winston.info("Could not list Dropbox folders")
+        // let creds = JSON.stringify({app: request.params.appKey, secret: request.params.secretKey})
         const state = new Hub.ActionState()
         form.state = state
         form.fields.push({
@@ -74,7 +94,7 @@ export class DropboxAction extends Hub.OAuthAction {
       })
     return form
   }
-
+  // async oauthUrl(request: Hub.ActionRequest, redirectUri: string, stateUrl: string) {
   async oauthUrl(redirectUri: string, stateUrl: string) {
     const url = new URL("https://www.dropbox.com/oauth2/authorize")
     url.search = querystring.stringify({
@@ -130,6 +150,4 @@ export class DropboxAction extends Hub.OAuthAction {
   }
 }
 
-if (process.env.DROPBOX_ACTION_APP_KEY && process.env.DROPBOX_ACTION_APP_SECRET) {
-  Hub.addAction(new DropboxAction())
-}
+Hub.addAction(new DropboxAction())
