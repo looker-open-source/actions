@@ -13,6 +13,16 @@ function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
 }
 
+const hyperParameters: { [key: string]: any } = {
+  "xgboost": {
+    num_round: "100",
+    objective: "binary:logistic",
+  },
+  "linear-learner": {
+    predictor_type: "binary_classifier",
+  },
+}
+
 export class SageMakerTrainAction extends Hub.Action {
 
   name = "amazon_sagemaker"
@@ -99,10 +109,7 @@ export class SageMakerTrainAction extends Hub.Action {
           TrainingInputMode: "File", // required
           TrainingImage: trainingImagePath,
         },
-        HyperParameters: {
-          num_round: "100",
-          objective: "binary:logistic",
-        },
+        HyperParameters: hyperParameters[algorithm],
         InputDataConfig: [
           {
             ChannelName: channelName, // required
