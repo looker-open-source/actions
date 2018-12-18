@@ -173,7 +173,7 @@ export class SageMakerTrainAction extends Hub.Action {
             label: "XGBoost",
           },
           {
-            name: "linearlearner",
+            name: "linear-learner",
             label: "Linear Learner",
           },
         ],

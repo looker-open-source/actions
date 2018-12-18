@@ -33,6 +33,6 @@ const hostsLinearLearner: { [key: string]: string } = {
 }
 
 export const ecrHosts: { [key: string]: { [key: string]: string } } = {
-  xgboost: hostsXgBoost,
-  linearlearner: hostsLinearLearner,
+  "xgboost": hostsXgBoost,
+  "linear-learner": hostsLinearLearner,
 }
