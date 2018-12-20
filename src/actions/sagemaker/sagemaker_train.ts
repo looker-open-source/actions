@@ -19,7 +19,7 @@ const hyperParameters: { [key: string]: any } = {
     objective: "binary:logistic",
   },
   "linear-learner": {
-    feature_dim: "5",
+    feature_dim: "30",
     predictor_type: "binary_classifier",
   },
 }
