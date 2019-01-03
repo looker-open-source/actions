@@ -1,12 +1,12 @@
 import * as querystring from "querystring"
 import * as https from "request-promise-native"
 // import * as AWS from "aws-sdk"
-import { URL } from "url"
-
-import Dropbox = require("dropbox")
+import {URL} from "url"
 
 import * as winston from "winston"
 import * as Hub from "../../hub"
+import {AwsKms} from "../../crypto/aws_kms"
+import Dropbox = require("dropbox")
 
 export class DropboxAction extends Hub.OAuthAction {
     name = "dropbox"
@@ -65,38 +65,47 @@ export class DropboxAction extends Hub.OAuthAction {
     form.fields = []
 
     const drop = this.dropboxClientFromRequest(request)
-    await drop.filesListFolder({path: ""})
-      .then( (resp) => {
-        form.fields = [{
-          description: "Dropbox directory where file will be saved",
-          label: "Save in",
-          name: "directory",
-          options: resp.entries.map((entries) => ({ name: entries.name, label: entries.name })),
-          required: true,
-          type: "select",
-        }, {
-          label: "Filename",
-          name: "filename",
-          type: "string",
-        }]
-      })
-      .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
-        winston.info("Could not list Dropbox folders")
-        // let creds = JSON.stringify({app: request.params.appKey, secret: request.params.secretKey})
-        const state = new Hub.ActionState()
-        form.state = state
-        form.fields.push({
-          name: "login",
-          type: "oauth_link",
-          label: "Log in with Dropbox",
-          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth`,
+    return new Promise<Hub.ActionForm>((resolve, reject) => {
+      drop.filesListFolder({path: ""})
+        .then((resp) => {
+          form.fields = [{
+            description: "Dropbox directory where file will be saved",
+            label: "Save in",
+            name: "directory",
+            options: resp.entries.map((entries) => ({name: entries.name, label: entries.name})),
+            required: true,
+            type: "select",
+          }, {
+            label: "Filename",
+            name: "filename",
+            type: "string",
+          }]
+          resolve(form)
         })
-      })
-    return form
+        .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
+          winston.info("Could not list Dropbox folders")
+          const creds = JSON.stringify({app: request.params.appKey, secret: request.params.secretKey})
+          const kms = new AwsKms()
+          kms.encrypt(creds).then((ciphertextBlob: string) => {
+            form.state = new Hub.ActionState()
+            form.fields.push({
+              name: "login",
+              type: "oauth_link",
+              label: "Log in with Dropbox",
+              oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=${ciphertextBlob})`,
+            })
+            resolve(form)
+          }).catch((err: string) => {
+            winston.error("Encryption not correctly configured")
+            reject(err)
+          })
+        })
+    })
   }
   // async oauthUrl(request: Hub.ActionRequest, redirectUri: string, stateUrl: string) {
   async oauthUrl(redirectUri: string, stateUrl: string) {
     const url = new URL("https://www.dropbox.com/oauth2/authorize")
+    winston.info("State: " + stateUrl)
     url.search = querystring.stringify({
       response_type: "code",
       client_id: process.env.DROPBOX_ACTION_APP_KEY,

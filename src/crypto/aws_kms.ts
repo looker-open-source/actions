@@ -1,4 +1,5 @@
 import * as AWS from "aws-sdk"
+import * as b64 from "base64-url"
 import * as winston from "winston"
 import {CryptoBase} from "./crypto_base"
 
@@ -7,9 +8,11 @@ export class AwsKms extends CryptoBase {
     if (plaintext == null) {
       throw "Plaintext was empty"
     }
-    if (process.env.KMS_KEY_ID == null) {
+    if (process.env.KMS_KEY_ID === undefined) {
       throw "No KMS_KEY_ID present"
     }
+    const creds = new AWS.SharedIniFileCredentials({profile: "actionhub-dev-oauth-console"})
+    AWS.config.update({ region: "us-east-1", credentials: creds})
     const kms = new AWS.KMS()
     const params = {
       KeyId: process.env.KMS_KEY_ID,
@@ -22,8 +25,8 @@ export class AwsKms extends CryptoBase {
           winston.info(`Error: ${err.message}`)
           reject(err.message)
         }
-        if (data.CiphertextBlob) {
-          resolve(data.CiphertextBlob.toString())
+        if (data && data.CiphertextBlob) {
+          resolve(b64.encode(data.CiphertextBlob.toString()))
         }
         reject("CiphertextBlob was empty")
       }))
@@ -31,6 +34,8 @@ export class AwsKms extends CryptoBase {
   }
 
   async decrypt(ciphertext: string) {
+    const creds = new AWS.SharedIniFileCredentials({profile: "actionhub-dev-oauth-console"})
+    AWS.config.update({ region: "us-east-1", credentials: creds})
     const kms = new AWS.KMS()
     const params = {
       CiphertextBlob: ciphertext,
@@ -42,7 +47,7 @@ export class AwsKms extends CryptoBase {
           winston.info(`Error: ${err.message}`)
           reject(err.message)
         }
-        if (data.Plaintext) {
+        if (data && data.Plaintext) {
           resolve(data.Plaintext.toString())
         }
         reject("Plaintext was empty")
