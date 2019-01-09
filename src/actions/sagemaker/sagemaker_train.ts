@@ -21,8 +21,8 @@ export class SageMakerTrainAction extends Hub.Action {
   description = "Send training data to Amazon SageMaker."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
-  supportedFormattings = [Hub.ActionFormatting.Formatted]
-  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Apply]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   usesStreaming = true
   requiredFields = []
@@ -53,6 +53,9 @@ export class SageMakerTrainAction extends Hub.Action {
 
     const {role_arn} = request.params
     const {bucket, algorithm} = request.formParams
+
+    winston.debug("request", request)
+    winston.debug("request keys", Object.keys(request))
 
     try {
       // validate input
@@ -96,6 +99,7 @@ export class SageMakerTrainAction extends Hub.Action {
       winston.debug("s3OutputPath", s3OutputPath)
 
       const hyperParameters = await this.getHyperparameters(algorithm, request)
+      winston.debug("hyperParameters", hyperParameters)
 
       const trainingParams = {
         // should we ask the user to name the training job?
