@@ -280,10 +280,15 @@ export class SageMakerTrainAction extends Hub.Action {
     }
   }
 
-  private async getLinearLearnerHyperparameters(_request: Hub.ActionRequest) {
-    // TODO get number of columns, subtract 1 for feature_dim param
+  private async getLinearLearnerHyperparameters(request: Hub.ActionRequest) {
+    // get number of columns, subtract 1 for feature_dim param
+    const { fields } = request.scheduledPlan!.query!
+    if (! Array.isArray(fields)) {
+      throw new Error("Unabled to access query fields.")
+    }
+
     return {
-      feature_dim: "30",
+      feature_dim: String(fields.length - 1),
       predictor_type: "binary_classifier",
     }
   }
