@@ -21,8 +21,8 @@ export class SageMakerTrainAction extends Hub.Action {
   description = "Send training data to Amazon SageMaker."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
-  supportedFormattings = [Hub.ActionFormatting.Unformatted]
-  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  supportedFormattings = [Hub.ActionFormatting.Formatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Apply]
 
   usesStreaming = true
   requiredFields = []
