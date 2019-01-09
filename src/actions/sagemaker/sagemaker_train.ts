@@ -13,17 +13,6 @@ function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
 }
 
-const hyperParameters: { [key: string]: any } = {
-  "xgboost": {
-    num_round: "100",
-    objective: "binary:logistic",
-  },
-  "linear-learner": {
-    feature_dim: "30",
-    predictor_type: "binary_classifier",
-  },
-}
-
 export class SageMakerTrainAction extends Hub.Action {
 
   name = "amazon_sagemaker"
@@ -32,8 +21,12 @@ export class SageMakerTrainAction extends Hub.Action {
   description = "Send training data to Amazon SageMaker."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+
   usesStreaming = true
   requiredFields = []
+
   params = [
     {
       name: "access_key_id",
@@ -102,6 +95,8 @@ export class SageMakerTrainAction extends Hub.Action {
       winston.debug("s3Uri", s3Uri)
       winston.debug("s3OutputPath", s3OutputPath)
 
+      const hyperParameters = await this.getHyperparameters(algorithm, request)
+
       const trainingParams = {
         // should we ask the user to name the training job?
         TrainingJobName: `training-job-${date}`,
@@ -110,7 +105,7 @@ export class SageMakerTrainAction extends Hub.Action {
           TrainingInputMode: "File", // required
           TrainingImage: trainingImagePath,
         },
-        HyperParameters: hyperParameters[algorithm],
+        HyperParameters: hyperParameters,
         InputDataConfig: [
           {
             ChannelName: channelName, // required
@@ -185,6 +180,7 @@ export class SageMakerTrainAction extends Hub.Action {
             label: "Linear Learner",
           },
         ],
+        default: "linear-learner",
         type: "select",
         description: "The algorithm for SageMaker training",
       },
@@ -260,6 +256,32 @@ export class SageMakerTrainAction extends Hub.Action {
           .pipe(uploadFromStream())
       })
     })
+  }
+
+  private async getHyperparameters(algorithm: string, request: Hub.ActionRequest) {
+    switch (algorithm) {
+      case "xgboost":
+        return this.getXgboostHyperparameters(request)
+      case "linear-learner":
+        return this.getLinearLearnerHyperparameters(request)
+      default:
+        return {}
+    }
+  }
+
+  private async getXgboostHyperparameters(_request: Hub.ActionRequest) {
+    return {
+      num_round: "100",
+      objective: "binary:logistic",
+    }
+  }
+
+  private async getLinearLearnerHyperparameters(_request: Hub.ActionRequest) {
+    // TODO get number of columns, subtract 1 for feature_dim param
+    return {
+      feature_dim: "30",
+      predictor_type: "binary_classifier",
+    }
   }
 
 }
