@@ -54,7 +54,7 @@ export class SageMakerTrainAction extends Hub.Action {
     const {role_arn} = request.params
     const {bucket, algorithm} = request.formParams
 
-    winston.debug("request", request)
+    winston.debug("request", JSON.stringify(request))
     winston.debug("request keys", Object.keys(request))
 
     try {
