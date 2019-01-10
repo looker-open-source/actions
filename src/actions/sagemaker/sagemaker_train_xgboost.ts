@@ -114,6 +114,16 @@ export class SageMakerTrainAction extends Hub.Action {
       winston.debug("s3Uri", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
+      // create hyperparameters
+      const hyperParameters: any = {
+        objective,
+        num_round: String(numRounds),
+      }
+      // num_class is only allowed for objective: multi:softmax
+      if (objective === "multi:softmax") {
+        hyperParameters.num_class = String(numClass)
+      }
+
       const trainingParams = {
         TrainingJobName: jobName,
         RoleArn: roleArn,
@@ -121,11 +131,7 @@ export class SageMakerTrainAction extends Hub.Action {
           TrainingInputMode: "File", // required
           TrainingImage: trainingImagePath,
         },
-        HyperParameters: {
-          objective,
-          num_round: String(numRounds),
-          num_class: String(numClass),
-        },
+        HyperParameters: hyperParameters,
         InputDataConfig: [
           {
             ChannelName: channelName, // required
