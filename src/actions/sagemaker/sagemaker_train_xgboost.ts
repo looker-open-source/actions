@@ -8,7 +8,7 @@ import * as winston from "winston"
 
 const striplines = require("striplines")
 
-import { ecrHosts } from "./algorithm_hosts"
+import { xgboostHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
 
 function logJson(label: string, obj: any) {
@@ -31,19 +31,19 @@ export class SageMakerTrainAction extends Hub.Action {
 
   params = [
     {
-      name: "access_key_id",
+      name: "accessKeyId",
       label: "Access Key",
       required: true,
       sensitive: true,
       description: "Your access key for SageMaker.",
     }, {
-      name: "secret_access_key",
+      name: "secretAccessKey",
       label: "Secret Key",
       required: true,
       sensitive: true,
       description: "Your secret key for SageMaker.",
     }, {
-      name: "role_arn",
+      name: "roleArn",
       label: "Role ARN",
       required: true,
       sensitive: false,
@@ -53,26 +53,39 @@ export class SageMakerTrainAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    const {role_arn} = request.params
-    const {bucket, algorithm} = request.formParams
-
-    winston.debug("request", JSON.stringify(request))
-    winston.debug("request keys", Object.keys(request))
+    logJson("request", JSON.stringify(request))
+    logJson("request keys", Object.keys(request))
 
     try {
-      // validate input
+      // get string inputs
+      const {
+        jobName,
+        bucket,
+        awsInstanceType,
+        objective,
+      } = request.formParams
+
+      const { roleArn } = request.params
+
+      // validate string inputs
+      if (!jobName) {
+        throw new Error("Need SageMaker training job name.")
+      }
       if (!bucket) {
         throw new Error("Need Amazon S3 bucket.")
       }
-      if (!algorithm) {
-        throw new Error("Need SageMaker algorithm for training.")
+      if (!awsInstanceType) {
+        throw new Error("Need Amazon awsInstanceType.")
       }
-      // if (!trainingJobName) {
-      //   throw new Error("Need SageMaker training job name.")
-      // }
-      if (!role_arn) {
-        throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
+      if (!objective) {
+        throw new Error("Need training objective.")
       }
+
+      const numClass = this.getNumericFormParam(request, "numClass", 3, 1000000)
+      const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
+      const numRounds = this.getNumericFormParam(request, "numRounds", 1, 1000000)
+      const maxRuntimeInHours = this.getNumericFormParam(request, "maxRuntimeInHours", 1, 72)
+      const maxRuntimeInSeconds = maxRuntimeInHours * 60 * 60
 
       // get region for bucket
       const region = await this.getBucketLocation(request, bucket)
@@ -83,9 +96,7 @@ export class SageMakerTrainAction extends Hub.Action {
 
       // set up variables required for API calls
       const channelName = "train"
-      const date = Date.now()
-      const prefix = `${algorithm}-${date}`
-      const uploadKey = `${prefix}/${channelName}`
+      const uploadKey = `${jobName}/${channelName}`
 
       // store data in S3 bucket
       await this.uploadToS3(request, bucket, uploadKey)
@@ -93,25 +104,25 @@ export class SageMakerTrainAction extends Hub.Action {
       // make createTrainingJob API call
       const sagemaker = this.getSageMakerClientFromRequest(request, region)
 
-      const s3Uri = `s3://${bucket}/${prefix}/${channelName}`
-      const s3OutputPath = `s3://${bucket}/${prefix}`
-      const trainingImageHost = ecrHosts[algorithm][region]
-      const trainingImagePath = `${trainingImageHost}/${algorithm}:1`
+      const s3Uri = `s3://${bucket}/${jobName}/${channelName}`
+      const s3OutputPath = `s3://${bucket}/${jobName}`
+      const trainingImageHost = xgboostHosts[region]
+      const trainingImagePath = `${trainingImageHost}/xgboost:1`
       winston.debug("s3Uri", s3Uri)
       winston.debug("s3OutputPath", s3OutputPath)
 
-      const hyperParameters = await this.getHyperparameters(request)
-      winston.debug("hyperParameters", hyperParameters)
-
       const trainingParams = {
-        // should we ask the user to name the training job?
-        TrainingJobName: `training-job-${date}`,
-        RoleArn: role_arn,
+        TrainingJobName: jobName,
+        RoleArn: roleArn,
         AlgorithmSpecification: { // required
           TrainingInputMode: "File", // required
           TrainingImage: trainingImagePath,
         },
-        HyperParameters: hyperParameters,
+        HyperParameters: {
+          objective,
+          num_round: String(numRounds),
+          num_class: String(numClass),
+        },
         InputDataConfig: [
           {
             ChannelName: channelName, // required
@@ -128,12 +139,12 @@ export class SageMakerTrainAction extends Hub.Action {
           S3OutputPath: s3OutputPath,
         },
         ResourceConfig: {
-          InstanceCount: 1,
-          InstanceType: "ml.m4.xlarge",
+          InstanceCount: numInstances,
+          InstanceType: awsInstanceType,
           VolumeSizeInGB: 10,
         },
         StoppingCondition: {
-          MaxRuntimeInSeconds: 43200,
+          MaxRuntimeInSeconds: maxRuntimeInSeconds,
         },
       }
       winston.debug("trainingParams", trainingParams)
@@ -162,7 +173,7 @@ export class SageMakerTrainAction extends Hub.Action {
       {
         type: "string",
         label: "Training Job Name",
-        name: "job_name",
+        name: "jobName",
         required: true,
         default: `TrainingJob-${Date.now()}`,
         description: "The name for this training job.",
@@ -204,14 +215,14 @@ export class SageMakerTrainAction extends Hub.Action {
       {
         type: "string",
         label: "Number of classes",
-        name: "num_class",
+        name: "numClass",
         default: "3",
         description: "The number of classifications. Valid values: 3 to 1000000. Required if objective is multi:softmax. Otherwise ignored.",
       },
       {
         type: "select",
         label: "AWS Instance Type",
-        name: "aws_instance_type",
+        name: "awsInstanceType",
         required: true,
         options: awsInstanceTypes.map((type) => {
           return {
@@ -219,26 +230,27 @@ export class SageMakerTrainAction extends Hub.Action {
             label: type,
           }
         }),
+        default: "ml.m4.xlarge",
         description: "The type of AWS instance to use. More info: More info: https://aws.amazon.com/sagemaker/pricing/instance-types",
       },
       {
         type: "string",
         label: "Number of instances",
-        name: "num_instances",
+        name: "numInstances",
         default: "1",
         description: "The number of instances to run. Valid values: 1 to 500.",
       },
       {
         type: "string",
         label: "Number of rounds",
-        name: "num_round",
+        name: "numRounds",
         default: "100",
         description: "The number of rounds to run. Valid values: 1 to 1000000.",
       },
       {
         type: "string",
         label: "Maximum runtime in hours",
-        name: "max_runtime_in_hours",
+        name: "maxRuntimeInHours",
         default: "12",
         description: "Maximum allowed time for the job to run, in hours. Valid values: 1 to 72.",
       },
@@ -249,16 +261,31 @@ export class SageMakerTrainAction extends Hub.Action {
   protected getSageMakerClientFromRequest(request: Hub.ActionRequest, region: string) {
     return new SageMaker({
       region,
-      accessKeyId: request.params.access_key_id,
-      secretAccessKey: request.params.secret_access_key,
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
     })
   }
 
   protected getS3ClientFromRequest(request: Hub.ActionRequest) {
     return new S3({
-      accessKeyId: request.params.access_key_id,
-      secretAccessKey: request.params.secret_access_key,
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
     })
+  }
+
+  private getNumericFormParam(request: Hub.ActionRequest, key: string, min: number, max: number) {
+    const value = request.formParams[key]
+    if (! value) {
+      throw new Error(`Unable to get required param ${key}`)
+    }
+    const num = Number(value)
+    if (isNaN(num)) {
+      throw new Error(`Unable to get required param ${key}`)
+    }
+    if (num < min || num > max) {
+      throw new Error(`Number ${key} (${value}) is out of range: ${min} - ${max}`)
+    }
+    return num
   }
 
   private async listBuckets(request: Hub.ActionRequest) {
@@ -306,13 +333,6 @@ export class SageMakerTrainAction extends Hub.Action {
           .pipe(uploadFromStream())
       })
     })
-  }
-
-  private async getHyperparameters(_request: Hub.ActionRequest) {
-    return {
-      num_round: "100",
-      objective: "binary:logistic",
-    }
   }
 
 }
