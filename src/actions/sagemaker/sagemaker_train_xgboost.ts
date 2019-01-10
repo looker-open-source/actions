@@ -108,7 +108,7 @@ export class SageMakerTrainAction extends Hub.Action {
       const sagemaker = this.getSageMakerClientFromRequest(request, region)
 
       const s3InputPath = `s3://${bucket}/${uploadKey}`
-      const s3OutputPath = `s3://${bucket}/${jobName}`
+      const s3OutputPath = `s3://${bucket}`
       const trainingImageHost = xgboostHosts[region]
       const trainingImagePath = `${trainingImageHost}/xgboost:1`
       winston.debug("s3Uri", s3InputPath)
@@ -198,7 +198,8 @@ export class SageMakerTrainAction extends Hub.Action {
             label: bucket.Name!,
           }
         }),
-        default: buckets[0].Name,
+        // default: buckets[0].Name, // DNR
+        default: "looker-marketing-analysis", // DNR
         description: "The S3 bucket where SageMaker input training data should be stored",
       },
       {
