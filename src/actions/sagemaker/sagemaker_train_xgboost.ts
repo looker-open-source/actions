@@ -80,6 +80,9 @@ export class SageMakerTrainAction extends Hub.Action {
       if (!objective) {
         throw new Error("Need training objective.")
       }
+      if (!roleArn) {
+        throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
+      }
 
       const numClass = this.getNumericFormParam(request, "numClass", 3, 1000000)
       const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
@@ -104,11 +107,11 @@ export class SageMakerTrainAction extends Hub.Action {
       // make createTrainingJob API call
       const sagemaker = this.getSageMakerClientFromRequest(request, region)
 
-      const s3Uri = `s3://${bucket}/${jobName}/${channelName}`
+      const s3InputPath = `s3://${bucket}/${uploadKey}`
       const s3OutputPath = `s3://${bucket}/${jobName}`
       const trainingImageHost = xgboostHosts[region]
       const trainingImagePath = `${trainingImageHost}/xgboost:1`
-      winston.debug("s3Uri", s3Uri)
+      winston.debug("s3Uri", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
       const trainingParams = {
@@ -129,7 +132,7 @@ export class SageMakerTrainAction extends Hub.Action {
             DataSource: { // required
               S3DataSource: { // required
                 S3DataType: "S3Prefix", // required
-                S3Uri: s3Uri, // required
+                S3Uri: s3InputPath, // required
               },
             },
             ContentType: "text/csv",
@@ -189,6 +192,7 @@ export class SageMakerTrainAction extends Hub.Action {
             label: bucket.Name!,
           }
         }),
+        default: buckets[0].Name,
         description: "The S3 bucket where SageMaker input training data should be stored",
       },
       {
@@ -198,18 +202,19 @@ export class SageMakerTrainAction extends Hub.Action {
         required: true,
         options: [
           {
-            name: "reg:linear",
-            label: "reg:linear",
-          },
-          {
             name: "binary:logistic",
             label: "binary:logistic",
+          },
+          {
+            name: "reg:linear",
+            label: "reg:linear",
           },
           {
             name: "multi:softmax",
             label: "multi:softmax",
           },
         ],
+        default: "binary:logistic",
         description: "The type of classification to be performed.",
       },
       {
