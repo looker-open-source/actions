@@ -11,6 +11,9 @@ const striplines = require("striplines")
 import { xgboostHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
 
+// five minutes
+const POLL_INTERVAL = 1000 * 60 * 5
+
 function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
 }
@@ -55,6 +58,8 @@ export class SageMakerTrainAction extends Hub.Action {
 
     logJson("request", JSON.stringify(request))
     logJson("request keys", Object.keys(request))
+
+    const transaction: any = {}
 
     try {
       // get string inputs
@@ -105,7 +110,7 @@ export class SageMakerTrainAction extends Hub.Action {
       await this.uploadToS3(request, bucket, uploadKey)
 
       // make createTrainingJob API call
-      const sagemaker = this.getSageMakerClientFromRequest(request, region)
+      transaction.client = this.getSageMakerClientFromRequest(request, region)
 
       const s3InputPath = `s3://${bucket}/${uploadKey}`
       const s3OutputPath = `s3://${bucket}`
@@ -158,8 +163,19 @@ export class SageMakerTrainAction extends Hub.Action {
       }
       winston.debug("trainingParams", trainingParams)
 
-      const trainingResponse = await sagemaker.createTrainingJob(trainingParams).promise()
+      const trainingResponse = await transaction.client.createTrainingJob(trainingParams).promise()
       logJson("trainingResponse", trainingResponse)
+
+      // start poller for training job completion
+      transaction.request = request
+      transaction.jobName = jobName
+      transaction.interval = setInterval(() => {
+        this.checkTrainingJob(transaction)
+      }, POLL_INTERVAL)
+      transaction.timer = setTimeout(() => {
+        clearInterval(transaction.interval)
+        this.sendTimeoutEmail(transaction)
+      }, maxRuntimeInSeconds * 1000)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
@@ -168,6 +184,18 @@ export class SageMakerTrainAction extends Hub.Action {
       winston.error(err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
+  }
+
+  async checkTrainingJob(transaction: any) {
+    const params = {
+      TrainingJobName: transaction.jobName,
+    }
+    const response = await transaction.client.describeTrainingJob(params).promise()
+    winston.debug("describeTrainingJob", response)
+  }
+
+  async sendTimeoutEmail(_transaction: any) {
+    winston.debug("describeTrainingJob timeout")
   }
 
   async form(request: Hub.ActionRequest) {
