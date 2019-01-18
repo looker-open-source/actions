@@ -12,7 +12,9 @@ import { xgboostHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
 
 // five minutes
-const POLL_INTERVAL = 1000 * 60 * 5
+// const POLL_INTERVAL = 1000 * 60 * 5
+// thirty seconds
+const POLL_INTERVAL = 1000 * 30
 
 function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
