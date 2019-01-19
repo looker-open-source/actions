@@ -84,6 +84,13 @@ export class SageMakerTrainAction extends Hub.Action {
 
       const { roleArn } = request.params
 
+      const { fields } = request.scheduledPlan!.query!
+      if (! Array.isArray(fields)) {
+        throw new Error("Unabled to access query fields.")
+      }
+
+      const featureDim = fields.length - 1
+
       // validate string inputs
       if (!modelName) {
         throw new Error("Need SageMaker model name.")
@@ -135,6 +142,7 @@ export class SageMakerTrainAction extends Hub.Action {
       // create hyperparameters
       const hyperParameters: SageMaker.HyperParameters = {
         predictor_type: predictorType,
+        feature_dim: String(featureDim),
         epochs: String(epochs),
       }
       // num_class is only allowed for objective: multi:softmax
