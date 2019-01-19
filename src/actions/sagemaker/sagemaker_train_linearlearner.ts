@@ -34,10 +34,10 @@ interface Transaction {
 
 export class SageMakerTrainAction extends Hub.Action {
 
-  name = "amazon_sagemaker_train_xgboost"
-  label = "Amazon SageMaker Train: Xgboost"
+  name = "amazon_sagemaker_train_linearlearner"
+  label = "Amazon SageMaker Train: Linear Learner"
   iconName = "sagemaker/sagemaker_train.png"
-  description = "Start a traingin job on Amazon SageMaker, using the Xgboost algorithm."
+  description = "Start a traingin job on Amazon SageMaker, using the Linear Learner algorithm."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
@@ -128,7 +128,7 @@ export class SageMakerTrainAction extends Hub.Action {
       const s3InputPath = `s3://${bucket}/${uploadKey}`
       const s3OutputPath = `s3://${bucket}`
       const trainingImageHost = linearLearnerHosts[region]
-      const trainingImage = `${trainingImageHost}/xgboost:1`
+      const trainingImage = `${trainingImageHost}/linear-learner:1`
       winston.debug("s3Uri", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
