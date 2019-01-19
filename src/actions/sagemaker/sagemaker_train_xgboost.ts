@@ -20,6 +20,18 @@ function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
 }
 
+interface Transaction {
+  request: Hub.ActionRequest
+  client: SageMaker
+  modelName: string
+  jobName: string
+  roleArn: string
+  trainingImage: string
+  maxRuntimeInSeconds: number
+  interval?: any
+  timer?: any
+}
+
 export class SageMakerTrainAction extends Hub.Action {
 
   name = "amazon_sagemaker_train_xgboost"
@@ -61,12 +73,10 @@ export class SageMakerTrainAction extends Hub.Action {
     logJson("request", JSON.stringify(request))
     logJson("request keys", Object.keys(request))
 
-    const transaction: any = {}
-
     try {
       // get string inputs
       const {
-        jobName,
+        modelName,
         bucket,
         awsInstanceType,
         objective,
@@ -75,8 +85,8 @@ export class SageMakerTrainAction extends Hub.Action {
       const { roleArn } = request.params
 
       // validate string inputs
-      if (!jobName) {
-        throw new Error("Need SageMaker training job name.")
+      if (!modelName) {
+        throw new Error("Need SageMaker model name.")
       }
       if (!bucket) {
         throw new Error("Need Amazon S3 bucket.")
@@ -91,6 +101,7 @@ export class SageMakerTrainAction extends Hub.Action {
         throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
       }
 
+      const jobName = `${modelName}-${Date.now()}`
       const numClass = this.getNumericFormParam(request, "numClass", 3, 1000000)
       const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
       const numRounds = this.getNumericFormParam(request, "numRounds", 1, 1000000)
@@ -112,12 +123,12 @@ export class SageMakerTrainAction extends Hub.Action {
       await this.uploadToS3(request, bucket, uploadKey)
 
       // make createTrainingJob API call
-      transaction.client = this.getSageMakerClientFromRequest(request, region)
+      const client = this.getSageMakerClientFromRequest(request, region)
 
       const s3InputPath = `s3://${bucket}/${uploadKey}`
       const s3OutputPath = `s3://${bucket}`
       const trainingImageHost = xgboostHosts[region]
-      const trainingImagePath = `${trainingImageHost}/xgboost:1`
+      const trainingImage = `${trainingImageHost}/xgboost:1`
       winston.debug("s3Uri", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
@@ -136,7 +147,7 @@ export class SageMakerTrainAction extends Hub.Action {
         RoleArn: roleArn,
         AlgorithmSpecification: { // required
           TrainingInputMode: "File", // required
-          TrainingImage: trainingImagePath,
+          TrainingImage: trainingImage,
         },
         HyperParameters: hyperParameters,
         InputDataConfig: [
@@ -165,19 +176,20 @@ export class SageMakerTrainAction extends Hub.Action {
       }
       winston.debug("trainingParams", trainingParams)
 
-      const trainingResponse = await transaction.client.createTrainingJob(trainingParams).promise()
+      const trainingResponse = await client.createTrainingJob(trainingParams).promise()
       logJson("trainingResponse", trainingResponse)
 
-      // start poller for training job completion
-      transaction.request = request
-      transaction.jobName = jobName
-      transaction.interval = setInterval(() => {
-        this.checkTrainingJob(transaction)
-      }, POLL_INTERVAL)
-      transaction.timer = setTimeout(() => {
-        clearInterval(transaction.interval)
-        this.sendTimeoutEmail(transaction)
-      }, maxRuntimeInSeconds * 1000)
+      // start polling for training job completion
+      const transaction: Transaction = {
+        request,
+        client,
+        modelName,
+        jobName,
+        maxRuntimeInSeconds,
+        roleArn,
+        trainingImage,
+      }
+      this.pollTrainingJob(transaction)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
@@ -188,16 +200,47 @@ export class SageMakerTrainAction extends Hub.Action {
     }
   }
 
-  async checkTrainingJob(transaction: any) {
+  async pollTrainingJob(transaction: Transaction) {
+      // start poller for training job completion
+      winston.debug("polling training job status")
+      transaction.interval = setInterval(() => {
+        this.checkTrainingJob(transaction)
+      }, POLL_INTERVAL)
+      transaction.timer = setTimeout(() => {
+        clearInterval(transaction.interval)
+        this.sendTrainingTimeoutEmail(transaction)
+      }, transaction.maxRuntimeInSeconds * 1000)
+  }
+
+  async checkTrainingJob(transaction: Transaction) {
     const params = {
       TrainingJobName: transaction.jobName,
     }
     const response = await transaction.client.describeTrainingJob(params).promise()
-    winston.debug("describeTrainingJob", response)
+    logJson("describeTrainingJob response", response)
+
+    if (response.TrainingJobStatus === "Completed") {
+      clearInterval(transaction.interval)
+      clearTimeout(transaction.timer)
+      this.createModel(transaction, response)
+    }
   }
 
-  async sendTimeoutEmail(_transaction: any) {
+  async sendTrainingTimeoutEmail(_transaction: Transaction) {
     winston.debug("describeTrainingJob timeout")
+  }
+
+  async createModel(transaction: Transaction, trainingResponse: SageMaker.DescribeTrainingJobResponse) {
+    const params: SageMaker.CreateModelInput = {
+      ModelName: transaction.modelName,
+      PrimaryContainer: {
+        Image: transaction.trainingImage,
+        ModelDataUrl: trainingResponse.ModelArtifacts.S3ModelArtifacts,
+      },
+      ExecutionRoleArn: transaction.roleArn,
+    }
+    const response = await transaction.client.createModel(params).promise()
+    logJson("createModel response", response)
   }
 
   async form(request: Hub.ActionRequest) {
@@ -211,11 +254,11 @@ export class SageMakerTrainAction extends Hub.Action {
     form.fields = [
       {
         type: "string",
-        label: "Training Job Name",
-        name: "jobName",
+        label: "Model Name",
+        name: "modelName",
         required: true,
-        default: `TrainingJob-${Date.now()}`,
-        description: "The name for this training job.",
+        default: `MyModel-${Date.now()}`, // DNR
+        description: "The name for model to be created after training is complete.",
       },
       {
         type: "select",
