@@ -71,7 +71,6 @@ export class SageMakerTrainAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
 
     logJson("request", JSON.stringify(request))
-    logJson("request keys", Object.keys(request))
 
     try {
       // get string inputs
@@ -219,15 +218,37 @@ export class SageMakerTrainAction extends Hub.Action {
     const response = await transaction.client.describeTrainingJob(params).promise()
     logJson("describeTrainingJob response", response)
 
-    if (response.TrainingJobStatus === "Completed") {
-      clearInterval(transaction.interval)
-      clearTimeout(transaction.timer)
-      this.createModel(transaction, response)
+    winston.debug("status", response.TrainingJobStatus)
+
+    switch (response.TrainingJobStatus) {
+      case "Completed":
+        clearInterval(transaction.interval)
+        clearTimeout(transaction.timer)
+        this.createModel(transaction, response)
+        break
+      case "Failed":
+        clearInterval(transaction.interval)
+        clearTimeout(transaction.timer)
+        this.sendTrainingFailedEmail(transaction, response)
+        break
+      case "Stopped":
+        clearInterval(transaction.interval)
+        clearTimeout(transaction.timer)
+        this.sendTrainingStoppedEmail(transaction, response)
+        break
     }
   }
 
   async sendTrainingTimeoutEmail(_transaction: Transaction) {
     winston.debug("sendTrainingTimeoutEmail")
+  }
+
+  async sendTrainingFailedEmail(_transaction: Transaction, _response: SageMaker.DescribeTrainingJobResponse) {
+    winston.debug("sendTrainingFailedEmail")
+  }
+
+  async sendTrainingStoppedEmail(_transaction: Transaction, _response: SageMaker.DescribeTrainingJobResponse) {
+    winston.debug("sendTrainingFailedEmail")
   }
 
   async sendCreateModelSuccessEmail(_transaction: Transaction) {
