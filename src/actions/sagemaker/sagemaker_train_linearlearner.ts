@@ -8,7 +8,7 @@ import * as winston from "winston"
 
 const striplines = require("striplines")
 
-import { xgboostHosts } from "./algorithm_hosts"
+import { linearLearnerHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
 
 // five minutes
@@ -79,7 +79,7 @@ export class SageMakerTrainAction extends Hub.Action {
         modelName,
         bucket,
         awsInstanceType,
-        objective,
+        predictorType,
       } = request.formParams
 
       const { roleArn } = request.params
@@ -94,17 +94,17 @@ export class SageMakerTrainAction extends Hub.Action {
       if (!awsInstanceType) {
         throw new Error("Need Amazon awsInstanceType.")
       }
-      if (!objective) {
-        throw new Error("Need training objective.")
+      if (!predictorType) {
+        throw new Error("Need training predictor type.")
       }
       if (!roleArn) {
         throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
       }
 
       const jobName = `${modelName}-${Date.now()}`
-      const numClass = this.getNumericFormParam(request, "numClass", 3, 1000000)
+      const numClasses = this.getNumericFormParam(request, "numClasses", 3, 1000000)
       const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
-      const numRounds = this.getNumericFormParam(request, "numRounds", 1, 1000000)
+      const epochs = this.getNumericFormParam(request, "epochs", 1, 1000000)
       const maxRuntimeInHours = this.getNumericFormParam(request, "maxRuntimeInHours", 1, 72)
       const maxRuntimeInSeconds = maxRuntimeInHours * 60 * 60
 
@@ -127,19 +127,19 @@ export class SageMakerTrainAction extends Hub.Action {
 
       const s3InputPath = `s3://${bucket}/${uploadKey}`
       const s3OutputPath = `s3://${bucket}`
-      const trainingImageHost = xgboostHosts[region]
+      const trainingImageHost = linearLearnerHosts[region]
       const trainingImage = `${trainingImageHost}/xgboost:1`
       winston.debug("s3Uri", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
       // create hyperparameters
       const hyperParameters: SageMaker.HyperParameters = {
-        objective,
-        num_round: String(numRounds),
+        predictor_type: predictorType,
+        epochs: String(epochs),
       }
       // num_class is only allowed for objective: multi:softmax
-      if (objective === "multi:softmax") {
-        hyperParameters.num_class = String(numClass)
+      if (predictorType === "multiclass_classifier") {
+        hyperParameters.num_classes = String(numClasses)
       }
 
       const trainingParams = {
@@ -290,32 +290,32 @@ export class SageMakerTrainAction extends Hub.Action {
       },
       {
         type: "select",
-        label: "Objective",
-        name: "objective",
+        label: "Predictor Type",
+        name: "predictorType",
         required: true,
         options: [
           {
-            name: "binary:logistic",
-            label: "binary:logistic",
+            name: "binary_classifier",
+            label: "binary_classifier",
           },
           {
-            name: "reg:linear",
-            label: "reg:linear",
+            name: "multiclass_classifier",
+            label: "multiclass_classifier",
           },
           {
-            name: "multi:softmax",
-            label: "multi:softmax",
+            name: "regressor",
+            label: "regressor",
           },
         ],
-        default: "binary:logistic",
-        description: "The type of classification to be performed.",
+        default: "binary_classifier",
+        description: "The type of predictor to be performed.",
       },
       {
         type: "string",
         label: "Number of classes",
-        name: "numClass",
+        name: "numClasses",
         default: "3",
-        description: "The number of classifications. Valid values: 3 to 1000000. Required if objective is multi:softmax. Otherwise ignored.",
+        description: "The number of classifications. Valid values: 3 to 1000000. Required if predictor type is multiclass_classifier. Otherwise ignored.",
       },
       {
         type: "select",
@@ -340,10 +340,10 @@ export class SageMakerTrainAction extends Hub.Action {
       },
       {
         type: "string",
-        label: "Number of rounds",
-        name: "numRounds",
-        default: "100",
-        description: "The number of rounds to run. Valid values: 1 to 1000000.",
+        label: "Epochs",
+        name: "epochs",
+        default: "15",
+        description: "The number of rounds to run. Valid values: 1 to 100000.",
       },
       {
         type: "string",
