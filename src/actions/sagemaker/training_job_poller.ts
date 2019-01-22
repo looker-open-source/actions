@@ -31,10 +31,12 @@ export class TrainingJobPoller {
 
   async pollTrainingJob(transaction: Transaction) {
       // start poller for training job completion
-      winston.debug("polling training job status")
+      winston.debug("starting poller")
+
       this.intervalTimer = setInterval(() => {
         this.checkTrainingJob(transaction)
       }, transaction.pollIntervalInSeconds)
+
       this.timeoutTimer = setTimeout(() => {
         clearInterval(this.intervalTimer)
         this.sendTrainingTimeoutEmail(transaction)
@@ -42,6 +44,7 @@ export class TrainingJobPoller {
   }
 
   async checkTrainingJob(transaction: Transaction) {
+    winston.debug("polling training job status")
     const params = {
       TrainingJobName: transaction.jobName,
     }
@@ -52,21 +55,25 @@ export class TrainingJobPoller {
 
     switch (response.TrainingJobStatus) {
       case "Completed":
-        clearInterval(this.intervalTimer)
-        clearTimeout(this.timeoutTimer)
+        this.stopPolling()
         this.createModel(transaction, response)
         break
       case "Failed":
-        clearInterval(this.intervalTimer)
-        clearTimeout(this.timeoutTimer)
+        this.stopPolling()
         this.sendTrainingFailedEmail(transaction, response)
         break
       case "Stopped":
-        clearInterval(this.intervalTimer)
-        clearTimeout(this.timeoutTimer)
+        this.stopPolling()
         this.sendTrainingStoppedEmail(transaction, response)
         break
     }
+  }
+
+  stopPolling() {
+    winston.debug("stopping poller")
+
+    clearInterval(this.intervalTimer)
+    clearTimeout(this.timeoutTimer)
   }
 
   async sendTrainingTimeoutEmail(_transaction: Transaction) {
