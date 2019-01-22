@@ -1,5 +1,6 @@
 /* tslint:disable max-line-length */
 import * as Hub from "../../hub"
+import { THIRTY_SECONDS, TrainingJobPoller, Transaction } from "./training_job_poller"
 
 import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
@@ -11,25 +12,8 @@ const striplines = require("striplines")
 import { xgboostHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
 
-// five minutes
-// const POLL_INTERVAL = 1000 * 60 * 5
-// thirty seconds
-const POLL_INTERVAL = 1000 * 30
-
 function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
-}
-
-interface Transaction {
-  request: Hub.ActionRequest
-  client: SageMaker
-  modelName: string
-  jobName: string
-  roleArn: string
-  trainingImage: string
-  maxRuntimeInSeconds: number
-  interval?: any
-  timer?: any
 }
 
 export class SageMakerTrainAction extends Hub.Action {
@@ -180,15 +164,15 @@ export class SageMakerTrainAction extends Hub.Action {
 
       // start polling for training job completion
       const transaction: Transaction = {
-        request,
         client,
         modelName,
         jobName,
         maxRuntimeInSeconds,
         roleArn,
         trainingImage,
+        pollIntervalInSeconds: THIRTY_SECONDS,
       }
-      this.pollTrainingJob(transaction)
+      new TrainingJobPoller(transaction)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
@@ -196,84 +180,6 @@ export class SageMakerTrainAction extends Hub.Action {
     } catch (err) {
       winston.error(err)
       return new Hub.ActionResponse({ success: false, message: err.message })
-    }
-  }
-
-  async pollTrainingJob(transaction: Transaction) {
-      // start poller for training job completion
-      winston.debug("polling training job status")
-      transaction.interval = setInterval(() => {
-        this.checkTrainingJob(transaction)
-      }, POLL_INTERVAL)
-      transaction.timer = setTimeout(() => {
-        clearInterval(transaction.interval)
-        this.sendTrainingTimeoutEmail(transaction)
-      }, transaction.maxRuntimeInSeconds * 1000)
-  }
-
-  async checkTrainingJob(transaction: Transaction) {
-    const params = {
-      TrainingJobName: transaction.jobName,
-    }
-    const response = await transaction.client.describeTrainingJob(params).promise()
-    logJson("describeTrainingJob response", response)
-
-    winston.debug("status", response.TrainingJobStatus)
-
-    switch (response.TrainingJobStatus) {
-      case "Completed":
-        clearInterval(transaction.interval)
-        clearTimeout(transaction.timer)
-        this.createModel(transaction, response)
-        break
-      case "Failed":
-        clearInterval(transaction.interval)
-        clearTimeout(transaction.timer)
-        this.sendTrainingFailedEmail(transaction, response)
-        break
-      case "Stopped":
-        clearInterval(transaction.interval)
-        clearTimeout(transaction.timer)
-        this.sendTrainingStoppedEmail(transaction, response)
-        break
-    }
-  }
-
-  async sendTrainingTimeoutEmail(_transaction: Transaction) {
-    winston.debug("sendTrainingTimeoutEmail")
-  }
-
-  async sendTrainingFailedEmail(_transaction: Transaction, _response: SageMaker.DescribeTrainingJobResponse) {
-    winston.debug("sendTrainingFailedEmail")
-  }
-
-  async sendTrainingStoppedEmail(_transaction: Transaction, _response: SageMaker.DescribeTrainingJobResponse) {
-    winston.debug("sendTrainingFailedEmail")
-  }
-
-  async sendCreateModelSuccessEmail(_transaction: Transaction) {
-    winston.debug("sendCreateModelSuccessEmail")
-  }
-
-  async sendCreateModelFailureEmail(_transaction: Transaction) {
-    winston.debug("sendCreateModelFailureEmail")
-  }
-
-  async createModel(transaction: Transaction, trainingResponse: SageMaker.DescribeTrainingJobResponse) {
-    const params: SageMaker.CreateModelInput = {
-      ModelName: transaction.modelName,
-      PrimaryContainer: {
-        Image: transaction.trainingImage,
-        ModelDataUrl: trainingResponse.ModelArtifacts.S3ModelArtifacts,
-      },
-      ExecutionRoleArn: transaction.roleArn,
-    }
-    try {
-      const response = await transaction.client.createModel(params).promise()
-      logJson("createModel response", response)
-      this.sendCreateModelSuccessEmail(transaction)
-    } catch (err) {
-      this.sendCreateModelFailureEmail(transaction)
     }
   }
 
