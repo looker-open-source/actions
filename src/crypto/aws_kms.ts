@@ -21,7 +21,7 @@ export class AwsKms extends CryptoBase {
           winston.warn(`Encryption Error: ${err}`)
           reject(err)
         }
-        if (data.CiphertextBlob) {
+        if ((data as any) != null && data.CiphertextBlob) {
           resolve(b64.escape((data.CiphertextBlob as Buffer).toString("base64")))
         }
         reject("CiphertextBlob was empty")
@@ -41,7 +41,7 @@ export class AwsKms extends CryptoBase {
           winston.warn(`Decryption Error: ${err}`)
           reject(err)
         }
-        if (data.Plaintext) {
+        if ((data as any) != null && data.Plaintext) {
           resolve(data.Plaintext.toString())
         }
         reject("Plaintext was empty")
