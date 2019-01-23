@@ -5,28 +5,24 @@ import {CryptoBase} from "./crypto_base"
 
 export class AwsKms extends CryptoBase {
   async encrypt(plaintext: string) {
-    if (plaintext == null) {
-      throw "Plaintext was empty"
-    }
     if (process.env.KMS_KEY_ID === undefined) {
       throw "No KMS_KEY_ID present"
     }
-    const creds = new AWS.SharedIniFileCredentials({profile: "actionhub-dev-oauth-console"})
-    AWS.config.update({ region: "us-east-1", credentials: creds})
     const kms = new AWS.KMS()
     const params = {
       KeyId: process.env.KMS_KEY_ID,
       Plaintext: plaintext,
+      EncryptionContext: { looker: "actionhub" },
     }
 
     return new Promise<string>((resolve, reject) => {
       kms.encrypt(params, ((err, data) => {
-        if (err != null && err.message) {
-          winston.info(`Error: ${err.message}`)
-          reject(err.message)
+        if ((err as any) != null) {
+          winston.warn(`Encryption Error: ${err}`)
+          reject(err)
         }
-        if (data && data.CiphertextBlob) {
-          resolve(b64.encode(data.CiphertextBlob.toString()))
+        if (data.CiphertextBlob) {
+          resolve(b64.escape((data.CiphertextBlob as Buffer).toString("base64")))
         }
         reject("CiphertextBlob was empty")
       }))
@@ -34,24 +30,27 @@ export class AwsKms extends CryptoBase {
   }
 
   async decrypt(ciphertext: string) {
-    const creds = new AWS.SharedIniFileCredentials({profile: "actionhub-dev-oauth-console"})
-    AWS.config.update({ region: "us-east-1", credentials: creds})
     const kms = new AWS.KMS()
     const params = {
-      CiphertextBlob: ciphertext,
+      CiphertextBlob: Buffer.from(b64.unescape(ciphertext), "base64"),
+      EncryptionContext: { looker: "actionhub" },
     }
-
     return new Promise<string>((resolve, reject) => {
       kms.decrypt(params, ((err, data) => {
-        if (err != null && err.message) {
-          winston.info(`Error: ${err.message}`)
-          reject(err.message)
+        if ((err as any) != null) {
+          winston.warn(`Decryption Error: ${err}`)
+          reject(err)
         }
-        if (data && data.Plaintext) {
+        if (data.Plaintext) {
           resolve(data.Plaintext.toString())
         }
         reject("Plaintext was empty")
       }))
     })
   }
+}
+
+if (process.env.KMS_PROFILE !== undefined) {
+  const creds = new AWS.SharedIniFileCredentials({profile: process.env.KMS_PROFILE})
+  AWS.config.update({ region: "us-east-1", credentials: creds})
 }

@@ -142,7 +142,8 @@ export default class Server implements Hub.RouteBuilder {
       if (action instanceof OAuthAction) {
         const parts = uparse.parse(req.url, true)
         const stateUrl = parts.query.stateUrl
-        const url = await action.oauthUrl(this.oauthRedirectUrl(action), stateUrl)
+        const state = parts.query.state
+        const url = await action.oauthUrl(this.oauthRedirectUrl(action), stateUrl, state)
         res.redirect(url)
       } else {
         throw "Action does not support OAuth."

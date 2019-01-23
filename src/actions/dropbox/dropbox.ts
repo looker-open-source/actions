@@ -1,12 +1,11 @@
 import * as querystring from "querystring"
 import * as https from "request-promise-native"
-// import * as AWS from "aws-sdk"
 import {URL} from "url"
 
-import * as winston from "winston"
-import * as Hub from "../../hub"
-import {AwsKms} from "../../crypto/aws_kms"
 import Dropbox = require("dropbox")
+import * as winston from "winston"
+import {AwsKms} from "../../crypto/aws_kms"
+import * as Hub from "../../hub"
 
 export class DropboxAction extends Hub.OAuthAction {
     name = "dropbox"
@@ -92,7 +91,7 @@ export class DropboxAction extends Hub.OAuthAction {
               name: "login",
               type: "oauth_link",
               label: "Log in with Dropbox",
-              oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=${ciphertextBlob})`,
+              oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=${ciphertextBlob}`,
             })
             resolve(form)
           }).catch((err: string) => {
@@ -102,34 +101,48 @@ export class DropboxAction extends Hub.OAuthAction {
         })
     })
   }
-  // async oauthUrl(request: Hub.ActionRequest, redirectUri: string, stateUrl: string) {
-  async oauthUrl(redirectUri: string, stateUrl: string) {
+  // async oauthUrl(redirectUri: string, stateUrl: string, encryptedState) {
+  async oauthUrl(redirectUri: string, stateUrl: string, encryptedState: string) {
     const url = new URL("https://www.dropbox.com/oauth2/authorize")
-    winston.info("State: " + stateUrl)
+    const kms = new AwsKms()
+    const decryptedState = await kms.decrypt(encryptedState).catch((reason: any) => {
+      throw reason
+    })
+    const jsonState = JSON.parse(decryptedState)
     url.search = querystring.stringify({
       response_type: "code",
-      client_id: process.env.DROPBOX_ACTION_APP_KEY,
+      client_id: jsonState.app,
       redirect_uri: redirectUri,
-      state: stateUrl,
+      state: JSON.stringify({lookerstateurl: stateUrl, creds: encryptedState}),
     })
     return url.toString()
   }
 
   async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string) {
     const url = new URL("https://api.dropboxapi.com/oauth2/token")
-    url.search = querystring.stringify({
-      code: urlParams.code,
-      grant_type: "authorization_code",
-      redirect_uri: redirectUri,
-      client_id: process.env.DROPBOX_ACTION_APP_KEY,
-      client_secret: process.env.DROPBOX_ACTION_APP_SECRET,
+    const kms = new AwsKms()
+    const jsonState = JSON.parse(urlParams.state)
+    const plaintext = await kms.decrypt( jsonState.creds ).catch((err: string) => {
+      winston.error("Encryption not correctly configured" + err)
+      throw err
     })
+
+    const payload = JSON.parse(plaintext)
+    url.search = querystring.stringify({
+      grant_type: "authorization_code",
+      code: urlParams.code,
+      client_id: payload.app,
+      client_secret: payload.secret,
+      redirect_uri: redirectUri,
+    })
+
     const response = await https.post(url.toString(), { json: true }).catch()
+    // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0" // Localhost development hack
     await https.get({
-      url: urlParams.state,
+      url: jsonState.lookerstateurl,
       body: JSON.stringify({access_token: response.access_token}),
     }).catch()
-    return JSON.stringify({ token: response.access_token, state: urlParams.state })
+    return "<html><script>window.close()</script>></html>"
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
