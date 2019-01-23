@@ -1,7 +1,7 @@
 const Transform = require("stream").Transform
 const util = require("util")
 
-export function StripColumns(numOfColumns) {
+function StripColumns(numOfColumns) {
     if (! (this instanceof StripColumns)) {
         return new StripColumns(numOfColumns)
     }
@@ -40,3 +40,5 @@ StripColumns.prototype._transform = function(chunk, encoding, done) {
 
     done()
 }
+
+module.exports = StripColumns
