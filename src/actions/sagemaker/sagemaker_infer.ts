@@ -1,3 +1,5 @@
+/* tslint:disable max-line-length */
+
 import * as Hub from "../../hub"
 
 import * as S3 from "aws-sdk/clients/s3"
@@ -136,11 +138,13 @@ export class SageMakerInferAction extends Hub.Action {
         required: true,
         options: buckets.map((bucket) => {
           return {
-            name: bucket.Name,
-            label: bucket.Name,
+            name: bucket.Name!,
+            label: bucket.Name!,
           }
         }),
         type: "select",
+        // default: buckets[0].Name, // DNR
+        default: "looker-marketing-analysis", // DNR
         description: "The S3 bucket where inference data should be stored",
       },
       {
@@ -155,6 +159,19 @@ export class SageMakerInferAction extends Hub.Action {
         }),
         type: "select",
         description: "The S3 bucket where SageMaker input training data should be stored",
+      },
+      {
+        label: "Strip Columns",
+        name: "stripColumns",
+        required: true,
+        options: [
+          { name: "0", label: "None" },
+          { name: "1", label: "First Column" },
+          { name: "2", label: "First & Second Column" },
+        ],
+        type: "select",
+        default: "0",
+        description: "Columns to remove before running inference task. Columns must be first or second column in the data provided. Use this to remove key, target variable, or both.",
       },
     ]
     return form
@@ -186,17 +203,6 @@ export class SageMakerInferAction extends Hub.Action {
     const response = await sagemaker.listModels().promise()
     return response.Models
   }
-
-  // private async getBucketLocation(request: Hub.ActionRequest, bucket: string) {
-  //   const s3 = this.getS3ClientFromRequest(request)
-
-  //   const params = {
-  //     Bucket: bucket,
-  //   }
-  //   const response = await s3.getBucketLocation(params).promise()
-
-  //   return response.LocationConstraint
-  // }
 
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
     return new Promise((resolve, reject) => {
