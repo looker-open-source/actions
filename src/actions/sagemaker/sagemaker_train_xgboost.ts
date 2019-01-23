@@ -1,4 +1,5 @@
 /* tslint:disable max-line-length */
+
 import * as Hub from "../../hub"
 import { THIRTY_SECONDS, TrainingJobPoller, Transaction } from "./training_job_poller"
 
@@ -6,11 +7,10 @@ import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
 import { PassThrough } from "stream"
 import * as winston from "winston"
-
-const striplines = require("striplines")
-
 import { xgboostHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
+
+const striplines = require("striplines")
 
 function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
@@ -54,7 +54,7 @@ export class SageMakerTrainAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    logJson("request", JSON.stringify(request))
+    logJson("request", request)
 
     try {
       // get string inputs

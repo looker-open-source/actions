@@ -6,8 +6,10 @@ import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
 import { PassThrough } from "stream"
 import * as winston from "winston"
+import { awsInstanceTypes } from "./aws_instance_types"
 
-const striplines = require("striplines")
+const stripLines = require("striplines")
+const stripColumns = require("./strip_columns.js")
 
 function logJson(label: string, obj: any) {
   winston.debug(label, JSON.stringify(obj, null, 2))
@@ -21,77 +23,96 @@ export class SageMakerInferAction extends Hub.Action {
   description = "Perform an inference using Amazon SageMaker."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+
   usesStreaming = true
   requiredFields = []
+
   params = [
     {
-      name: "access_key_id",
+      name: "accessKeyId",
       label: "Access Key",
       required: true,
       sensitive: true,
       description: "Your access key for SageMaker.",
     }, {
-      name: "secret_access_key",
+      name: "secretAccessKey",
       label: "Secret Key",
       required: true,
       sensitive: true,
       description: "Your secret key for SageMaker.",
     }, {
-      name: "region",
-      label: "Region",
-      required: true,
-      sensitive: false,
-      description: "AWS Region accessing SageMaker",
-    }, {
-      name: "role_arn",
+      name: "roleArn",
       label: "Role ARN",
       required: true,
       sensitive: false,
       description: "Role ARN for accessing SageMaker and S3",
+    }, {
+      name: "region",
+      label: "Region",
+      required: true,
+      sensitive: false,
+      description: "AWS Region for accessing SageMaker",
     },
   ]
 
   async execute(request: Hub.ActionRequest) {
 
-    const {role_arn} = request.params
-    const {bucket, model} = request.formParams
+    logJson("request", request)
 
     try {
-      // validate input
+      // get string inputs
+      const {
+        modelName,
+        bucket,
+        awsInstanceType,
+      } = request.formParams
+
+      const { roleArn } = request.params
+
+      // validate string inputs
+      if (!modelName) {
+        throw new Error("Need SageMaker model name.")
+      }
       if (!bucket) {
         throw new Error("Need Amazon S3 bucket.")
       }
-      if (!model) {
-        throw new Error("Need Amazon SageMaker model.")
+      if (!awsInstanceType) {
+        throw new Error("Need Amazon awsInstanceType.")
       }
-      if (!role_arn) {
+      if (!roleArn) {
         throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
       }
+
+      const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
+      const numStripColumns = this.getNumericFormParam(request, "numStripColumns", 0, 2)
 
       // upload data to S3
       const date = Date.now()
       const prefix = `transform-job-${date}`
-      const uploadKey = `${prefix}/transform-input`
+      const inputDataKey = `${prefix}/transform-input`
+      const rawDataKey = `${prefix}/transform-raw`
 
       // store data in S3 bucket
-      await this.uploadToS3(request, bucket, uploadKey)
+      await this.uploadToS3(request, bucket, numStripColumns, inputDataKey, rawDataKey)
 
       // create transform job
-      const sagemaker = this.getSageMakerClientFromRequest(request)
+      const client = this.getSageMakerClientFromRequest(request)
 
-      const s3Uri = `s3://${bucket}/${prefix}/transform-input`
-      const s3OutputPath = `s3://${bucket}/${prefix}`
-      winston.debug("s3Uri", s3Uri)
+      const s3InputPath = `s3://${bucket}/${inputDataKey}`
+      const s3OutputPath = `s3://${bucket}`
+      winston.debug("s3Uri", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
-      const transformParams = {
-        ModelName: model,
+      const transformParams: SageMaker.CreateTransformJobRequest = {
+        ModelName: modelName,
         TransformJobName: `transform-job-${date}`,
         TransformInput: {
           DataSource: {
             S3DataSource: {
               S3DataType: "S3Prefix", // required
-              S3Uri: s3Uri, // required
+              S3Uri: s3InputPath, // required
             },
           },
           ContentType: "text/csv",
@@ -100,13 +121,13 @@ export class SageMakerInferAction extends Hub.Action {
           S3OutputPath: s3OutputPath,
         },
         TransformResources: {
-          InstanceCount: 1,
-          InstanceType: "ml.m4.xlarge",
+          InstanceCount: numInstances,
+          InstanceType: awsInstanceType,
         },
       }
       winston.debug("transformParams", transformParams)
 
-      const transformResponse = await sagemaker.createTransformJob(transformParams).promise()
+      const transformResponse = await client.createTransformJob(transformParams).promise()
       logJson("transformResponse", transformResponse)
 
       // return success response
@@ -133,7 +154,33 @@ export class SageMakerInferAction extends Hub.Action {
     const form = new Hub.ActionForm()
     form.fields = [
       {
-        label: "Bucket",
+        label: "Model",
+        name: "modelName",
+        required: true,
+        options: models.map((model: any) => {
+          return {
+            name: model.ModelName,
+            label: model.ModelName,
+          }
+        }),
+        type: "select",
+        description: "The S3 bucket where SageMaker input training data should be stored",
+      },
+      {
+        label: "Strip Columns",
+        name: "numStripColumns",
+        required: true,
+        options: [
+          { name: "0", label: "None" },
+          { name: "1", label: "First Column" },
+          { name: "2", label: "First & Second Column" },
+        ],
+        type: "select",
+        default: "0",
+        description: "Columns to remove before running inference task. Columns must be first or second column in the data provided. Use this to remove key, target variable, or both.",
+      },
+      {
+        label: "Output Bucket",
         name: "bucket",
         required: true,
         options: buckets.map((bucket) => {
@@ -148,30 +195,25 @@ export class SageMakerInferAction extends Hub.Action {
         description: "The S3 bucket where inference data should be stored",
       },
       {
-        label: "Model",
-        name: "model",
+        type: "select",
+        label: "AWS Instance Type",
+        name: "awsInstanceType",
         required: true,
-        options: models.map((model: any) => {
+        options: awsInstanceTypes.map((type) => {
           return {
-            name: model.ModelName,
-            label: model.ModelName,
+            name: type,
+            label: type,
           }
         }),
-        type: "select",
-        description: "The S3 bucket where SageMaker input training data should be stored",
+        default: "ml.m4.xlarge",
+        description: "The type of AWS instance to use. More info: More info: https://aws.amazon.com/sagemaker/pricing/instance-types",
       },
       {
-        label: "Strip Columns",
-        name: "stripColumns",
-        required: true,
-        options: [
-          { name: "0", label: "None" },
-          { name: "1", label: "First Column" },
-          { name: "2", label: "First & Second Column" },
-        ],
-        type: "select",
-        default: "0",
-        description: "Columns to remove before running inference task. Columns must be first or second column in the data provided. Use this to remove key, target variable, or both.",
+        type: "string",
+        label: "Number of instances",
+        name: "numInstances",
+        default: "1",
+        description: "The number of instances to run. Valid values: 1 to 500.",
       },
     ]
     return form
@@ -180,16 +222,31 @@ export class SageMakerInferAction extends Hub.Action {
   protected getSageMakerClientFromRequest(request: Hub.ActionRequest) {
     return new SageMaker({
       region: request.params.region,
-      accessKeyId: request.params.access_key_id,
-      secretAccessKey: request.params.secret_access_key,
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
     })
   }
 
   protected getS3ClientFromRequest(request: Hub.ActionRequest) {
     return new S3({
-      accessKeyId: request.params.access_key_id,
-      secretAccessKey: request.params.secret_access_key,
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
     })
+  }
+
+  private getNumericFormParam(request: Hub.ActionRequest, key: string, min: number, max: number) {
+    const value = request.formParams[key]
+    if (! value) {
+      throw new Error(`Unable to get required param ${key}`)
+    }
+    const num = Number(value)
+    if (isNaN(num)) {
+      throw new Error(`Unable to get required param ${key}`)
+    }
+    if (num < min || num > max) {
+      throw new Error(`Number ${key} (${value}) is out of range: ${min} - ${max}`)
+    }
+    return num
   }
 
   private async listBuckets(request: Hub.ActionRequest) {
@@ -204,11 +261,11 @@ export class SageMakerInferAction extends Hub.Action {
     return response.Models
   }
 
-  private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
+  private async uploadToS3(request: Hub.ActionRequest, bucket: string, numStripColumns: number, inputDataKey: string, rawDataKey: string) {
     return new Promise((resolve, reject) => {
       const s3 = this.getS3ClientFromRequest(request)
 
-      function uploadFromStream() {
+      function uploadFromStream(key: string) {
         const passthrough = new PassThrough()
 
         const params = {
@@ -227,9 +284,16 @@ export class SageMakerInferAction extends Hub.Action {
       }
 
       request.stream(async (readable) => {
+        // upload the inference data
+        // without headers and strip columns if needed
         readable
-          .pipe(striplines(1))
-          .pipe(uploadFromStream())
+          .pipe(stripLines(1))
+          .pipe(stripColumns(numStripColumns))
+          .pipe(uploadFromStream(inputDataKey))
+
+        // upload the raw data
+        readable
+          .pipe(uploadFromStream(rawDataKey))
       })
     })
   }

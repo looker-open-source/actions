@@ -54,7 +54,7 @@ export class SageMakerTrainAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    logJson("request", JSON.stringify(request))
+    logJson("request", request)
 
     try {
       // get string inputs
