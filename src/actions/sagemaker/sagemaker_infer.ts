@@ -36,24 +36,73 @@ export class SageMakerInferAction extends Hub.Action {
       required: true,
       sensitive: true,
       description: "Your access key for SageMaker.",
-    }, {
+    },
+    {
       name: "secretAccessKey",
       label: "Secret Key",
       required: true,
       sensitive: true,
       description: "Your secret key for SageMaker.",
-    }, {
+    },
+    {
       name: "roleArn",
       label: "Role ARN",
       required: true,
       sensitive: false,
       description: "Role ARN for accessing SageMaker and S3",
-    }, {
+    },
+    {
       name: "region",
       label: "Region",
       required: true,
       sensitive: false,
       description: "AWS Region for accessing SageMaker",
+    },
+    {
+      name: "user_email",
+      label: "Looker User Email",
+      required: true,
+      description: `
+        Click the button on the right and select 'Email'.
+        This is required for the action to send status emails
+        when training or inference jobs are complete.
+      `,
+      sensitive: false,
+    },
+    {
+      name: "smtpHost",
+      label: "SMTP Host",
+      required: true,
+      sensitive: false,
+      description: "Host for sending emails.",
+    },
+    {
+      name: "smtpPort",
+      label: "SMTP Port",
+      required: true,
+      sensitive: false,
+      description: "Port for sending emails.",
+    },
+    {
+      name: "smtpFrom",
+      label: "SMTP From",
+      required: true,
+      sensitive: false,
+      description: "From for sending emails.",
+    },
+    {
+      name: "smtpUser",
+      label: "SMTP User",
+      required: true,
+      sensitive: false,
+      description: "User for sending emails.",
+    },
+    {
+      name: "smtpPass",
+      label: "SMTP Pass",
+      required: true,
+      sensitive: false,
+      description: "Pass for sending emails.",
     },
   ]
 

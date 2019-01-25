@@ -234,6 +234,14 @@
   version "9.6.18"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-9.6.18.tgz#092e13ef64c47e986802c9c45a61c1454813b31d"
 
+"@types/nodemailer@^4.6.5":
+  version "4.6.5"
+  resolved "https://registry.yarnpkg.com/@types/nodemailer/-/nodemailer-4.6.5.tgz#8bb799202f8cfcc8200a1c1627f6a8a74fe71da6"
+  integrity sha512-cbs2HFLj33TBqzcCqTrs+6/mgTX3xl0odbApv3vTdF2+JERLxh5rDZCasXhvy+YqaiUNBr2I1RjNCdbKGs1Bnw==
+  dependencies:
+    "@types/events" "*"
+    "@types/node" "*"
+
 "@types/oboe@^2.0.28":
   version "2.0.28"
   resolved "https://registry.yarnpkg.com/@types/oboe/-/oboe-2.0.28.tgz#3afcb0cc949fcdf777861d96e8571f3b486f0fa7"
@@ -2918,6 +2926,11 @@ node-pre-gyp@^0.10.0:
 node-uuid@~1.4.7:
   version "1.4.8"
   resolved "https://registry.yarnpkg.com/node-uuid/-/node-uuid-1.4.8.tgz#b040eb0923968afabf8d32fb1f17f1167fdab907"
+
+nodemailer@^5.1.1:
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-5.1.1.tgz#0c48d1ecab02e86d9ff6c620ee75ed944b763505"
+  integrity sha512-hKGCoeNdFL2W7S76J/Oucbw0/qRlfG815tENdhzcqTpSjKgAN91mFOqU2lQUflRRxFM7iZvCyaFcAR9noc/CqQ==
 
 nodemon@^1.12.1:
   version "1.17.5"

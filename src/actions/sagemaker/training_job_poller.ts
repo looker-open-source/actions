@@ -1,7 +1,9 @@
 /* tslint:disable max-line-length */
 import * as SageMaker from "aws-sdk/clients/sagemaker"
-
+import * as nodemailer from "nodemailer"
 import * as winston from "winston"
+import * as Hub from "../../hub"
+import { getMailTransporter } from "./mail_transporter"
 
 export const FIVE_MINUTES = 1000 * 60 * 5
 export const THIRTY_SECONDS = 1000 * 30
@@ -11,7 +13,8 @@ function logJson(label: string, obj: any) {
 }
 
 export interface Transaction {
-  client: SageMaker
+  request: Hub.ActionRequest
+  sagemaker: SageMaker
   modelName: string
   jobName: string
   roleArn: string
@@ -22,10 +25,12 @@ export interface Transaction {
 
 export class TrainingJobPoller {
 
+  transporter: nodemailer.Transporter
   intervalTimer: any
   timeoutTimer: any
 
   constructor(transaction: Transaction) {
+    this.transporter = getMailTransporter(transaction.request)
     this.pollTrainingJob(transaction)
   }
 
@@ -48,7 +53,7 @@ export class TrainingJobPoller {
     const params = {
       TrainingJobName: transaction.jobName,
     }
-    const response = await transaction.client.describeTrainingJob(params).promise()
+    const response = await transaction.sagemaker.describeTrainingJob(params).promise()
     logJson("describeTrainingJob response", response)
 
     winston.debug("status", response.TrainingJobStatus)
@@ -76,24 +81,60 @@ export class TrainingJobPoller {
     clearTimeout(this.timeoutTimer)
   }
 
-  async sendTrainingTimeoutEmail(_transaction: Transaction) {
+  async sendTrainingTimeoutEmail(transaction: Transaction) {
     winston.debug("sendTrainingTimeoutEmail")
+    this.transporter.sendMail({
+      subject: `Training job ${transaction.jobName} timed out`,
+      text: `The training job ${transaction.jobName} exceeded the maximum run time of ${transaction.maxRuntimeInSeconds} seconds.`,
+    })
   }
 
-  async sendTrainingFailedEmail(_transaction: Transaction, _response: SageMaker.DescribeTrainingJobResponse) {
+  async sendTrainingFailedEmail(transaction: Transaction, response: SageMaker.DescribeTrainingJobResponse) {
     winston.debug("sendTrainingFailedEmail")
+    this.transporter.sendMail({
+      subject: `Training job ${transaction.jobName} failed`,
+      text: `
+        The training job ${transaction.jobName} failed. Here is the SageMaker API response:
+
+        ${JSON.stringify(response)}
+      `,
+    })
   }
 
-  async sendTrainingStoppedEmail(_transaction: Transaction, _response: SageMaker.DescribeTrainingJobResponse) {
-    winston.debug("sendTrainingFailedEmail")
+  async sendTrainingStoppedEmail(transaction: Transaction, response: SageMaker.DescribeTrainingJobResponse) {
+    winston.debug("sendTrainingStoppedEmail")
+    this.transporter.sendMail({
+      subject: `Training job ${transaction.jobName} was stopped`,
+      text: `
+        The training job ${transaction.jobName} was stopped. Here is the SageMaker API response:
+
+        ${JSON.stringify(response)}
+      `,
+    })
   }
 
-  async sendCreateModelSuccessEmail(_transaction: Transaction) {
+  async sendCreateModelSuccessEmail(transaction: Transaction, response: SageMaker.CreateModelOutput) {
     winston.debug("sendCreateModelSuccessEmail")
+    this.transporter.sendMail({
+      subject: `The model ${transaction.modelName} has been created`,
+      text: `
+        The model ${transaction.modelName} has been created. Here is the SageMaker API response:
+
+        ${JSON.stringify(response)}
+      `,
+    })
   }
 
-  async sendCreateModelFailureEmail(_transaction: Transaction) {
+  async sendCreateModelFailureEmail(transaction: Transaction, response: SageMaker.CreateModelOutput) {
     winston.debug("sendCreateModelFailureEmail")
+    this.transporter.sendMail({
+      subject: `The model ${transaction.modelName} could not be created`,
+      text: `
+        The model ${transaction.modelName} could not be created. Here is the SageMaker API response:
+
+        ${JSON.stringify(response)}
+      `,
+    })
   }
 
   async createModel(transaction: Transaction, trainingResponse: SageMaker.DescribeTrainingJobResponse) {
@@ -106,11 +147,11 @@ export class TrainingJobPoller {
       ExecutionRoleArn: transaction.roleArn,
     }
     try {
-      const response = await transaction.client.createModel(params).promise()
+      const response = await transaction.sagemaker.createModel(params).promise()
       logJson("createModel response", response)
-      this.sendCreateModelSuccessEmail(transaction)
+      this.sendCreateModelSuccessEmail(transaction, response)
     } catch (err) {
-      this.sendCreateModelFailureEmail(transaction)
+      this.sendCreateModelFailureEmail(transaction, err)
     }
   }
 
