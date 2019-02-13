@@ -78,11 +78,7 @@ export class DropboxAction extends Hub.OAuthAction {
         }
       } catch { winston.warn(request.params.state_json) }
     }
-    winston.info(accessToken)
     const drop = this.dropboxClientFromRequest(request, accessToken)
-
-    winston.info(`oauth: ${request.params.state_url}`)
-
     return new Promise<Hub.ActionForm>((resolve, reject) => {
       drop.filesListFolder({path: ""})
         .then((resp) => {
@@ -151,13 +147,12 @@ export class DropboxAction extends Hub.OAuthAction {
     })
 
     const payload = JSON.parse(plaintext)
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0" // Localhost development hack
     // Should encrypt the state going down
-    const _ingore = await https.get({
+    await https.get({
       url: payload.stateurl,
       body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
-    }).catch((_err) => { winston.error(_err.toString())})
-    return `<html><body>${_ingore}</body><script>window.close()</script>></html>`
+    }).catch((_err) => { winston.error(_err.toString()) })
+    return `<html><script>window.close()</script>></html>`
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
