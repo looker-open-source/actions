@@ -38,14 +38,20 @@ export class DropboxAction extends Hub.OAuthAction {
     const directory = request.formParams.directory
     const ext = request.attachment!.fileExtension
 
-    const drop = this.dropboxClientFromRequest(request)
+    let accessToken = ""
+    if (request.params.state_json) {
+      const jsonState = JSON.parse(request.params.state_json)
+      if (jsonState.code && jsonState.redirect) {
+        accessToken = await this.getAccessTokenFromCode(request)
+      }
+    }
+    const drop = this.dropboxClientFromRequest(request, accessToken)
+
     const resp = new Hub.ActionResponse()
     if (request.attachment && request.attachment.dataBuffer) {
       const fileBuf = request.attachment.dataBuffer
       await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then((_dropResp) => {
         resp.success = true
-        resp.state = new Hub.ActionState()
-        resp.state.data = "reset"
       }).catch((err: any) => {
         winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
         resp.success = false
@@ -63,7 +69,20 @@ export class DropboxAction extends Hub.OAuthAction {
     const form = new Hub.ActionForm()
     form.fields = []
 
-    const drop = this.dropboxClientFromRequest(request)
+    let accessToken = ""
+    if (request.params.state_json) {
+      try {
+        const jsonState = JSON.parse(request.params.state_json)
+        if (jsonState.code && jsonState.redirect) {
+          accessToken = await this.getAccessTokenFromCode(request)
+        }
+      } catch { winston.warn(request.params.state_json) }
+    }
+    winston.info(accessToken)
+    const drop = this.dropboxClientFromRequest(request, accessToken)
+
+    winston.info(`oauth: ${request.params.state_url}`)
+
     return new Promise<Hub.ActionForm>((resolve, reject) => {
       drop.filesListFolder({path: ""})
         .then((resp) => {
@@ -79,13 +98,18 @@ export class DropboxAction extends Hub.OAuthAction {
             name: "filename",
             type: "string",
           }]
+          if (accessToken !== "") {
+            const newState = JSON.stringify({access_token: accessToken})
+            form.state = new Hub.ActionState()
+            form.state.data = newState
+          }
           resolve(form)
         })
         .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
           winston.info("Could not list Dropbox folders")
-          const creds = JSON.stringify({app: request.params.appKey, secret: request.params.secretKey})
           const kms = new AwsKms()
-          kms.encrypt(creds).then((ciphertextBlob: string) => {
+          const jsonString = JSON.stringify({stateurl: request.params.state_url, app: request.params.appKey})
+          kms.encrypt(jsonString).then((ciphertextBlob: string) => {
             form.state = new Hub.ActionState()
             form.fields.push({
               name: "login",
@@ -102,7 +126,7 @@ export class DropboxAction extends Hub.OAuthAction {
     })
   }
   // async oauthUrl(redirectUri: string, stateUrl: string, encryptedState) {
-  async oauthUrl(redirectUri: string, stateUrl: string, encryptedState: string) {
+  async oauthUrl(redirectUri: string, encryptedState: string) {
     const url = new URL("https://www.dropbox.com/oauth2/authorize")
     const kms = new AwsKms()
     const decryptedState = await kms.decrypt(encryptedState).catch((reason: any) => {
@@ -113,41 +137,32 @@ export class DropboxAction extends Hub.OAuthAction {
       response_type: "code",
       client_id: jsonState.app,
       redirect_uri: redirectUri,
-      state: JSON.stringify({lookerstateurl: stateUrl, creds: encryptedState}),
+      force_reapprove: true,
+      state: encryptedState,
     })
     return url.toString()
   }
 
   async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string) {
-    const url = new URL("https://api.dropboxapi.com/oauth2/token")
     const kms = new AwsKms()
-    const jsonState = JSON.parse(urlParams.state)
-    const plaintext = await kms.decrypt( jsonState.creds ).catch((err: string) => {
+    const plaintext = await kms.decrypt(urlParams.state).catch((err: string) => {
       winston.error("Encryption not correctly configured" + err)
       throw err
     })
 
     const payload = JSON.parse(plaintext)
-    url.search = querystring.stringify({
-      grant_type: "authorization_code",
-      code: urlParams.code,
-      client_id: payload.app,
-      client_secret: payload.secret,
-      redirect_uri: redirectUri,
-    })
-
-    const response = await https.post(url.toString(), { json: true }).catch()
-    // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0" // Localhost development hack
-    await https.get({
-      url: jsonState.lookerstateurl,
-      body: JSON.stringify({access_token: response.access_token}),
-    }).catch()
-    return "<html><script>window.close()</script>></html>"
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0" // Localhost development hack
+    // Should encrypt the state going down
+    const _ingore = await https.get({
+      url: payload.stateurl,
+      body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
+    }).catch((_err) => { winston.error(_err.toString())})
+    return `<html><body>${_ingore}</body><script>window.close()</script>></html>`
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
     let res = false
-    const drop = this.dropboxClientFromRequest(request)
+    const drop = this.dropboxClientFromRequest(request, "")
     await drop.filesListFolder({path: ""})
       .then(() => {
         res = true
@@ -158,9 +173,33 @@ export class DropboxAction extends Hub.OAuthAction {
     return res
   }
 
-  protected dropboxClientFromRequest(request: Hub.ActionRequest) {
-    let token = ""
+  protected async getAccessTokenFromCode(request: Hub.ActionRequest) {
+    const url = new URL("https://api.dropboxapi.com/oauth2/token")
+    let stateJson = {code: "something", redirect: "something"}
     if (request.params.state_json) {
+      stateJson = JSON.parse(request.params.state_json)
+    } else {
+      throw "state_json not present"
+    }
+    url.search = querystring.stringify({
+      grant_type: "authorization_code",
+      code: stateJson.code,
+      client_id: request.params.appKey,
+      client_secret: request.params.secretKey,
+      redirect_uri: stateJson.redirect,
+    })
+    return new Promise<string>((res, _rej) => {
+      https.post(url.toString(), { json: true })
+        .then((response: any) => {
+          winston.info(response.access_token)
+          res(response.access_token)
+        })
+        .catch((_err) => { res("") })
+    })
+  }
+
+  protected dropboxClientFromRequest(request: Hub.ActionRequest, token: string) {
+    if (request.params.state_json && token === "") {
       try {
         const json = JSON.parse(request.params.state_json)
         token = json.access_token

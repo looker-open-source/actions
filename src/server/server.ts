@@ -141,9 +141,8 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action instanceof OAuthAction) {
         const parts = uparse.parse(req.url, true)
-        const stateUrl = parts.query.stateUrl
         const state = parts.query.state
-        const url = await action.oauthUrl(this.oauthRedirectUrl(action), stateUrl, state)
+        const url = await action.oauthUrl(this.oauthRedirectUrl(action), state)
         res.redirect(url)
       } else {
         throw "Action does not support OAuth."
@@ -165,8 +164,9 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (action instanceof OAuthAction) {
         try {
-          await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
+          const response = await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
           res.statusCode = 200
+          res.send(response)
         } catch (e) {
           this.logPromiseFail(req, res, e)
           res.statusCode = 400

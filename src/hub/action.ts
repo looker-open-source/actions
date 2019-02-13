@@ -63,6 +63,7 @@ export abstract class Action {
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
   supportedDownloadSettings?: string[]
   requiredFields?: RequiredField[] = []
+  usesOauth = false
 
   abstract params: ActionParameter[]
   actionUserMetadata?: string
@@ -77,6 +78,7 @@ export abstract class Action {
       actionUserMetadata: this.actionUserMetadata,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
+      uses_oauth: this.usesOauth,
       supported_formats: (this.supportedFormats instanceof Function)
         ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
