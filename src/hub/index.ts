@@ -9,6 +9,8 @@ export * from "./utils"
 
 import { LookmlModelExploreField as FieldBase } from "../api_types/lookml_model_explore_field"
 import { LookmlModelExploreFieldset as ExploreFieldset } from "../api_types/lookml_model_explore_fieldset"
+import { LocalCryptoTesting as ActionCrypto } from "../crypto/local_crypto_testing"
+
 import * as JsonDetail from "./json_detail"
 
 // LookmlModelExploreField is not the same as what Looker will actually send
@@ -41,4 +43,4 @@ function allFields(fields: Fieldset) {
   return all
 }
 
-export { JsonDetail, Field, Fieldset, allFields }
+export { ActionCrypto, JsonDetail, Field, Fieldset, allFields }

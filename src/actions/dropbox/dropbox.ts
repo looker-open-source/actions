@@ -4,7 +4,6 @@ import {URL} from "url"
 
 import Dropbox = require("dropbox")
 import * as winston from "winston"
-import {AwsKms} from "../../crypto/aws_kms"
 import * as Hub from "../../hub"
 
 export class DropboxAction extends Hub.OAuthAction {
@@ -14,7 +13,7 @@ export class DropboxAction extends Hub.OAuthAction {
     description = "Send query results directly to a file in your Dropbox."
     supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
-    minimumSupportedLookerVersion = "6.2.0"
+    minimumSupportedLookerVersion = "6.4.0"
     requiredFields = []
     params = [
       {
@@ -52,6 +51,8 @@ export class DropboxAction extends Hub.OAuthAction {
       const fileBuf = request.attachment.dataBuffer
       await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then((_dropResp) => {
         resp.success = true
+        resp.state = new Hub.ActionState()
+        resp.state.data = "reset"
       }).catch((err: any) => {
         winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
         resp.success = false
@@ -98,14 +99,16 @@ export class DropboxAction extends Hub.OAuthAction {
             const newState = JSON.stringify({access_token: accessToken})
             form.state = new Hub.ActionState()
             form.state.data = newState
+          } else {
+            form.state = new Hub.ActionState()
           }
           resolve(form)
         })
         .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
           winston.info("Could not list Dropbox folders")
-          const kms = new AwsKms()
+          const actionCrypto = new Hub.ActionCrypto()
           const jsonString = JSON.stringify({stateurl: request.params.state_url, app: request.params.appKey})
-          kms.encrypt(jsonString).then((ciphertextBlob: string) => {
+          actionCrypto.encrypt(jsonString).then((ciphertextBlob: string) => {
             form.state = new Hub.ActionState()
             form.fields.push({
               name: "login",
@@ -124,10 +127,11 @@ export class DropboxAction extends Hub.OAuthAction {
   // async oauthUrl(redirectUri: string, stateUrl: string, encryptedState) {
   async oauthUrl(redirectUri: string, encryptedState: string) {
     const url = new URL("https://www.dropbox.com/oauth2/authorize")
-    const kms = new AwsKms()
-    const decryptedState = await kms.decrypt(encryptedState).catch((reason: any) => {
+    const actionCrypto = new Hub.ActionCrypto()
+    const decryptedState = await actionCrypto.decrypt(encryptedState).catch((reason: any) => {
       throw reason
     })
+    winston.info(decryptedState)
     const jsonState = JSON.parse(decryptedState)
     url.search = querystring.stringify({
       response_type: "code",
@@ -140,14 +144,15 @@ export class DropboxAction extends Hub.OAuthAction {
   }
 
   async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string) {
-    const kms = new AwsKms()
-    const plaintext = await kms.decrypt(urlParams.state).catch((err: string) => {
+    const actionCrypto = new Hub.ActionCrypto()
+    const plaintext = await actionCrypto.decrypt(urlParams.state).catch((err: string) => {
       winston.error("Encryption not correctly configured" + err)
       throw err
     })
 
     const payload = JSON.parse(plaintext)
     // Should encrypt the state going down
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
     await https.get({
       url: payload.stateurl,
       body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
