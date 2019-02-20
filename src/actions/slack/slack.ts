@@ -100,38 +100,55 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   }
 
   async usablePublicChannels(request: Hub.ActionRequest) {
-    return new Promise<Channel[]>((resolve, reject) => {
-      const slack = this.slackClientFromRequest(request)
-      slack.channels.list({
-        exclude_archived: true,
-        exclude_members: true,
-      }, (err: any, response: any) => {
-        if (err || !response.ok) {
-          reject(err)
-        } else {
-          const channels = response.channels.filter((c: any) => c.is_member && !c.is_archived)
-          const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
-          resolve(reformatted)
-        }
-      })
-    })
+    const slack = this.slackClientFromRequest(request)
+    const options: any = {
+      exclude_archived: true,
+      exclude_members: true,
+      limit: 200,
+    }
+    async function pageLoaded(accumulatedChannels: any[], response: any): Promise<any[]> {
+      const mergedChannels = accumulatedChannels.concat(response.channels)
+
+      // When a `next_cursor` exists, recursively call this function to get the next page.
+      if (response.response_metadata &&
+          response.response_metadata.next_cursor &&
+          response.response_metadata.next_cursor !== "") {
+        const pageOptions = { ...options }
+        pageOptions.cursor = response.response_metadata.next_cursor
+        return pageLoaded(mergedChannels, await slack.channels.list(pageOptions))
+      }
+      return mergedChannels
+    }
+    const paginatedChannels = await pageLoaded([], await slack.channels.list(options))
+    const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
+    const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
+    return reformatted
   }
 
   async usableDMs(request: Hub.ActionRequest) {
-    return new Promise<Channel[]>((resolve, reject) => {
-      const slack = this.slackClientFromRequest(request)
-      slack.users.list({}, (err: any, response: any) => {
-        if (err || !response.ok) {
-          reject(err)
-        } else {
-          const users = response.members.filter((u: any) => {
-            return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
-          })
-          const reformatted: Channel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
-          resolve(reformatted)
-        }
-      })
+    const slack = this.slackClientFromRequest(request)
+    const options: any = {
+      limit: 200,
+    }
+    async function pageLoaded(accumulatedUsers: any[], response: any): Promise<any[]> {
+      const mergedUsers = accumulatedUsers.concat(response.members)
+
+      // When a `next_cursor` exists, recursively call this function to get the next page.
+      if (response.response_metadata &&
+          response.response_metadata.next_cursor &&
+          response.response_metadata.next_cursor !== "") {
+        const pageOptions = { ...options }
+        pageOptions.cursor = response.response_metadata.next_cursor
+        return pageLoaded(mergedUsers, await slack.users.list(pageOptions))
+      }
+      return mergedUsers
+    }
+    const paginatedUsers = await pageLoaded([], await slack.users.list(options))
+    const users = paginatedUsers.filter((u: any) => {
+      return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
     })
+    const reformatted: Channel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
+    return reformatted
   }
 
   private prettySlackError(e: any) {
