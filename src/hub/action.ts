@@ -66,7 +66,6 @@ export abstract class Action {
   usesOauth = false
 
   abstract params: ActionParameter[]
-  actionUserMetadata?: string
 
   asJson(router: RouteBuilder, request: ActionRequest) {
     return {
@@ -75,7 +74,6 @@ export abstract class Action {
       label: this.label,
       name: this.name,
       params: this.params,
-      actionUserMetadata: this.actionUserMetadata,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
       uses_oauth: this.usesOauth,
