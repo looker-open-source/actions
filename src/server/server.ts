@@ -5,10 +5,9 @@ import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
-import {OAuthAction} from "../hub"
+import {isOauthAction, OAuthAction} from "../hub"
 import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
-
 const expressWinston = require("express-winston")
 const uparse = require("url")
 const blocked = require("blocked-at")
@@ -139,10 +138,10 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action instanceof OAuthAction) {
+      if (isOauthAction(action)) {
         const parts = uparse.parse(req.url, true)
         const state = parts.query.state
-        const url = await action.oauthUrl(this.oauthRedirectUrl(action), state)
+        const url = await (action as OAuthAction).oauthUrl(this.oauthRedirectUrl(action), state)
         res.redirect(url)
       } else {
         throw "Action does not support OAuth."
@@ -152,9 +151,11 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      if (action instanceof OAuthAction) {
-        const check = action.oauthCheck(request)
+      if (isOauthAction(action)) {
+        const check = (action as OAuthAction).oauthCheck(request)
         res.json(check)
+      } else {
+        res.statusCode = 404
       }
     })
 
@@ -162,9 +163,9 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_redirect", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action instanceof OAuthAction) {
+      if (isOauthAction(action)) {
         try {
-          const response = await action.oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
+          const response = await (action as OAuthAction).oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
           res.statusCode = 200
           res.send(response)
         } catch (e) {
@@ -192,7 +193,7 @@ export default class Server implements Hub.RouteBuilder {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
   }
 
-  oauthRedirectUrl(action: Hub.Action) {
+  private oauthRedirectUrl(action: Hub.Action) {
     const url = this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
     return url
   }
@@ -235,7 +236,7 @@ export default class Server implements Hub.RouteBuilder {
 
       const headerValue = req.header("authorization")
       const tokenMatch = headerValue ? headerValue.match(TOKEN_REGEX) : undefined
-      if (!tokenMatch || !apiKey.validate(tokenMatch[1]) && urlPath !== "/actions/:actionId/oauth_redirect") {
+      if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})
         this.logInfo(req, res, "Unauthorized request.")

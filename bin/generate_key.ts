@@ -1,5 +1,3 @@
-require("dotenv").config()
-
 import * as crypto from "crypto"
 import * as keys from "../src/server/api_key"
 

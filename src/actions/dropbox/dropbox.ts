@@ -49,16 +49,13 @@ export class DropboxAction extends Hub.OAuthAction {
     const resp = new Hub.ActionResponse()
     if (request.attachment && request.attachment.dataBuffer) {
       const fileBuf = request.attachment.dataBuffer
-      await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).then((_dropResp) => {
-        resp.success = true
-        resp.state = new Hub.ActionState()
-        resp.state.data = "reset"
-      }).catch((err: any) => {
+      await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).catch((err: any) => {
         winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
         resp.success = false
         resp.state = new Hub.ActionState()
         resp.state.data = "reset"
       })
+      resp.success = true
     } else {
       resp.success = false
       resp.message = "No data sent from Looker to be sent to Dropbox"
@@ -77,7 +74,7 @@ export class DropboxAction extends Hub.OAuthAction {
         if (jsonState.code && jsonState.redirect) {
           accessToken = await this.getAccessTokenFromCode(request)
         }
-      } catch { winston.warn(request.params.state_json) }
+      } catch { winston.warn("Could not parse state_json") }
     }
     const drop = this.dropboxClientFromRequest(request, accessToken)
     return new Promise<Hub.ActionForm>((resolve, reject) => {
@@ -105,7 +102,6 @@ export class DropboxAction extends Hub.OAuthAction {
           resolve(form)
         })
         .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
-          winston.info("Could not list Dropbox folders")
           const actionCrypto = new Hub.ActionCrypto()
           const jsonString = JSON.stringify({stateurl: request.params.state_url, app: request.params.appKey})
           actionCrypto.encrypt(jsonString).then((ciphertextBlob: string) => {
@@ -131,7 +127,6 @@ export class DropboxAction extends Hub.OAuthAction {
     const decryptedState = await actionCrypto.decrypt(encryptedState).catch((reason: any) => {
       throw reason
     })
-    winston.info(decryptedState)
     const jsonState = JSON.parse(decryptedState)
     url.search = querystring.stringify({
       response_type: "code",
