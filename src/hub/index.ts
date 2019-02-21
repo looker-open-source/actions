@@ -9,7 +9,7 @@ export * from "./utils"
 
 import { LookmlModelExploreField as FieldBase } from "../api_types/lookml_model_explore_field"
 import { LookmlModelExploreFieldset as ExploreFieldset } from "../api_types/lookml_model_explore_fieldset"
-import { LocalCryptoTesting as ActionCrypto } from "../crypto/local_crypto_testing"
+import { AESTransitCrypto as ActionCrypto } from "../crypto/aes_transit_crypto"
 
 import * as JsonDetail from "./json_detail"
 

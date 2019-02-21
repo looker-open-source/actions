@@ -5,7 +5,7 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
-import {AwsKms} from "../../crypto/aws_kms"
+import {AESTransitCrypto} from "../../crypto/aes_transit_crypto"
 import { DropboxAction } from "./dropbox"
 
 const action = new DropboxAction()
@@ -29,8 +29,8 @@ function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any) {
 }
 
 describe(`${action.constructor.name} unit tests`, () => {
-  sinon.stub(AwsKms.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
-  sinon.stub(AwsKms.prototype, "decrypt").callsFake( async (s: string) => s )
+  sinon.stub(AESTransitCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
+  sinon.stub(AESTransitCrypto.prototype, "decrypt").callsFake( async (s: string) => s )
 
   describe("action", () => {
 

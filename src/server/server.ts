@@ -235,7 +235,7 @@ export default class Server implements Hub.RouteBuilder {
 
       const headerValue = req.header("authorization")
       const tokenMatch = headerValue ? headerValue.match(TOKEN_REGEX) : undefined
-      if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
+      if (!tokenMatch || !apiKey.validate(tokenMatch[1]) && urlPath !== "/actions/:actionId/oauth_redirect") {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})
         this.logInfo(req, res, "Unauthorized request.")

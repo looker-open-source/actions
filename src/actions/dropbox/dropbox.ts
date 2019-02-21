@@ -151,8 +151,6 @@ export class DropboxAction extends Hub.OAuthAction {
     })
 
     const payload = JSON.parse(plaintext)
-    // Should encrypt the state going down
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
     await https.post({
       url: payload.stateurl,
       body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
@@ -191,7 +189,6 @@ export class DropboxAction extends Hub.OAuthAction {
     return new Promise<string>((res, _rej) => {
       https.post(url.toString(), { json: true })
         .then((response: any) => {
-          winston.info(response.access_token)
           res(response.access_token)
         })
         .catch((_err) => { res("") })
