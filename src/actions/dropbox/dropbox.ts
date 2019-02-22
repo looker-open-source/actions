@@ -116,7 +116,7 @@ export class DropboxAction extends Hub.OAuthAction {
       return(form)
     }
   }
-  // async oauthUrl(redirectUri: string, stateUrl: string, encryptedState) {
+
   async oauthUrl(redirectUri: string, encryptedState: string) {
     const url = new URL("https://www.dropbox.com/oauth2/authorize")
     const actionCrypto = new Hub.ActionCrypto()
