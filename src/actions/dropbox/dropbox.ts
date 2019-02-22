@@ -77,48 +77,44 @@ export class DropboxAction extends Hub.OAuthAction {
       } catch { winston.warn("Could not parse state_json") }
     }
     const drop = this.dropboxClientFromRequest(request, accessToken)
-    return new Promise<Hub.ActionForm>((resolve, reject) => {
-      drop.filesListFolder({path: ""})
-        .then((resp) => {
-          form.fields = [{
-            description: "Dropbox directory where file will be saved",
-            label: "Save in",
-            name: "directory",
-            options: resp.entries.map((entries) => ({name: entries.name, label: entries.name})),
-            required: true,
-            type: "select",
-          }, {
-            label: "Filename",
-            name: "filename",
-            type: "string",
-          }]
-          if (accessToken !== "") {
-            const newState = JSON.stringify({access_token: accessToken})
-            form.state = new Hub.ActionState()
-            form.state.data = newState
-          } else {
-            form.state = new Hub.ActionState()
-          }
-          resolve(form)
-        })
-        .catch((_error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
-          const actionCrypto = new Hub.ActionCrypto()
-          const jsonString = JSON.stringify({stateurl: request.params.state_url, app: request.params.appKey})
-          actionCrypto.encrypt(jsonString).then((ciphertextBlob: string) => {
-            form.state = new Hub.ActionState()
-            form.fields.push({
-              name: "login",
-              type: "oauth_link",
-              label: "Log in with Dropbox",
-              oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=${ciphertextBlob}`,
-            })
-            resolve(form)
-          }).catch((err: string) => {
-            winston.error("Encryption not correctly configured")
-            reject(err)
-          })
-        })
-    })
+    try {
+      const response = await drop.filesListFolder({path: ""})
+      form.fields = [{
+        description: "Dropbox directory where file will be saved",
+        label: "Save in",
+        name: "directory",
+        options: response.entries.map((entries) => ({name: entries.name, label: entries.name})),
+        required: true,
+        type: "select",
+      }, {
+        label: "Filename",
+        name: "filename",
+        type: "string",
+      }]
+      if (accessToken !== "") {
+        const newState = JSON.stringify({access_token: accessToken})
+        form.state = new Hub.ActionState()
+        form.state.data = newState
+      } else {
+        form.state = new Hub.ActionState()
+      }
+      return form
+    } catch (_error) {
+      const actionCrypto = new Hub.ActionCrypto()
+      const jsonString = JSON.stringify({stateurl: request.params.state_url, app: request.params.appKey})
+      const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
+        winston.error("Encryption not correctly configured")
+        throw err
+      })
+      form.state = new Hub.ActionState()
+      form.fields.push({
+        name: "login",
+        type: "oauth_link",
+        label: "Log in with Dropbox",
+        oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=${ciphertextBlob}`,
+      })
+      return(form)
+    }
   }
   // async oauthUrl(redirectUri: string, stateUrl: string, encryptedState) {
   async oauthUrl(redirectUri: string, encryptedState: string) {
