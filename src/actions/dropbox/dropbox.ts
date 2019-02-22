@@ -168,26 +168,25 @@ export class DropboxAction extends Hub.OAuthAction {
 
   protected async getAccessTokenFromCode(request: Hub.ActionRequest) {
     const url = new URL("https://api.dropboxapi.com/oauth2/token")
-    let stateJson = {code: "something", redirect: "something"}
+    let stateJson
     if (request.params.state_json) {
       stateJson = JSON.parse(request.params.state_json)
     } else {
       throw "state_json not present"
     }
-    url.search = querystring.stringify({
-      grant_type: "authorization_code",
-      code: stateJson.code,
-      client_id: request.params.appKey,
-      client_secret: request.params.secretKey,
-      redirect_uri: stateJson.redirect,
-    })
-    return new Promise<string>((res, _rej) => {
-      https.post(url.toString(), { json: true })
-        .then((response: any) => {
-          res(response.access_token)
-        })
-        .catch((_err) => { res("") })
-    })
+    if (stateJson.code && stateJson.redirect) {
+      url.search = querystring.stringify({
+        grant_type: "authorization_code",
+        code: stateJson.code,
+        client_id: request.params.appKey,
+        client_secret: request.params.secretKey,
+        redirect_uri: stateJson.redirect,
+      })
+    } else {
+      throw "state_json does not contain correct members"
+    }
+    return await https.post(url.toString(), { json: true })
+        .catch((_err) => { winston.error("Error requesting access_token") })
   }
 
   protected dropboxClientFromRequest(request: Hub.ActionRequest, token: string) {
