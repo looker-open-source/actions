@@ -144,27 +144,51 @@ describe(`${action.constructor.name} unit tests`, () => {
       const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({
           channels: {
-            list: (filters: any, callback: (err: any, response: any) => void) => {
-              callback(null, {
-                ok: true,
-                channels: [
-                  {id: "1", name: "A", is_member: true},
-                  {id: "2", name: "B", is_member: true},
-                ],
-                filters,
-              })
+            list: (filters: any) => {
+              if (filters.cursor) {
+                return {
+                  ok: true,
+                  channels: [
+                    {id: "3", name: "C", is_member: true},
+                    {id: "4", name: "D", is_member: true},
+                  ],
+                }
+              } else {
+                return {
+                  ok: true,
+                  channels: [
+                    {id: "1", name: "A", is_member: true},
+                    {id: "2", name: "B", is_member: true},
+                  ],
+                  response_metadata: {
+                    next_cursor: "cursor",
+                  },
+                }
+              }
             },
           },
           users: {
-            list: (filters: any, callback: (err: any, response: any) => void) => {
-              callback(null, {
-                ok: true,
-                members: [
-                  {id: "10", name: "Z"},
-                  {id: "20", name: "Y"},
-                ],
-                filters,
-              })
+            list: (filters: any) => {
+              if (filters.cursor) {
+                return {
+                  ok: true,
+                  members: [
+                    {id: "30", name: "W"},
+                    {id: "40", name: "X"},
+                  ],
+                }
+              } else {
+                return {
+                  ok: true,
+                    members: [
+                      {id: "10", name: "Z"},
+                      {id: "20", name: "Y"},
+                    ],
+                  response_metadata: {
+                    next_cursor: "cursor",
+                  },
+                }
+              }
             },
           },
         }))
@@ -181,8 +205,12 @@ describe(`${action.constructor.name} unit tests`, () => {
           options: [
             {name: "1", label: "#A"},
             {name: "2", label: "#B"},
+            {name: "3", label: "#C"},
+            {name: "4", label: "#D"},
             {name: "10", label: "@Z"},
-            {name: "20", label: "@Y"}],
+            {name: "20", label: "@Y"},
+            {name: "30", label: "@W"},
+            {name: "40", label: "@X"}],
           required: true,
           type: "select",
         }, {
