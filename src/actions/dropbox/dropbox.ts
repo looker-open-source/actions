@@ -47,6 +47,7 @@ export class DropboxAction extends Hub.OAuthAction {
     const drop = this.dropboxClientFromRequest(request, accessToken)
 
     const resp = new Hub.ActionResponse()
+    resp.success = true
     if (request.attachment && request.attachment.dataBuffer) {
       const fileBuf = request.attachment.dataBuffer
       await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).catch((err: any) => {
@@ -55,7 +56,6 @@ export class DropboxAction extends Hub.OAuthAction {
         resp.state = new Hub.ActionState()
         resp.state.data = "reset"
       })
-      resp.success = true
     } else {
       resp.success = false
       resp.message = "No data sent from Looker to be sent to Dropbox"
@@ -95,8 +95,6 @@ export class DropboxAction extends Hub.OAuthAction {
         const newState = JSON.stringify({access_token: accessToken})
         form.state = new Hub.ActionState()
         form.state.data = newState
-      } else {
-        form.state = new Hub.ActionState()
       }
       return form
     } catch (_error) {
