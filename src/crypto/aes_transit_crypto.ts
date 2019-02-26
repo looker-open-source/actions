@@ -4,6 +4,7 @@ import {CryptoBase} from "./crypto_base"
 
 export class AESTransitCrypto extends CryptoBase {
   ALGORITHM = "aes-256-ctr"
+  VERSION = 1
 
   async encrypt(plaintext: string) {
     if (process.env.CIPHER_MASTER === undefined) {
@@ -31,21 +32,21 @@ export class AESTransitCrypto extends CryptoBase {
 
     /*
     * Url Safe Encryption Payload
-    * [ 3      , 3     , ivsize    , keysize                       , any size                 ]
-    * [ keysize, ivsize, base64(iv), base64(enc(dataKey,masterKey)), base64(enc(data,dataKey))]
+    * [ 1       , 3     , 3     , ivsize    , keysize                       , any size                 ]
+    * [ Version, keysize, ivsize, base64(iv), base64(enc(dataKey,masterKey)), base64(enc(data,dataKey))]
     * */
-    return keysize + ivSize + encdodediv + encDataKey + cipherText
+    return this.VERSION + keysize + ivSize + encdodediv + encDataKey + cipherText
   }
   async decrypt(ciphertext: string) {
     if (process.env.CIPHER_MASTER === undefined) {
       throw "CIPHER_MASTER environment variable not set"
     }
     const masterBuffer = Buffer.from(process.env.CIPHER_MASTER, "hex")
-    const keySize = Number(ciphertext.substring(0, 3))
-    const ivSize = Number(ciphertext.substring(3, 6))
-    const iv = Buffer.from(b64.unescape(ciphertext.substring(6, 6 + ivSize)), "base64")
-    const offset = keySize + ivSize + 6
-    const encDataKey = b64.unescape(ciphertext.substring(6 + ivSize, offset))
+    const keySize = Number(ciphertext.substring(1, 4))
+    const ivSize = Number(ciphertext.substring(4, 7))
+    const iv = Buffer.from(b64.unescape(ciphertext.substring(7, 7 + ivSize)), "base64")
+    const offset = keySize + ivSize + 7
+    const encDataKey = b64.unescape(ciphertext.substring(7 + ivSize, offset))
     const masterCipher = crypto.createDecipheriv(this.ALGORITHM, masterBuffer, iv)
 
     // Decrypt dataKey and reassign to a Buffer to decrypt the data
