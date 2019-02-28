@@ -179,8 +179,9 @@ export class DropboxAction extends Hub.OAuthAction {
     } else {
       throw "state_json does not contain correct members"
     }
-    return await https.post(url.toString(), { json: true })
+    const response = await https.post(url.toString(), { json: true })
         .catch((_err) => { winston.error("Error requesting access_token") })
+    return response.access_token
   }
 
   protected dropboxClientFromRequest(request: Hub.ActionRequest, token: string) {
