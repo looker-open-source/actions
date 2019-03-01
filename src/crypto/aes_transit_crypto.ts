@@ -1,8 +1,8 @@
 import * as b64 from "base64-url"
 import * as crypto from "crypto"
-import {CryptoBase} from "./crypto_base"
+import {CryptoProvider} from "./crypto_base"
 
-export class AESTransitCrypto extends CryptoBase {
+export class AESTransitCrypto implements CryptoProvider {
   ALGORITHM = "aes-256-ctr"
   VERSION = 1
 

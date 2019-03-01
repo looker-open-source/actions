@@ -1,4 +1,4 @@
-export abstract class CryptoBase {
-  abstract async encrypt(plaintext: string): Promise<string>
-  abstract async decrypt(ciphertext: string): Promise<string>
+export interface CryptoProvider {
+  encrypt(plaintext: string): Promise<string>
+  decrypt(ciphertext: string): Promise<string>
 }

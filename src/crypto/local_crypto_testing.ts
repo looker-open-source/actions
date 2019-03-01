@@ -1,9 +1,9 @@
 import * as b64 from "base64-url"
 import * as crypto from "crypto"
-import {CryptoBase} from "./crypto_base"
+import {CryptoProvider} from "./crypto_base"
 
 // This class is meant for local development and will never go into production
-export class LocalCryptoTesting extends CryptoBase {
+export class LocalCryptoTesting implements CryptoProvider {
   ALGORITHM = "aes-256-cbc"
   INSECURE_IV = Buffer.alloc(16)
 
