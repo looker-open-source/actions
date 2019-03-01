@@ -133,7 +133,11 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("returns correct fields on oauth success", (done) => {
       const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
         .callsFake(() => ({
-          filesListFolder: async (_: any) => Promise.resolve({entries: [{name: "fake_name", label: "fake_label"}]}),
+          filesListFolder: async (_: any) => Promise.resolve({entries: [{
+              "name": "fake_name",
+              "label": "fake_label",
+              ".tag": "folder"}],
+          }),
         }))
       const request = new Hub.ActionRequest()
       request.params = {
