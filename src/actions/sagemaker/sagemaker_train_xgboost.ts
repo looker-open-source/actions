@@ -233,11 +233,13 @@ export class SageMakerTrainAction extends Hub.Action {
   }
 
   async form(request: Hub.ActionRequest) {
+    winston.debug("form")
 
     const buckets = await this.listBuckets(request)
     if (! Array.isArray(buckets)) {
-      throw new Error("Unable to retrieve buckets")
+      throw "Unable to retrieve buckets"
     }
+    logJson("buckets", buckets)
 
     const form = new Hub.ActionForm()
     form.fields = [
