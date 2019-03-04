@@ -192,13 +192,15 @@ export class SageMakerInferAction extends Hub.Action {
 
     const buckets = await this.listBuckets(request)
     if (! Array.isArray(buckets)) {
-      throw new Error("Unable to retrieve buckets")
+      throw "Unable to retrieve buckets"
     }
+    logJson("buckets", buckets)
 
     const models = await this.listModels(request)
     if (! Array.isArray(models)) {
-      throw new Error("Unable to retrieve models")
+      throw "Unable to retrieve models"
     }
+    logJson("models", models)
 
     const form = new Hub.ActionForm()
     form.fields = [
