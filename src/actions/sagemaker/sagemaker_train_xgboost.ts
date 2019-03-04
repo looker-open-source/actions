@@ -234,6 +234,7 @@ export class SageMakerTrainAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     winston.debug("form")
+    logJson("request.params", request.params)
 
     const buckets = await this.listBuckets(request)
     if (! Array.isArray(buckets)) {
