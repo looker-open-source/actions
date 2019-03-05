@@ -8,7 +8,7 @@ You can configure which user (usually a bot user) the action will post the attac
 
 There are 2 ways of getting Slack credentials for use with this action.
 
-1. Bot user in a private Slack application (reccomended)
+1. Bot user in a private Slack application (recommended)
 2. Slack legacy token
 
 ### Bot user in a private Slack application
@@ -68,6 +68,8 @@ There are 2 ways of getting Slack credentials for use with this action.
     ![](app-9.png)
 
 10. Enable Slack in Looker on the Actions page (/admin/actions) and use the token you copied.
+
+Note: Remember to invite the looker bot to any channels or groups that you might want to send data to!
 
 ### Legacy Token
 
