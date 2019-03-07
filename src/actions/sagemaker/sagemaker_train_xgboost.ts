@@ -12,10 +12,6 @@ import { awsInstanceTypes } from "./aws_instance_types"
 
 const striplines = require("striplines")
 
-function logJson(label: string, obj: any) {
-  winston.debug(label, JSON.stringify(obj, null, 2))
-}
-
 export class SageMakerTrainAction extends Hub.Action {
 
   name = "amazon_sagemaker_train_xgboost"
@@ -102,8 +98,6 @@ export class SageMakerTrainAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    logJson("request", request)
-
     try {
       // get string inputs
       const {
@@ -144,7 +138,6 @@ export class SageMakerTrainAction extends Hub.Action {
       if (! region) {
         throw new Error("Unable to determine bucket region.")
       }
-      winston.debug("region", region)
 
       // set up variables required for API calls
       const channelName = "train"
@@ -160,8 +153,6 @@ export class SageMakerTrainAction extends Hub.Action {
       const s3OutputPath = `s3://${bucket}`
       const trainingImageHost = xgboostHosts[region]
       const trainingImage = `${trainingImageHost}/xgboost:1`
-      winston.debug("s3Uri", s3InputPath)
-      winston.debug("s3OutputPath", s3OutputPath)
 
       // create hyperparameters
       const hyperParameters: SageMaker.HyperParameters = {
@@ -208,7 +199,7 @@ export class SageMakerTrainAction extends Hub.Action {
       winston.debug("trainingParams", trainingParams)
 
       const trainingResponse = await sagemaker.createTrainingJob(trainingParams).promise()
-      logJson("trainingResponse", trainingResponse)
+      winston.debug("trainingResponse", trainingResponse)
 
       // start polling for training job completion
       const transaction: Transaction = {
@@ -233,14 +224,11 @@ export class SageMakerTrainAction extends Hub.Action {
   }
 
   async form(request: Hub.ActionRequest) {
-    winston.debug("form")
-    logJson("request.params", request.params)
 
     const buckets = await this.listBuckets(request)
     if (! Array.isArray(buckets)) {
       throw "Unable to retrieve buckets"
     }
-    logJson("buckets", buckets)
 
     const form = new Hub.ActionForm()
     form.fields = [

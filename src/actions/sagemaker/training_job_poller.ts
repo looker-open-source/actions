@@ -8,10 +8,6 @@ import { getMailTransporter } from "./mail_transporter"
 export const FIVE_MINUTES = 1000 * 60 * 5
 export const THIRTY_SECONDS = 1000 * 30
 
-function logJson(label: string, obj: any) {
-  winston.debug(label, JSON.stringify(obj, null, 2))
-}
-
 export interface Transaction {
   request: Hub.ActionRequest
   sagemaker: SageMaker
@@ -54,8 +50,7 @@ export class TrainingJobPoller {
       TrainingJobName: transaction.jobName,
     }
     const response = await transaction.sagemaker.describeTrainingJob(params).promise()
-    logJson("describeTrainingJob response", response)
-
+    winston.debug("describeTrainingJob response", response)
     winston.debug("status", response.TrainingJobStatus)
 
     switch (response.TrainingJobStatus) {
@@ -148,7 +143,7 @@ export class TrainingJobPoller {
     }
     try {
       const response = await transaction.sagemaker.createModel(params).promise()
-      logJson("createModel response", response)
+      winston.debug("createModel response", response)
       this.sendCreateModelSuccessEmail(transaction, response)
     } catch (err) {
       this.sendCreateModelFailureEmail(transaction, err)

@@ -1,4 +1,5 @@
 /* tslint:disable max-line-length */
+
 import * as Hub from "../../hub"
 import { THIRTY_SECONDS, TrainingJobPoller, Transaction } from "./training_job_poller"
 
@@ -6,15 +7,10 @@ import * as S3 from "aws-sdk/clients/s3"
 import * as SageMaker from "aws-sdk/clients/sagemaker"
 import { PassThrough } from "stream"
 import * as winston from "winston"
-
-const striplines = require("striplines")
-
 import { linearLearnerHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
 
-function logJson(label: string, obj: any) {
-  winston.debug(label, JSON.stringify(obj, null, 2))
-}
+const striplines = require("striplines")
 
 export class SageMakerTrainAction extends Hub.Action {
 
@@ -102,8 +98,6 @@ export class SageMakerTrainAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    logJson("request", request)
-
     try {
       // get string inputs
       const {
@@ -151,7 +145,6 @@ export class SageMakerTrainAction extends Hub.Action {
       if (! region) {
         throw new Error("Unable to determine bucket region.")
       }
-      winston.debug("region", region)
 
       // set up variables required for API calls
       const channelName = "train"
@@ -167,8 +160,6 @@ export class SageMakerTrainAction extends Hub.Action {
       const s3OutputPath = `s3://${bucket}`
       const trainingImageHost = linearLearnerHosts[region]
       const trainingImage = `${trainingImageHost}/linear-learner:1`
-      winston.debug("s3Uri", s3InputPath)
-      winston.debug("s3OutputPath", s3OutputPath)
 
       // create hyperparameters
       const hyperParameters: SageMaker.HyperParameters = {
@@ -216,7 +207,7 @@ export class SageMakerTrainAction extends Hub.Action {
       winston.debug("trainingParams", trainingParams)
 
       const trainingResponse = await sagemaker.createTrainingJob(trainingParams).promise()
-      logJson("trainingResponse", trainingResponse)
+      winston.debug("trainingResponse", trainingResponse)
 
       // start polling for training job completion
       const transaction: Transaction = {

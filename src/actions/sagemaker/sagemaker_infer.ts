@@ -11,10 +11,6 @@ import { awsInstanceTypes } from "./aws_instance_types"
 const stripLines = require("striplines")
 const stripColumns = require("./strip_columns.js")
 
-function logJson(label: string, obj: any) {
-  winston.debug(label, JSON.stringify(obj, null, 2))
-}
-
 export class SageMakerInferAction extends Hub.Action {
 
   name = "amazon_sagemaker_infer"
@@ -108,8 +104,6 @@ export class SageMakerInferAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
-    logJson("request", request)
-
     try {
       // get string inputs
       const {
@@ -174,10 +168,10 @@ export class SageMakerInferAction extends Hub.Action {
           InstanceType: awsInstanceType,
         },
       }
-      logJson("transformParams", transformParams)
+      winston.debug("transformParams", transformParams)
 
       const transformResponse = await client.createTransformJob(transformParams).promise()
-      logJson("transformResponse", transformResponse)
+      winston.debug("transformResponse", transformResponse)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
@@ -189,20 +183,16 @@ export class SageMakerInferAction extends Hub.Action {
   }
 
   async form(request: Hub.ActionRequest) {
-    winston.debug("form")
-    logJson("request.params", request.params)
 
     const buckets = await this.listBuckets(request)
     if (! Array.isArray(buckets)) {
       throw "Unable to retrieve buckets"
     }
-    logJson("buckets", buckets)
 
     const models = await this.listModels(request)
     if (! Array.isArray(models)) {
       throw "Unable to retrieve models"
     }
-    logJson("models", models)
 
     const form = new Hub.ActionForm()
     form.fields = [
