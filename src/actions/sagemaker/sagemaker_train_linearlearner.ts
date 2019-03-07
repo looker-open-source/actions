@@ -254,7 +254,6 @@ export class SageMakerTrainAction extends Hub.Action {
         label: "Model Name",
         name: "modelName",
         required: true,
-        default: `MyModel-${Date.now()}`, // DNR
         description: "The name for model to be created after training is complete.",
       },
       {
@@ -268,8 +267,7 @@ export class SageMakerTrainAction extends Hub.Action {
             label: bucket.Name!,
           }
         }),
-        // default: buckets[0].Name, // DNR
-        default: "looker-marketing-analysis", // DNR
+        default: buckets[0].Name,
         description: "The S3 bucket where SageMaker input training data should be stored",
       },
       {
