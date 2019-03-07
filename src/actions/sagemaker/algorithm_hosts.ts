@@ -1,3 +1,6 @@
+// list of hosts for Amazon-provided training algorithm images
+// https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-algo-docker-registry-paths.html
+
 export const xgboostHosts: { [key: string]: string } = {
   "us-west-1": "632365934929.dkr.ecr.us-west-1.amazonaws.com​",
   "us-west-2": "433757028032.dkr.ecr.us-west-2.amazonaws.com",
