@@ -21,6 +21,11 @@ const expensiveJobQueue = new ExecuteProcessQueue.ExecuteProcessQueue()
 export default class Server implements Hub.RouteBuilder {
 
   static run() {
+    const { port, timeout } = Server.configure()
+    Server.listen(port, timeout)
+  }
+
+  static configure() {
     dotenv.config()
 
     if (useRaven()) {
@@ -65,7 +70,10 @@ export default class Server implements Hub.RouteBuilder {
     // Load balancers in front of the app may still timeout
     const timeout = process.env.ACTION_HUB_SOCKET_TIMEOUT ? parseInt(process.env.ACTION_HUB_SOCKET_TIMEOUT, 10) : 0
 
-    Server.listen(port, timeout)
+    return {
+      port,
+      timeout,
+    }
   }
 
   static listen(port: number, timeout: number) {
