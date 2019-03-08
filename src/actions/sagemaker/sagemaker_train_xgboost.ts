@@ -12,7 +12,7 @@ import { awsInstanceTypes } from "./aws_instance_types"
 
 const striplines = require("striplines")
 
-export class SageMakerTrainAction extends Hub.Action {
+export class SageMakerTrainXgboostAction extends Hub.Action {
 
   name = "amazon_sagemaker_train_xgboost"
   label = "Amazon SageMaker Train: Xgboost"
@@ -218,7 +218,6 @@ export class SageMakerTrainAction extends Hub.Action {
       return new Hub.ActionResponse({ success: true })
 
     } catch (err) {
-      winston.error(err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
@@ -400,4 +399,4 @@ export class SageMakerTrainAction extends Hub.Action {
 
 }
 
-Hub.addAction(new SageMakerTrainAction())
+Hub.addAction(new SageMakerTrainXgboostAction())

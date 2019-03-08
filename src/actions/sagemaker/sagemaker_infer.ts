@@ -177,7 +177,6 @@ export class SageMakerInferAction extends Hub.Action {
       return new Hub.ActionResponse({ success: true })
 
     } catch (err) {
-      winston.error(err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
@@ -233,8 +232,7 @@ export class SageMakerInferAction extends Hub.Action {
           }
         }),
         type: "select",
-        // default: buckets[0].Name, // DNR
-        default: "looker-marketing-analysis", // DNR
+        default: buckets[0].Name,
         description: "The S3 bucket where inference data should be stored",
       },
       {
