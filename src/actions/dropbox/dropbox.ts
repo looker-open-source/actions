@@ -13,24 +13,9 @@ export class DropboxAction extends Hub.OAuthAction {
     description = "Send query results directly to a file in your Dropbox."
     supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
-    minimumSupportedLookerVersion = "6.4.0"
+    minimumSupportedLookerVersion = "6.8.0"
     requiredFields = []
-    params = [
-      {
-        description: "Dropbox Application Key",
-        label: "Application Key",
-        name: "appKey",
-        required: true,
-        sensitive: true,
-      },
-      {
-        description: "Dropbox Secret Key",
-        label: "Secret Key",
-        name: "secretKey",
-        required: true,
-        sensitive: true,
-      },
-    ]
+    params = []
 
   async execute(request: Hub.ActionRequest) {
     const filename = request.formParams.filename
@@ -104,7 +89,7 @@ export class DropboxAction extends Hub.OAuthAction {
       return form
     } catch (_error) {
       const actionCrypto = new Hub.ActionCrypto()
-      const jsonString = JSON.stringify({stateurl: request.params.state_url, app: request.params.appKey})
+      const jsonString = JSON.stringify({stateurl: request.params.state_url})
       const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
         winston.error("Encryption not correctly configured")
         throw err
@@ -122,14 +107,9 @@ export class DropboxAction extends Hub.OAuthAction {
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
     const url = new URL("https://www.dropbox.com/oauth2/authorize")
-    const actionCrypto = new Hub.ActionCrypto()
-    const decryptedState = await actionCrypto.decrypt(encryptedState).catch((reason: any) => {
-      throw reason
-    })
-    const jsonState = JSON.parse(decryptedState)
     url.search = querystring.stringify({
       response_type: "code",
-      client_id: jsonState.app,
+      client_id: process.env.DROPBOX_ACTION_APP_KEY,
       redirect_uri: redirectUri,
       force_reapprove: true,
       state: encryptedState,
@@ -177,8 +157,8 @@ export class DropboxAction extends Hub.OAuthAction {
       url.search = querystring.stringify({
         grant_type: "authorization_code",
         code: stateJson.code,
-        client_id: request.params.appKey,
-        client_secret: request.params.secretKey,
+        client_id: process.env.DROPBOX_ACTION_APP_KEY,
+        client_secret: process.env.DROPBOX_ACTION_APP_SECRET,
         redirect_uri: stateJson.redirect,
       })
     } else {
@@ -202,4 +182,6 @@ export class DropboxAction extends Hub.OAuthAction {
   }
 }
 
-Hub.addAction(new DropboxAction())
+if (process.env.DROPBOX_ACTION_APP_KEY && process.env.DROPBOX_ACTION_APP_SECRET) {
+  Hub.addAction(new DropboxAction())
+}
