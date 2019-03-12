@@ -24,9 +24,9 @@ export class DropboxAction extends Hub.OAuthAction {
 
     let accessToken = ""
     if (request.params.state_json) {
-      const jsonState = JSON.parse(request.params.state_json)
-      if (jsonState.code && jsonState.redirect) {
-        accessToken = await this.getAccessTokenFromCode(request)
+      const stateJson = JSON.parse(request.params.state_json)
+      if (stateJson.code && stateJson.redirect) {
+        accessToken = await this.getAccessTokenFromCode(stateJson)
       }
     }
     const drop = this.dropboxClientFromRequest(request, accessToken)
@@ -55,9 +55,9 @@ export class DropboxAction extends Hub.OAuthAction {
     let accessToken = ""
     if (request.params.state_json) {
       try {
-        const jsonState = JSON.parse(request.params.state_json)
-        if (jsonState.code && jsonState.redirect) {
-          accessToken = await this.getAccessTokenFromCode(request)
+        const stateJson = JSON.parse(request.params.state_json)
+        if (stateJson.code && stateJson.redirect) {
+          accessToken = await this.getAccessTokenFromCode(stateJson)
         }
       } catch { winston.warn("Could not parse state_json") }
     }
@@ -133,26 +133,19 @@ export class DropboxAction extends Hub.OAuthAction {
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
-    let res = false
+    let res = true
     const drop = this.dropboxClientFromRequest(request, "")
     await drop.filesListFolder({path: ""})
-      .then(() => {
-        res = true
-      })
       .catch((error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
+        res = false
         winston.error(error.error.toString())
       })
     return res
   }
 
-  protected async getAccessTokenFromCode(request: Hub.ActionRequest) {
+  protected async getAccessTokenFromCode(stateJson: any) {
     const url = new URL("https://api.dropboxapi.com/oauth2/token")
-    let stateJson
-    if (request.params.state_json) {
-      stateJson = JSON.parse(request.params.state_json)
-    } else {
-      throw "state_json not present"
-    }
+
     if (stateJson.code && stateJson.redirect) {
       url.search = querystring.stringify({
         grant_type: "authorization_code",
