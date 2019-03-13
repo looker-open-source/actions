@@ -15,13 +15,26 @@ export class ActionForm {
   }
 }
 
-export interface ActionFormField {
+interface ActionFormFieldBase {
   name: string
   label?: string
   description?: string
   default?: string
-  type?: "string" | "textarea" | "select" | "oauth_link"
-  options?: { name: string, label: string }[]
   required?: boolean
-  oauth_url?: string
 }
+
+interface ActionFormFieldString extends ActionFormFieldBase {
+  type?: "string" | "textarea"
+}
+
+interface ActionFormFieldSelect extends ActionFormFieldBase {
+  type: "select"
+  options: { name: string, label: string }[]
+}
+
+interface ActionFormFieldOAuth extends ActionFormFieldBase {
+  type: "oauth_link"
+  oauth_url: string
+}
+
+export type ActionFormField = ActionFormFieldString | ActionFormFieldSelect | ActionFormFieldOAuth

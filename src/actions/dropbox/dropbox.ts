@@ -35,7 +35,8 @@ export class DropboxAction extends Hub.OAuthAction {
     resp.success = true
     if (request.attachment && request.attachment.dataBuffer) {
       const fileBuf = request.attachment.dataBuffer
-      await drop.filesUpload({path: `/${directory}/${filename}.${ext}`, contents: fileBuf}).catch((err: any) => {
+      const path = (directory === "__root") ? `/${filename}.${ext}` : `/${directory}/${filename}.${ext}`
+      await drop.filesUpload({path: `${path}`, contents: fileBuf}).catch((err: any) => {
         winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
         resp.success = false
         resp.state = new Hub.ActionState()
@@ -64,22 +65,22 @@ export class DropboxAction extends Hub.OAuthAction {
     const drop = this.dropboxClientFromRequest(request, accessToken)
     try {
       const response = await drop.filesListFolder({path: ""})
-      let folderList = response.entries.filter((entries) => (entries[".tag"] === "folder"))
+      const folderList = response.entries.filter((entries) => (entries[".tag"] === "folder"))
         .map((entries) => ({name: entries.name, label: entries.name}))
-      if (folderList.length === 0) {
-        folderList = [{name: "Looker", label: "Looker"}]
-      }
+      folderList.unshift({name: "__root", label: "root directory"})
       form.fields = [{
-        description: "Dropbox directory where file will be saved",
-        label: "Save in",
+        description: "Dropbox folder where file will be saved",
+        label: "Save in folder",
         name: "directory",
         options: folderList,
         required: true,
         type: "select",
+        default: "__root",
       }, {
         label: "Filename",
         name: "filename",
         type: "string",
+        required: true,
       }]
       if (accessToken !== "") {
         const newState = JSON.stringify({access_token: accessToken})
@@ -129,18 +130,17 @@ export class DropboxAction extends Hub.OAuthAction {
       url: payload.stateurl,
       body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
     }).catch((_err) => { winston.error(_err.toString()) })
-    return `<html><script>window.close()</script>></html>`
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
-    let res = true
     const drop = this.dropboxClientFromRequest(request, "")
-    await drop.filesListFolder({path: ""})
-      .catch((error: DropboxTypes.Error<DropboxTypes.files.ListFolderError>) => {
-        res = false
-        winston.error(error.error.toString())
-      })
-    return res
+    try {
+      await drop.filesListFolder({path: ""})
+      return true
+    } catch (err) {
+      winston.error((err as DropboxTypes.Error<DropboxTypes.files.ListFolderError>).error.toString())
+      return false
+    }
   }
 
   protected async getAccessTokenFromCode(stateJson: any) {

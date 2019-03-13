@@ -165,9 +165,9 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (isOauthAction(action)) {
         try {
-          const response = await (action as OAuthAction).oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
+          await (action as OAuthAction).oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
           res.statusCode = 200
-          res.send(response)
+          res.send(`<html><script>window.close()</script>><body>You may now close this tab.</body></html>`)
         } catch (e) {
           this.logPromiseFail(req, res, e)
           res.statusCode = 400
@@ -194,8 +194,7 @@ export default class Server implements Hub.RouteBuilder {
   }
 
   private oauthRedirectUrl(action: Hub.Action) {
-    const url = this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
-    return url
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
   }
   /**
    * For JSON responses that take a long time without sending any data,
