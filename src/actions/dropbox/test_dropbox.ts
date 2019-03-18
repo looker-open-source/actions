@@ -145,16 +145,18 @@ describe(`${action.constructor.name} unit tests`, () => {
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          description: "Dropbox directory where file will be saved",
-          label: "Save in",
+          default: "__root",
+          description: "Dropbox folder where file will be saved",
+          label: "Save in folder",
           name: "directory",
-          options: [{ name: "fake_name", label: "fake_name" }],
+          options: [{ name: "__root", label: "root folder" }, { name: "fake_name", label: "fake_name" }],
           required: true,
           type: "select",
         }, {
           label: "Filename",
           name: "filename",
           type: "string",
+          required: true,
         }],
       }).and.notify(stubClient.restore).and.notify(done)
     })
@@ -177,7 +179,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
           `c2RmIiwiYXBwIjoibXlrZXkifQ`},
         "redirect")
-      chai.expect(result).to.eventually.equal("<html><script>window.close()</script>></html>")
+      chai.expect(result)
         .and.notify(stubReq.restore).and.notify(done)
     })
   })
