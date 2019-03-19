@@ -1,15 +1,15 @@
 import * as bodyParser from "body-parser"
-import * as dotenv from "dotenv"
 import * as express from "express"
 import * as fs from "fs"
 import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
+import {isOauthAction, OAuthAction} from "../hub"
 import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
-
 const expressWinston = require("express-winston")
+const uparse = require("url")
 const blocked = require("blocked-at")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
@@ -21,7 +21,6 @@ const expensiveJobQueue = new ExecuteProcessQueue.ExecuteProcessQueue()
 export default class Server implements Hub.RouteBuilder {
 
   static run() {
-    dotenv.config()
 
     if (useRaven()) {
       let statusJson: any = {}
@@ -135,6 +134,49 @@ export default class Server implements Hub.RouteBuilder {
       }
     }))
 
+    // Initial OAuth flow request from Resource Owner
+    this.app.get("/actions/:actionId/oauth", async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      if (isOauthAction(action)) {
+        const parts = uparse.parse(req.url, true)
+        const state = parts.query.state
+        const url = await (action as OAuthAction).oauthUrl(this.oauthRedirectUrl(action), state)
+        res.redirect(url)
+      } else {
+        throw "Action does not support OAuth."
+      }
+    })
+
+    this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
+      if (isOauthAction(action)) {
+        const check = (action as OAuthAction).oauthCheck(request)
+        res.json(check)
+      } else {
+        res.statusCode = 404
+      }
+    })
+
+    // Response from Authorization Server with response from OAuth flow
+    this.app.get("/actions/:actionId/oauth_redirect", async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+      if (isOauthAction(action)) {
+        try {
+          await (action as OAuthAction).oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
+          res.statusCode = 200
+          res.send(`<html><script>window.close()</script>><body>You may now close this tab.</body></html>`)
+        } catch (e) {
+          this.logPromiseFail(req, res, e)
+          res.statusCode = 400
+        }
+      } else {
+        throw "Action does not support OAuth."
+      }
+    })
+
     // To provide a health or version check endpoint you should place a status.json file
     // into the project root, which will get served by this endpoint (or 404 otherwise).
     this.app.get("/status", (_req, res) => {
@@ -151,6 +193,9 @@ export default class Server implements Hub.RouteBuilder {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
   }
 
+  private oauthRedirectUrl(action: Hub.Action) {
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_redirect`)
+  }
   /**
    * For JSON responses that take a long time without sending any data,
    * we periodically send a newline character to prevent the connection from being
@@ -220,6 +265,19 @@ export default class Server implements Hub.RouteBuilder {
       }
 
     })
+  }
+
+  private logPromiseFail(req: express.Request, res: express.Response, e: any) {
+    this.logError(req, res, "Error on request")
+    if (typeof (e) === "string") {
+      res.status(404)
+      res.json({ success: false, error: e })
+      this.logError(req, res, e)
+    } else {
+      res.status(500)
+      res.json({ success: false, error: "Internal server error." })
+      this.logError(req, res, e)
+    }
   }
 
   private logInfo(req: express.Request, res: express.Response, message: any, options: any = {}) {
