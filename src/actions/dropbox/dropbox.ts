@@ -99,7 +99,9 @@ export class DropboxAction extends Hub.OAuthAction {
       form.fields.push({
         name: "login",
         type: "oauth_link",
-        label: "Log in with Dropbox",
+        label: "Log in",
+        description: "In order to send to a Dropbox file or folder now and in the future, you will need to log in" +
+          " once to your Dropbox account",
         oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=${ciphertextBlob}`,
       })
       return(form)
