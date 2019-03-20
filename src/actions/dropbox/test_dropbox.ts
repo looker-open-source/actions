@@ -95,7 +95,9 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: [{
           name: "login",
           type: "oauth_link",
-          label: "Log in with Dropbox",
+          description: "In order to send to a Dropbox file or folder now and in the future, you will need to log " +
+            "in once to your Dropbox account",
+          label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
           `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
@@ -120,7 +122,9 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: [{
           name: "login",
           type: "oauth_link",
-          label: "Log in with Dropbox",
+          description: "In order to send to a Dropbox file or folder now and in the future, you will need to log " +
+            "in once to your Dropbox account",
+          label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
