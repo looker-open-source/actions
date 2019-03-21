@@ -3,11 +3,7 @@ import * as url from "url"
 
 import * as Hub from "../../hub"
 
-<<<<<<< HEAD
 enum BrazeConfig {
-=======
-export enum BrazeConfig {
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
   EXPORT_PATH = "/users/track",
   LOOKER_ATTRIBUTE_NAME = "looker_export",
   MAX_LINES = 75,
@@ -17,7 +13,6 @@ export enum BrazeConfig {
   DEFAULT_DOMAIN = ".braze.com",
 }
 
-<<<<<<< HEAD
 interface BrazeApiRow {
   [key: string]: any
   external_id?: string
@@ -33,17 +28,11 @@ interface BrazeApiBody {
   attributes: BrazeApiRow[]
 }
 
-=======
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
 function isEmpty(obj: any) {
   return !obj || Object.keys(obj).length === 0
 }
 
 export class BrazeAction extends Hub.Action {
-<<<<<<< HEAD
-=======
-
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
   name = "braze"
   label = "Braze"
   description = "Ensure there's a '" + BrazeConfig.BRAZE_ID_TAG + "' field tagged in a results."
@@ -88,14 +77,8 @@ export class BrazeAction extends Hub.Action {
     // Generate endpoint
     const endpoint = request.params.braze_api_endpoint.trim()
       .replace("http://", "https://").replace(/\/$/, "") + BrazeConfig.EXPORT_PATH
-<<<<<<< HEAD
 
     if (!endpoint.startsWith("http") ) {
-=======
-    const urlendpoint = url.parse(endpoint)
-
-    if (!(urlendpoint.hostname) ) {
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
       throw "Incorrect domain for endpoint."
     }
 
@@ -109,19 +92,11 @@ export class BrazeAction extends Hub.Action {
 
     const exportValue = request.formParams.braze_segment  || String(BrazeConfig.EXPORT_DEFAULT_VALUE)
     const brazeAttribute = { add : [ exportValue ] }
-<<<<<<< HEAD
     const brazeApiKey = String(request.params.braze_api_key)
     let totalCnt = 0
     let fieldlist: Hub.Field[] = []
     let bzIdField = ""
     let rows: BrazeApiRow[] = []
-=======
-
-    let totalCnt = 0
-    let fieldlist: Hub.Field[] = []
-    let bzIdField = ""
-    let rows: any[] = []
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
     try {
       await request.streamJsonDetail({
         onFields: (fields) => {
@@ -137,7 +112,6 @@ export class BrazeAction extends Hub.Action {
         },
         onRow: (row) => {
           if (totalCnt < BrazeConfig.MAX_EXPORT) {
-<<<<<<< HEAD
             const entry: BrazeApiRow = {
               _update_existing_only: true,
             }
@@ -145,33 +119,18 @@ export class BrazeAction extends Hub.Action {
             entry[String(BrazeConfig.LOOKER_ATTRIBUTE_NAME)] = brazeAttribute
             // Only update existing records to prevent unknown data sources
             // entry._update_existing_only = true
-=======
-            const entry: { [key: string]: any } = {}
-            entry[String(request.formParams.braze_key)] = row[bzIdField].value
-            entry[String(BrazeConfig.LOOKER_ATTRIBUTE_NAME)] = brazeAttribute
-            // Only update existing records to prevent unknown data sources
-            entry._update_existing_only = true
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
             rows.push(entry)
 
             totalCnt++
             if (rows.length === BrazeConfig.MAX_LINES) {
-<<<<<<< HEAD
               this.sendChunk(endpoint, brazeApiKey, rows)
-=======
-              this.sendChunk(urlendpoint, request.params.braze_api_key, rows)
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
                 .catch( (e) => {
                   return new Hub.ActionResponse({success: false, message: e.message })
                 })
               rows = []
             }
           } else if (rows.length > 0) {
-<<<<<<< HEAD
             this.sendChunk(endpoint, brazeApiKey, rows)
-=======
-            this.sendChunk(urlendpoint, request.params.braze_api_key, rows)
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
               .catch( (e) => {
                 return new Hub.ActionResponse({success: false, message: e.message })
               })
@@ -181,11 +140,7 @@ export class BrazeAction extends Hub.Action {
       })
 
       if (rows.length > 0) {
-<<<<<<< HEAD
         this.sendChunk(endpoint, brazeApiKey, rows)
-=======
-        this.sendChunk(urlendpoint, request.params.braze_api_key, rows)
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
           .catch( (e) => {
             return new Hub.ActionResponse({success: false, message: e.message })
           })
@@ -196,10 +151,7 @@ export class BrazeAction extends Hub.Action {
     }
     return new Hub.ActionResponse({success: true, message: "ok"})
   }
-<<<<<<< HEAD
 
-=======
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
   async form() {
     const form = new Hub.ActionForm()
     form.fields = [{
@@ -220,28 +172,18 @@ export class BrazeAction extends Hub.Action {
         BrazeConfig.LOOKER_ATTRIBUTE_NAME + "'). Defaults to '" + BrazeConfig.EXPORT_DEFAULT_VALUE + "'." ,
       required: true,
       type: "string",
-<<<<<<< HEAD
       default: String(BrazeConfig.EXPORT_DEFAULT_VALUE),
-=======
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
     },
     ]
     return form
   }
 
-<<<<<<< HEAD
   async sendChunk(endpoint: string, apiKey: string, chunk: BrazeApiRow[]) {
     const urlendpoint = url.parse(endpoint)
     const reqbody: BrazeApiBody = {
       api_key: apiKey,
       attributes: chunk,
     }
-=======
-  async sendChunk(urlendpoint: any, apiKey: any, chunk: any[]) {
-    const reqbody: any = {}
-    reqbody.api_key = apiKey
-    reqbody.attributes = chunk
->>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
     return req.post({ uri: urlendpoint, headers: {"Content-Type": "application/json"}, body: reqbody, json: true})
   }
 }
