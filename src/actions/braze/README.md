@@ -17,7 +17,6 @@ The Braze actions enables you to flag users within Braze via the [Rest API Endpo
   2. Select the Custon Braze Action
   3. From the drop down, select the appropriate Unique User Key for the Braze account. Possible settings:
     * external_id
-    * user_alias
     * braze_id
   4. Give the export a name. If none is provided, `LOOKER_EXPORT` will be used.
   5. Advanced options: Select `Results in Table` or `All Results`
