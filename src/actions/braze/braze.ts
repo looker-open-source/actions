@@ -41,7 +41,6 @@ export class BrazeAction extends Hub.Action {
   supportedActionTypes = [Hub.ActionType.Query]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
-  // supportedFormats = [Hub.ActionFormat.JsonDetail]
   requiredFields = [{ tag: String(BrazeConfig.BRAZE_ID_TAG) }]
   usesStreaming = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
@@ -118,7 +117,6 @@ export class BrazeAction extends Hub.Action {
             entry[String(request.formParams.braze_key)] = row[bzIdField].value
             entry[String(BrazeConfig.LOOKER_ATTRIBUTE_NAME)] = brazeAttribute
             // Only update existing records to prevent unknown data sources
-            // entry._update_existing_only = true
             rows.push(entry)
 
             totalCnt++
