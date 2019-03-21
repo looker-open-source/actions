@@ -21,6 +21,7 @@ export interface ActionParameter {
   label: string
   required: boolean
   sensitive: boolean
+  per_user?: boolean
   description?: string
 }
 
@@ -60,6 +61,7 @@ export abstract class Action {
   supportedFormats?: ((_request: ActionRequest) => ActionFormat[]) | ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
+  supportedDownloadSettings?: string[]
   requiredFields?: RequiredField[] = []
 
   abstract params: ActionParameter[]
@@ -73,6 +75,7 @@ export abstract class Action {
       params: this.params,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
+      uses_oauth: false,
       supported_formats: (this.supportedFormats instanceof Function)
         ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
