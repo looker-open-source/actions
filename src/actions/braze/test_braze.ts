@@ -1,11 +1,17 @@
 import * as chai from "chai"
+<<<<<<< HEAD
 import * as req from "request-promise-native"
 import * as sinon from "sinon"
 
+=======
+// import * as sinon from "sinon"
+// import concatStream = require("concat-stream")
+>>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
 import * as Hub from "../../hub"
 
 import { BrazeAction } from "./braze"
 
+<<<<<<< HEAD
 const sampleBrazeData = {
   fields: {
     measures: [],
@@ -27,6 +33,8 @@ function expectBrazeMatch(request: Hub.ActionRequest) {
   })
 }
 
+=======
+>>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
 class BrazeActionTest extends BrazeAction {
   name = "braze"
 
@@ -63,11 +71,19 @@ describe(`${action.constructor.name} unit tests`, () => {
         .be.rejectedWith("Missing config settings.")
     })
 
+<<<<<<< HEAD
     it("errors if is a not a Braze endpoint", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
         braze_api_key: "AAACCCKKKATTT",
+=======
+    it("errors if is a not a braze endpoint", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        braze_api_token: "AAACCCKKKATTT",
+>>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
         braze_api_endpoint: "https://rest.notbraze.com",
       }
 
@@ -79,7 +95,11 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
+<<<<<<< HEAD
         braze_api_key: "AAACCCKKKATTT",
+=======
+        braze_api_token: "AAACCCKKKATTT",
+>>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
         braze_api_endpoint: "rest.braze.com",
       }
 
@@ -91,12 +111,17 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
+<<<<<<< HEAD
         braze_api_key: "",
+=======
+        braze_api_token: "",
+>>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
         braze_api_endpoint: "https://rest.braze.com",
       }
       return chai.expect(action.execute(request)).to.eventually
         .be.rejectedWith("Missing API Key.")
     })
+<<<<<<< HEAD
 
     it("success with sample data", async () => {
       const request = new Hub.ActionRequest()
@@ -114,6 +139,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       return expectBrazeMatch(request)
     })
+=======
+>>>>>>> a6c597203a6c27f122d5ff22d8d2ebe7f43fdc44
   })
 
   describe("form", () => {
