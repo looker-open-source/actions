@@ -92,7 +92,7 @@ export class BrazeAction extends Hub.Action {
     const exportValue = request.formParams.braze_segment  || String(BrazeConfig.EXPORT_DEFAULT_VALUE)
     const brazeAttribute = { add : [ exportValue ] }
     const brazeApiKey = String(request.params.braze_api_key)
-    let totalCnt = 0
+    let totalCount = 0
     let fieldlist: Hub.Field[] = []
     let bzIdField = ""
     let rows: BrazeApiRow[] = []
@@ -110,7 +110,7 @@ export class BrazeAction extends Hub.Action {
           }
         },
         onRow: (row) => {
-          if (totalCnt < BrazeConfig.MAX_EXPORT) {
+          if (totalCount < BrazeConfig.MAX_EXPORT) {
             const entry: BrazeApiRow = {
               _update_existing_only: true,
             }
@@ -119,7 +119,7 @@ export class BrazeAction extends Hub.Action {
             // Only update existing records to prevent unknown data sources
             rows.push(entry)
 
-            totalCnt++
+            totalCount++
             if (rows.length === BrazeConfig.MAX_LINES) {
               this.sendChunk(endpoint, brazeApiKey, rows)
                 .catch( (e) => {
