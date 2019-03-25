@@ -23,22 +23,6 @@ const sampleData = {
 describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
-    it("errors if there is no campaignId", () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.params = {
-        url: "myurl",
-        clientID: "myclientID",
-        clientSecret: "myclientSecret",
-      }
-      request.formParams = {}
-      request.attachment = {
-        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
-      }
-      return chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith("Missing Campaign ID.")
-    })
-
     it("errors if there is no lookupField", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query

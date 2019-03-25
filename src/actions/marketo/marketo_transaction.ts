@@ -10,23 +10,26 @@ interface Result {
   leads: any[],
   skipped: any[],
   leadErrors: any[],
-  campaignErrors: any[],
+  membershipErrors: any[],
 }
 
 export class MarketoTransaction {
 
   fieldMap: any
   marketo: any
-  campaignId?: string
+  campaignIds: string[] = []
+  addListIds: string[] = []
+  removeListIds: string[] = []
   lookupField?: string
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
 
-    this.campaignId = request.formParams.campaignId
-    if (!this.campaignId) {
-      throw "Missing Campaign ID."
-    }
-
+    this.campaignIds = (
+		request.formParams.campaignIds
+		|| request.formParams.campaignId //Support the old "single add" format as well
+		|| '').split(/\s*,\s*/).filter(Boolean)
+	this.addListIds = (request.formParams.addListIds || '').split(/\s*,\s*/).filter(Boolean)
+	this.removeListIds = (request.formParams.removeListIds || '').split(/\s*,\s*/).filter(Boolean)
     this.lookupField = request.formParams.lookupField
     if (!this.lookupField) {
       throw "Missing Lookup Field."
@@ -92,7 +95,7 @@ export class MarketoTransaction {
       leads: results.reduce((memo: any[], r: Result) => memo.concat(r.leads), []),
       skipped: results.reduce((memo: any[], r: Result) => memo.concat(r.skipped), []),
       leadErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.leadErrors), []),
-      campaignErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.campaignErrors), []),
+      membershipErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.membershipErrors), []),
       requestErrors: errors,
     }
 
@@ -114,7 +117,7 @@ export class MarketoTransaction {
       leads: this.getLeadList(chunk),
       skipped: [],
       leadErrors: [],
-      campaignErrors: [],
+      membershipErrors: [],
     }
 
     const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
@@ -132,9 +135,19 @@ export class MarketoTransaction {
       }
     })
 
-    const campaignResponse = await this.marketo.campaign.request(this.campaignId, ids)
-    if (Array.isArray(campaignResponse.errors) && campaignResponse.errors.length) {
-      result.campaignErrors = campaignResponse.errors
+    for (let campaignId of this.campaignIds){
+      const response = await this.marketo.campaign.request(campaignId, ids)
+      result.membershipErrors = result.membershipErrors.concat(response.errors || [])
+    }
+	
+    for (let listId of this.addListIds){
+      const response = await this.marketo.list.addLeadsToList(listId, ids)
+      result.membershipErrors = result.membershipErrors.concat(response.errors || [])
+    }
+
+    for (let listId of this.removeListIds){
+      const response = await this.marketo.campaign.removeLeadsFromList(listId, ids)
+      result.membershipErrors = result.membershipErrors.concat(response.errors || [])
     }
 
     return result
@@ -182,7 +195,7 @@ export class MarketoTransaction {
     return (
       result.skipped.length
       || result.leadErrors.length
-      || result.campaignErrors.length
+      || result.membershipErrors.length
       || result.requestErrors.length
     )
   }
@@ -195,8 +208,8 @@ export class MarketoTransaction {
     if (result.leadErrors.length) {
       condensed.leadErrors = result.leadErrors
     }
-    if (result.campaignErrors.length) {
-      condensed.campaignErrors = result.campaignErrors
+    if (result.membershipErrors.length) {
+      condensed.membershipErrors = result.membershipErrors
     }
     if (result.requestErrors.length) {
       condensed.requestErrors = result.requestErrors

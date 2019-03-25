@@ -46,7 +46,6 @@ export class MarketoAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     // create a stateful object to manage the transaction
     const transaction = new MarketoTransaction()
-    console.log(JSON.stringify(request,undefined,4))
     // return the response from the transaction object
     return transaction.handleRequest(request)
   }
@@ -61,22 +60,22 @@ export class MarketoAction extends Hub.Action {
       default: "email",
       required: true,
     }, {
-      label: "Add to Campaign ID (optional)",
-      name: "campaignId",
+      label: "Add to Campaign IDs (optional)",
+      name: "campaignIds",
       type: "string",
-      description: "Campaign ID to add the leads to, if any",
+      description: "Campaign IDs to add the leads to, if any, comma-separated",
       required: false,
     }, {
-      label: "Add to Static List ID (optional)",
-      name: "addStaticList",
+      label: "Add to List IDs (optional)",
+      name: "addListIds",
       type: "string",
-      description: "Static List ID to add the leads to, if any",
+      description: "List IDs to add the leads to, if any, comma-separated",
       required: true,
     }, {
-      label: "Remove from Static List ID (optional)",
-      name: "removeStaticList",
+      label: "Remove from List IDs (optional)",
+      name: "removeListIds",
       type: "string",
-      description: "Static List ID to remove the leads from, if any.",
+      description: "List IDs to remove the leads from, if any, comma-separated",
       required: true,
     }]
     return form
