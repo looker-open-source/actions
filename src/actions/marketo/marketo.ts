@@ -6,7 +6,7 @@ export class MarketoAction extends Hub.Action {
   name = "marketo"
   label = "Marketo"
   iconName = "marketo/marketo.svg"
-  description = "Update leads and add to Marketo campaign."
+  description = "Update Marketo leads and their campaign/list membership."
   params = [
     {
       description: "Identity server host URL",
@@ -46,7 +46,7 @@ export class MarketoAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     // create a stateful object to manage the transaction
     const transaction = new MarketoTransaction()
-
+    console.log(JSON.stringify(request,undefined,4))
     // return the response from the transaction object
     return transaction.handleRequest(request)
   }
@@ -54,16 +54,29 @@ export class MarketoAction extends Hub.Action {
   async form() {
     const form = new Hub.ActionForm()
     form.fields = [{
-      label: "Campaign ID",
-      name: "campaignId",
-      required: true,
-      type: "string",
-    }, {
       label: "Lead Lookup Field",
       name: "lookupField",
       type: "string",
-      description: "Marketo field to use for lookup.",
+      description: "Marketo field to use for lookup",
       default: "email",
+      required: true,
+    }, {
+      label: "Add to Campaign ID (optional)",
+      name: "campaignId",
+      type: "string",
+      description: "Campaign ID to add the leads to, if any",
+      required: false,
+    }, {
+      label: "Add to Static List ID (optional)",
+      name: "addStaticList",
+      type: "string",
+      description: "Static List ID to add the leads to, if any",
+      required: true,
+    }, {
+      label: "Remove from Static List ID (optional)",
+      name: "removeStaticList",
+      type: "string",
+      description: "Static List ID to remove the leads from, if any.",
       required: true,
     }]
     return form
