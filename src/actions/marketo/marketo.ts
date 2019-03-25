@@ -46,6 +46,7 @@ export class MarketoAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     // create a stateful object to manage the transaction
     const transaction = new MarketoTransaction()
+
     // return the response from the transaction object
     return transaction.handleRequest(request)
   }
