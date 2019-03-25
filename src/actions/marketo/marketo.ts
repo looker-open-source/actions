@@ -70,13 +70,13 @@ export class MarketoAction extends Hub.Action {
       name: "addListIds",
       type: "string",
       description: "List IDs to add the leads to, if any, comma-separated",
-      required: true,
+      required: false,
     }, {
       label: "Remove from List IDs (optional)",
       name: "removeListIds",
       type: "string",
       description: "List IDs to remove the leads from, if any, comma-separated",
-      required: true,
+      required: false,
     }]
     return form
   }
