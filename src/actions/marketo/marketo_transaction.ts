@@ -25,11 +25,11 @@ export class MarketoTransaction {
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
 
     this.campaignIds = (
-		request.formParams.campaignIds
-		|| request.formParams.campaignId //Support the old "single add" format as well
-		|| '').split(/\s*,\s*/).filter(Boolean)
-	this.addListIds = (request.formParams.addListIds || '').split(/\s*,\s*/).filter(Boolean)
-	this.removeListIds = (request.formParams.removeListIds || '').split(/\s*,\s*/).filter(Boolean)
+        request.formParams.campaignIds
+        || request.formParams.campaignId //Support the old "single add" format as well
+        || '').split(/\s*,\s*/).filter(Boolean)
+    this.addListIds = (request.formParams.addListIds || '').split(/\s*,\s*/).filter(Boolean)
+    this.removeListIds = (request.formParams.removeListIds || '').split(/\s*,\s*/).filter(Boolean)
     this.lookupField = request.formParams.lookupField
     if (!this.lookupField) {
       throw "Missing Lookup Field."
