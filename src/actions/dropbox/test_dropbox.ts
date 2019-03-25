@@ -151,13 +151,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: [{
           default: "__root",
           description: "Dropbox folder where file will be saved",
-          label: "Save in folder",
+          label: "Select folder to save file",
           name: "directory",
           options: [{ name: "__root", label: "root folder" }, { name: "fake_name", label: "fake_name" }],
           required: true,
           type: "select",
         }, {
-          label: "Filename",
+          label: "Enter filename",
           name: "filename",
           type: "string",
           required: true,
