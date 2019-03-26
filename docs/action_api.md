@@ -75,7 +75,7 @@ interface ActionDefinition {
   description?: string
   /** Array of params for the action. */
   params?: Param[]
-  /** A list of data formats the action supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
+  /** A list of data formats the action supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "json_detail_lite_stream", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
   supported_formats?: string[]
   /** A list of formatting options the action supports. Valid values are: "formatted", "unformatted". */
   supported_formattings?: string[]
@@ -85,6 +85,10 @@ interface ActionDefinition {
   icon_data_uri?: string
   /** A list of descriptions of required fields that this action is compatible with. If there are multiple entries in this list, the action requires more than one field. */
   required_fields?: RequiredField[]
+  /** A boolean that determines whether or not the action will be sent a one time use download url to faciliate unlimited streaming of data */
+  supported_download_settings: boolean
+  /** A boolean that determines whether action is an oauth action or not. This will change whether or not the action will be sent a one time use link to be able to set state for a specific user for this action */
+  uses_oauth: boolean
 }
 
 interface Param {
@@ -175,6 +179,18 @@ The form body is a JSON array of form fields:
 ]
 ```
 
+Here's a Typescript definition for the response of a form request
+```ts
+class ActionForm {
+  /** See ActionFormField definition below */
+  fields: ActionFormField[] = [<ActionFormField>]
+  /** State to be set for a user and action. This overrides existing state. See below for more information */
+  state?: ActionState
+  /** If there was an error in the form request, then set an error here for Looker to display in the UI and add to scheduler history*/
+  error?: Error | string
+}
+```
+
 Here's a TypeScript definition for all the options for a form field:
 
 ```ts
@@ -200,6 +216,19 @@ interface FormSelectOption {
   name: string
   /** Human-readable label */
   label?: string
+}
+```
+
+### Action User State
+
+By default the Action Hub keeps each an every action independent from previous actions. For certain actions though (OAuth enabled actions being an example) - state may be required per user. If there is state for a user and action - then Looker will send the state as part of a `form` or `execute` request. If there is no state then the field is unused. If you wish to set state it can be accomplished using the `state` field on an `execute` or `form` response. Refresh time may also be specified in seconds (a refresh on state will make a state request), although the Looker server currently will only look for new refresh states once every 10 minutes. This can be used to keep authentication credentials up to date or to simply keep some state up to date on the Looker server for the user and action. 
+Here is the definition of the `state` field: 
+```ts
+class ActionState {
+    /** Data is a string up to 32KB that can be saved on the Looker server. This data is encrypted by the Looker server and only read out when an action requests it. If data is set to nil then the state will be wiped on the Looker server. */
+    data?: string
+    /** refresh_time is a time in seconds that the state will automatically send `form` requests for the action. */
+    refresh_time?: number
 }
 ```
 
