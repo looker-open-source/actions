@@ -35,7 +35,7 @@ function isEmpty(obj: any) {
 export class BrazeAction extends Hub.Action {
   name = "braze"
   label = "Braze"
-  description = "Flags users from Looker to Braze via REST API for use with segmentation. "
+  description = "Flags users from Looker to Braze via the REST API for use with segmentation. "
     + "Ensure there's a '" + BrazeConfig.BRAZE_ID_TAG + "' field tagged in a results."
     + " MAX EXPORT: " + BrazeConfig.MAX_EXPORT + "."
   iconName = "braze/braze.svg"
