@@ -70,14 +70,14 @@ export class DropboxAction extends Hub.OAuthAction {
       folderList.unshift({name: "__root", label: "root folder"})
       form.fields = [{
         description: "Dropbox folder where file will be saved",
-        label: "Save in folder",
+        label: "Select folder to save file",
         name: "directory",
         options: folderList,
         required: true,
         type: "select",
         default: "__root",
       }, {
-        label: "Filename",
+        label: "Enter filename",
         name: "filename",
         type: "string",
         required: true,
