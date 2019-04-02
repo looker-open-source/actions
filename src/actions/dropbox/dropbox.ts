@@ -128,7 +128,6 @@ export class DropboxAction extends Hub.OAuthAction {
     })
 
     const payload = JSON.parse(plaintext)
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
     await https.post({
       url: payload.stateurl,
       body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
