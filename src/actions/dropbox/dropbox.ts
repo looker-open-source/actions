@@ -44,7 +44,7 @@ export class DropboxAction extends Hub.OAuthAction {
       })
     } else {
       resp.success = false
-      resp.message = "No data sent from Looker to be sent to Dropbox"
+      resp.message = "No data sent from Looker to be sent to Dropbox."
     }
     return resp
   }
@@ -67,7 +67,7 @@ export class DropboxAction extends Hub.OAuthAction {
       const response = await drop.filesListFolder({path: ""})
       const folderList = response.entries.filter((entries) => (entries[".tag"] === "folder"))
         .map((entries) => ({name: entries.name, label: entries.name}))
-      folderList.unshift({name: "__root", label: "root folder"})
+      folderList.unshift({name: "__root", label: "Home Folder"})
       form.fields = [{
         description: "Dropbox folder where file will be saved",
         label: "Select folder to save file",
@@ -101,7 +101,7 @@ export class DropboxAction extends Hub.OAuthAction {
         type: "oauth_link",
         label: "Log in",
         description: "In order to send to a Dropbox file or folder now and in the future, you will need to log in" +
-          " once to your Dropbox account",
+          " once to your Dropbox account.",
         oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=${ciphertextBlob}`,
       })
       return(form)
