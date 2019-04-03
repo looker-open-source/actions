@@ -64,27 +64,30 @@ export class AzureStorageAction extends Hub.Action {
     // https://github.com/Azure/azure-storage-node/issues/352
     const form = new Hub.ActionForm()
     const blogService: any = this.azureClientFromRequest(request)
-    blogService.listContainersSegmented(null, (err: any, res: any) => {
-      if (err) {
-        form.error = err
-      } else {
-        form.fields = [{
-          label: "Container",
-          name: "container",
-          required: true,
-          options: res.entries.map((c: any) => {
+    return new Promise<Hub.ActionForm>((resolve, _reject) => {
+      blogService.listContainersSegmented(null, (err: any, res: any) => {
+        if (err) {
+          form.error = err
+          resolve(form)
+        } else {
+          form.fields = [{
+            label: "Container",
+            name: "container",
+            required: true,
+            options: res.entries.map((c: any) => {
               return {name: c.id, label: c.name}
             }),
-          type: "select",
-          default: res.entries[0].id,
-        }, {
-          label: "Filename",
-          name: "filename",
-          type: "string",
-        }]
-      }
+            type: "select",
+            default: res.entries[0].id,
+          }, {
+            label: "Filename",
+            name: "filename",
+            type: "string",
+          }]
+          resolve(form)
+        }
+      })
     })
-    return form
   }
 
   private azureClientFromRequest(request: Hub.ActionRequest) {
