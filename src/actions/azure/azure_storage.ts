@@ -75,10 +75,10 @@ export class AzureStorageAction extends Hub.Action {
             name: "container",
             required: true,
             options: res.entries.map((c: any) => {
-              return {name: c.id, label: c.name}
+              return {name: c.name, label: c.name}
             }),
             type: "select",
-            default: res.entries[0].id,
+            default: res.entries[0].name,
           }, {
             label: "Filename",
             name: "filename",
