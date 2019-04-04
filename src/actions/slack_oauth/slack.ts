@@ -45,19 +45,22 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
     let response
     try {
       const slack = this.slackClientFromRequest(request)
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve, _reject) => {
         slack.files.upload(options, (err: any) => {
           if (err) {
-            reject(err)
+            throw err
           } else {
             resolve()
           }
         })
       })
+      response = new Hub.ActionResponse({success: true})
     } catch (e) {
-      response = { success: false, message: e.message }
+      response = new Hub.ActionResponse({success: false, message: "Authorization Invalid"})
+      response.state = new Hub.ActionState()
+      response.state.data = "reset"
     }
-    return new Hub.ActionResponse(response)
+    return response
   }
 
   async form(request: Hub.ActionRequest) {
@@ -91,6 +94,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
         throw err
       })
       form.state = new Hub.ActionState()
+      form.state.data = "reset"
       form.fields.push({
         name: "login",
         type: "oauth_link",
@@ -107,6 +111,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
   async usableChannels(request: Hub.ActionRequest) {
     let channels = await this.usablePublicChannels(request)
     channels = channels.concat(await this.usableDMs(request))
+    channels = channels.concat(await this.usableGroups(request))
     return channels
   }
 
@@ -162,7 +167,30 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
     return reformatted
   }
 
-  // "channels:read+chat:write:user+files:write:user+groups:read+users:read"
+  async usableGroups(request: Hub.ActionRequest) {
+    const slack = this.slackClientFromRequest(request)
+    const options: any = {
+      limit: 20,
+    }
+    async function pageLoaded(accumulatedGroups: any[], response: any): Promise<any[]> {
+      const mergedGroups = accumulatedGroups.concat(response.groups)
+
+      // When a `next_cursor` exists, recursively call this function to get the next page.
+      if (response.response_metadata &&
+        response.response_metadata.next_cursor &&
+        response.response_metadata.next_cursor !== "") {
+        const pageOptions = { ...options }
+        pageOptions.cursor = response.response_metadata.next_cursor
+        return pageLoaded(mergedGroups, await slack.groups.list(pageOptions))
+      }
+      return mergedGroups
+    }
+    const paginatedGroups = await pageLoaded([], await slack.groups.list(options))
+    const groups = paginatedGroups.filter((g: any) =>  !g.is_archived)
+    const reformatted: Channel[] = groups.map((group: any) => ({id: group.id, label: `@${group.name}`}))
+    return reformatted
+  }
+
   async oauthUrl(redirectUri: string, encryptedState: string) {
     const url = new URL("https://slack.com/oauth/authorize")
     url.search = querystring.stringify({
@@ -225,7 +253,10 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         accessToken = stateJson.access_token
-      } catch { winston.warn("Could not parse state_json") }
+      } catch {
+        winston.warn("Could not parse state_json")
+        throw "Bad things"
+      }
     }
     return new WebClient(accessToken)
   }
