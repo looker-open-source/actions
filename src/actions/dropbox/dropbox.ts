@@ -77,7 +77,7 @@ export class DropboxAction extends Hub.OAuthAction {
         type: "select",
         default: "__root",
       }, {
-        label: "Enter name",
+        label: "Enter a name",
         name: "filename",
         type: "string",
         required: true,

@@ -157,7 +157,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
           type: "select",
         }, {
-          label: "Enter name",
+          label: "Enter a name",
           name: "filename",
           type: "string",
           required: true,
