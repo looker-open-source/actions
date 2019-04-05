@@ -4,6 +4,7 @@
     "src/api_types/**/*.ts",
     "src/hub/**/*.ts",
     "src/server/**/*.ts",
-    "src/xpc/**/**.ts"
+    "src/xpc/**/**.ts",
+    "src/crypto/**/**.ts"
   ]
 }
