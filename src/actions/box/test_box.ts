@@ -6,24 +6,30 @@ import * as sinon from "sinon"
 import * as Hub from "../../hub"
 
 import {ActionCrypto} from "../../hub"
-import { DropboxAction } from "./dropbox"
+import { BoxAction } from "./box"
 
-const action = new DropboxAction()
+const action = new BoxAction()
 
 const stubFileName = "stubSuggestedFilename"
-const stubDirectory = "stubSuggestedDirectory"
+const stubFolder = "looker"
 
-function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any) {
+function expectBoxMatch(request: Hub.ActionRequest, optionsMatch: any) {
 
   const fileUploadSpy = sinon.spy(async (_path: string, _contents: any) => Promise.resolve({}))
 
-  const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
+  const stubClient = sinon.stub(action as any, "getClientFromRequest")
     .callsFake(() => ({
-      filesUpload: fileUploadSpy,
+      files: {
+        uploadFile: fileUploadSpy,
+      },
     }))
 
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(optionsMatch)
+    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(
+      optionsMatch.folder,
+      optionsMatch.fileName,
+      optionsMatch.data,
+    )
     stubClient.restore()
   })
 }
@@ -44,28 +50,33 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
-    it("has streaming disabled to support legacy schedules", () => {
-      chai.expect(action.usesStreaming).equals(false)
-    })
-
     it("successfully interprets execute request params", () => {
       const request = new Hub.ActionRequest()
-      request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
-      request.formParams = {filename: stubFileName, directory: stubDirectory}
+      request.attachment = {
+        dataBuffer: Buffer.from("Hello"),
+        fileExtension: "csv",
+        mime: "application/json",
+        encoding: "utf8",
+      }
+      request.formParams = {filename: stubFileName, folder: stubFolder}
       request.params = {
         appKey: "mykey",
         secretKey: "mySecret",
         stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         stateJson: `{"access_token": "token"}`,
       }
-      return expectDropboxMatch(request,
-        {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
+      return expectBoxMatch(request, {folder: stubFolder, fileName: stubFileName, data: Buffer.from("Hello")})
     })
 
     it("sets state to reset if error in fileUpload", (done) => {
       const request = new Hub.ActionRequest()
-      request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
-      request.formParams = {filename: stubFileName, directory: stubDirectory}
+      request.attachment = {
+        dataBuffer: Buffer.from("Hello"),
+        fileExtension: "csv",
+        mime: "application/json",
+        encoding: "utf8",
+      }
+      request.formParams = {filename: stubFileName, folder: stubFolder}
       request.type = Hub.ActionType.Query
       request.params = {
         appKey: "mykey",
@@ -73,9 +84,9 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
-      const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
+      const stubClient = sinon.stub(action as any, "getClientFromRequest")
         .callsFake(() => ({
-          filesUpload: async () => Promise.reject("reject"),
+          files: {create: async () => Promise.reject("reject") },
         }))
       const resp = action.validateAndExecute(request)
       chai.expect(resp).to.eventually.deep.equal({
@@ -93,9 +104,9 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("returns an oauth form on bad login", (done) => {
-      const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
+      const stubClient = sinon.stub(action as any, "getClientFromRequest")
         .callsFake(() => ({
-          filesListFolder: async (_: any) => Promise.reject("haha I failed auth"),
+          files: {create: async (_: any) => Promise.reject("haha I failed auth") },
         }))
       const request = new Hub.ActionRequest()
       request.params = {
@@ -109,20 +120,19 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: [{
           name: "login",
           type: "oauth_link",
-          description: "In order to send to a Dropbox file or folder now and in the future, you will need to log " +
-            "in once to your Dropbox account.",
-          label: "Log in",
-          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
-          `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
+          label: "Log in with Box",
+          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/box/oauth?state=` +
+            "eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1" +
+            "Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0",
         }],
         state: {},
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
     it("does not blow up on bad state JSON and returns an OAUTH form", (done) => {
-      const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
+      const stubClient = sinon.stub(action as any, "getClientFromRequest")
         .callsFake(() => ({
-          filesListFolder: async (_: any) => Promise.reject("haha I failed auth"),
+          files: {create: async (_: any) => Promise.reject("haha I failed auth") },
         }))
       const request = new Hub.ActionRequest()
       request.params = {
@@ -136,25 +146,24 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: [{
           name: "login",
           type: "oauth_link",
-          description: "In order to send to a Dropbox file or folder now and in the future, you will need to log " +
-            "in once to your Dropbox account.",
-          label: "Log in",
-          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
-            `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
+          label: "Log in with Box",
+          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/box/oauth` +
+            "?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9" +
+            "uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0",
         }],
         state: {},
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
     it("returns correct fields on oauth success", (done) => {
-      const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
+      const stubClient = sinon.stub(action as any, "getClientFromRequest")
         .callsFake(() => ({
-          filesListFolder: async (_: any) => Promise.resolve({entries: [{
+          files: { create: async (_: any) => Promise.resolve({entries: [{
               "name": "fake_name",
               "label": "fake_label",
               ".tag": "folder"}],
           }),
-        }))
+        }}))
       const request = new Hub.ActionRequest()
       request.params = {
         appKey: "mykey",
@@ -163,32 +172,25 @@ describe(`${action.constructor.name} unit tests`, () => {
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          default: "__root",
-          description: "Dropbox folder where file will be saved",
-          label: "Select folder to save file",
-          name: "directory",
-          options: [{ name: "__root", label: "Home" }, { name: "fake_name", label: "fake_name" }],
-          required: true,
-          type: "select",
-        }, {
-          label: "Enter a name",
-          name: "filename",
-          type: "string",
-          required: true,
+          label: "Log in with Box",
+          name: "login",
+          oauth_url: "undefined/actions/box/oauth?state=e30",
+          type: "oauth_link",
         }],
+        state: {},
       }).and.notify(stubClient.restore).and.notify(done)
     })
   })
 
   describe("oauth", () => {
     it("returns correct redirect url", () => {
-      process.env.DROPBOX_ACTION_APP_KEY = "testingkey"
-      const prom = action.oauthUrl("https://actionhub.com/actions/dropbox/oauth_redirect",
+      process.env.BOX_CLIENT_ID = "testingkey"
+      const prom = action.oauthUrl("https://actionhub.com/actions/box/oauth_redirect",
         `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`)
-      return chai.expect(prom).to.eventually.equal("https://www.dropbox.com/oauth2/authorize?response_type=code&" +
-        "client_id=testingkey&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fdropbox%2Foauth_redirect&" +
-        "force_reapprove=true&" +
-        "state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0")
+      return chai.expect(prom).to.eventually.equal("https://account.box.com/api/oauth2/authorize?response_type=" +
+        "code&client_id=testingkey&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fbox%2Foauth_redirect&stat" +
+        "e=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0",
+      )
     })
 
     it("correctly handles redirect from authorization server", (done) => {
