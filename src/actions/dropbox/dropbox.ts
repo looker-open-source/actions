@@ -10,7 +10,7 @@ export class DropboxAction extends Hub.OAuthAction {
     name = "dropbox"
     label = "Dropbox"
     iconName = "dropbox/dropbox.png"
-    description = "Send query results directly to a file in your Dropbox."
+    description = "Send data directly to a Dropbox folder."
     supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
     minimumSupportedLookerVersion = "6.8.0"
