@@ -170,7 +170,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
   async usableGroups(request: Hub.ActionRequest) {
     const slack = this.slackClientFromRequest(request)
     const options: any = {
-      limit: 20,
+      limit: 100,
     }
     async function pageLoaded(accumulatedGroups: any[], response: any): Promise<any[]> {
       const mergedGroups = accumulatedGroups.concat(response.groups)
