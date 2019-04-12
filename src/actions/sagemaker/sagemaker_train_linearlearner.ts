@@ -9,6 +9,7 @@ import { PassThrough } from "stream"
 import * as winston from "winston"
 import { linearLearnerHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
+import { logRejection } from "./utils"
 
 const striplines = require("striplines")
 
@@ -376,7 +377,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
   }
 
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
-    return new Promise((resolve, reject) => {
+    return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
       const s3 = this.getS3ClientFromRequest(request)
 
       function uploadFromStream() {
@@ -387,7 +388,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
           Key: key,
           Body: passthrough,
         }
-        s3.upload(params, (err: any, data: any) => {
+        s3.upload(params, (err: Error|null, data: S3.ManagedUpload.SendData) => {
           if (err) {
             return reject(err)
           }
@@ -402,6 +403,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
           .pipe(striplines(1))
           .pipe(uploadFromStream())
       })
+      .catch(logRejection)
     })
   }
 

@@ -7,6 +7,7 @@ import * as SageMaker from "aws-sdk/clients/sagemaker"
 import { PassThrough } from "stream"
 import * as winston from "winston"
 import { awsInstanceTypes } from "./aws_instance_types"
+import { logRejection } from "./utils"
 
 const stripLines = require("striplines")
 const stripColumns = require("./strip_columns.js")
@@ -303,7 +304,7 @@ export class SageMakerInferAction extends Hub.Action {
   }
 
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, numStripColumns: number, inputDataKey: string, rawDataKey: string) {
-    return new Promise((resolve, reject) => {
+    return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
       const s3 = this.getS3ClientFromRequest(request)
 
       function uploadFromStream(key: string) {
@@ -314,7 +315,7 @@ export class SageMakerInferAction extends Hub.Action {
           Key: key,
           Body: passthrough,
         }
-        s3.upload(params, (err: any, data: any) => {
+        s3.upload(params, (err: Error|null, data: S3.ManagedUpload.SendData) => {
           if (err) {
             return reject(err)
           }
@@ -336,6 +337,7 @@ export class SageMakerInferAction extends Hub.Action {
         readable
           .pipe(uploadFromStream(rawDataKey))
       })
+      .catch(logRejection)
     })
   }
 

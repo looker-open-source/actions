@@ -4,6 +4,7 @@ import * as nodemailer from "nodemailer"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import { getMailTransporter } from "./mail_transporter"
+import { logRejection } from "./utils"
 
 export const FIVE_MINUTES = 1000 * 60 * 5
 export const THIRTY_SECONDS = 1000 * 30
@@ -27,7 +28,7 @@ export class TrainingJobPoller {
 
   constructor(transaction: Transaction) {
     this.transporter = getMailTransporter(transaction.request)
-    this.pollTrainingJob(transaction)
+    this.pollTrainingJob(transaction).catch(logRejection)
   }
 
   async pollTrainingJob(transaction: Transaction) {
@@ -35,12 +36,12 @@ export class TrainingJobPoller {
       winston.debug("starting poller")
 
       this.intervalTimer = setInterval(() => {
-        this.checkTrainingJob(transaction)
+        this.checkTrainingJob(transaction).catch(logRejection)
       }, transaction.pollIntervalInSeconds)
 
       this.timeoutTimer = setTimeout(() => {
         clearInterval(this.intervalTimer)
-        this.sendTrainingTimeoutEmail(transaction)
+        this.sendTrainingTimeoutEmail(transaction).catch(logRejection)
       }, transaction.maxRuntimeInSeconds * 1000)
   }
 
@@ -56,15 +57,15 @@ export class TrainingJobPoller {
     switch (response.TrainingJobStatus) {
       case "Completed":
         this.stopPolling()
-        this.createModel(transaction, response)
+        this.createModel(transaction, response).catch(logRejection)
         break
       case "Failed":
         this.stopPolling()
-        this.sendTrainingFailedEmail(transaction, response)
+        this.sendTrainingFailedEmail(transaction, response).catch(logRejection)
         break
       case "Stopped":
         this.stopPolling()
-        this.sendTrainingStoppedEmail(transaction, response)
+        this.sendTrainingStoppedEmail(transaction, response).catch(logRejection)
         break
     }
   }
@@ -82,6 +83,7 @@ export class TrainingJobPoller {
       subject: `Training job ${transaction.jobName} timed out`,
       text: `The training job ${transaction.jobName} exceeded the maximum run time of ${transaction.maxRuntimeInSeconds} seconds.`,
     })
+    .catch(logRejection)
   }
 
   async sendTrainingFailedEmail(transaction: Transaction, response: SageMaker.DescribeTrainingJobResponse) {
@@ -94,6 +96,7 @@ export class TrainingJobPoller {
         ${JSON.stringify(response)}
       `,
     })
+    .catch(logRejection)
   }
 
   async sendTrainingStoppedEmail(transaction: Transaction, response: SageMaker.DescribeTrainingJobResponse) {
@@ -106,6 +109,7 @@ export class TrainingJobPoller {
         ${JSON.stringify(response)}
       `,
     })
+    .catch(logRejection)
   }
 
   async sendCreateModelSuccessEmail(transaction: Transaction, response: SageMaker.CreateModelOutput) {
@@ -118,6 +122,7 @@ export class TrainingJobPoller {
         ${JSON.stringify(response)}
       `,
     })
+    .catch(logRejection)
   }
 
   async sendCreateModelFailureEmail(transaction: Transaction, response: SageMaker.CreateModelOutput) {
@@ -130,6 +135,7 @@ export class TrainingJobPoller {
         ${JSON.stringify(response)}
       `,
     })
+    .catch(logRejection)
   }
 
   async createModel(transaction: Transaction, trainingResponse: SageMaker.DescribeTrainingJobResponse) {
@@ -144,9 +150,9 @@ export class TrainingJobPoller {
     try {
       const response = await transaction.sagemaker.createModel(params).promise()
       winston.debug("createModel response", response)
-      this.sendCreateModelSuccessEmail(transaction, response)
+      this.sendCreateModelSuccessEmail(transaction, response).catch(logRejection)
     } catch (err) {
-      this.sendCreateModelFailureEmail(transaction, err)
+      this.sendCreateModelFailureEmail(transaction, err).catch(logRejection)
     }
   }
 
