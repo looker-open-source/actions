@@ -4,6 +4,7 @@ import * as Hub from "../../hub"
 
 const streamifier: any = require("streamifier")
 const { google } = require("googleapis")
+const ROOT_FOLDER_NAME = "My Drive"
 
 interface FolderOption {
   name: string,
@@ -20,6 +21,10 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   usesStreaming = false
   requiredFields = []
   params = []
+  googleAuth = new google.auth.OAuth2(
+    process.env.GOOGLE_DRIVE_CLIENT_ID,
+    process.env.GOOGLE_DRIVE_CLIENT_SECRET,
+  )
 
   async execute(request: Hub.ActionRequest) {
     const filename = request.formParams.filename || request.suggestedFilename()
@@ -38,7 +43,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         accessToken = await this.getAccessTokenFromCode(stateJson)
       }
     }
-    const client = this.getClientFromRequest(request, accessToken)
+    const drive = this.getClientFromRequest(request, accessToken)
 
     const fileMetadata = {
       name: filename,
@@ -50,7 +55,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       fileMetadata.parents.push(request.formParams.folder)
     }
     try {
-      await client.files.create(
+      await drive.files.create(
         {
           resource: fileMetadata,
           media: {
@@ -58,7 +63,10 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           },
         },
       )
-      return new Hub.ActionResponse({ success: true })
+      const resp = new Hub.ActionResponse({ success: true })
+      resp.state = new Hub.ActionState()
+      resp.state.data = JSON.stringify({tokens: this.googleAuth.credentials})
+      return resp
     } catch (e) {
       const resp = new Hub.ActionResponse({ success: false })
       resp.state = new Hub.ActionState()
@@ -79,7 +87,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         }
       } catch { winston.warn("Could not parse state_json") }
     }
-    const client = this.getClientFromRequest(request, accessToken)
+    const drive = this.getClientFromRequest(request, accessToken)
 
     const params = {
       q: "mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false",
@@ -89,7 +97,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     }
 
     try {
-      const results = await client.files.list(params)
+      const results = await drive.files.list(params)
       const folders: FolderOption[] = this.generateFolderOptions(results.data.files)
 
       form.fields = [{
@@ -107,7 +115,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         }]
 
       if (accessToken !== "") {
-        const newState = JSON.stringify({ access_token: accessToken })
+        const newState = JSON.stringify({ tokens: this.googleAuth.credentials })
         form.state = new Hub.ActionState()
         form.state.data = newState
       }
@@ -135,7 +143,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   async oauthUrl(redirectUri: string, encryptedState: string) {
     // Generate the url that will be used for the consent dialog.
 
-    return this.oAuthClient(redirectUri).generateAuthUrl({
+    return this.updateGoogleAuth(redirectUri).generateAuthUrl({
       access_type: "offline",
       scope: "https://www.googleapis.com/auth/drive",
       state: encryptedState,
@@ -157,13 +165,13 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
-    const client = this.getClientFromRequest(request, "")
+    const drive = this.getClientFromRequest(request, "")
     const params = {
       q: "mimeType='application/vnd.google-apps.folder'",
     }
 
     try {
-      await client.files.list(params)
+      await drive.files.list(params)
       return true
     } catch (err) {
       winston.error(`oauth check failed ${err.message}`)
@@ -175,7 +183,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     let result
     if (stateJson.code && stateJson.redirect) {
       try {
-        result = await this.oAuthClient(stateJson.redirect).getToken(stateJson.code)
+        result = await this.updateGoogleAuth(stateJson.redirect).getToken(stateJson.code)
       } catch (_err) {
         winston.error(`Error requesting access_token: ${_err.toString()}`)
       }
@@ -187,36 +195,35 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     }
   }
 
-  private oAuthClient(redirectUri: any) {
-    return new google.auth.OAuth2(
-      process.env.GOOGLE_DRIVE_CLIENT_ID,
-      process.env.GOOGLE_DRIVE_CLIENT_SECRET,
-      redirectUri,
-    )
+  private updateGoogleAuth(redirectUri: any) {
+    if (redirectUri) {
+      this.googleAuth.redirectUri = redirectUri
+    }
+    return this.googleAuth
   }
 
-  private getClientFromRequest(request: Hub.ActionRequest, token: string) {
-    if (request.params.state_json && token === "") {
+  private getClientFromRequest(request: Hub.ActionRequest, tokens: string) {
+    if (request.params.state_json && tokens === "") {
       try {
         const json = JSON.parse(request.params.state_json)
-        token = json.access_token
+        tokens = json.tokens
       } catch (er) {
         winston.error("cannot parse")
       }
     }
-    const client = this.oAuthClient("")
-    client.setCredentials(token)
+
+    this.googleAuth.setCredentials(tokens)
 
     return google.drive({
       version: "v3",
-      auth: client,
+      auth: this.googleAuth,
     })
   }
 
   private generateFolderOptions(folders: any[]): FolderOption[] {
-    const folderOptions = folders.map((folder) => ({name: `My Drive / ${folder.name}`, id: folder.id}))
+    const folderOptions = folders.map((folder) => ({name: `${ROOT_FOLDER_NAME} / ${folder.name}`, id: folder.id}))
 
-    return [{ name: "My Drive", id: "" }, ...folderOptions]
+    return [{ name: ROOT_FOLDER_NAME, id: "" }, ...folderOptions]
   }
 }
 
