@@ -32,6 +32,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       throw new Error("Couldn't determine filename.")
     }
 
+    const ext = request.attachment!.fileExtension
+
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw new Error("Couldn't get data from attachment")
     }
@@ -46,7 +48,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const drive = this.getClientFromRequest(request, accessToken)
 
     const fileMetadata = {
-      name: filename,
+      name: `${filename}.${ext}`,
       parents: new Array(),
       mimeType: request.attachment.mime,
     }

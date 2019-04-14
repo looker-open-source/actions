@@ -69,7 +69,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
           resource: {
             mimeType: "application/json",
-            name: "stubSuggestedFilename",
+            name: "stubSuggestedFilename.csv",
             parents: ["looker"],
           },
         })
