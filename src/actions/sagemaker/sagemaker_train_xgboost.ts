@@ -13,6 +13,10 @@ import { logRejection } from "./utils"
 
 const striplines = require("striplines")
 
+const debug = require("debug")
+const log = debug("module")
+log("start")
+
 export class SageMakerTrainXgboostAction extends Hub.Action {
 
   name = "amazon_sagemaker_train_xgboost"
@@ -98,46 +102,47 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
+    // get string inputs
+    const {
+      modelName,
+      bucket,
+      awsInstanceType,
+      objective,
+    } = request.formParams
+
+    const { roleArn } = request.params
+
+    // validate string inputs
+    if (!modelName) {
+      throw "Need SageMaker model name."
+    }
+    if (!bucket) {
+      throw "Need Amazon S3 bucket."
+    }
+    if (!awsInstanceType) {
+      throw "Need Amazon awsInstanceType."
+    }
+    if (!objective) {
+      throw "Need training objective."
+    }
+    if (!roleArn) {
+      throw "Need Amazon Role ARN for SageMaker & S3 Access."
+    }
 
     try {
-      // get string inputs
-      const {
-        modelName,
-        bucket,
-        awsInstanceType,
-        objective,
-      } = request.formParams
-
-      const { roleArn } = request.params
-
-      // validate string inputs
-      if (!modelName) {
-        throw new Error("Need SageMaker model name.")
-      }
-      if (!bucket) {
-        throw new Error("Need Amazon S3 bucket.")
-      }
-      if (!awsInstanceType) {
-        throw new Error("Need Amazon awsInstanceType.")
-      }
-      if (!objective) {
-        throw new Error("Need training objective.")
-      }
-      if (!roleArn) {
-        throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
-      }
-
-      const jobName = `${modelName}-${Date.now()}`
+      const jobName = this.getJobName(modelName)
       const numClass = this.getNumericFormParam(request, "numClass", 3, 1000000)
       const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
       const numRounds = this.getNumericFormParam(request, "numRounds", 1, 1000000)
       const maxRuntimeInHours = this.getNumericFormParam(request, "maxRuntimeInHours", 1, 72)
       const maxRuntimeInSeconds = maxRuntimeInHours * 60 * 60
+      log("maxRuntimeInSeconds", maxRuntimeInSeconds)
 
       // get region for bucket
       const region = await this.getBucketLocation(request, bucket)
+      log("region", region)
       if (! region) {
-        throw new Error("Unable to determine bucket region.")
+        throw "Unable to determine bucket region."
       }
 
       // set up variables required for API calls
@@ -336,17 +341,21 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
     })
   }
 
+  private getJobName(modelName: string) {
+    return `${modelName}-${Date.now()}`
+  }
+
   private getNumericFormParam(request: Hub.ActionRequest, key: string, min: number, max: number) {
     const value = request.formParams[key]
     if (! value) {
-      throw new Error(`Unable to get required param ${key}`)
+      throw `Unable to get required param ${key}`
     }
     const num = Number(value)
     if (isNaN(num)) {
-      throw new Error(`Unable to get required param ${key}`)
+      throw `Unable to get required param ${key}`
     }
     if (num < min || num > max) {
-      throw new Error(`Number ${key} (${value}) is out of range: ${min} - ${max}`)
+      throw `Number ${key} (${value}) is out of range: ${min} - ${max}`
     }
     return num
   }
@@ -364,6 +373,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
       Bucket: bucket,
     }
     const response = await s3.getBucketLocation(params).promise()
+    log("response", response)
 
     return response.LocationConstraint
   }

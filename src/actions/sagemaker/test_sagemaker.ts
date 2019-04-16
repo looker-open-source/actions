@@ -1,44 +1,378 @@
-// import * as chai from "chai"
-// // import * as sinon from "sinon"
+import * as chai from "chai"
+import * as sinon from "sinon"
 
-// import * as Hub from "../../hub"
+import * as Hub from "../../hub"
 
-// import { SageMakerTrainAction } from "./sagemaker_train"
+const debug = require("debug")
+const log = debug("test")
+log("start")
 
-// const action = new SageMakerTrainAction()
+import { SageMakerTrainXgboostAction } from "./sagemaker_train_xgboost"
 
-// describe(`${action.constructor.name} unit tests`, () => {
+import concatStream = require("concat-stream")
 
-//   describe("action", () => {
+const action = new SageMakerTrainXgboostAction()
 
-//     it("errors if there is no email address", () => {
-//       const request = new Hub.ActionRequest()
-//       request.formParams = {}
-//       request.attachment = {}
-//       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+function expectAmazonS3Match(thisAction: SageMakerTrainXgboostAction, request: Hub.ActionRequest, match: any) {
 
-//       return chai.expect(action.execute(request)).to.eventually
-//         .be.rejectedWith("Needs a valid email address.")
-//     })
+  const expectedBuffer = match.Body
+  delete match.Body
 
-//     it("errors if the input has no attachment", () => {
-//       const request = new Hub.ActionRequest()
-//       request.formParams = {
-//         to: "test@example.com",
-//       }
+  const getJobNameSpy = sinon.spy(() => match.jobName)
 
-//       return chai.expect(action.execute(request)).to.eventually
-//         .be.rejectedWith("Couldn't get data from attachment")
-//     })
+  const getBucketLocationSpy = sinon.spy((params: any) => {
+    chai.expect(params.Bucket).to.equal(match.Bucket)
+    return { promise: async () => {
+      return {
+        LocationConstraint: "my-region",
+      }
+    }}
+  })
 
-//   })
+  const uploadSpy = sinon.spy(async (params: any) => {
+    params.Body.pipe(concatStream((buffer) => {
+      chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
+    }))
+    return { promise: async () => Promise.resolve() }
+  })
 
-//   describe("form", () => {
+  const stubClient = sinon.stub(thisAction as any, "getS3ClientFromRequest")
+    .callsFake(() => ({
+      getJobName: getJobNameSpy,
+      getBucketLocation: getBucketLocationSpy,
+      upload: uploadSpy,
+    }))
 
-//     it("has form", () => {
-//       chai.expect(action.hasForm).equals(true)
-//     })
+  return chai.expect(thisAction.validateAndExecute(request)).to.be.fulfilled.then(() => {
+    chai.expect(getJobNameSpy, "getJobNameSpy").to.have.been.called
+    chai.expect(getBucketLocationSpy, "getBucketLocationSpy").to.have.been.called
+    chai.expect(uploadSpy, "uploadSpy").to.have.been.called
+    stubClient.restore()
+  })
+}
 
-//   })
+describe(`${action.constructor.name} unit tests`, () => {
 
-// })
+  const validParams = {
+    accessKeyId: "mykey",
+    secretAccessKey: "mysecret",
+    region: "my-region",
+    roleArn: "my-role-arn",
+    user_email: "user@mail.com",
+    smtpHost: "smtpHost",
+    smtpPort: "smtpPort",
+    smtpFrom: "smtpFrom",
+    smtpUser: "smtpUser",
+    smtpPass: "smtpPass",
+  }
+  const validFormParams = {
+    modelName: "modelName",
+    bucket: "bucket",
+    awsInstanceType: "awsInstanceType",
+    objective: "objective",
+    numClass: "3",
+    numInstances: "1",
+    numRounds: "1",
+    maxRuntimeInHours: "1",
+  }
+
+  describe("action", () => {
+
+    it("errors if there is no model", () => {
+      const request = new Hub.ActionRequest()
+      request.params = validParams
+      request.formParams = { ...validFormParams, modelName: undefined }
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+      request.type = Hub.ActionType.Query
+
+      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need SageMaker model name.")
+    })
+
+    it("errors if there is no bucket", () => {
+      const request = new Hub.ActionRequest()
+      request.params = validParams
+      request.formParams = { ...validFormParams, bucket: undefined }
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+      request.type = Hub.ActionType.Query
+
+      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need Amazon S3 bucket.")
+    })
+
+    it("errors if there is no awsInstanceType", () => {
+      const request = new Hub.ActionRequest()
+      request.params = validParams
+      request.formParams = { ...validFormParams, awsInstanceType: undefined }
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+      request.type = Hub.ActionType.Query
+
+      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need Amazon awsInstanceType.")
+    })
+
+    it("errors if there is no objective", () => {
+      const request = new Hub.ActionRequest()
+      request.params = validParams
+      request.formParams = { ...validFormParams, objective: undefined }
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+      request.type = Hub.ActionType.Query
+
+      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need training objective.")
+    })
+
+    xit("should upload training data to right bucket", () => {
+      const request = new Hub.ActionRequest()
+      request.params = validParams
+      request.formParams = validFormParams
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+      request.type = Hub.ActionType.Query
+
+      return expectAmazonS3Match(action, request, {
+        jobName: "my-job-name",
+        Bucket: "bucket",
+        Key: "stubSuggestedFilename",
+        Body: Buffer.from("1,2,3,4", "utf8"),
+      })
+    })
+
+  })
+
+  describe("form", () => {
+
+    it("has form", () => {
+      chai.expect(action.hasForm).equals(true)
+    })
+
+    it("has form with correct buckets", (done) => {
+
+      const stubClient = sinon.stub(action as any, "getS3ClientFromRequest")
+        .callsFake(() => ({
+          listBuckets: () => {
+            return {
+              promise: async () => {
+                return new Promise<any>((resolve) => {
+                  resolve({
+                    Buckets: [
+                      { Name: "A" },
+                      { Name: "B" },
+                    ],
+                  })
+                })
+              },
+            }
+          },
+        }))
+
+      const request = new Hub.ActionRequest()
+      request.params = validParams
+
+      const form = action.validateAndFetchForm(request)
+
+      const expected = {
+        fields: [
+          {
+            type: "string",
+            label: "Model Name",
+            name: "modelName",
+            required: true,
+            description: "The name for model to be created after training is complete.",
+          },
+          {
+            type: "select",
+            label: "Bucket",
+            name: "bucket",
+            required: true,
+            options: [
+              {
+                name: "A",
+                label: "A",
+              },
+              {
+                name: "B",
+                label: "B",
+              },
+            ],
+            default: "A",
+            description: "The S3 bucket where SageMaker input training data should be stored",
+          },
+          {
+            type: "select",
+            label: "Objective",
+            name: "objective",
+            required: true,
+            options: [
+              {
+                name: "binary:logistic",
+                label: "binary:logistic",
+              },
+              {
+                name: "reg:linear",
+                label: "reg:linear",
+              },
+              {
+                name: "multi:softmax",
+                label: "multi:softmax",
+              },
+            ],
+            default: "binary:logistic",
+            description: "The type of classification to be performed.",
+          },
+          {
+            type: "string",
+            label: "Number of classes",
+            name: "numClass",
+            default: "3",
+            // tslint:disable-next-line max-line-length
+            description: "The number of classifications. Valid values: 3 to 1000000. Required if objective is multi:softmax. Otherwise ignored.",
+          },
+          {
+            type: "select",
+            label: "AWS Instance Type",
+            name: "awsInstanceType",
+            required: true,
+            options: [
+              {
+                name: "ml.m4.xlarge",
+                label: "ml.m4.xlarge",
+              },
+              {
+                name: "ml.m4.2xlarge",
+                label: "ml.m4.2xlarge",
+              },
+              {
+                name: "ml.m4.4xlarge",
+                label: "ml.m4.4xlarge",
+              },
+              {
+                name: "ml.m4.10xlarge",
+                label: "ml.m4.10xlarge",
+              },
+              {
+                name: "ml.m4.16xlarge",
+                label: "ml.m4.16xlarge",
+              },
+              {
+                name: "ml.m5.large",
+                label: "ml.m5.large",
+              },
+              {
+                name: "ml.m5.xlarge",
+                label: "ml.m5.xlarge",
+              },
+              {
+                name: "ml.m5.2xlarge",
+                label: "ml.m5.2xlarge",
+              },
+              {
+                name: "ml.m5.4xlarge",
+                label: "ml.m5.4xlarge",
+              },
+              {
+                name: "ml.m5.12xlarge",
+                label: "ml.m5.12xlarge",
+              },
+              {
+                name: "ml.m5.24xlarge",
+                label: "ml.m5.24xlarge",
+              },
+              {
+                name: "ml.c4.xlarge",
+                label: "ml.c4.xlarge",
+              },
+              {
+                name: "ml.c4.2xlarge",
+                label: "ml.c4.2xlarge",
+              },
+              {
+                name: "ml.c4.4xlarge",
+                label: "ml.c4.4xlarge",
+              },
+              {
+                name: "ml.c4.8xlarge",
+                label: "ml.c4.8xlarge",
+              },
+              {
+                name: "ml.p2.xlarge",
+                label: "ml.p2.xlarge",
+              },
+              {
+                name: "ml.p2.8xlarge",
+                label: "ml.p2.8xlarge",
+              },
+              {
+                name: "ml.p2.16xlarge",
+                label: "ml.p2.16xlarge",
+              },
+              {
+                name: "ml.p3.2xlarge",
+                label: "ml.p3.2xlarge",
+              },
+              {
+                name: "ml.p3.8xlarge",
+                label: "ml.p3.8xlarge",
+              },
+              {
+                name: "ml.p3.16xlarge",
+                label: "ml.p3.16xlarge",
+              },
+              {
+                name: "ml.c5.xlarge",
+                label: "ml.c5.xlarge",
+              },
+              {
+                name: "ml.c5.2xlarge",
+                label: "ml.c5.2xlarge",
+              },
+              {
+                name: "ml.c5.4xlarge",
+                label: "ml.c5.4xlarge",
+              },
+              {
+                name: "ml.c5.9xlarge",
+                label: "ml.c5.9xlarge",
+              },
+              {
+                name: "ml.c5.18xlarge",
+                label: "ml.c5.18xlarge",
+              },
+            ],
+            default: "ml.m4.xlarge",
+            // tslint:disable-next-line max-line-length
+            description: "The type of AWS instance to use. More info: More info: https://aws.amazon.com/sagemaker/pricing/instance-types",
+          },
+          {
+            type: "string",
+            label: "Number of instances",
+            name: "numInstances",
+            default: "1",
+            description: "The number of instances to run. Valid values: 1 to 500.",
+          },
+          {
+            type: "string",
+            label: "Number of rounds",
+            name: "numRounds",
+            default: "100",
+            description: "The number of rounds to run. Valid values: 1 to 1000000.",
+          },
+          {
+            type: "string",
+            label: "Maximum runtime in hours",
+            name: "maxRuntimeInHours",
+            default: "12",
+            description: "Maximum allowed time for the job to run, in hours. Valid values: 1 to 72.",
+          },
+        ],
+      }
+
+      chai.expect(form)
+        .to.eventually.deep.equal(expected)
+        .and.notify(stubClient.restore)
+        .and.notify(done)
+    })
+
+  })
+
+})
