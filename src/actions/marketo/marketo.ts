@@ -70,7 +70,7 @@ export class MarketoAction extends Hub.Action {
           label:"None - Update lead only",
         }, {
           name:"addCampaign",
-          label:"Update lead and add to below Campain ID",
+          label:"Update lead and add to below Campaign ID",
         }, {
           name:"addList",
           label:"Update lead and add to below List ID",
