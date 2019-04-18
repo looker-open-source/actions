@@ -22,6 +22,82 @@ const sampleData = {
 
 describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
+	  
+    it("errors if there is no subaction and no campaignId", () => {
+      //This is the old implicit mode
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "myurl",
+        clientID: "myclientID",
+        clientSecret: "myclientSecret",
+      }
+      request.formParams = {}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejected
+    })
+
+    it("errors if subaction is 'none' and there is subactionIds", () => {
+      //This is the old implicit mode
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "myurl",
+        clientID: "myclientID",
+        clientSecret: "myclientSecret",
+      }
+      request.formParams = {
+        subaction:"none",
+        subactionIds:"123"
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejected
+    })
+
+    it("errors if subaction is not 'none' and there is no subactionIds", () => {
+      //This is the old implicit mode
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "myurl",
+        clientID: "myclientID",
+        clientSecret: "myclientSecret",
+      }
+      request.formParams = {
+        subaction:"addCampaign",
+        subactionIds:""
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejected
+    })
+
+    it("errors if subaction is not recognized", () => {
+      //This is the old implicit mode
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "myurl",
+        clientID: "myclientID",
+        clientSecret: "myclientSecret",
+      }
+      request.formParams = {
+        subaction:"somethingUnexpected"
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejected
+    })
 
     it("errors if there is no lookupField", () => {
       const request = new Hub.ActionRequest()

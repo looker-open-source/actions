@@ -55,6 +55,9 @@ export class MarketoTransaction {
         }
       this.removeListIds = subactionIds
       break;
+      default:
+        throw "Unrecognized additional action type"
+      break
     }
 	
     this.lookupField = request.formParams.lookupField
@@ -166,14 +169,17 @@ export class MarketoTransaction {
       const response = await this.marketo.campaign.request(campaignId, ids)
       result.membershipErrors = result.membershipErrors.concat(response.errors || [])
     }
-	
+
     for (let listId of this.addListIds){
       const response = await this.marketo.list.addLeadsToList(listId, ids)
       result.membershipErrors = result.membershipErrors.concat(response.errors || [])
     }
 
     for (let listId of this.removeListIds){
-      const response = await this.marketo.campaign.removeLeadsFromList(listId, ids)
+      let leadIds = ids.map(obj=>obj.id)
+      // ^ Unlike the other two methods, removeLeadsFromList does not automatically pick the ID from an object
+      // https://github.com/MadKudu/node-marketo/blob/master/lib/api/list.js#L38
+      const response = await this.marketo.list.removeLeadsFromList(listId, leadIds)
       result.membershipErrors = result.membershipErrors.concat(response.errors || [])
     }
 
