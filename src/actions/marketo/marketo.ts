@@ -57,26 +57,36 @@ export class MarketoAction extends Hub.Action {
       label: "Lead Lookup Field",
       name: "lookupField",
       type: "string",
-      description: "Marketo field to use for lookup",
+      description: "Marketo field to use when looking up leads to update",
       default: "email",
       required: true,
     }, {
-      label: "Add to Campaign IDs (optional)",
-      name: "campaignIds",
-      type: "string",
-      description: "Campaign IDs to add the leads to, if any, comma-separated",
-      required: false,
+      label: "Additional Action",
+      name: "subaction",
+      type: "select",
+      options: [
+        {
+          name:"none",
+          label:"None - Update lead only",
+        }, {
+          name:"addCampaign",
+          label:"Update lead and add to below Campain ID",
+        }, {
+          name:"addList",
+          label:"Update lead and add to below List ID",
+        }, {
+          name:"removeList",
+          label:"Update lead and remove from below List ID",
+        }
+      ],
+      description: "Additional action to take",
+      default: "none",
+      required: true,
     }, {
-      label: "Add to List IDs (optional)",
-      name: "addListIds",
+      label: "Campaign/List ID for Additional Action",
+      name: "subactionIds",
       type: "string",
-      description: "List IDs to add the leads to, if any, comma-separated",
-      required: false,
-    }, {
-      label: "Remove from List IDs (optional)",
-      name: "removeListIds",
-      type: "string",
-      description: "List IDs to remove the leads from, if any, comma-separated",
+      description: "Either a Campaign ID or a List ID, depending on above selection",
       required: false,
     }]
     return form

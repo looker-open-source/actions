@@ -23,13 +23,40 @@ export class MarketoTransaction {
   lookupField?: string
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
-
-    this.campaignIds = (
-        request.formParams.campaignIds
-        || request.formParams.campaignId //Support the old "single add" format as well
-        || '').split(/\s*,\s*/).filter(Boolean)
-    this.addListIds = (request.formParams.addListIds || '').split(/\s*,\s*/).filter(Boolean)
-    this.removeListIds = (request.formParams.removeListIds || '').split(/\s*,\s*/).filter(Boolean)
+    this.campaignIds = []
+    this.addListIds = []
+    this.removeListIds = []
+    let subactionIds = (request.formParams.subactionIds || '').split(/\s*,\s*/).filter(Boolean)
+    switch(request.formParams.subaction){
+      case undefined:
+        //The older version of the action assumed an "addToCampaign" subaction
+        this.campaignIds = [request.formParams.campaignId || ''].filter(Boolean) //Note singular parameter name
+        break;
+      case 'none':
+        if(subactionIds.length){
+          throw "Additional action of 'none' was selected, but additional action ID was provided"
+        }
+      break;
+      case 'addCampaign':
+        if(!subactionIds.length){
+          throw "'Add to campaign' was selected, but additional action ID was not provided"
+        }
+      this.campaignIds = subactionIds
+      break;
+      case 'addList':
+        if(!subactionIds.length){
+          throw "'Add to list' was selected, but additional action ID was not provided"
+        }
+      this.addListIds = subactionIds
+      break;
+      case 'removeList':
+        if(!subactionIds.length){
+          throw "'Remove from list' was selected, but additional action ID was not provided"
+        }
+      this.removeListIds = subactionIds
+      break;
+    }
+	
     this.lookupField = request.formParams.lookupField
     if (!this.lookupField) {
       throw "Missing Lookup Field."
