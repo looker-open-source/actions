@@ -137,6 +137,7 @@ export class SageMakerInferAction extends Hub.Action {
       const jobName = `transform-job-${date}`
       const inputDataKey = `${jobName}/transform-input`
       const rawDataKey = `${jobName}/transform-raw`
+      const outputDataKey = `${jobName}/transform-output`
 
       // store data in S3 bucket
       await this.uploadToS3(request, bucket, numStripColumns, inputDataKey, rawDataKey)
@@ -145,7 +146,7 @@ export class SageMakerInferAction extends Hub.Action {
       const client = this.getSageMakerClientFromRequest(request)
 
       const s3InputPath = `s3://${bucket}/${inputDataKey}`
-      const s3OutputPath = `s3://${bucket}/${inputDataKey}`
+      const s3OutputPath = `s3://${bucket}/${outputDataKey}`
       winston.debug("s3InputPath", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
