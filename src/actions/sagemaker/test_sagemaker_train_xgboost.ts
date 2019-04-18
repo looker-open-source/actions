@@ -138,6 +138,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("should create training job")
+    it("should poll for training job completion")
+
   })
 
   describe("form", () => {
