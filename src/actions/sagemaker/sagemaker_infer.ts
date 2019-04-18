@@ -333,6 +333,7 @@ export class SageMakerInferAction extends Hub.Action {
         winston.debug("stripped columns")
         readable
           .pipe(stripColumns(numStripColumns))
+          .pipe(process.stdout)
 
         // upload the inference data
         // without headers and strip columns if needed
