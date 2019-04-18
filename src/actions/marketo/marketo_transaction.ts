@@ -37,24 +37,24 @@ export class MarketoTransaction {
           .filter(Boolean) // Note singular parameter name
         break
       case "none":
-        if (subactionIds.length === 0) {
+        if (subactionIds.length > 0) {
           throw "Additional action of 'none' was selected, but additional action ID was provided"
         }
         break
       case "addCampaign":
-        if (subactionIds.length > 0) {
+        if (subactionIds.length === 0) {
           throw "'Add to campaign' was selected, but additional action ID was not provided"
         }
         this.campaignIds = subactionIds
         break
       case "addList":
-        if (subactionIds.length > 0) {
+        if (subactionIds.length === 0) {
           throw "'Add to list' was selected, but additional action ID was not provided"
         }
         this.addListIds = subactionIds
         break
       case "removeList":
-        if (subactionIds.length > 0) {
+        if (subactionIds.length === 0) {
           throw "'Remove from list' was selected, but additional action ID was not provided"
         }
         this.removeListIds = subactionIds
