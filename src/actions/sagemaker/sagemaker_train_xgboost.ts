@@ -114,33 +114,31 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
 
     // validate string inputs
     if (!modelName) {
-      throw "Need SageMaker model name."
+      throw "Missing required param: modelName"
     }
     if (!bucket) {
-      throw "Need Amazon S3 bucket."
+      throw "Missing required param: bucket"
     }
     if (!awsInstanceType) {
-      throw "Need Amazon awsInstanceType."
+      throw "Missing required param: awsInstanceType"
     }
     if (!objective) {
-      throw "Need training objective."
+      throw "Missing required param: objective"
     }
     if (!roleArn) {
-      throw "Need Amazon Role ARN for SageMaker & S3 Access."
+      throw "Missing required param: roleArn"
     }
 
-    try {
-      const jobName = this.getJobName(modelName)
-      const numClass = this.getNumericFormParam(request, "numClass", 3, 1000000)
-      const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
-      const numRounds = this.getNumericFormParam(request, "numRounds", 1, 1000000)
-      const maxRuntimeInHours = this.getNumericFormParam(request, "maxRuntimeInHours", 1, 72)
-      const maxRuntimeInSeconds = maxRuntimeInHours * 60 * 60
-      log("maxRuntimeInSeconds", maxRuntimeInSeconds)
+    const jobName = this.getJobName(modelName)
+    const numClass = this.getNumericFormParam(request, "numClass", 3, 1000000)
+    const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
+    const numRounds = this.getNumericFormParam(request, "numRounds", 1, 1000000)
+    const maxRuntimeInHours = this.getNumericFormParam(request, "maxRuntimeInHours", 1, 72)
+    const maxRuntimeInSeconds = maxRuntimeInHours * 60 * 60
 
+    try {
       // get region for bucket
       const region = await this.getBucketLocation(request, bucket)
-      log("region", region)
       if (! region) {
         throw "Unable to determine bucket region."
       }
@@ -348,14 +346,14 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
   private getNumericFormParam(request: Hub.ActionRequest, key: string, min: number, max: number) {
     const value = request.formParams[key]
     if (! value) {
-      throw `Unable to get required param ${key}`
+      throw `Missing required param: ${key}.`
     }
     const num = Number(value)
     if (isNaN(num)) {
-      throw `Unable to get required param ${key}`
+      throw `Missing required param: ${key}`
     }
     if (num < min || num > max) {
-      throw `Number ${key} (${value}) is out of range: ${min} - ${max}`
+      throw `Param ${key}: ${value} is out of range: ${min} - ${max}`
     }
     return num
   }

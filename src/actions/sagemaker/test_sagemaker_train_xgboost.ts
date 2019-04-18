@@ -76,59 +76,69 @@ describe(`${action.constructor.name} unit tests`, () => {
     maxRuntimeInHours: "1",
   }
 
+  function createValidRequest() {
+    const request = new Hub.ActionRequest()
+    request.params = validParams
+    request.formParams = validFormParams
+    request.attachment = {}
+    request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+    request.type = Hub.ActionType.Query
+    return request
+  }
+
   describe("action", () => {
 
-    it("errors if there is no model", () => {
-      const request = new Hub.ActionRequest()
-      request.params = validParams
-      request.formParams = { ...validFormParams, modelName: undefined }
-      request.attachment = {}
-      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
-      request.type = Hub.ActionType.Query
+    function testMissingParam(param: string, value?: any|undefined) {
+      it(`errors if param ${param} is ${value}`, () => {
+        const request = createValidRequest()
+        request.formParams = { ...validFormParams, [param]: value }
 
-      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need SageMaker model name.")
-    })
+        return chai.expect(action.execute(request))
+          .to.eventually.be.rejectedWith(`Missing required param: ${param}`)
+      })
+    }
 
-    it("errors if there is no bucket", () => {
-      const request = new Hub.ActionRequest()
-      request.params = validParams
-      request.formParams = { ...validFormParams, bucket: undefined }
-      request.attachment = {}
-      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
-      request.type = Hub.ActionType.Query
+    function testMissingNumericParam(param: string, value?: any|undefined) {
+      it(`errors if param ${param} is ${value}`, () => {
+        const request = createValidRequest()
+        request.formParams = { ...validFormParams, [param]: value }
 
-      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need Amazon S3 bucket.")
-    })
+        return chai.expect(action.execute(request))
+          .to.eventually.be.rejectedWith(`Missing required param: ${param}`)
+      })
+    }
 
-    it("errors if there is no awsInstanceType", () => {
-      const request = new Hub.ActionRequest()
-      request.params = validParams
-      request.formParams = { ...validFormParams, awsInstanceType: undefined }
-      request.attachment = {}
-      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
-      request.type = Hub.ActionType.Query
+    function testInvalidNumericParam(param: string, value: string, min: number, max: number) {
+      it(`errors if param ${param}: ${value} is out of range: ${min} - ${max}`, () => {
+        const request = createValidRequest()
+        request.formParams = { ...validFormParams, [param]: value }
 
-      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need Amazon awsInstanceType.")
-    })
+        return chai.expect(action.execute(request))
+          .to.eventually.be.rejectedWith(`Param ${param}: ${value} is out of range: ${min} - ${max}`)
+      })
+    }
 
-    it("errors if there is no objective", () => {
-      const request = new Hub.ActionRequest()
-      request.params = validParams
-      request.formParams = { ...validFormParams, objective: undefined }
-      request.attachment = {}
-      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
-      request.type = Hub.ActionType.Query
+    testMissingParam("modelName")
+    testMissingParam("bucket")
+    testMissingParam("awsInstanceType")
+    testMissingParam("objective")
 
-      return chai.expect(action.execute(request)).to.eventually.be.rejectedWith("Need training objective.")
-    })
+    testMissingNumericParam("numClass")
+    testMissingNumericParam("numInstances")
+    testMissingNumericParam("numRounds")
+    testMissingNumericParam("maxRuntimeInHours")
+
+    testInvalidNumericParam("numClass", "0", 3, 1000000)
+    testInvalidNumericParam("numClass", "1000001", 3, 1000000)
+    testInvalidNumericParam("numInstances", "0", 1, 500)
+    testInvalidNumericParam("numInstances", "501", 1, 500)
+    testInvalidNumericParam("numRounds", "0", 1, 1000000)
+    testInvalidNumericParam("numRounds", "1000001", 1, 1000000)
+    testInvalidNumericParam("maxRuntimeInHours", "0", 1, 72)
+    testInvalidNumericParam("maxRuntimeInHours", "73", 1, 72)
 
     xit("should upload training data to right bucket", () => {
-      const request = new Hub.ActionRequest()
-      request.params = validParams
-      request.formParams = validFormParams
-      request.attachment = {}
-      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
-      request.type = Hub.ActionType.Query
+      const request = createValidRequest()
 
       return expectAmazonS3Match(action, request, {
         jobName: "my-job-name",

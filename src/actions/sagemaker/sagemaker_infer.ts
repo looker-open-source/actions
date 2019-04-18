@@ -326,6 +326,14 @@ export class SageMakerInferAction extends Hub.Action {
       }
 
       request.stream(async (readable) => {
+        winston.debug("all columns")
+        readable
+          .pipe(process.stdout)
+
+        winston.debug("stripped columns")
+        readable
+          .pipe(stripColumns(numStripColumns))
+
         // upload the inference data
         // without headers and strip columns if needed
         readable
