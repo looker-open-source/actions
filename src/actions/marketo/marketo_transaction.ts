@@ -26,40 +26,44 @@ export class MarketoTransaction {
     this.campaignIds = []
     this.addListIds = []
     this.removeListIds = []
-    let subactionIds = (request.formParams.subactionIds || '').split(/\s*,\s*/).filter(Boolean)
-    switch(request.formParams.subaction){
+    const subactionIds =
+      (request.formParams.subactionIds !== undefined ? request.formParams.subactionIds : "")
+      .split(/\s*,\s*/)
+      .filter(Boolean)
+    switch (request.formParams.subaction) {
       case undefined:
-        //The older version of the action assumed an "addToCampaign" subaction
-        this.campaignIds = [request.formParams.campaignId || ''].filter(Boolean) //Note singular parameter name
-        break;
-      case 'none':
-        if(subactionIds.length){
+        // The older version of the action assumed an "addToCampaign" subaction
+        this.campaignIds = [request.formParams.campaignId !== undefined ? request.formParams.campaignId : ""]
+          .filter(Boolean) // Note singular parameter name
+        break
+      case "none":
+        if (subactionIds.length === 0) {
           throw "Additional action of 'none' was selected, but additional action ID was provided"
         }
-      break;
-      case 'addCampaign':
-        if(!subactionIds.length){
+        break
+      case "addCampaign":
+        if (subactionIds.length > 0) {
           throw "'Add to campaign' was selected, but additional action ID was not provided"
         }
-      this.campaignIds = subactionIds
-      break;
-      case 'addList':
-        if(!subactionIds.length){
+        this.campaignIds = subactionIds
+        break
+      case "addList":
+        if (subactionIds.length > 0) {
           throw "'Add to list' was selected, but additional action ID was not provided"
         }
-      this.addListIds = subactionIds
-      break;
-      case 'removeList':
-        if(!subactionIds.length){
+        this.addListIds = subactionIds
+        break
+      case "removeList":
+        if (subactionIds.length > 0) {
           throw "'Remove from list' was selected, but additional action ID was not provided"
         }
-      this.removeListIds = subactionIds
-      break;
+        this.removeListIds = subactionIds
+        break
       default:
         throw "Unrecognized additional action type"
-      break
+        break
     }
-	
+
     this.lookupField = request.formParams.lookupField
     if (!this.lookupField) {
       throw "Missing Lookup Field."
@@ -165,22 +169,25 @@ export class MarketoTransaction {
       }
     })
 
-    for (let campaignId of this.campaignIds){
+    for (const campaignId of this.campaignIds) {
       const response = await this.marketo.campaign.request(campaignId, ids)
-      result.membershipErrors = result.membershipErrors.concat(response.errors || [])
+      result.membershipErrors =
+        result.membershipErrors.concat(response.errors !== undefined ? response.errors : [])
     }
 
-    for (let listId of this.addListIds){
+    for (const listId of this.addListIds) {
       const response = await this.marketo.list.addLeadsToList(listId, ids)
-      result.membershipErrors = result.membershipErrors.concat(response.errors || [])
+      result.membershipErrors =
+        result.membershipErrors.concat(response.errors !== undefined ? response.errors : [])
     }
 
-    for (let listId of this.removeListIds){
-      let leadIds = ids.map(obj=>obj.id)
+    for (const listId of this.removeListIds) {
+      const leadIds = ids.map((obj) => obj.id)
       // ^ Unlike the other two methods, removeLeadsFromList does not automatically pick the ID from an object
       // https://github.com/MadKudu/node-marketo/blob/master/lib/api/list.js#L38
       const response = await this.marketo.list.removeLeadsFromList(listId, leadIds)
-      result.membershipErrors = result.membershipErrors.concat(response.errors || [])
+      result.membershipErrors =
+        result.membershipErrors.concat(response.errors !== undefined ? response.errors : [])
     }
 
     return result
