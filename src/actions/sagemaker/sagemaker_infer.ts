@@ -145,7 +145,7 @@ export class SageMakerInferAction extends Hub.Action {
       const client = this.getSageMakerClientFromRequest(request)
 
       const s3InputPath = `s3://${bucket}/${inputDataKey}`
-      const s3OutputPath = `s3://${bucket}`
+      const s3OutputPath = `s3://${bucket}/${inputDataKey}`
       winston.debug("s3InputPath", s3InputPath)
       winston.debug("s3OutputPath", s3OutputPath)
 
