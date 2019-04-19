@@ -1,5 +1,3 @@
-/* tslint:disable max-line-length */
-
 import * as Hub from "../../hub"
 
 import * as S3 from "aws-sdk/clients/s3"
@@ -11,6 +9,11 @@ import { logRejection } from "./utils"
 
 const stripLines = require("striplines")
 const stripColumns = require("./strip_columns.js")
+
+const debug = require("debug")
+const log = debug("infer")
+log("start")
+// import concatStream = require("concat-stream")
 
 export class SageMakerInferAction extends Hub.Action {
 
@@ -105,36 +108,35 @@ export class SageMakerInferAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
+    // get string inputs
+    const {
+      modelName,
+      bucket,
+      awsInstanceType,
+    } = request.formParams
+
+    const { roleArn } = request.params
+
+    // validate string inputs
+    if (!modelName) {
+      throw "Missing required param: modelName"
+    }
+    if (!bucket) {
+      throw "Missing required param: bucket"
+    }
+    if (!awsInstanceType) {
+      throw "Missing required param: awsInstanceType"
+    }
+    if (!roleArn) {
+      throw "Missing required param: roleArn"
+    }
+
+    const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
+    const numStripColumns = this.getNumericFormParam(request, "numStripColumns", 0, 2)
+
     try {
-      // get string inputs
-      const {
-        modelName,
-        bucket,
-        awsInstanceType,
-      } = request.formParams
-
-      const { roleArn } = request.params
-
-      // validate string inputs
-      if (!modelName) {
-        throw new Error("Need SageMaker model name.")
-      }
-      if (!bucket) {
-        throw new Error("Need Amazon S3 bucket.")
-      }
-      if (!awsInstanceType) {
-        throw new Error("Need Amazon awsInstanceType.")
-      }
-      if (!roleArn) {
-        throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
-      }
-
-      const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
-      const numStripColumns = this.getNumericFormParam(request, "numStripColumns", 0, 2)
-
       // upload data to S3
-      const date = Date.now()
-      const jobName = `transform-job-${date}`
+      const jobName = this.getJobName()
       const inputDataKey = `${jobName}/transform-input`
       const rawDataKey = `${jobName}/transform-raw`
       const outputDataKey = `${jobName}/transform-output`
@@ -221,6 +223,7 @@ export class SageMakerInferAction extends Hub.Action {
         ],
         type: "select",
         default: "0",
+        // tslint:disable-next-line max-line-length
         description: "Columns to remove before running inference task. Columns must be first or second column in the data provided. Use this to remove key, target variable, or both.",
       },
       {
@@ -249,6 +252,7 @@ export class SageMakerInferAction extends Hub.Action {
           }
         }),
         default: "ml.m4.xlarge",
+        // tslint:disable-next-line max-line-length
         description: "The type of AWS instance to use. More info: More info: https://aws.amazon.com/sagemaker/pricing/instance-types",
       },
       {
@@ -277,17 +281,21 @@ export class SageMakerInferAction extends Hub.Action {
     })
   }
 
+  private getJobName() {
+    return `transform-job-${Date.now()}`
+  }
+
   private getNumericFormParam(request: Hub.ActionRequest, key: string, min: number, max: number) {
     const value = request.formParams[key]
     if (! value) {
-      throw new Error(`Unable to get required param ${key}`)
+      throw `Missing required param: ${key}.`
     }
     const num = Number(value)
     if (isNaN(num)) {
-      throw new Error(`Unable to get required param ${key}`)
+      throw `Missing required param: ${key}`
     }
     if (num < min || num > max) {
-      throw new Error(`Number ${key} (${value}) is out of range: ${min} - ${max}`)
+      throw `Param ${key}: ${value} is out of range: ${min} - ${max}`
     }
     return num
   }
@@ -304,9 +312,16 @@ export class SageMakerInferAction extends Hub.Action {
     return response.Models
   }
 
-  private async uploadToS3(request: Hub.ActionRequest, bucket: string, numStripColumns: number, inputDataKey: string, rawDataKey: string) {
+  private async uploadToS3(
+    request: Hub.ActionRequest,
+    bucket: string,
+    numStripColumns: number,
+    inputDataKey: string,
+    rawDataKey: string,
+  ) {
     return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
       const s3 = this.getS3ClientFromRequest(request)
+      log("numStripColumns", numStripColumns)
 
       function uploadFromStream(key: string) {
         const passthrough = new PassThrough()
