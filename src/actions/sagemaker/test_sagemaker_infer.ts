@@ -3,13 +3,15 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
-import { SageMakerTrainXgboostAction } from "./sagemaker_train_xgboost"
+import { SageMakerInferAction } from "./sagemaker_infer"
 
 import concatStream = require("concat-stream")
 
-const action = new SageMakerTrainXgboostAction()
+const action = new SageMakerInferAction()
 
 describe(`${action.constructor.name} unit tests`, () => {
+
+  const csvData = "a,b,c,d\n1,2,3,4\n5,6,7,8\n"
 
   const validParams = {
     accessKeyId: "mykey",
@@ -27,11 +29,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     modelName: "modelName",
     bucket: "bucket",
     awsInstanceType: "awsInstanceType",
-    objective: "objective",
-    numClass: "3",
     numInstances: "1",
-    numRounds: "1",
-    maxRuntimeInHours: "1",
+    numStripColumns: "2",
   }
 
   function createValidRequest() {
@@ -39,7 +38,17 @@ describe(`${action.constructor.name} unit tests`, () => {
     request.params = validParams
     request.formParams = validFormParams
     request.attachment = {}
-    request.attachment.dataBuffer = Buffer.from("a,b,c,d\n1,2,3,4\n", "utf8")
+    request.attachment.dataBuffer = Buffer.from(csvData, "utf8")
+    request.scheduledPlan = {
+      query: {
+        fields: [
+          "field1",
+          "field2",
+          "field3",
+          "field4",
+        ],
+      },
+    } as any
     request.type = Hub.ActionType.Query
     return request
   }
@@ -82,120 +91,99 @@ describe(`${action.constructor.name} unit tests`, () => {
       testMissingParam("modelName")
       testMissingParam("bucket")
       testMissingParam("awsInstanceType")
-      testMissingParam("objective")
 
-      testMissingNumericParam("numClass")
       testMissingNumericParam("numInstances")
-      testMissingNumericParam("numRounds")
-      testMissingNumericParam("maxRuntimeInHours")
+      testMissingNumericParam("numStripColumns")
 
-      testInvalidNumericParam("numClass", "0", 3, 1000000)
-      testInvalidNumericParam("numClass", "1000001", 3, 1000000)
       testInvalidNumericParam("numInstances", "0", 1, 500)
       testInvalidNumericParam("numInstances", "501", 1, 500)
-      testInvalidNumericParam("numRounds", "0", 1, 1000000)
-      testInvalidNumericParam("numRounds", "1000001", 1, 1000000)
-      testInvalidNumericParam("maxRuntimeInHours", "0", 1, 72)
-      testInvalidNumericParam("maxRuntimeInHours", "73", 1, 72)
+      testInvalidNumericParam("numStripColumns", "-1", 0, 2)
+      testInvalidNumericParam("numStripColumns", "3", 0, 2)
 
     })
 
     describe("with valid parameters", () => {
 
-      it("should upload training data and create training job", () => {
+      it("should upload inference data, upload raw data, and create transform job", () => {
         const request = createValidRequest()
 
         const expectedBucket = "bucket"
-        const expectedKey = "my-job-name/train"
-        const expectedBuffer = Buffer.from("1,2,3,4\n", "utf8")
-        const expectedTrainingParams = {
-          TrainingJobName: "my-job-name",
-          RoleArn: "my-role-arn",
-          AlgorithmSpecification: {
-            TrainingInputMode: "File",
-            TrainingImage: "632365934929.dkr.ecr.us-west-1.amazonaws.com​/xgboost:1",
-          },
-          HyperParameters: {
-            objective: "objective",
-            num_round: "1",
-          },
-          InputDataConfig: [
-            {
-              ChannelName: "train",
-              DataSource: {
-                S3DataSource: {
-                  S3DataType: "S3Prefix",
-                  S3Uri: "s3://bucket/my-job-name/train",
-                },
+        const expectedStrippedBuffer = Buffer.from("3,4\n7,8\n", "utf8")
+        const expectedRawBuffer = Buffer.from(csvData, "utf8")
+
+        const expectedTransformParams = {
+          ModelName: "modelName",
+          TransformJobName: "my-job-name",
+          TransformInput: {
+            DataSource: {
+              S3DataSource: {
+                S3DataType: "S3Prefix",
+                S3Uri: "s3://bucket/my-job-name/transform-input",
               },
-              ContentType: "text/csv",
             },
-          ],
-          OutputDataConfig: {
-            S3OutputPath: "s3://bucket",
+            ContentType: "text/csv",
           },
-          ResourceConfig: {
+          TransformOutput: {
+            S3OutputPath: "s3://bucket/my-job-name/transform-output",
+          },
+          TransformResources: {
             InstanceCount: 1,
             InstanceType: "awsInstanceType",
-            VolumeSizeInGB: 10,
-          },
-          StoppingCondition: {
-            MaxRuntimeInSeconds: 3600,
           },
         }
 
         const stubJobName = sinon.stub(action as any, "getJobName")
           .callsFake(() => "my-job-name")
 
-        const getBucketLocationSpy = sinon.spy((params: any) => {
-          chai.expect(params.Bucket).to.equal(expectedBucket)
-          return { promise: async () => {
-            return {
-              LocationConstraint: "us-west-1",
-            }
-          }}
-        })
-
+        const uploads: any = {}
         const uploadSpy = sinon.spy((params: any, callback: any) => {
-          chai.expect(params.Key).to.equal(expectedKey)
-          chai.expect(params.Bucket).to.equal(expectedBucket)
           params.Body.pipe(concatStream((buffer) => {
-            chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
+            uploads[params.Key] = buffer
             callback(null)
           }))
         })
 
         const stubClient = sinon.stub(action as any, "getS3ClientFromRequest")
           .callsFake(() => ({
-            getBucketLocation: getBucketLocationSpy,
             upload: uploadSpy,
           }))
 
-        const createTrainingJobSpy = sinon.spy((params: any) => {
-          chai.expect(params).to.deep.equal(expectedTrainingParams)
+        const createTransformJobSpy = sinon.spy((params: any) => {
+          chai.expect(params).to.deep.equal(expectedTransformParams)
           return { promise: async () => null }
         })
 
         const stubSagemaker = sinon.stub(action as any, "getSageMakerClientFromRequest")
           .callsFake(() => ({
-            createTrainingJob: createTrainingJobSpy,
+            createTransformJob: createTransformJobSpy,
           }))
-
-        const stubPoller = sinon.stub(action as any, "startPoller")
 
         return chai.expect(action.validateAndExecute(request))
           .to.be.fulfilled
           .then((result) => {
             chai.expect(result.success, "result.success").to.be.true
             chai.expect(stubJobName, "stubJobName").to.have.been.called
-            chai.expect(getBucketLocationSpy, "getBucketLocationSpy").to.have.been.called
+
             chai.expect(uploadSpy, "uploadSpy").to.have.been.called
-            chai.expect(createTrainingJobSpy, "createTrainingJobSpy").to.have.been.called
-            chai.expect(stubPoller, "stubPoller").to.have.been.called
+            chai.expect(uploadSpy.callCount, "uploadSpy.callCount").to.equal(2)
+
+            const stripped: any = uploadSpy.args[0][0]
+            const strippedBuffer = uploads[stripped.Key]
+            chai.expect(stripped.Bucket).to.equal(expectedBucket)
+            chai.expect(stripped.Key).to.equal("my-job-name/transform-input")
+            chai.expect(strippedBuffer.toString()).to.equal(expectedStrippedBuffer.toString())
+
+            const raw: any = uploadSpy.args[1][0]
+            const rawBuffer = uploads[raw.Key]
+            chai.expect(raw.Bucket).to.equal(expectedBucket)
+            chai.expect(raw.Key).to.equal("my-job-name/transform-raw")
+            chai.expect(rawBuffer.toString()).to.equal(expectedRawBuffer.toString())
+
+            chai.expect(createTransformJobSpy, "createTransformJobSpy").to.have.been.called
+            // const raw: any = uploadSpy.args[1]
             stubJobName.restore()
             stubClient.restore()
             stubSagemaker.restore()
-            stubPoller.restore()
           })
       })
 
@@ -218,8 +206,26 @@ describe(`${action.constructor.name} unit tests`, () => {
                 return new Promise<any>((resolve) => {
                   resolve({
                     Buckets: [
-                      { Name: "A" },
-                      { Name: "B" },
+                      { Name: "BucketA" },
+                      { Name: "BucketB" },
+                    ],
+                  })
+                })
+              },
+            }
+          },
+        }))
+
+      const stubSagemaker = sinon.stub(action as any, "getSageMakerClientFromRequest")
+        .callsFake(() => ({
+          listModels: () => {
+            return {
+              promise: async () => {
+                return new Promise<any>((resolve) => {
+                  resolve({
+                    Models: [
+                      { ModelName: "ModelA" },
+                      { ModelName: "ModelB" },
                     ],
                   })
                 })
@@ -236,59 +242,62 @@ describe(`${action.constructor.name} unit tests`, () => {
       const expected = {
         fields: [
           {
-            type: "string",
-            label: "Model Name",
+            label: "Model",
             name: "modelName",
             required: true,
-            description: "The name for model to be created after training is complete.",
+            options: [
+              {
+                name: "ModelA",
+                label: "ModelA",
+              },
+              {
+                name: "ModelB",
+                label: "ModelB",
+              },
+            ],
+            type: "select",
+            description: "The S3 bucket where SageMaker input training data should be stored",
           },
           {
+            label: "Strip Columns",
+            name: "numStripColumns",
+            required: true,
+            options: [
+              {
+                name: "0",
+                label: "None",
+              },
+              {
+                name: "1",
+                label: "First Column",
+              },
+              {
+                name: "2",
+                label: "First & Second Column",
+              },
+            ],
             type: "select",
-            label: "Bucket",
+            default: "0",
+            // tslint:disable-next-line max-line-length
+            description: "Columns to remove before running inference task. Columns must be first or second column in the data provided. Use this to remove key, target variable, or both.",
+          },
+          {
+            label: "Output Bucket",
             name: "bucket",
             required: true,
             options: [
               {
-                name: "A",
-                label: "A",
+                name: "BucketA",
+                label: "BucketA",
               },
               {
-                name: "B",
-                label: "B",
+                name: "BucketB",
+                label: "BucketB",
               },
             ],
-            default: "A",
-            description: "The S3 bucket where SageMaker input training data should be stored",
-          },
-          {
             type: "select",
-            label: "Objective",
-            name: "objective",
-            required: true,
-            options: [
-              {
-                name: "binary:logistic",
-                label: "binary:logistic",
-              },
-              {
-                name: "reg:linear",
-                label: "reg:linear",
-              },
-              {
-                name: "multi:softmax",
-                label: "multi:softmax",
-              },
-            ],
-            default: "binary:logistic",
-            description: "The type of classification to be performed.",
-          },
-          {
-            type: "string",
-            label: "Number of classes",
-            name: "numClass",
-            default: "3",
-            // tslint:disable-next-line max-line-length
-            description: "The number of classifications. Valid values: 3 to 1000000. Required if objective is multi:softmax. Otherwise ignored.",
+            default: "BucketA",
+            description: "The S3 bucket where inference data should be stored",
           },
           {
             type: "select",
@@ -412,26 +421,13 @@ describe(`${action.constructor.name} unit tests`, () => {
             default: "1",
             description: "The number of instances to run. Valid values: 1 to 500.",
           },
-          {
-            type: "string",
-            label: "Number of rounds",
-            name: "numRounds",
-            default: "100",
-            description: "The number of rounds to run. Valid values: 1 to 1000000.",
-          },
-          {
-            type: "string",
-            label: "Maximum runtime in hours",
-            name: "maxRuntimeInHours",
-            default: "12",
-            description: "Maximum allowed time for the job to run, in hours. Valid values: 1 to 72.",
-          },
         ],
       }
 
       chai.expect(form)
         .to.eventually.deep.equal(expected)
         .and.notify(stubClient.restore)
+        .and.notify(stubSagemaker.restore)
         .and.notify(done)
     })
 

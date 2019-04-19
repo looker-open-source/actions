@@ -10,11 +10,6 @@ import { logRejection } from "./utils"
 const stripLines = require("striplines")
 const stripColumns = require("./strip_columns.js")
 
-const debug = require("debug")
-const log = debug("infer")
-log("start")
-// import concatStream = require("concat-stream")
-
 export class SageMakerInferAction extends Hub.Action {
 
   name = "amazon_sagemaker_infer"
@@ -321,7 +316,6 @@ export class SageMakerInferAction extends Hub.Action {
   ) {
     return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
       const s3 = this.getS3ClientFromRequest(request)
-      log("numStripColumns", numStripColumns)
 
       function uploadFromStream(key: string) {
         const passthrough = new PassThrough()

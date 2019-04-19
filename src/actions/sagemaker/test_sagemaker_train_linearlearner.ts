@@ -3,10 +3,6 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
-const debug = require("debug")
-const log = debug("test")
-log("start")
-
 import { SageMakerTrainLinearLearnerAction } from "./sagemaker_train_linearlearner"
 
 import concatStream = require("concat-stream")
@@ -43,7 +39,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     request.params = validParams
     request.formParams = validFormParams
     request.attachment = {}
-    request.attachment.dataBuffer = Buffer.from("a,b,c,d\n1,2,3,4", "utf8")
+    request.attachment.dataBuffer = Buffer.from("a,b,c,d\n1,2,3,4\n", "utf8")
     request.scheduledPlan = {
       query: {
         fields: [
@@ -121,7 +117,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
         const expectedBucket = "bucket"
         const expectedKey = "my-job-name/train"
-        const expectedBuffer = Buffer.from("1,2,3,4", "utf8")
+        const expectedBuffer = Buffer.from("1,2,3,4\n", "utf8")
         const expectedTrainingParams = {
           TrainingJobName: "my-job-name",
           RoleArn: "my-role-arn",
