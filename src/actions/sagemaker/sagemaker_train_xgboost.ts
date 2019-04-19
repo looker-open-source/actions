@@ -96,6 +96,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
+
     // get string inputs
     const {
       modelName,

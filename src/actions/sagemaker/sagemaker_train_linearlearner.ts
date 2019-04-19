@@ -1,5 +1,3 @@
-/* tslint:disable max-line-length */
-
 import * as Hub from "../../hub"
 import { THIRTY_SECONDS, TrainingJobPoller, Transaction } from "./training_job_poller"
 
@@ -99,52 +97,52 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
 
+    // get string inputs
+    const {
+      modelName,
+      bucket,
+      awsInstanceType,
+      predictorType,
+    } = request.formParams
+
+    const { roleArn } = request.params
+
+    const { fields } = request.scheduledPlan!.query!
+    if (! Array.isArray(fields)) {
+      throw new Error("Unabled to access query fields.")
+    }
+
+    const featureDim = fields.length - 1
+
+    // validate string inputs
+    if (!modelName) {
+      throw "Missing required param: modelName"
+    }
+    if (!bucket) {
+      throw "Missing required param: bucket"
+    }
+    if (!awsInstanceType) {
+      throw "Missing required param: awsInstanceType"
+    }
+    if (!predictorType) {
+      throw "Missing required param: predictorType"
+    }
+    if (!roleArn) {
+      throw "Missing required param: roleArn"
+    }
+
+    const jobName = this.getJobName(modelName)
+    const numClasses = this.getNumericFormParam(request, "numClasses", 3, 1000000)
+    const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
+    const epochs = this.getNumericFormParam(request, "epochs", 1, 1000000)
+    const maxRuntimeInHours = this.getNumericFormParam(request, "maxRuntimeInHours", 1, 72)
+    const maxRuntimeInSeconds = maxRuntimeInHours * 60 * 60
+
     try {
-      // get string inputs
-      const {
-        modelName,
-        bucket,
-        awsInstanceType,
-        predictorType,
-      } = request.formParams
-
-      const { roleArn } = request.params
-
-      const { fields } = request.scheduledPlan!.query!
-      if (! Array.isArray(fields)) {
-        throw new Error("Unabled to access query fields.")
-      }
-
-      const featureDim = fields.length - 1
-
-      // validate string inputs
-      if (!modelName) {
-        throw new Error("Need SageMaker model name.")
-      }
-      if (!bucket) {
-        throw new Error("Need Amazon S3 bucket.")
-      }
-      if (!awsInstanceType) {
-        throw new Error("Need Amazon awsInstanceType.")
-      }
-      if (!predictorType) {
-        throw new Error("Need training predictor type.")
-      }
-      if (!roleArn) {
-        throw new Error("Need Amazon Role ARN for SageMaker & S3 Access.")
-      }
-
-      const jobName = `${modelName}-${Date.now()}`
-      const numClasses = this.getNumericFormParam(request, "numClasses", 3, 1000000)
-      const numInstances = this.getNumericFormParam(request, "numInstances", 1, 500)
-      const epochs = this.getNumericFormParam(request, "epochs", 1, 1000000)
-      const maxRuntimeInHours = this.getNumericFormParam(request, "maxRuntimeInHours", 1, 72)
-      const maxRuntimeInSeconds = maxRuntimeInHours * 60 * 60
-
       // get region for bucket
       const region = await this.getBucketLocation(request, bucket)
       if (! region) {
-        throw new Error("Unable to determine bucket region.")
+        throw "Unable to determine bucket region."
       }
 
       // set up variables required for API calls
@@ -221,7 +219,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
         trainingImage,
         pollIntervalInSeconds: THIRTY_SECONDS,
       }
-      new TrainingJobPoller(transaction)
+      this.startPoller(transaction)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
@@ -235,7 +233,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
 
     const buckets = await this.listBuckets(request)
     if (! Array.isArray(buckets)) {
-      throw new Error("Unable to retrieve buckets")
+      throw "Unable to retrieve buckets"
     }
 
     const form = new Hub.ActionForm()
@@ -288,6 +286,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
         label: "Number of classes",
         name: "numClasses",
         default: "3",
+        // tslint:disable-next-line max-line-length
         description: "The number of classifications. Valid values: 3 to 1000000. Required if predictor type is multiclass_classifier. Otherwise ignored.",
       },
       {
@@ -302,6 +301,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
           }
         }),
         default: "ml.m4.xlarge",
+        // tslint:disable-next-line max-line-length
         description: "The type of AWS instance to use. More info: More info: https://aws.amazon.com/sagemaker/pricing/instance-types",
       },
       {
@@ -344,17 +344,21 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
     })
   }
 
+  private getJobName(modelName: string) {
+    return `${modelName}-${Date.now()}`
+  }
+
   private getNumericFormParam(request: Hub.ActionRequest, key: string, min: number, max: number) {
     const value = request.formParams[key]
     if (! value) {
-      throw new Error(`Unable to get required param ${key}`)
+      throw `Missing required param: ${key}.`
     }
     const num = Number(value)
     if (isNaN(num)) {
-      throw new Error(`Unable to get required param ${key}`)
+      throw `Missing required param: ${key}`
     }
     if (num < min || num > max) {
-      throw new Error(`Number ${key} (${value}) is out of range: ${min} - ${max}`)
+      throw `Param ${key}: ${value} is out of range: ${min} - ${max}`
     }
     return num
   }
@@ -405,6 +409,10 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
       })
       .catch(logRejection)
     })
+  }
+
+  private startPoller(transaction: Transaction) {
+    new TrainingJobPoller(transaction)
   }
 
 }

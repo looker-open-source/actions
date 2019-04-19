@@ -3,11 +3,15 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
-import { SageMakerTrainXgboostAction } from "./sagemaker_train_xgboost"
+const debug = require("debug")
+const log = debug("test")
+log("start")
+
+import { SageMakerTrainLinearLearnerAction } from "./sagemaker_train_linearlearner"
 
 import concatStream = require("concat-stream")
 
-const action = new SageMakerTrainXgboostAction()
+const action = new SageMakerTrainLinearLearnerAction()
 
 describe(`${action.constructor.name} unit tests`, () => {
 
@@ -27,10 +31,10 @@ describe(`${action.constructor.name} unit tests`, () => {
     modelName: "modelName",
     bucket: "bucket",
     awsInstanceType: "awsInstanceType",
-    objective: "objective",
-    numClass: "3",
+    predictorType: "predictorType",
+    numClasses: "3",
     numInstances: "1",
-    numRounds: "1",
+    epochs: "1",
     maxRuntimeInHours: "1",
   }
 
@@ -40,6 +44,16 @@ describe(`${action.constructor.name} unit tests`, () => {
     request.formParams = validFormParams
     request.attachment = {}
     request.attachment.dataBuffer = Buffer.from("a,b,c,d\n1,2,3,4", "utf8")
+    request.scheduledPlan = {
+      query: {
+        fields: [
+          "field1",
+          "field2",
+          "field3",
+          "field4",
+        ],
+      },
+    } as any
     request.type = Hub.ActionType.Query
     return request
   }
@@ -82,19 +96,19 @@ describe(`${action.constructor.name} unit tests`, () => {
       testMissingParam("modelName")
       testMissingParam("bucket")
       testMissingParam("awsInstanceType")
-      testMissingParam("objective")
+      testMissingParam("predictorType")
 
-      testMissingNumericParam("numClass")
+      testMissingNumericParam("numClasses")
       testMissingNumericParam("numInstances")
-      testMissingNumericParam("numRounds")
+      testMissingNumericParam("epochs")
       testMissingNumericParam("maxRuntimeInHours")
 
-      testInvalidNumericParam("numClass", "0", 3, 1000000)
-      testInvalidNumericParam("numClass", "1000001", 3, 1000000)
+      testInvalidNumericParam("numClasses", "0", 3, 1000000)
+      testInvalidNumericParam("numClasses", "1000001", 3, 1000000)
       testInvalidNumericParam("numInstances", "0", 1, 500)
       testInvalidNumericParam("numInstances", "501", 1, 500)
-      testInvalidNumericParam("numRounds", "0", 1, 1000000)
-      testInvalidNumericParam("numRounds", "1000001", 1, 1000000)
+      testInvalidNumericParam("epochs", "0", 1, 1000000)
+      testInvalidNumericParam("epochs", "1000001", 1, 1000000)
       testInvalidNumericParam("maxRuntimeInHours", "0", 1, 72)
       testInvalidNumericParam("maxRuntimeInHours", "73", 1, 72)
 
@@ -113,11 +127,12 @@ describe(`${action.constructor.name} unit tests`, () => {
           RoleArn: "my-role-arn",
           AlgorithmSpecification: {
             TrainingInputMode: "File",
-            TrainingImage: "632365934929.dkr.ecr.us-west-1.amazonaws.com​/xgboost:1",
+            TrainingImage: "632365934929.dkr.ecr.us-west-1.amazonaws.com/linear-learner:1",
           },
           HyperParameters: {
-            objective: "objective",
-            num_round: "1",
+            predictor_type: "predictorType",
+            feature_dim: "3",
+            epochs: "1",
           },
           InputDataConfig: [
             {
@@ -262,33 +277,33 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
           {
             type: "select",
-            label: "Objective",
-            name: "objective",
+            label: "Predictor Type",
+            name: "predictorType",
             required: true,
             options: [
               {
-                name: "binary:logistic",
-                label: "binary:logistic",
+                name: "binary_classifier",
+                label: "binary_classifier",
               },
               {
-                name: "reg:linear",
-                label: "reg:linear",
+                name: "multiclass_classifier",
+                label: "multiclass_classifier",
               },
               {
-                name: "multi:softmax",
-                label: "multi:softmax",
+                name: "regressor",
+                label: "regressor",
               },
             ],
-            default: "binary:logistic",
-            description: "The type of classification to be performed.",
+            default: "binary_classifier",
+            description: "The type of predictor to be performed.",
           },
           {
             type: "string",
             label: "Number of classes",
-            name: "numClass",
+            name: "numClasses",
             default: "3",
             // tslint:disable-next-line max-line-length
-            description: "The number of classifications. Valid values: 3 to 1000000. Required if objective is multi:softmax. Otherwise ignored.",
+            description: "The number of classifications. Valid values: 3 to 1000000. Required if predictor type is multiclass_classifier. Otherwise ignored.",
           },
           {
             type: "select",
@@ -414,10 +429,10 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
           {
             type: "string",
-            label: "Number of rounds",
-            name: "numRounds",
-            default: "100",
-            description: "The number of rounds to run. Valid values: 1 to 1000000.",
+            label: "Epochs",
+            name: "epochs",
+            default: "15",
+            description: "The number of rounds to run. Valid values: 1 to 100000.",
           },
           {
             type: "string",
