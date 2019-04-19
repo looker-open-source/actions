@@ -3,53 +3,11 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
-const debug = require("debug")
-const log = debug("test")
-log("start")
-
 import { SageMakerTrainXgboostAction } from "./sagemaker_train_xgboost"
 
 import concatStream = require("concat-stream")
 
 const action = new SageMakerTrainXgboostAction()
-
-function expectAmazonS3Match(thisAction: SageMakerTrainXgboostAction, request: Hub.ActionRequest, match: any) {
-
-  const expectedBuffer = match.Body
-  delete match.Body
-
-  const getJobNameSpy = sinon.spy(() => match.jobName)
-
-  const getBucketLocationSpy = sinon.spy((params: any) => {
-    chai.expect(params.Bucket).to.equal(match.Bucket)
-    return { promise: async () => {
-      return {
-        LocationConstraint: "my-region",
-      }
-    }}
-  })
-
-  const uploadSpy = sinon.spy(async (params: any) => {
-    params.Body.pipe(concatStream((buffer) => {
-      chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
-    }))
-    return { promise: async () => Promise.resolve() }
-  })
-
-  const stubClient = sinon.stub(thisAction as any, "getS3ClientFromRequest")
-    .callsFake(() => ({
-      getJobName: getJobNameSpy,
-      getBucketLocation: getBucketLocationSpy,
-      upload: uploadSpy,
-    }))
-
-  return chai.expect(thisAction.validateAndExecute(request)).to.be.fulfilled.then(() => {
-    chai.expect(getJobNameSpy, "getJobNameSpy").to.have.been.called
-    chai.expect(getBucketLocationSpy, "getBucketLocationSpy").to.have.been.called
-    chai.expect(uploadSpy, "uploadSpy").to.have.been.called
-    stubClient.restore()
-  })
-}
 
 describe(`${action.constructor.name} unit tests`, () => {
 
@@ -81,14 +39,14 @@ describe(`${action.constructor.name} unit tests`, () => {
     request.params = validParams
     request.formParams = validFormParams
     request.attachment = {}
-    request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+    request.attachment.dataBuffer = Buffer.from("a,b,c,d\n1,2,3,4", "utf8")
     request.type = Hub.ActionType.Query
     return request
   }
 
   describe("action", () => {
 
-    describe("parameter validation", () => {
+    describe("with invalid parameters", () => {
 
       function testMissingParam(param: string, value?: any|undefined) {
         it(`${param} is ${value}`, () => {
@@ -142,21 +100,103 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     })
 
-    describe("valid request", () => {
+    describe("with valid parameters", () => {
 
-      xit("should upload training data to right bucket", () => {
+      it("should upload training data and create training job", () => {
         const request = createValidRequest()
 
-        return expectAmazonS3Match(action, request, {
-          jobName: "my-job-name",
-          Bucket: "bucket",
-          Key: "stubSuggestedFilename",
-          Body: Buffer.from("1,2,3,4", "utf8"),
-        })
-      })
+        const expectedBucket = "bucket"
+        const expectedKey = "my-job-name/train"
+        const expectedBuffer = Buffer.from("1,2,3,4", "utf8")
+        const expectedTrainingParams = {
+          TrainingJobName: "my-job-name",
+          RoleArn: "my-role-arn",
+          AlgorithmSpecification: {
+            TrainingInputMode: "File",
+            TrainingImage: "632365934929.dkr.ecr.us-west-1.amazonaws.com​/xgboost:1",
+          },
+          HyperParameters: {
+            objective: "objective",
+            num_round: "1",
+          },
+          InputDataConfig: [
+            {
+              ChannelName: "train",
+              DataSource: {
+                S3DataSource: {
+                  S3DataType: "S3Prefix",
+                  S3Uri: "s3://bucket/my-job-name/train",
+                },
+              },
+              ContentType: "text/csv",
+            },
+          ],
+          OutputDataConfig: {
+            S3OutputPath: "s3://bucket",
+          },
+          ResourceConfig: {
+            InstanceCount: 1,
+            InstanceType: "awsInstanceType",
+            VolumeSizeInGB: 10,
+          },
+          StoppingCondition: {
+            MaxRuntimeInSeconds: 3600,
+          },
+        }
 
-      it("should create training job")
-      it("should poll for training job completion")
+        const stubJobName = sinon.stub(action as any, "getJobName")
+          .callsFake(() => "my-job-name")
+
+        const getBucketLocationSpy = sinon.spy((params: any) => {
+          chai.expect(params.Bucket).to.equal(expectedBucket)
+          return { promise: async () => {
+            return {
+              LocationConstraint: "us-west-1",
+            }
+          }}
+        })
+
+        const uploadSpy = sinon.spy((params: any, callback: any) => {
+          chai.expect(params.Key).to.equal(expectedKey)
+          chai.expect(params.Bucket).to.equal(expectedBucket)
+          params.Body.pipe(concatStream((buffer) => {
+            chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
+            callback(null)
+          }))
+        })
+
+        const stubClient = sinon.stub(action as any, "getS3ClientFromRequest")
+          .callsFake(() => ({
+            getBucketLocation: getBucketLocationSpy,
+            upload: uploadSpy,
+          }))
+
+        const createTrainingJobSpy = sinon.spy((params: any) => {
+          chai.expect(params).to.deep.equal(expectedTrainingParams)
+          return { promise: async () => null }
+        })
+
+        const stubSagemaker = sinon.stub(action as any, "getSageMakerClientFromRequest")
+          .callsFake(() => ({
+            createTrainingJob: createTrainingJobSpy,
+          }))
+
+        const stubPoller = sinon.stub(action as any, "startPoller")
+
+        return chai.expect(action.validateAndExecute(request))
+          .to.be.fulfilled
+          .then(() => {
+            chai.expect(stubJobName, "stubJobName").to.have.been.called
+            chai.expect(getBucketLocationSpy, "getBucketLocationSpy").to.have.been.called
+            chai.expect(uploadSpy, "uploadSpy").to.have.been.called
+            chai.expect(createTrainingJobSpy, "createTrainingJobSpy").to.have.been.called
+            chai.expect(stubPoller, "stubPoller").to.have.been.called
+            stubJobName.restore()
+            stubClient.restore()
+            stubSagemaker.restore()
+            stubPoller.restore()
+          })
+      })
 
     })
   })

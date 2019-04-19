@@ -1,5 +1,3 @@
-/* tslint:disable max-line-length */
-
 import * as Hub from "../../hub"
 import { THIRTY_SECONDS, TrainingJobPoller, Transaction } from "./training_job_poller"
 
@@ -12,10 +10,6 @@ import { awsInstanceTypes } from "./aws_instance_types"
 import { logRejection } from "./utils"
 
 const striplines = require("striplines")
-
-const debug = require("debug")
-const log = debug("module")
-log("start")
 
 export class SageMakerTrainXgboostAction extends Hub.Action {
 
@@ -216,7 +210,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
         trainingImage,
         pollIntervalInSeconds: THIRTY_SECONDS,
       }
-      new TrainingJobPoller(transaction)
+      this.startPoller(transaction)
 
       // return success response
       return new Hub.ActionResponse({ success: true })
@@ -283,6 +277,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
         label: "Number of classes",
         name: "numClass",
         default: "3",
+        // tslint:disable-next-line max-line-length
         description: "The number of classifications. Valid values: 3 to 1000000. Required if objective is multi:softmax. Otherwise ignored.",
       },
       {
@@ -297,6 +292,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
           }
         }),
         default: "ml.m4.xlarge",
+        // tslint:disable-next-line max-line-length
         description: "The type of AWS instance to use. More info: More info: https://aws.amazon.com/sagemaker/pricing/instance-types",
       },
       {
@@ -371,7 +367,6 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
       Bucket: bucket,
     }
     const response = await s3.getBucketLocation(params).promise()
-    log("response", response)
 
     return response.LocationConstraint
   }
@@ -405,6 +400,10 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
       })
       .catch(logRejection)
     })
+  }
+
+  private startPoller(transaction: Transaction) {
+    new TrainingJobPoller(transaction)
   }
 
 }
