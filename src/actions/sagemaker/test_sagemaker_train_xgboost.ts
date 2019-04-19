@@ -88,69 +88,77 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
-    function testMissingParam(param: string, value?: any|undefined) {
-      it(`errors if param ${param} is ${value}`, () => {
-        const request = createValidRequest()
-        request.formParams = { ...validFormParams, [param]: value }
+    describe("parameter validation", () => {
 
-        return chai.expect(action.execute(request))
-          .to.eventually.be.rejectedWith(`Missing required param: ${param}`)
-      })
-    }
+      function testMissingParam(param: string, value?: any|undefined) {
+        it(`${param} is ${value}`, () => {
+          const request = createValidRequest()
+          request.formParams = { ...validFormParams, [param]: value }
 
-    function testMissingNumericParam(param: string, value?: any|undefined) {
-      it(`errors if param ${param} is ${value}`, () => {
-        const request = createValidRequest()
-        request.formParams = { ...validFormParams, [param]: value }
+          return chai.expect(action.execute(request))
+            .to.eventually.be.rejectedWith(`Missing required param: ${param}`)
+        })
+      }
 
-        return chai.expect(action.execute(request))
-          .to.eventually.be.rejectedWith(`Missing required param: ${param}`)
-      })
-    }
+      function testMissingNumericParam(param: string, value?: any|undefined) {
+        it(`${param} is ${value}`, () => {
+          const request = createValidRequest()
+          request.formParams = { ...validFormParams, [param]: value }
 
-    function testInvalidNumericParam(param: string, value: string, min: number, max: number) {
-      it(`errors if param ${param}: ${value} is out of range: ${min} - ${max}`, () => {
-        const request = createValidRequest()
-        request.formParams = { ...validFormParams, [param]: value }
+          return chai.expect(action.execute(request))
+            .to.eventually.be.rejectedWith(`Missing required param: ${param}`)
+        })
+      }
 
-        return chai.expect(action.execute(request))
-          .to.eventually.be.rejectedWith(`Param ${param}: ${value} is out of range: ${min} - ${max}`)
-      })
-    }
+      function testInvalidNumericParam(param: string, value: string, min: number, max: number) {
+        const aboveBelow = (Number(value) < min) ? "below" : "above"
+        it(`${param} is ${aboveBelow} range: ${min} - ${max}`, () => {
+          const request = createValidRequest()
+          request.formParams = { ...validFormParams, [param]: value }
 
-    testMissingParam("modelName")
-    testMissingParam("bucket")
-    testMissingParam("awsInstanceType")
-    testMissingParam("objective")
+          return chai.expect(action.execute(request))
+            .to.eventually.be.rejectedWith(`Param ${param}: ${value} is out of range: ${min} - ${max}`)
+        })
+      }
 
-    testMissingNumericParam("numClass")
-    testMissingNumericParam("numInstances")
-    testMissingNumericParam("numRounds")
-    testMissingNumericParam("maxRuntimeInHours")
+      testMissingParam("modelName")
+      testMissingParam("bucket")
+      testMissingParam("awsInstanceType")
+      testMissingParam("objective")
 
-    testInvalidNumericParam("numClass", "0", 3, 1000000)
-    testInvalidNumericParam("numClass", "1000001", 3, 1000000)
-    testInvalidNumericParam("numInstances", "0", 1, 500)
-    testInvalidNumericParam("numInstances", "501", 1, 500)
-    testInvalidNumericParam("numRounds", "0", 1, 1000000)
-    testInvalidNumericParam("numRounds", "1000001", 1, 1000000)
-    testInvalidNumericParam("maxRuntimeInHours", "0", 1, 72)
-    testInvalidNumericParam("maxRuntimeInHours", "73", 1, 72)
+      testMissingNumericParam("numClass")
+      testMissingNumericParam("numInstances")
+      testMissingNumericParam("numRounds")
+      testMissingNumericParam("maxRuntimeInHours")
 
-    xit("should upload training data to right bucket", () => {
-      const request = createValidRequest()
+      testInvalidNumericParam("numClass", "0", 3, 1000000)
+      testInvalidNumericParam("numClass", "1000001", 3, 1000000)
+      testInvalidNumericParam("numInstances", "0", 1, 500)
+      testInvalidNumericParam("numInstances", "501", 1, 500)
+      testInvalidNumericParam("numRounds", "0", 1, 1000000)
+      testInvalidNumericParam("numRounds", "1000001", 1, 1000000)
+      testInvalidNumericParam("maxRuntimeInHours", "0", 1, 72)
+      testInvalidNumericParam("maxRuntimeInHours", "73", 1, 72)
 
-      return expectAmazonS3Match(action, request, {
-        jobName: "my-job-name",
-        Bucket: "bucket",
-        Key: "stubSuggestedFilename",
-        Body: Buffer.from("1,2,3,4", "utf8"),
-      })
     })
 
-    it("should create training job")
-    it("should poll for training job completion")
+    describe("valid request", () => {
 
+      xit("should upload training data to right bucket", () => {
+        const request = createValidRequest()
+
+        return expectAmazonS3Match(action, request, {
+          jobName: "my-job-name",
+          Bucket: "bucket",
+          Key: "stubSuggestedFilename",
+          Body: Buffer.from("1,2,3,4", "utf8"),
+        })
+      })
+
+      it("should create training job")
+      it("should poll for training job completion")
+
+    })
   })
 
   describe("form", () => {
@@ -159,7 +167,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(action.hasForm).equals(true)
     })
 
-    it("has form with correct buckets", (done) => {
+    it("has form with correct fields", (done) => {
 
       const stubClient = sinon.stub(action as any, "getS3ClientFromRequest")
         .callsFake(() => ({
