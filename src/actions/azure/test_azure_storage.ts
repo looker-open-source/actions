@@ -96,8 +96,8 @@ describe(`${action.constructor.name} unit tests`, () => {
             chai.expect(filter).to.equal(null)
             const containers = {
               entries: [
-                {id: "1", name: "A"},
-                {id: "2", name: "B"},
+                {id: "A", name: "A"},
+                {id: "B", name: "B"},
               ],
             }
             cb(null, containers)
@@ -116,11 +116,11 @@ describe(`${action.constructor.name} unit tests`, () => {
           name: "container",
           required: true,
           options: [
-            {name: "1", label: "A"},
-            {name: "2", label: "B"},
+            {name: "A", label: "A"},
+            {name: "B", label: "B"},
           ],
           type: "select",
-          default: "1",
+          default: "A",
         }, {
           label: "Filename",
           name: "filename",

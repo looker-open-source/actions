@@ -27,70 +27,67 @@ export class AzureStorageAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment"
+    }
+
+    if (!request.formParams.container) {
+      throw "Need Azure container."
+    }
+
+    const blobService = this.azureClientFromRequest(request)
+    const fileName = request.formParams.filename || request.suggestedFilename()
+    const container = request.formParams.container
+    const data = request.attachment.dataBuffer
+
+    if (!fileName) {
+      return new Hub.ActionResponse({ success: false, message: "Cannot determine a filename." })
+    }
+
     return new Promise<Hub.ActionResponse>((resolve, reject) => {
-
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        reject("Couldn't get data from attachment")
-        return
-      }
-
-      if (!request.formParams.container) {
-        reject("Need Azure container.")
-        return
-      }
-
-      const blobService = this.azureClientFromRequest(request)
-      const fileName = request.formParams.filename || request.suggestedFilename()
-
-      if (!fileName) {
-        reject("Cannot determine a filename.")
-        return
-      }
-
       blobService.createBlockBlobFromText(
-        request.formParams.container,
+        container,
         fileName,
-        request.attachment.dataBuffer,
+        data,
         (e?: Error) => {
           if (e) {
-            resolve(new Hub.ActionResponse({ success: false, message: e.message }))
+            reject(new Hub.ActionResponse({success: false, message: e.message}))
           } else {
-            resolve(new Hub.ActionResponse({ success: true }))
+            resolve(new Hub.ActionResponse({success: true}))
           }
         })
     })
   }
 
   async form(request: Hub.ActionRequest) {
-    const promise = new Promise<Hub.ActionForm>((resolve, reject) => {
-      // error in type definition for listContainersSegmented currentToken?
-      // https://github.com/Azure/azure-storage-node/issues/352
-      const blogService: any = this.azureClientFromRequest(request)
+    // error in type definition for listContainersSegmented currentToken?
+    // https://github.com/Azure/azure-storage-node/issues/352
+    const form = new Hub.ActionForm()
+    const blogService: any = this.azureClientFromRequest(request)
+    return new Promise<Hub.ActionForm>((resolve, _reject) => {
       blogService.listContainersSegmented(null, (err: any, res: any) => {
         if (err) {
-          reject(err)
+          form.error = err
+          resolve(form)
         } else {
-          const form = new Hub.ActionForm()
           form.fields = [{
             label: "Container",
             name: "container",
             required: true,
             options: res.entries.map((c: any) => {
-                return {name: c.id, label: c.name}
-              }),
+              return {name: c.name, label: c.name}
+            }),
             type: "select",
-            default: res.entries[0].id,
+            default: res.entries[0].name,
           }, {
             label: "Filename",
             name: "filename",
             type: "string",
           }]
-
           resolve(form)
         }
       })
     })
-    return promise
   }
 
   private azureClientFromRequest(request: Hub.ActionRequest) {

@@ -10,7 +10,7 @@ export class DropboxAction extends Hub.OAuthAction {
     name = "dropbox"
     label = "Dropbox"
     iconName = "dropbox/dropbox.png"
-    description = "Send query results directly to a file in your Dropbox."
+    description = "Send data directly to a Dropbox folder."
     supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
     usesStreaming = false
     minimumSupportedLookerVersion = "6.8.0"
@@ -67,7 +67,7 @@ export class DropboxAction extends Hub.OAuthAction {
       const response = await drop.filesListFolder({path: ""})
       const folderList = response.entries.filter((entries) => (entries[".tag"] === "folder"))
         .map((entries) => ({name: entries.name, label: entries.name}))
-      folderList.unshift({name: "__root", label: "Home Folder"})
+      folderList.unshift({name: "__root", label: "Home"})
       form.fields = [{
         description: "Dropbox folder where file will be saved",
         label: "Select folder to save file",
@@ -77,7 +77,7 @@ export class DropboxAction extends Hub.OAuthAction {
         type: "select",
         default: "__root",
       }, {
-        label: "Enter filename",
+        label: "Enter a name",
         name: "filename",
         type: "string",
         required: true,
