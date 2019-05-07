@@ -102,7 +102,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const options: any = {
       exclude_archived: true,
       limit: 1000,
-      types: "public_channel,private_channel,im"
+      types: "public_channel,private_channel,im",
     }
     async function pageLoaded(accumulatedChannels: any[], response: any): Promise<any[]> {
       const mergedChannels = accumulatedChannels.concat(response.channels)
@@ -121,7 +121,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
     const reformatted: Channel[] = channels.map((channel: any) => ({
       id: channel.id,
-      label: channel.is_im ? "#" : "A" + channel.name,
+      label: channel.is_im ? `#${channel.name}` : `@${channel.user}`,
     }))
     return reformatted
   }

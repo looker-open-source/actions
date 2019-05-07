@@ -143,50 +143,106 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("has form with correct channels", (done) => {
       const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({
-          channels: {
+          conversations: {
             list: (filters: any) => {
               if (filters.cursor) {
                 return {
                   ok: true,
                   channels: [
-                    {id: "3", name: "C", is_member: true},
-                    {id: "4", name: "D", is_member: true},
+                    {
+                      id: "D0C0F7S8Y",
+                      created: 1498500348,
+                      is_im: true,
+                      is_org_shared: false,
+                      user: "U0BS9U4SV",
+                      is_user_deleted: false,
+                      priority: 0,
+                    },
+                    {
+                      id: "D0BSHH4AD",
+                      created: 1498511030,
+                      is_im: true,
+                      is_org_shared: false,
+                      user: "U0C0NS9HN",
+                      is_user_deleted: false,
+                      priority: 0,
+                    },
                   ],
+                  response_metadata: {
+                    next_cursor: "aW1faWQ6RDBCSDk1RExI",
+                  },
                 }
               } else {
                 return {
                   ok: true,
                   channels: [
-                    {id: "1", name: "A", is_member: true},
-                    {id: "2", name: "B", is_member: true},
+                    {
+                      id: "C012AB3CD",
+                      name: "general",
+                      is_channel: true,
+                      is_group: false,
+                      is_im: false,
+                      created: 1449252889,
+                      creator: "U012A3CDE",
+                      is_archived: false,
+                      is_general: true,
+                      unlinked: 0,
+                      name_normalized: "general",
+                      is_shared: false,
+                      is_ext_shared: false,
+                      is_org_shared: false,
+                      pending_shared: [],
+                      is_pending_ext_shared: false,
+                      is_member: true,
+                      is_private: false,
+                      is_mpim: false,
+                      topic: {
+                        value: "Company-wide announcements and work-based matters",
+                        creator: "",
+                        last_set: 0,
+                      },
+                      purpose: {
+                        value: "This channel is for team-wide communication and announcements.",
+                        creator: "",
+                        last_set: 0,
+                      },
+                      previous_names: [],
+                      num_members: 4,
+                    },
+                    {
+                      id: "C061EG9T2",
+                      name: "random",
+                      is_channel: true,
+                      is_group: false,
+                      is_im: false,
+                      created: 1449252889,
+                      creator: "U061F7AUR",
+                      is_archived: false,
+                      is_general: false,
+                      unlinked: 0,
+                      name_normalized: "random",
+                      is_shared: false,
+                      is_ext_shared: false,
+                      is_org_shared: false,
+                      pending_shared: [],
+                      is_pending_ext_shared: false,
+                      is_member: true,
+                      is_private: false,
+                      is_mpim: false,
+                      topic: {
+                        value: "Non-work banter and water cooler conversation",
+                        creator: "",
+                        last_set: 0,
+                      },
+                      purpose: {
+                        value: "A place for non-work-related you'd prefer to keep out.",
+                        creator: "",
+                        last_set: 0,
+                      },
+                      previous_names: [],
+                      num_members: 4,
+                    }
                   ],
-                  response_metadata: {
-                    next_cursor: "cursor",
-                  },
-                }
-              }
-            },
-          },
-          users: {
-            list: (filters: any) => {
-              if (filters.cursor) {
-                return {
-                  ok: true,
-                  members: [
-                    {id: "30", name: "W"},
-                    {id: "40", name: "X"},
-                  ],
-                }
-              } else {
-                return {
-                  ok: true,
-                    members: [
-                      {id: "10", name: "Z"},
-                      {id: "20", name: "Y"},
-                    ],
-                  response_metadata: {
-                    next_cursor: "cursor",
-                  },
                 }
               }
             },
