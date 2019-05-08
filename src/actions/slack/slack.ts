@@ -120,7 +120,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       return mergedChannels
     }
     const paginatedChannels = await pageLoaded([], await slack.conversations.list(options))
-    const channels = paginatedChannels.filter((c: any) =>  c.is_member && !c.is_archived)
+    const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
     const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
     return reformatted
   }
