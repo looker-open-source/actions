@@ -168,9 +168,6 @@ describe(`${action.constructor.name} unit tests`, () => {
                       priority: 0,
                     },
                   ],
-                  response_metadata: {
-                    next_cursor: "aW1faWQ6RDBCSDk1RExI",
-                  },
                 }
               } else {
                 return {
@@ -241,8 +238,11 @@ describe(`${action.constructor.name} unit tests`, () => {
                       },
                       previous_names: [],
                       num_members: 4,
-                    }
+                    },
                   ],
+                  response_metadata: {
+                    next_cursor: "aW1faWQ6RDBCSDk1RExI",
+                  },
                 }
               }
             },
@@ -259,14 +259,11 @@ describe(`${action.constructor.name} unit tests`, () => {
           label: "Share In",
           name: "channel",
           options: [
-            {name: "1", label: "#A"},
-            {name: "2", label: "#B"},
-            {name: "3", label: "#C"},
-            {name: "4", label: "#D"},
-            {name: "10", label: "@Z"},
-            {name: "20", label: "@Y"},
-            {name: "30", label: "@W"},
-            {name: "40", label: "@X"}],
+            {name: "C012AB3CD", label: "#general"},
+            {name: "C061EG9T2", label: "#random"},
+            {name: "D0C0F7S8Y", label: "@U0BS9U4SV"},
+            {name: "D0BSHH4AD", label: "@U0C0NS9HN"},
+          ],
           required: true,
           type: "select",
         }, {
