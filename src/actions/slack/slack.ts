@@ -7,6 +7,8 @@ interface Channel {
   label: string,
 }
 
+const apiLimitSize = 1000
+
 export class SlackAttachmentAction extends Hub.Action {
 
   name = "slack"
@@ -103,7 +105,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const slack = this.slackClientFromRequest(request)
     const options: any = {
       exclude_archived: true,
-      limit: 1000,
+      limit: apiLimitSize,
       types: "public_channel,private_channel",
     }
     async function pageLoaded(accumulatedChannels: any[], response: any): Promise<any[]> {
@@ -128,7 +130,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async usableDMs(request: Hub.ActionRequest) {
     const slack = this.slackClientFromRequest(request)
     const options: any = {
-      limit: 1000,
+      limit: apiLimitSize,
     }
     async function pageLoaded(accumulatedUsers: any[], response: any): Promise<any[]> {
       const mergedUsers = accumulatedUsers.concat(response.members)
