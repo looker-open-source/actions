@@ -150,22 +150,37 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ok: true,
                   channels: [
                     {
-                      id: "D0C0F7S8Y",
-                      created: 1498500348,
-                      is_im: true,
+                      id: "C061EG9T2",
+                      name: "random",
+                      is_channel: true,
+                      is_group: false,
+                      is_im: false,
+                      created: 1449252889,
+                      creator: "U061F7AUR",
+                      is_archived: false,
+                      is_general: false,
+                      unlinked: 0,
+                      name_normalized: "random",
+                      is_shared: false,
+                      is_ext_shared: false,
                       is_org_shared: false,
-                      user: "U0BS9U4SV",
-                      is_user_deleted: false,
-                      priority: 0,
-                    },
-                    {
-                      id: "D0BSHH4AD",
-                      created: 1498511030,
-                      is_im: true,
-                      is_org_shared: false,
-                      user: "U0C0NS9HN",
-                      is_user_deleted: false,
-                      priority: 0,
+                      pending_shared: [],
+                      is_pending_ext_shared: false,
+                      is_member: true,
+                      is_private: false,
+                      is_mpim: false,
+                      topic: {
+                        value: "Non-work banter and water cooler conversation",
+                        creator: "",
+                        last_set: 0,
+                      },
+                      purpose: {
+                        value: "A place for non-work-related you'd prefer to keep out.",
+                        creator: "",
+                        last_set: 0,
+                      },
+                      previous_names: [],
+                      num_members: 4,
                     },
                   ],
                 }
@@ -206,42 +221,33 @@ describe(`${action.constructor.name} unit tests`, () => {
                       previous_names: [],
                       num_members: 4,
                     },
-                    {
-                      id: "C061EG9T2",
-                      name: "random",
-                      is_channel: true,
-                      is_group: false,
-                      is_im: false,
-                      created: 1449252889,
-                      creator: "U061F7AUR",
-                      is_archived: false,
-                      is_general: false,
-                      unlinked: 0,
-                      name_normalized: "random",
-                      is_shared: false,
-                      is_ext_shared: false,
-                      is_org_shared: false,
-                      pending_shared: [],
-                      is_pending_ext_shared: false,
-                      is_member: true,
-                      is_private: false,
-                      is_mpim: false,
-                      topic: {
-                        value: "Non-work banter and water cooler conversation",
-                        creator: "",
-                        last_set: 0,
-                      },
-                      purpose: {
-                        value: "A place for non-work-related you'd prefer to keep out.",
-                        creator: "",
-                        last_set: 0,
-                      },
-                      previous_names: [],
-                      num_members: 4,
-                    },
                   ],
                   response_metadata: {
                     next_cursor: "aW1faWQ6RDBCSDk1RExI",
+                  },
+                }
+              }
+            },
+          },
+          users: {
+            list: (filters: any) => {
+              if (filters.cursor) {
+                return {
+                  ok: true,
+                  members: [
+                    {id: "30", name: "W"},
+                    {id: "40", name: "X"},
+                  ],
+                }
+              } else {
+                return {
+                  ok: true,
+                    members: [
+                      {id: "10", name: "Z"},
+                      {id: "20", name: "Y"},
+                    ],
+                  response_metadata: {
+                    next_cursor: "cursor",
                   },
                 }
               }
@@ -261,8 +267,10 @@ describe(`${action.constructor.name} unit tests`, () => {
           options: [
             {name: "C012AB3CD", label: "#general"},
             {name: "C061EG9T2", label: "#random"},
-            {name: "D0C0F7S8Y", label: "@U0BS9U4SV"},
-            {name: "D0BSHH4AD", label: "@U0C0NS9HN"},
+            {name: "10", label: "@Z"},
+            {name: "20", label: "@Y"},
+            {name: "30", label: "@W"},
+            {name: "40", label: "@X"},
           ],
           required: true,
           type: "select",
