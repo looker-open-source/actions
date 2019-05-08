@@ -20,7 +20,7 @@ export class SlackAttachmentAction extends Hub.Action {
     label: "Slack API Token",
     required: true,
     description: `A Slack API token that includes the permissions "channels:read", \
-"users:read", and "files:write:user". You can follow the instructions to get a token at \
+"groups:read", "im:read", and "files:write:user". You can follow the instructions to get a token at \
 https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     sensitive: true,
   }]
