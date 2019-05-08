@@ -2,8 +2,6 @@ import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
 
-import * as winston from "winston"
-
 interface Channel {
   id: string,
   label: string,
@@ -122,8 +120,6 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       return mergedChannels
     }
     const paginatedChannels = await pageLoaded([], await slack.conversations.list(options))
-    winston.info(`channel response: \n\n\n${JSON.stringify(paginatedChannels)}`)
-
     const channels = paginatedChannels.filter((c: any) =>  c.is_member && !c.is_archived)
     const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
     return reformatted
