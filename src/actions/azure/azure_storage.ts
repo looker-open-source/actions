@@ -9,6 +9,7 @@ export class AzureStorageAction extends Hub.Action {
   iconName = "azure/azure_storage.png"
   description = "Write data files to an Azure container."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  usesStreaming = true
   requiredFields = []
   params = [
     {
@@ -27,36 +28,33 @@ export class AzureStorageAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment"
-    }
 
     if (!request.formParams.container) {
       throw "Need Azure container."
     }
 
-    const blobService = this.azureClientFromRequest(request)
     const fileName = request.formParams.filename || request.suggestedFilename()
     const container = request.formParams.container
-    const data = request.attachment.dataBuffer
 
     if (!fileName) {
       return new Hub.ActionResponse({ success: false, message: "Cannot determine a filename." })
     }
 
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
-      blobService.createBlockBlobFromText(
-        container,
-        fileName,
-        data,
-        (e?: Error) => {
-          if (e) {
-            reject(new Hub.ActionResponse({success: false, message: e.message}))
-          } else {
-            resolve(new Hub.ActionResponse({success: true}))
-          }
+    const blobService = this.azureClientFromRequest(request)
+    const writeStream = blobService.createWriteStreamToBlockBlob(container, fileName)
+
+    try {
+      await request.stream(async (readable) => {
+        return new Promise<any>((resolve, reject) => {
+          readable.pipe(writeStream)
+            .on("error", reject)
+            .on("finish", resolve)
         })
-    })
+      })
+      return new Hub.ActionResponse({ success: true })
+    } catch (e) {
+      return new Hub.ActionResponse({success: false, message: e.message})
+    }
   }
 
   async form(request: Hub.ActionRequest) {
