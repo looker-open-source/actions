@@ -5,6 +5,7 @@ import {URL} from "url"
 import { google } from "googleapis"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
+import { Credentials } from "aws-sdk/clients/cognitoidentity";
 
 export class GoogleSheetsAction extends Hub.OAuthAction {
     name = "google-sheets"
@@ -52,12 +53,12 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     const form = new Hub.ActionForm()
     form.fields = []
 
-    let accessToken = ""
+    let tokens
     if (request.params.state_json) {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.code && stateJson.redirect) {
-          accessToken = await this.getAccessTokenFromCode(stateJson)
+          tokens = await this.getAccessTokenCredentialsFromCode(stateJson)
         }
       } catch { winston.warn("Could not parse state_json") }
     }
@@ -111,6 +112,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
       // 'online' (default) or 'offline' (gets refresh_token)
       access_type: "offline",
       scope: scopes,
+      state: encryptedState,
     })
     return url.toString()
   }
@@ -134,19 +136,39 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     return true
   }
 
-  protected sheetsClientFromRequest(request: Hub.ActionRequest, token: string) {
+  protected async getAccessTokenCredentialsFromCode(stateJson: any) {
+    if (stateJson.code && stateJson.redirect) {
+      const client = this.oauth2Client(stateJson.redirect)
+      const {tokens} = await client.getToken(stateJson.code)
+      return tokens
+    } else {
+      throw "state_json does not contain correct members"
+    }
+  }
+
+  protected sheetsClientFromRequest(request: Hub.ActionRequest, tokens: Credentials) {
     if (request.params.state_json && token === "") {
       try {
         const json = JSON.parse(request.params.state_json)
         token = json.access_token
       } catch (er) {
-        winston.error("cannot parse")
+        winston.error("Could not parse state_json")
       }
     }
-    return new Dropbox({accessToken: token})
+    const client = this.oauth2Client()
+    client.setCredentials({access_token: tokens})
+    return client
+  }
+
+  private oauth2Client(redirectUri: string) {
+    return new google.auth.OAuth2(
+      process.env.GOOGLE_SHEETS_CLIENT_ID,
+      process.env.GOOGLE_SHEETS_CLIENT_SECRET,
+      redirectUri,
+    )
   }
 }
 
 if (process.env.DROPBOX_ACTION_APP_KEY && process.env.DROPBOX_ACTION_APP_SECRET) {
-  Hub.addAction(new DropboxAction())
+  Hub.addAction(new GoogleSheetsAction())
 }
