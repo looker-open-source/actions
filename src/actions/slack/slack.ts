@@ -1,6 +1,8 @@
 import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
+import * as _ from 'underscore'
+
 
 interface Channel {
   id: string,
@@ -124,7 +126,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const paginatedChannels = await pageLoaded([], await slack.channels.list(options))
     const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
     const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
-    return reformatted
+    return _.sortBy(reformatted, "label")
   }
 
   async usableDMs(request: Hub.ActionRequest) {
@@ -150,7 +152,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
     })
     const reformatted: Channel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
-    return reformatted
+    return _.sortBy(reformatted, "label")
   }
 
   private prettySlackError(e: any) {

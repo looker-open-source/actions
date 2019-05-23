@@ -48,6 +48,7 @@
     "@types/semver": "^5.4.0",
     "@types/ssh2-sftp-client": "^2.0.0",
     "@types/twilio": "^0.0.9",
+    "@types/underscore": "^1.8.0",
     "@types/uuid": "^3.4.3",
     "@types/winston": "^2.3.6",
     "airtable": "^0.5.0",
@@ -82,6 +83,7 @@
     "tslint-language-service": "^0.9.8",
     "twilio": "^3.8.0",
     "typescript": "^3.0.1",
+    "underscore": "^1.8.3",
     "uuid": "^3.1.0",
     "winston": "^2.3.1"
   },
