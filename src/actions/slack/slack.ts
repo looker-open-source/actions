@@ -3,7 +3,6 @@ import * as Hub from "../../hub"
 import { WebClient } from "@slack/client"
 import * as _ from 'underscore'
 
-
 interface Channel {
   id: string,
   label: string,
