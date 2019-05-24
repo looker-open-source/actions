@@ -1,7 +1,6 @@
 import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
-import * as _ from 'underscore'
 
 interface Channel {
   id: string,
@@ -71,7 +70,6 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
 
     try {
       const channels = await this.usableChannels(request)
-
       form.fields = [{
         description: "Name of the Slack channel you would like to post to.",
         label: "Share In",
@@ -99,6 +97,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async usableChannels(request: Hub.ActionRequest) {
     let channels = await this.usablePublicChannels(request)
     channels = channels.concat(await this.usableDMs(request))
+    channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
     return channels
   }
 
@@ -125,7 +124,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const paginatedChannels = await pageLoaded([], await slack.channels.list(options))
     const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
     const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
-    return _.sortBy(reformatted, "label")
+    return reformatted
   }
 
   async usableDMs(request: Hub.ActionRequest) {
@@ -151,7 +150,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
     })
     const reformatted: Channel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
-    return _.sortBy(reformatted, "label")
+    return reformatted
   }
 
   private prettySlackError(e: any) {
