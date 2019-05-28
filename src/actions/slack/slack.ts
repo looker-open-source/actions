@@ -70,7 +70,6 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
 
     try {
       const channels = await this.usableChannels(request)
-
       form.fields = [{
         description: "Name of the Slack channel you would like to post to.",
         label: "Share In",
@@ -98,6 +97,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async usableChannels(request: Hub.ActionRequest) {
     let channels = await this.usablePublicChannels(request)
     channels = channels.concat(await this.usableDMs(request))
+    channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
     return channels
   }
 
