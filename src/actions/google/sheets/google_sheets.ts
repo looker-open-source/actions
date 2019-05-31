@@ -8,7 +8,7 @@ import * as winston from "winston"
 import * as Hub from "../../../hub"
 
 export class GoogleSheetsAction extends Hub.OAuthAction {
-    name = "google-sheets"
+    name = "google_sheets"
     label = "Google Sheets"
     iconName = "google/sheets/sheets.svg"
     description = "Create a new Google Sheet."
@@ -24,7 +24,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     const resp = new Hub.ActionResponse()
     if (!(request.attachment && request.attachment.dataBuffer)) {
       resp.success = false
-      resp.message = "No data sent from Looker to be sent to Dropbox."
+      resp.message = "No data sent from Looker to be sent to Google Sheets."
       return resp
     }
 
@@ -55,7 +55,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
             mimeType: "text/csv",
             body: fileBuf,
           },
-        }, {})
+        })
       } catch (e) {
         resp.success = false
         resp.message = e.message
@@ -85,7 +85,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
       label: "Log in",
       description: "In order to send to Google Drive, you will need to log in" +
         " once to your Google account.",
-      oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google-sheets/oauth?state=${ciphertextBlob}`,
+      oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
     })
 
     if (request.params.state_json) {
