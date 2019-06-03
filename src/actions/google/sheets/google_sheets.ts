@@ -41,7 +41,6 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
       const tokens = await this.getAccessTokenCredentialsFromCode(stateJson)
       const drive = await this.driveClientFromRequest(request, tokens)
 
-      resp.success = true
       const fileBuf = request.attachment.dataBuffer
 
       const fileMetadata: drive_v3.Schema$File = {
@@ -58,6 +57,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
           requestBody: fileMetadata,
           media,
         })
+        resp.success = true
       } catch (e) {
         resp.success = false
         resp.message = e.message
@@ -91,9 +91,9 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     })
 
     if (request.params.state_json) {
-      try {
-        const stateJson = JSON.parse(request.params.state_json)
-        if (stateJson.code && stateJson.redirect) {
+      const stateJson = JSON.parse(request.params.state_json)
+      if (stateJson.code && stateJson.redirect) {
+        try {
           const tokens = await this.getAccessTokenCredentialsFromCode(stateJson)
           const drive = await this.driveClientFromRequest(request, tokens)
 
@@ -137,8 +137,8 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
           form.state = new Hub.ActionState()
           form.state.data = JSON.stringify(tokens)
           return form
-        }
-      } catch { winston.warn("Could not parse state_json") }
+        } catch { winston.warn("Log in fail") }
+      }
     }
     return form
   }

@@ -49,10 +49,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
-        stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        stateJson: `{"access_token": "token"}`,
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: `{"access_token": "token"}`,
       }
       return expectDropboxMatch(request,
         {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
@@ -64,8 +62,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {filename: stubFileName, directory: stubDirectory}
       request.type = Hub.ActionType.Query
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -95,8 +91,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -122,8 +116,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }

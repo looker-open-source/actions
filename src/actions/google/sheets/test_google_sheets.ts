@@ -16,17 +16,18 @@ const stubFolder = "stubSuggestedFolder"
 function expectGoogleSheetsMatch(request: Hub.ActionRequest, paramsMatch: any) {
 
   const createSpy = sinon.spy(async (_params: any) => Promise.resolve({}))
-  const filesSpy = sinon.spy(() => ({create: createSpy}))
 
-  const tokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").returns({})
+  const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
   const stubClient = sinon.stub(action as any, "driveClientFromRequest")
-    .callsFake(() => ({
-      files: filesSpy,
-    }))
+    .resolves({
+      files: {
+        create: createSpy,
+      },
+    })
 
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(createSpy).to.have.been.calledWithMatch(paramsMatch)
-    tokens.restore()
+    stubTokens.restore()
     stubClient.restore()
   })
 }
@@ -51,14 +52,11 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       const dataBuffer = Buffer.from("Hello")
       request.type = Hub.ActionType.Query
-      request.params.state_json = "{code: 1, redirect = 1}"
       request.attachment = {dataBuffer, fileExtension: "csv"}
       request.formParams = {filename: stubFileName, folder: stubFolder}
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
-        stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        stateJson: `{"access_token": "token"}`,
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({code: "access", redirect: "url"}),
       }
       return expectGoogleSheetsMatch(request, {
         requestBody: {
@@ -73,32 +71,31 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
-    it("sets state to reset if error in fileUpload", (done) => {
+    it("sets state to reset if error in create", (done) => {
       const request = new Hub.ActionRequest()
       const dataBuffer = Buffer.from("Hello")
       request.type = Hub.ActionType.Query
       request.attachment = {dataBuffer, fileExtension: "csv"}
       request.formParams = {filename: stubFileName, folder: stubFolder}
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: `{"access_token": "token"}`,
+        state_json: JSON.stringify({code: "code", redirect: "url"}),
       }
-      const tokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").returns({})
+      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
-        .callsFake(() => ({
+        .resolves({
           files: {
             create: async () => Promise.reject("reject"),
           },
-        }))
+        })
       const resp = action.validateAndExecute(request)
       chai.expect(resp).to.eventually.deep.equal({
         success: false,
-        state: {data: "reset"},
+        message: undefined,
+        // state: {data: "reset"},
         refreshQuery: false,
         validationErrors: [],
-      }).and.notify(stubClient.restore).and.notify(tokens.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
     })
   })
 
@@ -108,16 +105,17 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("returns an oauth form on bad login", (done) => {
+      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
-        .callsFake(() => ({
-          filesListFolder: async (_: any) => Promise.reject("haha I failed auth"),
-        }))
+        .resolves({
+          files: {
+            list: async () => Promise.reject("reject"),
+          },
+        })
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: `{"access_token": "token"}`,
+        state_json: JSON.stringify({code: "access", redirect: "url"}),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -132,20 +130,21 @@ describe(`${action.constructor.name} unit tests`, () => {
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
         state: {},
-      }).and.notify(stubClient.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
     })
 
     it("does not blow up on bad state JSON and returns an OAUTH form", (done) => {
+      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
-        .callsFake(() => ({
-          filesListFolder: async (_: any) => Promise.reject("haha I failed auth"),
-        }))
+        .resolves({
+          files: {
+            list: async () => Promise.reject("reject"),
+          },
+        })
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: `{"access_token": "token"}`,
+        state_json: JSON.stringify({code: "access", redirect: "url"}),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -160,22 +159,30 @@ describe(`${action.constructor.name} unit tests`, () => {
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
         state: {},
-      }).and.notify(stubClient.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
     })
 
     it("returns correct fields on oauth success", (done) => {
+      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
-        .callsFake(() => ({
-          filesListFolder: async (_: any) => Promise.resolve({entries: [{
-              "name": "fake_name",
-              "label": "fake_label",
-              ".tag": "folder"}],
-          }),
-        }))
+        .resolves({
+          files: {
+            list: async () => Promise.resolve({
+              data: {
+                files: [
+                  {
+                    id: "fake_id",
+                    name: "fake_name",
+                  },
+                ],
+              },
+            }),
+          },
+        })
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({code: "access", redirect: "url"}),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -183,7 +190,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           description: "Google Drive folder where file will be saved",
           label: "Select folder to save file",
           name: "folder",
-          options: [{ name: "fake_name", label: "fake_name" }],
+          options: [{ name: "fake_id", label: "fake_name" }],
           required: true,
           type: "select",
         }, {
@@ -192,7 +199,10 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "string",
           required: true,
         }],
-      }).and.notify(stubClient.restore).and.notify(done)
+        state: {
+          data: "{}",
+        },
+      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
     })
   })
 
