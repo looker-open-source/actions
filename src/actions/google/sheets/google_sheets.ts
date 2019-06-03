@@ -17,6 +17,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     minimumSupportedLookerVersion = "6.8.0"
     requiredFields = []
     params = []
+    supportedFormats = [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
     const filename = request.formParams.filename || request.suggestedFilename()
@@ -48,13 +49,14 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
         mimeType: "application/vnd.google-apps.spreadsheet",
         parents: request.formParams.folder ? [request.formParams.folder] : undefined,
       }
+      const media = {
+        mimeType: "text/csv",
+        body: fileBuf,
+      }
       try {
         await drive.files.create({
           requestBody: fileMetadata,
-          media: {
-            mimeType: "text/csv",
-            body: fileBuf,
-          },
+          media,
         })
       } catch (e) {
         resp.success = false
@@ -122,7 +124,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
           form.fields = [{
             description: "Google Drive folder where file will be saved",
             label: "Select folder to save file",
-            name: "directory",
+            name: "folder",
             options: folders,
             required: true,
             type: "select",
