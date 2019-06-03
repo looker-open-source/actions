@@ -11,57 +11,86 @@ import { GoogleSheetsAction } from "./google_sheets"
 const action = new GoogleSheetsAction()
 
 const stubFileName = "stubSuggestedFilename"
-const stubDirectory = "stubSuggestedDirectory"
+const stubFolder = "stubSuggestedFolder"
 
 function expectGoogleSheetsMatch(request: Hub.ActionRequest, paramsMatch: any) {
 
   const createSpy = sinon.spy(async (_params: any) => Promise.resolve({}))
+  const filesSpy = sinon.spy(() => ({create: createSpy}))
 
+  const tokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").returns({})
   const stubClient = sinon.stub(action as any, "driveClientFromRequest")
     .callsFake(() => ({
-      create: createSpy,
+      files: filesSpy,
     }))
 
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
     chai.expect(createSpy).to.have.been.calledWithMatch(paramsMatch)
+    tokens.restore()
     stubClient.restore()
   })
 }
 
 describe(`${action.constructor.name} unit tests`, () => {
-  sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
-  sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+  let encryptStub: any
+  let decryptStub: any
+
+  beforeEach(() => {
+    encryptStub = sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
+    decryptStub = sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+  })
+
+  afterEach(() => {
+    encryptStub.restore()
+    decryptStub.restore()
+  })
 
   describe("action", () => {
 
     it("successfully interprets execute request params", () => {
       const request = new Hub.ActionRequest()
-      request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
-      request.formParams = {filename: stubFileName, directory: stubDirectory}
+      const dataBuffer = Buffer.from("Hello")
+      request.type = Hub.ActionType.Query
+      request.params.state_json = "{code: 1, redirect = 1}"
+      request.attachment = {dataBuffer, fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, folder: stubFolder}
       request.params = {
         appKey: "mykey",
         secretKey: "mySecret",
         stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         stateJson: `{"access_token": "token"}`,
       }
-      return expectGoogleSheetsMatch(request,
-        {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
+      return expectGoogleSheetsMatch(request, {
+        requestBody: {
+          name: stubFileName,
+          mimeType: "application/vnd.google-apps.spreadsheet",
+          parents: [stubFolder],
+        },
+        media: {
+          mimeType: "text/csv",
+          body: dataBuffer,
+        },
+      })
     })
 
     it("sets state to reset if error in fileUpload", (done) => {
       const request = new Hub.ActionRequest()
-      request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
-      request.formParams = {filename: stubFileName, directory: stubDirectory}
+      const dataBuffer = Buffer.from("Hello")
       request.type = Hub.ActionType.Query
+      request.attachment = {dataBuffer, fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, folder: stubFolder}
       request.params = {
         appKey: "mykey",
         secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
+      const tokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").returns({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .callsFake(() => ({
-          filesUpload: async () => Promise.reject("reject"),
+          files: {
+            create: async () => Promise.reject("reject"),
+          },
         }))
       const resp = action.validateAndExecute(request)
       chai.expect(resp).to.eventually.deep.equal({
@@ -69,7 +98,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         state: {data: "reset"},
         refreshQuery: false,
         validationErrors: [],
-      }).and.notify(stubClient.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(tokens.restore).and.notify(done)
     })
   })
 
@@ -151,10 +180,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          default: "__root",
           description: "Google Drive folder where file will be saved",
           label: "Select folder to save file",
-          name: "directory",
+          name: "folder",
           options: [{ name: "fake_name", label: "fake_name" }],
           required: true,
           type: "select",
@@ -173,10 +201,11 @@ describe(`${action.constructor.name} unit tests`, () => {
       process.env.GOOGLE_SHEETS_CLIENT_ID = "testingkey"
       const prom = action.oauthUrl("https://actionhub.com/actions/google_sheets/oauth_redirect",
         `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`)
-      return chai.expect(prom).to.eventually.equal("https://www.dropbox.com/oauth2/authorize?response_type=code&" +
-        "client_id=testingkey&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%google_sheets%2Foauth_redirect&" +
-        "force_reapprove=true&" +
-        "state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0")
+      return chai.expect(prom).to.eventually.equal("https://accounts.google.com/o/oauth2/v2/auth?" +
+        "access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&state=" +
+        "eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0&" +
+        "response_type=code&client_id=testingkey&" +
+        "redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fgoogle_sheets%2Foauth_redirect")
     })
 
     it("correctly handles redirect from authorization server", (done) => {
