@@ -13,21 +13,14 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     iconName = "google/sheets/sheets.svg"
     description = "Create a new Google Sheet."
     supportedActionTypes = [Hub.ActionType.Query]
-    usesStreaming = false
+    usesStreaming = true
     minimumSupportedLookerVersion = "6.8.0"
     requiredFields = []
     params = []
     supportedFormats = [Hub.ActionFormat.Csv]
 
   async execute(request: Hub.ActionRequest) {
-    const filename = request.formParams.filename || request.suggestedFilename()
-
     const resp = new Hub.ActionResponse()
-    if (!(request.attachment && request.attachment.dataBuffer)) {
-      resp.success = false
-      resp.message = "No data sent from Looker to be sent to Google Sheets."
-      return resp
-    }
 
     if (!request.params.state_json) {
       resp.success = false
@@ -37,25 +30,25 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     }
 
     const stateJson = JSON.parse(request.params.state_json)
-    if (stateJson.code && stateJson.redirect) {
-      const tokens = await this.getAccessTokenCredentialsFromCode(stateJson)
-      const drive = await this.driveClientFromRequest(request, tokens)
+    if (stateJson.tokens && stateJson.redirect) {
+      const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
-      const fileBuf = request.attachment.dataBuffer
+      const filename = request.formParams.filename || request.suggestedFilename()
 
       const fileMetadata: drive_v3.Schema$File = {
         name: filename,
         mimeType: "application/vnd.google-apps.spreadsheet",
         parents: request.formParams.folder ? [request.formParams.folder] : undefined,
       }
-      const media = {
-        mimeType: "text/csv",
-        body: fileBuf,
-      }
       try {
-        await drive.files.create({
-          requestBody: fileMetadata,
-          media,
+        await request.stream(async (readable) => {
+          return drive.files.create({
+            requestBody: fileMetadata,
+            media: {
+              mimeType: "text/csv",
+              body: readable,
+            },
+          })
         })
         resp.success = true
       } catch (e) {
@@ -91,16 +84,16 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     })
 
     if (request.params.state_json) {
-      const stateJson = JSON.parse(request.params.state_json)
-      if (stateJson.code && stateJson.redirect) {
-        try {
-          const tokens = await this.getAccessTokenCredentialsFromCode(stateJson)
-          const drive = await this.driveClientFromRequest(request, tokens)
+      try {
+        const stateJson = JSON.parse(request.params.state_json)
+        if (stateJson.tokens && stateJson.redirect) {
+          const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
           const options: any = {
+            fields: "files(id,name,parents),nextPageToken",
+            orderBy: "recency desc",
             pageSize: 1000,
             q: "mimeType='application/vnd.google-apps.folder'",
-            fields: "files(id,parents),nextPageToken",
             spaces: "drive",
           }
 
@@ -135,20 +128,16 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
             required: true,
           }]
           form.state = new Hub.ActionState()
-          form.state.data = JSON.stringify(tokens)
+          form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
           return form
-        } catch { winston.warn("Log in fail") }
-      }
+        }
+      } catch { winston.warn("Log in fail") }
     }
     return form
   }
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_SHEETS_CLIENT_ID,
-      process.env.GOOGLE_SHEETS_CLIENT_SECRET,
-      redirectUri,
-    )
+    const oauth2Client = this.oauth2Client(redirectUri)
 
     // generate a url that asks permissions for Google Drive and Sheets scope
     const scopes = [
@@ -156,9 +145,9 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
     ]
 
     const url = oauth2Client.generateAuthUrl({
-      // 'online' (default) or 'offline' (gets refresh_token)
       access_type: "offline",
       scope: scopes,
+      prompt: "consent",
       state: encryptedState,
     })
     return url.toString()
@@ -171,49 +160,42 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
       throw err
     })
 
+    const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
     // Pass back context to Looker
     const payload = JSON.parse(plaintext)
     await https.post({
       url: payload.stateurl,
-      body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
+      body: JSON.stringify({tokens, redirect: redirectUri}),
     }).catch((_err) => { winston.error(_err.toString()) })
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
       const stateJson = JSON.parse(request.params.state_json)
-      const tokens = await this.getAccessTokenCredentialsFromCode(stateJson)
-      const drive = await this.driveClientFromRequest(request, tokens)
-      await drive.files.list({
-        pageSize: 10,
-      })
-      return true
+      if (stateJson.tokens && stateJson.redirect) {
+        const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
+        await drive.files.list({
+          pageSize: 10,
+        })
+        return true
+      }
     }
     return false
   }
 
-  protected async getAccessTokenCredentialsFromCode(stateJson: any) {
-    if (stateJson.code && stateJson.redirect) {
-      const client = this.oauth2Client(stateJson.redirect)
-      const {tokens} = await client.getToken(stateJson.code)
-      return tokens
-    } else {
-      throw "state_json does not contain correct members"
-    }
+  protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
+    const client = this.oauth2Client(redirect)
+    const {tokens} = await client.getToken(code)
+    return tokens
   }
 
-  protected async driveClientFromRequest(request: Hub.ActionRequest, tokens: Credentials) {
-    const redirect = ""
-    if (request.params.state_json && tokens === undefined) {
-      const stateJson = JSON.parse(request.params.state_json)
-      tokens = await this.getAccessTokenCredentialsFromCode(stateJson)
-    }
+  protected async driveClientFromRequest(redirect: string, tokens: Credentials) {
     const client = this.oauth2Client(redirect)
     client.setCredentials(tokens)
     return google.drive({version: "v3", auth: client})
   }
 
-  private oauth2Client(redirectUri: string) {
+  private oauth2Client(redirectUri: string | undefined) {
     return new google.auth.OAuth2(
       process.env.GOOGLE_SHEETS_CLIENT_ID,
       process.env.GOOGLE_SHEETS_CLIENT_SECRET,

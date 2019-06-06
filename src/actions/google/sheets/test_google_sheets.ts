@@ -1,7 +1,8 @@
 import * as b64 from "base64-url"
 import * as chai from "chai"
-import * as https from "request-promise-native"
 import * as sinon from "sinon"
+
+import concatStream = require("concat-stream")
 
 import * as Hub from "../../../hub"
 
@@ -15,9 +16,16 @@ const stubFolder = "stubSuggestedFolder"
 
 function expectGoogleSheetsMatch(request: Hub.ActionRequest, paramsMatch: any) {
 
-  const createSpy = sinon.spy(async (_params: any) => Promise.resolve({}))
+  const expectedBuffer = paramsMatch.media.body
+  delete paramsMatch.media.body
 
-  const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
+  const createSpy = sinon.spy(async (params: any) => {
+    params.media.body.pipe(concatStream((buffer) => {
+      chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
+    }))
+    return { promise: async () => Promise.resolve() }
+  })
+
   const stubClient = sinon.stub(action as any, "driveClientFromRequest")
     .resolves({
       files: {
@@ -25,9 +33,8 @@ function expectGoogleSheetsMatch(request: Hub.ActionRequest, paramsMatch: any) {
       },
     })
 
-  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(createSpy).to.have.been.calledWithMatch(paramsMatch)
-    stubTokens.restore()
+  return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
+    chai.expect(createSpy).to.have.been.called
     stubClient.restore()
   })
 }
@@ -56,7 +63,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {filename: stubFileName, folder: stubFolder}
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({code: "access", redirect: "url"}),
+        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
       return expectGoogleSheetsMatch(request, {
         requestBody: {
@@ -79,9 +86,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {filename: stubFileName, folder: stubFolder}
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({code: "code", redirect: "url"}),
+        state_json: JSON.stringify({tokens: "code", redirect: "url"}),
       }
-      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
           files: {
@@ -95,7 +101,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         // state: {data: "reset"},
         refreshQuery: false,
         validationErrors: [],
-      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(done)
     })
   })
 
@@ -105,7 +111,6 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("returns an oauth form on bad login", (done) => {
-      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
           files: {
@@ -115,7 +120,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({code: "access", redirect: "url"}),
+        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -130,11 +135,10 @@ describe(`${action.constructor.name} unit tests`, () => {
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
         state: {},
-      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
     it("does not blow up on bad state JSON and returns an OAUTH form", (done) => {
-      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
           files: {
@@ -144,7 +148,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({code: "access", redirect: "url"}),
+        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -159,11 +163,10 @@ describe(`${action.constructor.name} unit tests`, () => {
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
         state: {},
-      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
     it("returns correct fields on oauth success", (done) => {
-      const stubTokens = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({})
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
           files: {
@@ -182,7 +185,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({code: "access", redirect: "url"}),
+        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -200,9 +203,9 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
         }],
         state: {
-          data: "{}",
+          data: JSON.stringify({tokens: "access", redirect: "url"}),
         },
-      }).and.notify(stubClient.restore).and.notify(stubTokens.restore).and.notify(done)
+      }).and.notify(stubClient.restore).and.notify(done)
     })
   })
 
@@ -212,14 +215,14 @@ describe(`${action.constructor.name} unit tests`, () => {
       const prom = action.oauthUrl("https://actionhub.com/actions/google_sheets/oauth_redirect",
         `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`)
       return chai.expect(prom).to.eventually.equal("https://accounts.google.com/o/oauth2/v2/auth?" +
-        "access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&state=" +
+        "access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&prompt=consent&state=" +
         "eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0&" +
         "response_type=code&client_id=testingkey&" +
         "redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fgoogle_sheets%2Foauth_redirect")
     })
 
     it("correctly handles redirect from authorization server", (done) => {
-      const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
+      const stubReq = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({tokens: "token"})
       const result = action.oauthFetchInfo({code: "code",
         state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
           `c2RmIiwiYXBwIjoibXlrZXkifQ`},
