@@ -1,5 +1,6 @@
 import * as b64 from "base64-url"
 import * as chai from "chai"
+import * as https from "request-promise-native"
 import * as sinon from "sinon"
 
 import concatStream = require("concat-stream")
@@ -7,14 +8,14 @@ import concatStream = require("concat-stream")
 import * as Hub from "../../../hub"
 
 import { ActionCrypto } from "../../../hub"
-import { GoogleSheetsAction } from "./google_sheets"
+import { GoogleDriveAction } from "./google_drive"
 
-const action = new GoogleSheetsAction()
+const action = new GoogleDriveAction()
 
 const stubFileName = "stubSuggestedFilename"
 const stubFolder = "stubSuggestedFolder"
 
-function expectGoogleSheetsMatch(request: Hub.ActionRequest, paramsMatch: any) {
+function expectGoogleDriveMatch(request: Hub.ActionRequest, paramsMatch: any) {
 
   const expectedBuffer = paramsMatch.media.body
   delete paramsMatch.media.body
@@ -65,14 +66,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
-      return expectGoogleSheetsMatch(request, {
+      return expectGoogleDriveMatch(request, {
         requestBody: {
           name: stubFileName,
-          mimeType: "application/vnd.google-apps.spreadsheet",
+          mimeType: undefined,
           parents: [stubFolder],
         },
         media: {
-          mimeType: "text/csv",
           body: dataBuffer,
         },
       })
@@ -130,7 +130,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           description: "In order to send to Google Drive, you will need to log in" +
             " once to your Google account.",
           label: "Log in",
-          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_sheets/` +
+          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
@@ -158,7 +158,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           description: "In order to send to Google Drive, you will need to log in" +
           " once to your Google account.",
           label: "Log in",
-          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_sheets/` +
+          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
@@ -190,7 +190,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          description: "Google Drive folder where file will be saved",
+          description: "Google Drive folder where your file will be saved",
           label: "Select folder to save file",
           name: "folder",
           options: [{ name: "fake_id", label: "fake_name" }],
@@ -211,23 +211,25 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("oauth", () => {
     it("returns correct redirect url", () => {
-      process.env.GOOGLE_SHEETS_CLIENT_ID = "testingkey"
-      const prom = action.oauthUrl("https://actionhub.com/actions/google_sheets/oauth_redirect",
+      process.env.GOOGLE_DRIVE_CLIENT_ID = "testingkey"
+      const prom = action.oauthUrl("https://actionhub.com/actions/google_drive/oauth_redirect",
         `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`)
       return chai.expect(prom).to.eventually.equal("https://accounts.google.com/o/oauth2/v2/auth?" +
         "access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&prompt=consent&state=" +
         "eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0&" +
         "response_type=code&client_id=testingkey&" +
-        "redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fgoogle_sheets%2Foauth_redirect")
+        "redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fgoogle_drive%2Foauth_redirect")
     })
 
     it("correctly handles redirect from authorization server", (done) => {
-      const stubReq = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({tokens: "token"})
+      const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({tokens: "token"})
+      const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
       const result = action.oauthFetchInfo({code: "code",
         state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
           `c2RmIiwiYXBwIjoibXlrZXkifQ`},
         "redirect")
       chai.expect(result)
+        .and.notify(stubAccessToken.restore)
         .and.notify(stubReq.restore).and.notify(done)
     })
   })

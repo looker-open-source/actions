@@ -7,17 +7,17 @@ import { drive_v3, google } from "googleapis"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
 
-export class GoogleSheetsAction extends Hub.OAuthAction {
-    name = "google_sheets"
-    label = "Google Sheets"
-    iconName = "google/sheets/sheets.svg"
-    description = "Create a new Google Sheet."
-    supportedActionTypes = [Hub.ActionType.Query]
+export class GoogleDriveAction extends Hub.OAuthAction {
+    name = "google_drive"
+    label = "Google Drive"
+    iconName = "google/drive/google_drive.svg"
+    description = "Create a new file in Google Drive."
+    supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
     usesStreaming = true
     minimumSupportedLookerVersion = "6.8.0"
     requiredFields = []
     params = []
-    supportedFormats = [Hub.ActionFormat.Csv]
+    mimeType: string | undefined = undefined
 
   async execute(request: Hub.ActionRequest) {
     const resp = new Hub.ActionResponse()
@@ -37,7 +37,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
 
       const fileMetadata: drive_v3.Schema$File = {
         name: filename,
-        mimeType: "application/vnd.google-apps.spreadsheet",
+        mimeType: this.mimeType,
         parents: request.formParams.folder ? [request.formParams.folder] : undefined,
       }
       try {
@@ -45,7 +45,6 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
           return drive.files.create({
             requestBody: fileMetadata,
             media: {
-              mimeType: "text/csv",
               body: readable,
             },
           })
@@ -115,7 +114,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
             !(folder.id === undefined) && !(folder.name === undefined)))
             .map((folder) => ({name: folder.id!, label: folder.name!}))
           form.fields = [{
-            description: "Google Drive folder where file will be saved",
+            description: "Google Drive folder where your file will be saved",
             label: "Select folder to save file",
             name: "folder",
             options: folders,
@@ -139,7 +138,7 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
   async oauthUrl(redirectUri: string, encryptedState: string) {
     const oauth2Client = this.oauth2Client(redirectUri)
 
-    // generate a url that asks permissions for Google Drive and Sheets scope
+    // generate a url that asks permissions for Google Drive scope
     const scopes = [
       "https://www.googleapis.com/auth/drive",
     ]
@@ -197,13 +196,13 @@ export class GoogleSheetsAction extends Hub.OAuthAction {
 
   private oauth2Client(redirectUri: string | undefined) {
     return new google.auth.OAuth2(
-      process.env.GOOGLE_SHEETS_CLIENT_ID,
-      process.env.GOOGLE_SHEETS_CLIENT_SECRET,
+      process.env.GOOGLE_DRIVE_CLIENT_ID,
+      process.env.GOOGLE_DRIVE_CLIENT_SECRET,
       redirectUri,
     )
   }
 }
 
-if (process.env.GOOGLE_SHEETS_CLIENT_ID && process.env.GOOGLE_SHEETS_CLIENT_SECRET) {
-  Hub.addAction(new GoogleSheetsAction())
+if (process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET) {
+  Hub.addAction(new GoogleDriveAction())
 }
