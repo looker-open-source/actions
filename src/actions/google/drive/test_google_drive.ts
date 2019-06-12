@@ -148,7 +148,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
+        state_json: JSON.stringify({bad: "access", redirect: "url"}),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
