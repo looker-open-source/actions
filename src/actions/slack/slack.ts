@@ -1,7 +1,7 @@
 import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
-import { WebClientUtilities } from "./webclient_utilities"
+import { prettySlackError, WebClientUtilities } from "./webclient_utilities"
 
 export class SlackAttachmentAction extends Hub.Action {
 
@@ -55,7 +55,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
 
-    // try {
+    try {
     const slack = this.slackClientFromRequest(request)
     const slackUtility = new WebClientUtilities(slack)
     const channels = await slackUtility.usableChannels()
@@ -77,9 +77,9 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       type: "string",
     }]
 
-    // } catch (e) {
-    //   form.error = prettySlackError(e)
-    // }
+    } catch (e) {
+      form.error = prettySlackError(e)
+    }
 
     return form
   }
