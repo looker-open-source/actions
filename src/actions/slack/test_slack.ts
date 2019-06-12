@@ -5,15 +5,15 @@ import * as Hub from "../../hub"
 
 import { SlackAttachmentAction } from "./slack"
 
+import { FilesUploadArguments } from "@slack/client";
+
 const action = new SlackAttachmentAction()
 
 const stubFileName = "stubSuggestedFilename"
 
-function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: any) {
+function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadArguments) {
 
-  const fileUploadSpy = sinon.spy((filename: string, params: any, callback: (err: any, data: any) => void) => {
-    callback(null, `successfully sent ${filename} ${params}`)
-  })
+  const fileUploadSpy = sinon.spy(async () => Promise.resolve())
 
   const stubClient = sinon.stub(action as any, "slackClientFromRequest")
     .callsFake(() => ({
@@ -108,12 +108,10 @@ describe(`${action.constructor.name} unit tests`, () => {
         fileExtension: "csv",
       }
 
-      const fileUploadSpy = sinon.spy((_params: any, callback: (err: any) => void) => {
-        callback({
-          type: "CHANNEL_NOT_FOUND",
-          message: "Could not find channel mychannel",
-        })
-      })
+      const fileUploadSpy = sinon.spy(async () => Promise.reject({
+        type: "CHANNEL_NOT_FOUND",
+        message: "Could not find channel mychannel",
+      }))
 
       const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({

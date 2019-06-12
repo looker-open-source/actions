@@ -1,11 +1,7 @@
 import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
-
-interface Channel {
-  id: string,
-  label: string,
-}
+import { WebClientUtilities } from "./webclient_utilities"
 
 export class SlackAttachmentAction extends Hub.Action {
 
@@ -48,17 +44,10 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     let response
     try {
       const slack = this.slackClientFromRequest(request)
-      await new Promise<void>((resolve, reject) => {
-        slack.files.upload(options, (err: any) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
-        })
-      })
+      await slack.files.upload(options)
+      response = new Hub.ActionResponse({success: true})
     } catch (e) {
-      response = { success: false, message: e.message }
+      response = new Hub.ActionResponse({success: false, message: e.message })
     }
     return new Hub.ActionResponse(response)
   }
@@ -66,100 +55,36 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
 
-    try {
-      const channels = await this.usableChannels(request)
+    // try {
+    const slack = this.slackClientFromRequest(request)
+    const slackUtility = new WebClientUtilities(slack)
+    const channels = await slackUtility.usableChannels()
 
-      form.fields = [{
-        description: "Name of the Slack channel you would like to post to.",
-        label: "Share In",
-        name: "channel",
-        options: channels.map((channel) => ({ name: channel.id, label: channel.label })),
-        required: true,
-        type: "select",
-      }, {
-        label: "Comment",
-        type: "string",
-        name: "initial_comment",
-      }, {
-        label: "Filename",
-        name: "filename",
-        type: "string",
-      }]
+    form.fields = [{
+      description: "Name of the Slack channel you would like to post to.",
+      label: "Share In",
+      name: "channel",
+      options: channels.map((channel) => ({ name: channel.id, label: channel.label })),
+      required: true,
+      type: "select",
+    }, {
+      label: "Comment",
+      type: "string",
+      name: "initial_comment",
+    }, {
+      label: "Filename",
+      name: "filename",
+      type: "string",
+    }]
 
-    } catch (e) {
-      form.error = this.prettySlackError(e)
-    }
+    // } catch (e) {
+    //   form.error = prettySlackError(e)
+    // }
 
     return form
   }
 
-  async usableChannels(request: Hub.ActionRequest) {
-    let channels = await this.usablePublicChannels(request)
-    channels = channels.concat(await this.usableDMs(request))
-    return channels
-  }
-
-  async usablePublicChannels(request: Hub.ActionRequest) {
-    const slack = this.slackClientFromRequest(request)
-    const options: any = {
-      exclude_archived: true,
-      exclude_members: true,
-      limit: 200,
-    }
-    async function pageLoaded(accumulatedChannels: any[], response: any): Promise<any[]> {
-      const mergedChannels = accumulatedChannels.concat(response.channels)
-
-      // When a `next_cursor` exists, recursively call this function to get the next page.
-      if (response.response_metadata &&
-          response.response_metadata.next_cursor &&
-          response.response_metadata.next_cursor !== "") {
-        const pageOptions = { ...options }
-        pageOptions.cursor = response.response_metadata.next_cursor
-        return pageLoaded(mergedChannels, await slack.channels.list(pageOptions))
-      }
-      return mergedChannels
-    }
-    const paginatedChannels = await pageLoaded([], await slack.channels.list(options))
-    const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
-    const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
-    return reformatted
-  }
-
-  async usableDMs(request: Hub.ActionRequest) {
-    const slack = this.slackClientFromRequest(request)
-    const options: any = {
-      limit: 200,
-    }
-    async function pageLoaded(accumulatedUsers: any[], response: any): Promise<any[]> {
-      const mergedUsers = accumulatedUsers.concat(response.members)
-
-      // When a `next_cursor` exists, recursively call this function to get the next page.
-      if (response.response_metadata &&
-          response.response_metadata.next_cursor &&
-          response.response_metadata.next_cursor !== "") {
-        const pageOptions = { ...options }
-        pageOptions.cursor = response.response_metadata.next_cursor
-        return pageLoaded(mergedUsers, await slack.users.list(pageOptions))
-      }
-      return mergedUsers
-    }
-    const paginatedUsers = await pageLoaded([], await slack.users.list(options))
-    const users = paginatedUsers.filter((u: any) => {
-      return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
-    })
-    const reformatted: Channel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
-    return reformatted
-  }
-
-  private prettySlackError(e: any) {
-    if (e.message === "An API error occurred: invalid_auth") {
-      return "Your Slack authentication credentials are not valid."
-    } else {
-      return e
-    }
-  }
-
-  private slackClientFromRequest(request: Hub.ActionRequest) {
+  slackClientFromRequest(request: Hub.ActionRequest) {
     return new WebClient(request.params.slack_api_token!)
   }
 
