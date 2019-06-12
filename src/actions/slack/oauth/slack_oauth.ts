@@ -45,7 +45,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
       await slack.files.upload(options)
       response = new Hub.ActionResponse({success: true})
     } catch (e) {
-      response = new Hub.ActionResponse({success: false, message: "Authorization Invalid"})
+      response = new Hub.ActionResponse({success: false})
       response.state = new Hub.ActionState()
       response.state.data = "reset"
     }
@@ -90,8 +90,8 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
         name: "login",
         type: "oauth_link",
         label: "Log in",
-        description: "In order to send to a Dropbox file or folder now and in the future, you will need to log in" +
-          " once to your Dropbox account.",
+        description: "In order to send to a file, you will need to log in" +
+          " once to your Slack account.",
         oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/slack_oauth/oauth?state=${ciphertextBlob}`,
       })
     }
