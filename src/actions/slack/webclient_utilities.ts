@@ -25,6 +25,7 @@ export class WebClientUtilities {
   async usableChannels() {
     let channels = await this.usablePublicChannels()
     channels = channels.concat(await this.usableDMs())
+    channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
     return channels
   }
 
