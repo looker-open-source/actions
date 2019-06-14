@@ -5,7 +5,7 @@ import * as Hub from "../../hub"
 
 import { SlackAttachmentAction } from "./slack"
 
-import { FilesUploadArguments } from "@slack/client";
+import { FilesUploadArguments } from "@slack/client"
 
 const action = new SlackAttachmentAction()
 

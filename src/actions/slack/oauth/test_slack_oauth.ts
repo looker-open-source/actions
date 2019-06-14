@@ -92,7 +92,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({
           files: {
-            upload: () => Promise.reject("error"),
+            upload: async () => Promise.reject("error"),
           },
         }))
 
@@ -115,10 +115,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({
           channels: {
-            list: () => Promise.reject("haha I failed auth"),
+            list: async () => Promise.reject("haha I failed auth"),
           },
           users: {
-            list: () => Promise.reject("haha I failed auth"),
+            list: async () => Promise.reject("haha I failed auth"),
           },
         }))
       const request = new Hub.ActionRequest()
@@ -150,10 +150,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({
           channels: {
-            list: () => Promise.reject("haha I failed auth"),
+            list: async () => Promise.reject("haha I failed auth"),
           },
           users: {
-            list: () => Promise.reject("haha I failed auth"),
+            list: async () => Promise.reject("haha I failed auth"),
           },
         }))
       const request = new Hub.ActionRequest()
