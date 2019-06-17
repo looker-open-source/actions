@@ -138,7 +138,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
 
   protected async getCredentialsFromCode(code: string, redirect: string, refresh = false) {
     if (code) {
-      const response = await (new WebClient()).oauth.access({
+      const response = await this.slackClient().oauth.access({
         client_id: process.env.SLACK_CLIENT!,
         client_secret: process.env.SLACK_SECRET!,
         code,
@@ -152,17 +152,20 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
-    let accessToken = ""
+    let accessToken
     if (request.params.state_json) {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         accessToken = stateJson.access_token
       } catch {
         winston.warn("Could not parse state_json")
-        throw "Bad things"
       }
     }
-    return new WebClient(accessToken)
+    return this.slackClient(accessToken)
+  }
+
+  private slackClient(token?: string) {
+    return new WebClient(token)
   }
 }
 
