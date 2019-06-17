@@ -137,22 +137,18 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
   }
 
   protected async getCredentialsFromCode(code: string, redirect: string, refresh = false) {
-    const url = new URL("https://slack.com/api/oauth.access")
-
     if (code) {
-      url.search = querystring.stringify({
-        client_id: process.env.SLACK_CLIENT,
-        client_secret: process.env.SLACK_SECRET,
+      const response = await (new WebClient()).oauth.access({
+        client_id: process.env.SLACK_CLIENT!,
+        client_secret: process.env.SLACK_SECRET!,
         code,
         redirect_uri: redirect,
         grant_type: refresh ? "refresh_token" : "authorization_code",
       })
+      return response
     } else {
       throw "code does not exist"
     }
-    const response = await https.post(url.toString(), { json: true })
-      .catch((_err) => { winston.error("Error requesting access_token") })
-    return response
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
