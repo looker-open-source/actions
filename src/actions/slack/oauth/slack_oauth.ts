@@ -136,7 +136,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
     }
   }
 
-  protected async getAccessTokenFromCode(code: string, redirect: string) {
+  protected async getCredentialsFromCode(code: string, redirect: string, refresh = false) {
     const url = new URL("https://slack.com/api/oauth.access")
 
     if (code) {
@@ -145,6 +145,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
         client_secret: process.env.SLACK_SECRET,
         code,
         redirect_uri: redirect,
+        grant_type: refresh ? "refresh_token" : "authorization_code",
       })
     } else {
       throw "code does not exist"
