@@ -117,12 +117,12 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
       throw err
     })
 
-    const accessToken = await this.getAccessTokenFromCode(urlParams.code, redirectUri)
+    const credentials = await this.getCredentialsFromCode(urlParams.code, redirectUri)
 
     const payload = JSON.parse(plaintext)
     await https.post({
       url: payload.stateurl,
-      body: JSON.stringify({access_token: accessToken}),
+      body: JSON.stringify(credentials),
     }).catch((_err) => { winston.error(_err.toString()) })
   }
 
@@ -151,7 +151,7 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
     }
     const response = await https.post(url.toString(), { json: true })
       .catch((_err) => { winston.error("Error requesting access_token") })
-    return response.access_token
+    return response
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
