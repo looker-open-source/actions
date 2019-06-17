@@ -1,6 +1,8 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
+import concatStream = require("concat-stream")
+
 import * as Hub from "../../hub"
 
 import { SlackAttachmentAction } from "./slack"
@@ -12,8 +14,15 @@ const action = new SlackAttachmentAction()
 const stubFileName = "stubSuggestedFilename"
 
 function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadArguments) {
+  const expectedBuffer = optionsMatch.file as Buffer
+  delete optionsMatch.file
 
-  const fileUploadSpy = sinon.spy(async () => Promise.resolve())
+  const fileUploadSpy = sinon.spy(async (params: any) => {
+    params.media.body.pipe(concatStream((buffer) => {
+      chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
+    }))
+    return { promise: async () => Promise.resolve() }
+  })
 
   const stubClient = sinon.stub(action as any, "slackClientFromRequest")
     .callsFake(() => ({
@@ -48,16 +57,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         .be.rejectedWith("Missing channel.")
     })
 
-    it("errors if the input has no attachment", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-      }
-
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Couldn't get data from attachment.")
-    })
-
     it("sends to right body, channel and filename if specified", () => {
       const request = new Hub.ActionRequest()
       request.formParams = {
@@ -73,7 +72,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         file: request.attachment.dataBuffer,
         filename: request.formParams.filename,
         channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       })
     })
@@ -92,7 +90,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         file: request.attachment.dataBuffer,
         filename: stubFileName,
         channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       })
     })

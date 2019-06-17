@@ -20,12 +20,9 @@ export class SlackAttachmentAction extends Hub.Action {
 https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     sensitive: true,
   }]
+  usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
-
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
-    }
 
     if (!request.formParams.channel) {
       throw "Missing channel."
@@ -33,19 +30,17 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
 
     const fileName = request.formParams.filename || request.suggestedFilename()
 
-    const options = {
-      file: request.attachment.dataBuffer,
-      filename: fileName,
-      channels: request.formParams.channel,
-      filetype: request.attachment.fileExtension,
-      initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
-    }
-
-    let response
+    let response = new Hub.ActionResponse({success: true})
     try {
       const slack = this.slackClientFromRequest(request)
-      await slack.files.upload(options)
-      response = new Hub.ActionResponse({success: true})
+      await request.stream(async (readable) => {
+        await slack.files.upload({
+          file: readable,
+          filename: fileName,
+          channels: request.formParams.channel,
+          initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
+        })
+      })
     } catch (e) {
       response = new Hub.ActionResponse({success: false, message: e.message })
     }
