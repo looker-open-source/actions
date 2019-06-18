@@ -17,7 +17,7 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
   const expectedBuffer = optionsMatch.file as Buffer
   delete optionsMatch.file
 
-  const fileUploadSpy = sinon.spy(async (params: any) => {
+  const filesUploadSpy = sinon.spy(async (params: any) => {
     params.media.body.pipe(concatStream((buffer) => {
       chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
     }))
@@ -27,7 +27,7 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
   const stubClient = sinon.stub(action as any, "slackClientFromRequest")
     .callsFake(() => ({
       files: {
-        upload: fileUploadSpy,
+        upload: filesUploadSpy,
       },
     }))
 
@@ -35,7 +35,7 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
     .callsFake(() => stubFileName)
 
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(optionsMatch)
+    chai.expect(filesUploadSpy).to.have.been.calledWithMatch(optionsMatch)
     stubClient.restore()
     stubSuggestedFilename.restore()
   })
@@ -105,7 +105,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         fileExtension: "csv",
       }
 
-      const fileUploadSpy = sinon.spy(async () => Promise.reject({
+      const filesUploadSpy = sinon.spy(async () => Promise.reject({
         type: "CHANNEL_NOT_FOUND",
         message: "Could not find channel mychannel",
       }))
@@ -113,7 +113,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const stubClient = sinon.stub(action as any, "slackClientFromRequest")
         .callsFake(() => ({
           files: {
-            upload: fileUploadSpy,
+            upload: filesUploadSpy,
           },
         }))
 
