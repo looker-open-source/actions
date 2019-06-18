@@ -44,7 +44,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     } catch (e) {
       response = new Hub.ActionResponse({success: false, message: e.message })
     }
-    return new Hub.ActionResponse(response)
+    return response
   }
 
   async form(request: Hub.ActionRequest) {
