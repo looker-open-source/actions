@@ -2,6 +2,8 @@ import * as b64 from "base64-url"
 import * as chai from "chai"
 import * as sinon from "sinon"
 
+import concatStream = require("concat-stream")
+
 import * as Hub from "../../../hub"
 
 import {ActionCrypto} from "../../../hub"
@@ -10,8 +12,15 @@ import { SlackAttachmentOauthAction } from "./slack_oauth"
 const action = new SlackAttachmentOauthAction()
 
 function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: any) {
+  const expectedBuffer = optionsMatch.file as Buffer
+  delete optionsMatch.file
 
-  const filesUploadSpy = sinon.spy(async (_options: any) => Promise.resolve({}))
+  const filesUploadSpy = sinon.spy(async (params: any) => {
+    params.media.body.pipe(concatStream((buffer) => {
+      chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
+    }))
+    return { promise: async () => Promise.resolve() }
+  })
 
   const stubClient = sinon.stub(action as any, "slackClientFromRequest")
     .callsFake(() => ({
@@ -46,8 +55,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         stateJson: `{"access_token": "token"}`,
       }
@@ -64,7 +71,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         file: request.attachment.dataBuffer,
         filename: request.formParams.filename,
         channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
         initial_comment: request.formParams.initial_comment,
       })
     })
@@ -73,8 +79,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         stateJson: `{"access_token": "token"}`,
       }
@@ -122,8 +126,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -157,8 +159,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"bad": "token"}`,
       }
@@ -233,10 +233,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         },
       }))
       const request = new Hub.ActionRequest()
-      request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
-      }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{

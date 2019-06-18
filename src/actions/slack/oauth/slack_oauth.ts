@@ -18,12 +18,9 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
   minimumSupportedLookerVersion = "6.8.0"
   requiredFields = []
   params = []
+  usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
-
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
-    }
 
     if (!request.formParams.channel) {
       throw "Missing channel."
@@ -31,19 +28,17 @@ export class SlackAttachmentOauthAction extends Hub.OAuthAction {
 
     const fileName = request.formParams.filename || request.suggestedFilename()
 
-    const options = {
-      file: request.attachment.dataBuffer,
-      filename: fileName,
-      channels: request.formParams.channel,
-      filetype: request.attachment.fileExtension,
-      initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
-    }
-
-    let response
+    let response = new Hub.ActionResponse({success: true})
     try {
       const slack = this.slackClientFromRequest(request)
-      await slack.files.upload(options)
-      response = new Hub.ActionResponse({success: true})
+      await request.stream(async (readable) => {
+        await slack.files.upload({
+          file: readable,
+          filename: fileName,
+          channels: request.formParams.channel,
+          initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
+        })
+      })
     } catch (e) {
       response = new Hub.ActionResponse({success: false})
       response.state = new Hub.ActionState()
