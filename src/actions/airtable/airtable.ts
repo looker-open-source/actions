@@ -23,6 +23,7 @@ export class AirtableAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
   async execute(request: Hub.ActionRequest) {
+
     if (!(request.attachment && request.attachment.dataJSON)) {
       throw "No attached json."
     }
@@ -49,27 +50,18 @@ export class AirtableAction extends Hub.Action {
       return record
     })
 
-    let response
     try {
       const airtableClient = this.airtableClientFromRequest(request)
       const base = airtableClient.base(request.formParams.base)
       const table = base(request.formParams.table)
 
       await Promise.all(records.map(async (record: any) => {
-        return new Promise<void>((resolve, reject) => {
-          table.create(record, (err: { message: string } | null, rec: any) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(rec)
-            }
-          })
-        })
+        return table.create(record, {typecast: true})
       }))
+      return new Hub.ActionResponse({ success: true })
     } catch (e) {
-      response = { success: false, message: e.message }
+      return new Hub.ActionResponse({ success: false, message: e.message })
     }
-    return new Hub.ActionResponse(response)
   }
 
   async form() {
