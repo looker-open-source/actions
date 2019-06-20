@@ -33,11 +33,13 @@ export class ActionResponse {
       }
     }
     return {
-      message: this.message,
-      refresh_query: this.refreshQuery,
-      success: this.success,
-      validation_errors: errs,
-      state: this.state,
+      looker: {
+        message: this.message,
+        refresh_query: this.refreshQuery,
+        success: this.success,
+        validation_errors: errs,
+        state: this.state,
+      },
     }
   }
 
