@@ -25,7 +25,7 @@ export class SlackAttachmentAction extends Hub.OAuthAction {
   params = [{
     name: "slack_api_token",
     label: "Slack API Token",
-    // required if not oauth enabled via app client and secret env vars
+    // not required if oauth enabled via app client and secret env vars
     required: !(process.env.SLACK_CLIENT && process.env.SLACK_SECRET),
     description: `A Slack API token that includes the permissions "channels:read", \
 "users:read", and "files:write:user". You can follow the instructions to get a token at \
