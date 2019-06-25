@@ -14,14 +14,6 @@ interface Channel {
   label: string,
 }
 
-function prettySlackError(e: any) {
-  if (e.message === "An API error occurred: invalid_auth") {
-    return "Your Slack authentication credentials are not valid."
-  } else {
-    return e
-  }
-}
-
 export class SlackAttachmentAction extends Hub.OAuthAction {
 
   name = "slack"
@@ -33,7 +25,8 @@ export class SlackAttachmentAction extends Hub.OAuthAction {
   params = [{
     name: "slack_api_token",
     label: "Slack API Token",
-    required: false,
+    // required if not oauth enabled via app client and secret env vars
+    required: !(process.env.SLACK_CLIENT && process.env.SLACK_SECRET),
     description: `A Slack API token that includes the permissions "channels:read", \
 "users:read", and "files:write:user". You can follow the instructions to get a token at \
 https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
@@ -74,7 +67,6 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const form = new Hub.ActionForm()
     try {
       const channels = await this.usableChannels(request)
-
       form.fields = [{
         description: "Name of the Slack channel you would like to post to.",
         label: "Share In",
@@ -110,7 +102,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/slack/oauth?state=${ciphertextBlob}`,
         })
       } else {
-        form.error = prettySlackError(e)
+        form.error = this.prettySlackError(e)
       }
     }
     return form
@@ -231,6 +223,14 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     }
   }
 
+  private prettySlackError(e: any) {
+    if (e.message === "An API error occurred: invalid_auth") {
+      return "Your Slack authentication credentials are not valid."
+    } else {
+      return e
+    }
+  }
+
   private slackClientFromRequest(request: Hub.ActionRequest) {
     if (!request.params.slack_api_token) {
       let accessToken
@@ -253,6 +253,4 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   }
 }
 
-if (process.env.SLACK_CLIENT && process.env.SLACK_SECRET) {
-  Hub.addAction(new SlackAttachmentAction())
-}
+Hub.addAction(new SlackAttachmentAction())
