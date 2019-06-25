@@ -92,9 +92,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
         type: "string",
       }]
     } catch (e) {
-      if (request.params.slack_api_token) {
-        form.error = prettySlackError(e)
-      } else {
+      if (!request.params.slack_api_token) {
         const actionCrypto = new Hub.ActionCrypto()
         const jsonString = JSON.stringify({stateurl: request.params.state_url})
         const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
@@ -111,6 +109,8 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
             " once to your Slack account.",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/slack/oauth?state=${ciphertextBlob}`,
         })
+      } else {
+        form.error = prettySlackError(e)
       }
     }
     return form
@@ -232,9 +232,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
-    if (request.params.slack_api_token) {
-      return this.slackClient(request.params.slack_api_token)
-    } else {
+    if (!request.params.slack_api_token) {
       let accessToken
       if (request.params.state_json) {
         try {
@@ -245,6 +243,8 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
         }
       }
       return this.slackClient(accessToken)
+    } else {
+      return this.slackClient(request.params.slack_api_token)
     }
   }
 
