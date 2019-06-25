@@ -12,6 +12,10 @@ import { SlackAttachmentAction } from "./slack"
 
 import { FilesUploadArguments } from "@slack/client"
 
+// for api param to be not required
+process.env.SLACK_CLIENT = "1"
+process.env.SLACK_SECRET = "2"
+
 const action = new SlackAttachmentAction()
 
 const stubFileName = "stubSuggestedFilename"
