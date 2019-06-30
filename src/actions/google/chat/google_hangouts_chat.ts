@@ -13,6 +13,11 @@ export class GoogleHangoutsChatAction extends Hub.OAuthAction {
     iconName = "google/chat/google_hangouts_chat.svg"
     description = "Send data to Google Hangouts Chat."
     supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
+    supportedFormats = [
+      Hub.ActionFormat.WysiwygPdf,
+      Hub.ActionFormat.AssembledPdf,
+      Hub.ActionFormat.WysiwygPng,
+    ]
     usesStreaming = false
     minimumSupportedLookerVersion = "6.8.0"
     requiredFields = []
@@ -36,12 +41,18 @@ export class GoogleHangoutsChatAction extends Hub.OAuthAction {
       throw "Missing space."
     }
 
+    const plan = request.scheduledPlan
+    if (!plan) {
+      throw "Missing url."
+    }
+    const title = plan && plan.title ? plan.title : "Looker"
+    const url = plan.url!
+
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
       const chat = await this.chatClientFromRequest(stateJson.redirect, stateJson.tokens)
 
       try {
-        // todo fix params
         const params: chat_v1.Params$Resource$Spaces$Messages$Create = {
           requestBody: {
             space: {
@@ -50,9 +61,35 @@ export class GoogleHangoutsChatAction extends Hub.OAuthAction {
             text: "",
             cards: [{
               header: {
-                title: "",
-                imageUrl: "",
+                title,
+                imageUrl: "https://wwwstatic-d.lookercdn.com/logos/looker_black.svg",
               },
+              sections: [{
+                widgets: [{
+                  textParagraph: { text: request.formParams.message || "" },
+                  // todo figure out URL possible one time use?
+                  // google may add an image attachment to the API
+                  // https://issuetracker.google.com/issues/77501248
+                  image: {
+                    imageUrl: "",
+                    onClick: {
+                      openLink: {
+                        url,
+                      },
+                    },
+                  },
+                  buttons: [{
+                    textButton: {
+                      text: "See data in Looker",
+                      onClick: {
+                        openLink: {
+                          url,
+                        },
+                      },
+                    },
+                  }],
+                }],
+              }],
             }],
           },
         }
@@ -126,8 +163,8 @@ export class GoogleHangoutsChatAction extends Hub.OAuthAction {
             required: true,
             type: "select",
           }, {
-            label: "Enter a name",
-            name: "filename",
+            label: "Enter a message to display",
+            name: "message",
             type: "string",
             required: true,
           }]
