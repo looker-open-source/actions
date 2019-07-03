@@ -48,6 +48,7 @@ export class AirtableAction extends Hub.Action {
       }
       return record
     })
+
     let response
     try {
       const airtableClient = this.airtableClientFromRequest(request)
