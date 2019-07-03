@@ -48,7 +48,7 @@ export class AirtableAction extends Hub.Action {
       }
       return record
     })
-    const response = new Hub.ActionResponse({ success: true })
+    let response
     try {
       const airtableClient = this.airtableClientFromRequest(request)
       const base = airtableClient.base(request.formParams.base)
@@ -57,12 +57,10 @@ export class AirtableAction extends Hub.Action {
       await Promise.all(records.map(async (record: any) => {
         return table.create(record, {typecast: true})
       }))
-      return response
     } catch (e) {
-      response.success = false
-      response.message = e.message
-      return response
+      response = { success: false, message: e.message }
     }
+    return new Hub.ActionResponse(response)
   }
 
   async form() {
