@@ -37,4 +37,9 @@ interface ActionFormFieldOAuth extends ActionFormFieldBase {
   oauth_url: string
 }
 
-export type ActionFormField = ActionFormFieldString | ActionFormFieldSelect | ActionFormFieldOAuth
+interface ActionFormFieldOAuthInfo extends ActionFormFieldBase {
+  type: "auth_info"
+  value: string | undefined
+}
+
+export type ActionFormField = ActionFormFieldString | ActionFormFieldSelect | ActionFormFieldOAuth | ActionFormFieldOAuthInfo

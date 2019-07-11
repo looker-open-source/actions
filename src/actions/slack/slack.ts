@@ -17,9 +17,9 @@ interface Channel {
 export class SlackAttachmentAction extends Hub.OAuthAction {
 
   name = "slack"
-  label = "Slack Attachment"
+  label = "Slack with Oauth"
   iconName = "slack/slack.png"
-  description = "Write a data file to Slack."
+  description = "Oauth to Slack to do more cool things with Looker"
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
   params = [{
@@ -66,6 +66,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     try {
+      const stateJson = request.params.state_json && JSON.parse(request.params.state_json)
       const channels = await this.usableChannels(request)
       form.fields = [{
         description: "Name of the Slack channel you would like to post to.",
@@ -82,6 +83,12 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
         label: "Filename",
         name: "filename",
         type: "string",
+      } , {
+        name: "loggedInUser",
+        label: "Logged In As",
+        type: "auth_info",
+        value: stateJson && stateJson.user_id &&
+          stateJson.team_name && `User ${stateJson.user_id} in ${stateJson.team_name} Team`,
       }]
     } catch (e) {
       if (!request.params.slack_api_token) {
