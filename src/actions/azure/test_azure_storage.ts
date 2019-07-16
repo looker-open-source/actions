@@ -127,4 +127,28 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   })
 
+  it("returns form error if no containers are present", (done) => {
+    const stubClient = sinon.stub(action as any, "azureClientFromRequest")
+        .callsFake(() => ({
+          listContainersSegmented: (filter: any, cb: (err: any, res: any) => void) => {
+            chai.expect(filter).to.equal(null)
+            const containers = {
+              entries: [],
+            }
+            cb(null, containers)
+          },
+        }))
+
+    const request = new Hub.ActionRequest()
+    request.params = {
+      account: "foo",
+      accessKey: "foo",
+    }
+    const form = action.validateAndFetchForm(request)
+    chai.expect(form).to.eventually.deep.equal({
+      error: "Create a container in your Azure account.",
+      fields: [],
+    }).and.notify(stubClient.restore).and.notify(done)
+  })
+
 })

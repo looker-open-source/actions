@@ -68,21 +68,27 @@ export class AzureStorageAction extends Hub.Action {
           form.error = err
           resolve(form)
         } else {
-          form.fields = [{
-            label: "Container",
-            name: "container",
-            required: true,
-            options: res.entries.map((c: any) => {
-              return {name: c.name, label: c.name}
-            }),
-            type: "select",
-            default: res.entries[0].name,
-          }, {
-            label: "Filename",
-            name: "filename",
-            type: "string",
-          }]
-          resolve(form)
+          const entries: any[] = res.entries
+          if (entries.length > 0) {
+            form.fields = [{
+              label: "Container",
+              name: "container",
+              required: true,
+              options: res.entries.map((c: any) => {
+                return {name: c.name, label: c.name}
+              }),
+              type: "select",
+              default: res.entries[0].name,
+            }, {
+              label: "Filename",
+              name: "filename",
+              type: "string",
+            }]
+            resolve(form)
+          } else {
+            form.error = "Create a container in your Azure account."
+            resolve(form)
+          }
         }
       })
     })
