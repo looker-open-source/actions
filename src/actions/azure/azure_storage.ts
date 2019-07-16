@@ -61,9 +61,9 @@ export class AzureStorageAction extends Hub.Action {
     // error in type definition for listContainersSegmented currentToken?
     // https://github.com/Azure/azure-storage-node/issues/352
     const form = new Hub.ActionForm()
-    const blogService: any = this.azureClientFromRequest(request)
+    const blobService: any = this.azureClientFromRequest(request)
     return new Promise<Hub.ActionForm>((resolve, _reject) => {
-      blogService.listContainersSegmented(null, (err: any, res: any) => {
+      blobService.listContainersSegmented(null, (err: any, res: any) => {
         if (err) {
           form.error = err
           resolve(form)
