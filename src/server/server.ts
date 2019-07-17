@@ -167,7 +167,7 @@ export default class Server implements Hub.RouteBuilder {
         try {
           await (action as OAuthAction).oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
           res.statusCode = 200
-          res.send(`<html><script>window.close()</script>><body>You may now close this tab.</body></html>`)
+          res.send(`<html><script>window.close()</script>><body>You may now close this tab or visit <a href="https://self-signed.looker.com:9999/account">account page</a> for more info.</body></html>`)
         } catch (e) {
           this.logPromiseFail(req, res, e)
           res.statusCode = 400
