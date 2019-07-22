@@ -186,16 +186,18 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
     const client = this.oauth2Client(redirect)
     const {tokens} = await client.getToken(code)
-    try {
-      const result = await fetch(
-          `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.access_token}`
-      )
-      console.log(result)
-    } catch (e) {
-      console.warn(e)
+
+    if (!tokens || !tokens.access_token) {
+      throw new Error("Illegal")
     }
 
-    return tokens
+    const info = await client.getTokenInfo(tokens.access_token)
+
+    if (!info) {
+      throw new Error("Illegal")
+    }
+
+    return Object.assign({}, tokens, info)
   }
 
   protected async driveClientFromRequest(redirect: string, tokens: Credentials) {
