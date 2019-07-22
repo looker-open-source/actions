@@ -4,7 +4,7 @@ import {GoogleDriveAction} from "../google_drive"
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
-    label = "Google Sheets"
+    label = "Google Sheets OAuth"
     iconName = "google/sheets/sheets.svg"
     description = "Create a new Google Sheet."
     supportedActionTypes = [Hub.ActionType.Query]

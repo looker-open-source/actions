@@ -9,7 +9,7 @@ import * as Hub from "../../../hub"
 
 export class GoogleDriveAction extends Hub.OAuthAction {
     name = "google_drive"
-    label = "Google Drive"
+    label = "Google Drive Oauth"
     iconName = "google/drive/google_drive.svg"
     description = "Create a new file in Google Drive."
     supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
@@ -141,6 +141,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     // generate a url that asks permissions for Google Drive scope
     const scopes = [
       "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/userinfo.email"
     ]
 
     const url = oauth2Client.generateAuthUrl({
@@ -185,6 +186,15 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
     const client = this.oauth2Client(redirect)
     const {tokens} = await client.getToken(code)
+    try {
+      const result = await fetch(
+          `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.access_token}`
+      )
+      console.log(result)
+    } catch (e) {
+      console.warn(e)
+    }
+
     return tokens
   }
 
