@@ -86,6 +86,12 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
+          form.fields.push({
+            name: "loggedInUser",
+            label: "Logged In As",
+            type: "auth_info",
+            value: stateJson.tokens.email,
+          })
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
           const options: any = {
