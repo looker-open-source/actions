@@ -1,4 +1,4 @@
-import * as Hub from "../../hub"
+import * as Hub from "../../../hub"
 
 const storage = require("@google-cloud/storage")
 
