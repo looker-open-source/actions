@@ -53,6 +53,7 @@ export abstract class Action {
   usesStreaming = false
   executeInOwnProcess = false
   iconName?: string
+  oauthIconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
   minimumSupportedLookerVersion = "5.5.0"
@@ -88,6 +89,7 @@ export abstract class Action {
             [ActionDownloadSettings.Push]
       ),
       icon_data_uri: this.getImageDataUri(),
+      oauth_icon_data_uri: this.getOAuthImageDataUri(),
       url: router.actionUrl(this),
     }
   }
@@ -151,6 +153,17 @@ export abstract class Action {
       return null
     }
     const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
+    if (fs.existsSync(iconPath)) {
+      return new datauri(iconPath).content
+    }
+    return null
+  }
+
+  getOAuthImageDataUri() {
+    if (!this.oauthIconName) {
+      return null
+    }
+    const iconPath = path.resolve(__dirname, "..", "actions", this.oauthIconName)
     if (fs.existsSync(iconPath)) {
       return new datauri(iconPath).content
     }

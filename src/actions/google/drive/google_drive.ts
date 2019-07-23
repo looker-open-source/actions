@@ -9,8 +9,9 @@ import * as Hub from "../../../hub"
 
 export class GoogleDriveAction extends Hub.OAuthAction {
     name = "google_drive"
-    label = "Google Drive Oauth"
-    iconName = "google/drive/google_drive.svg"
+    label = "Google Oauth"
+    iconName = "google/drive/google.svg"
+    oauthIconName = "google/drive/google_signin.png"
     description = "Create a new file in Google Drive."
     supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
     usesStreaming = true
