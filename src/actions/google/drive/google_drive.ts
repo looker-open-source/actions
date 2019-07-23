@@ -12,7 +12,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     label = "Google Oauth"
     iconName = "google/drive/google.svg"
     oauthIconName = "google/drive/google_signin.png"
-    description = "Create a new file in Google Drive."
+    description = "Oauth to Google to do more cool things with Looker"
     supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
     usesStreaming = true
     minimumSupportedLookerVersion = "6.8.0"
