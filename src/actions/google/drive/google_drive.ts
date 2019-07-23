@@ -148,7 +148,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     // generate a url that asks permissions for Google Drive scope
     const scopes = [
       "https://www.googleapis.com/auth/drive",
-      "https://www.googleapis.com/auth/userinfo.email"
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/script.external_request",
     ]
 
     const url = oauth2Client.generateAuthUrl({
