@@ -2557,6 +2557,13 @@ json-stringify-safe@~5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
 
+json-to-markdown@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/json-to-markdown/-/json-to-markdown-1.0.4.tgz#0c7f0095eb140940c0b138054273fbaf566d7787"
+  integrity sha512-SIdPetj/im6XPlII9M3jJVDqF/RRGk2GKnj52/g8mY99S8A3ENEEOUhPDL+hhtCJpuodjWDuzXe69m0AffwUlg==
+  dependencies:
+    lodash "^4.16.4"
+
 jsonparse@~1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/jsonparse/-/jsonparse-1.2.0.tgz#5c0c5685107160e72fe7489bddea0b44c2bc67bd"
@@ -2708,6 +2715,11 @@ lodash@2.4.x:
 lodash@4.17.10, lodash@^4.13.1, lodash@^4.17.10, lodash@^4.17.4, lodash@^4.5.1, lodash@~4.17.5:
   version "4.17.10"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.10.tgz#1b7793cf7259ea38fb3661d4d38b3260af8ae4e7"
+
+lodash@^4.16.4, lodash@^4.17.15:
+  version "4.17.15"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
+  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
 
 log-driver@1.2.7:
   version "1.2.7"
