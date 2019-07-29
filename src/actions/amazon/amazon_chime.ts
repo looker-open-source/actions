@@ -1,6 +1,6 @@
 import * as Hub from "../../hub";
 import "json-to-markdown";
-import { find, filter, uniqBy } from "lodash";
+import { find, filter, uniq } from "lodash";
 
 
 const MAX_PAYLOAD = 4096
@@ -156,15 +156,15 @@ export class ChimeMarkdownTable extends Hub.Action {
         }
       });
       var tempCheck: any = out.concat([temp]);
-      var tempCheckBytes: number = ('/md '+ j2md(tempCheck, uniqBy(columns))).length
+      var tempCheckBytes: number = ('/md '+ j2md(tempCheck, uniq(columns))).length
   
       if (tempCheckBytes<=MAX_PAYLOAD) {
         out.push(temp);
       } else {
-        return {md: j2md(out, uniqBy(columns)), rows: index}
+        return {md: j2md(out, uniq(columns)), rows: index}
       }
     })
-    return {md: j2md(out, uniqBy(columns)), rows: data.length}
+    return {md: j2md(out, uniq(columns)), rows: data.length}
   }
 
   private webhook_post(webhook: string, data: any){
