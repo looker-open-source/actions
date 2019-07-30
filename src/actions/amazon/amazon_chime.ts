@@ -60,11 +60,11 @@ export class ChimeMarkdownTable extends Hub.Action {
     let response
     try {
       if ( request.formParams.send_title === "yes" ) {
-        await this.webhook_post(webhook, request.scheduledPlan.title )!
+        await this.webhook_post(webhook, request.scheduledPlan.title! )
       }
 
       // send table
-      const r: any = await this.webhook_post(webhook, mdObject.md)!
+      const r: any = await this.webhook_post(webhook, mdObject.md!)
       if (r && r.MessageId && r.RoomId) {
         response = {success: true, message: "200"}
       } else {
@@ -72,9 +72,9 @@ export class ChimeMarkdownTable extends Hub.Action {
       }
 
       if (mdObject.rows < dataLen) {
-        await this.webhook_post(webhook, "Showing " + mdObject.rows.toLocaleString("en-US") +
-          "/" + dataLen.toLocaleString("en-US") + " rows. [See all rows](" +
-          request.scheduledPlan.url + ")")!
+        await this.webhook_post(webhook!, "Showing " + mdObject.rows!.toLocaleString("en-US") +
+          "/" + dataLen!.toLocaleString("en-US") + " rows. [See all rows](" +
+          request.scheduledPlan.url! + ")")
       }
     } catch (e) {
       response = {success: false, message: e.message}
