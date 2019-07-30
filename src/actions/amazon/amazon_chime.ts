@@ -32,11 +32,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields;
     }
 
-    let hostName: string = ''
-    if (request.scheduledPlan &&
-        request.scheduledPlan.url) {
-      hostName = request.scheduledPlan.url.split('/').slice(0, 3).join('/');
-    } 
+    let hostName: string = (request.scheduledPlan && request.scheduledPlan.url) ?  request.scheduledPlan.url.split('/').slice(0, 3).join('/') : ''
 
     const details: any = (request.attachment && request.attachment.dataJSON) ? request.attachment.dataJSON : null;
     const webhook = (request.formParams.webhook_override) ? request.formParams.webhook_override : request.params.webhook;
@@ -44,15 +40,15 @@ export class ChimeMarkdownTable extends Hub.Action {
     const fieldTypes: string[] = ['dimensions','measures','table_calculations'];
     const dataLen: number = details.data.length
     
-    var fieldsOut: string[] = [];
+    var fieldsOut: any = [];
 
     fieldTypes.forEach(function (item: string) {
       if(fields[item] && fields[item].length>0) {
         for (var i=0; i<fields[item].length; i++) {
           var tmp: any = fields[item][i]
-            tmp['_hidden'] = ( hiddenFields.indexOf(tmp.name) > -1 )
-            tmp['_type'] = item
-            fieldsOut.push(tmp)           
+          tmp['_hidden'] = ( hiddenFields.indexOf(tmp.name) > -1 )
+          tmp['_type'] = item
+          fieldsOut.push(tmp)           
         }
       }
     });
@@ -63,17 +59,17 @@ export class ChimeMarkdownTable extends Hub.Action {
     let response
     try {
       if ( request.formParams.send_title == 'yes' ) {
-        var q: any = await this.webhook_post(webhook, request.scheduledPlan.title )
+        await this.webhook_post(webhook, request.scheduledPlan.title )
       }
       
       // send table
       var r: any = await this.webhook_post(webhook, mdObject.md);
   
       if (mdObject.rows < dataLen) {
-        var s: any = await this.webhook_post(webhook, 'Showing '+mdObject.rows.toLocaleString('en-US')+'/'+dataLen.toLocaleString('en-US')+' rows. [See all rows]('+request.scheduledPlan.url+')');
+        await this.webhook_post(webhook, 'Showing '+mdObject.rows.toLocaleString('en-US')+'/'+dataLen.toLocaleString('en-US')+' rows. [See all rows]('+request.scheduledPlan.url+')');
       }
     } catch (e) {
-      response = {success: false, message: e.messqage}
+      response = {success: false, message: e.message}
     }
     if (r && r.MessageId && r.RoomId) {
       response = {success: true, message: '200'}
@@ -132,22 +128,23 @@ export class ChimeMarkdownTable extends Hub.Action {
       var temp: any = {};
       Object.keys(row).map((key: string) => {
         // lookup the key in the fields collection
-        var findKey = find(fields_out, { 'name': key});
+        var findKey: any = find(fields_out, { 'name': key});
+        
         if (!findKey._hidden) {
 
-         var label: string = (findKey) ? (findKey.label_short || findKey.label) : findKey.name; // find the label (short) of the field
-         var value: string = row[key].rendered || row[key].value; // find the rendered value
+         var label: string = ( (findKey) ? (findKey.label_short || findKey.label) : findKey.name ) || ''; // find the label (short) of the field
+         var value: string = row[key].rendered || row[key].value || ''; // find the rendered value
    
          // if links are on, and the row has links, start the link generation
          if ( includeLinks != 'none' && row[key] && row[key].links) {
           
-           var tmpLinks: any = filter(row[key].links, function(o: any) { return o.type != 'action'; }) // remove actions drills
+           var tmpLinks: any = filter(row[key].links, function(o: any) { return o.type != 'action'; }) || {} // remove actions drills
 
            tmpLinks.forEach((tempLink: any, j: number)=>{
             if (j==0) {
-              value = '['+value+'](' + this.linkURL(hostName,tempLink.url) + ')';
+              value = ('['+value+'](' + this.linkURL(hostName,tempLink.url) + ')') || '';
             } else if (includeLinks == 'all') {
-              value = value + ' [['+tempLink.label+']](' + this.linkURL(hostName,tempLink.url) + ')'
+              value = ( value + ' [['+tempLink.label+']](' + this.linkURL(hostName,tempLink.url) + ')' )  || '';
             }
            })
          }
@@ -183,30 +180,11 @@ export class ChimeMarkdownTable extends Hub.Action {
           console.log(err)
           reject(err);
         }
+        console.log(httpResponse);
         resolve(body)
       })
     });
-  }  
-
-  private success(body: any) {
-    return this.buildResponse(200, body);
-  }
-  
-  private failure(body: any) {
-    return this.buildResponse(500, body);
-  }
-  
-  private buildResponse(statusCode: number, body: any) {
-    return {
-      statusCode: statusCode,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true
-      },
-      body: JSON.stringify(body)
-    };
-  }
-
+  } 
 }
 
 Hub.addAction(new ChimeMarkdownTable())
