@@ -54,7 +54,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       }
     })
 
-    const mdObject:any = this.convertToMd(details.data, fieldsOut, hostName, request.formParams.include_links)!
+    const mdObject: any = this.convertToMd(details.data, fieldsOut, hostName, request.formParams.include_links)!
 
     // send title from action hub parameter
     let response
@@ -124,7 +124,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     return hostname + link.replace(" ", "+")
   }
 
-  private convertToMd(data: any, fieldsOut: any, hostName: string, includeLinks: string) {
+  private convertToMd(data: any[], fieldsOut: any[], hostName: string, includeLinks: string) {
     const columns: string[] = []
     const out: string[] = []
 
