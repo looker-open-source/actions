@@ -60,7 +60,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     let response
     try {
       if ( request.formParams.send_title === "yes" ) {
-        var title_post:any = await this.webhook_post(webhook, request.scheduledPlan.title )
+        await this.webhook_post(webhook, request.scheduledPlan.title )
       }
 
       // send table
@@ -124,7 +124,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     return hostname + link.replace(" ", "+")
   }
 
-  private convertToMd(data, fieldsOut, hostName, includeLinks) {
+  private convertToMd(data: any, fieldsOut: any, hostName: any, includeLinks: any) {
     const columns: string[] = []
     const out: string[] = []
 
@@ -171,7 +171,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     return {md: j2md(out, uniq(columns)), rows: data.length}
   }
 
-  private async webhook_post(webhook: string, data: any) {
+  private async webhook_post(webhook, data) {
     const response: any = new Promise<any>((resolve, reject) => {
       const req = require("request")
 
