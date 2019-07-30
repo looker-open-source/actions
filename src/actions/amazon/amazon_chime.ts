@@ -124,7 +124,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     return hostname + link.replace(" ", "+")
   }
 
-  private convertToMd(data: any[], fieldsOut: any[], hostName: string, includeLinks: string) {
+  private convertToMd(data, fieldsOut, hostName, includeLinks) {
     const columns: string[] = []
     const out: string[] = []
 
