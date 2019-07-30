@@ -35,7 +35,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     const hostName: string = (request.scheduledPlan && request.scheduledPlan.url) ?
       request.scheduledPlan.url.split("/").slice(0, 3).join("/") : ""
 
-    const details: any = (request.attachment && request.attachment.dataJSON) ? request.attachment.dataJSON : null
+    const details: any = request.attachment.dataJSON
     const webhook = (request.formParams.webhook_override) ? request.formParams.webhook_override : request.params.webhook
     const fields = (details && details.fields) ? details.fields : {}
     const fieldTypes: string[] = ["dimensions", "measures", "table_calculations"]
