@@ -172,7 +172,7 @@ export class ChimeMarkdownTable extends Hub.Action {
   }
 
   private async webhook_post(webhook: string, data: any) {
-    return new Promise<any>((resolve, reject) => {
+    const response: any = new Promise<any>((resolve, reject) => {
       const req = require("request")
 
       const options = {
@@ -188,7 +188,8 @@ export class ChimeMarkdownTable extends Hub.Action {
         }
         resolve(body)
       })
-    }) as any
+    })
+    return response
   }
 }
 
