@@ -53,7 +53,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       }
     });
 
-    var mdObject: any = this.convertToMD(details.data, fieldsOut, hostName, request.formParams.include_links);
+    var mdObject: any = this.convertToMD(details.data, fieldsOut, hostName, request.formParams.include_links) || {};
  
     // send title from action hub parameter
     let response
