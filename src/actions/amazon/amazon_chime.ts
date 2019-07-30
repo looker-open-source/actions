@@ -1,10 +1,9 @@
-import * as Hub from "../../hub";
-import "json-to-markdown";
-import { find, filter, uniq } from "lodash";
-
+import "json-to-markdown"
+import { filter, find, uniq } from "lodash"
+import * as Hub from "../../hub"
 
 const MAX_PAYLOAD = 4096
-const j2md = require('json-to-markdown');
+const j2md = require("json-to-markdown")
 
 export class ChimeMarkdownTable extends Hub.Action {
 
@@ -18,7 +17,8 @@ export class ChimeMarkdownTable extends Hub.Action {
     name: "webhook",
     label: "Webhook",
     required: true,
-    description: `This is a default webhook to be written to; it can be overridden. See - https://docs.aws.amazon.com/chime/latest/ug/webhooks.html`,
+    description: `This is a default webhook to be written to; it can be overridden.` +
+      `See - https://docs.aws.amazon.com/chime/latest/ug/webhooks.html`,
     sensitive: false,
   }]
 
@@ -29,53 +29,57 @@ export class ChimeMarkdownTable extends Hub.Action {
         request.scheduledPlan.query &&
         request.scheduledPlan.query.vis_config &&
         request.scheduledPlan.query.vis_config.hidden_fields) {
-      hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields;
+      hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
     }
 
-    let hostName: string = (request.scheduledPlan && request.scheduledPlan.url) ?  request.scheduledPlan.url.split('/').slice(0, 3).join('/') : ''
+    const hostName: string = (request.scheduledPlan && request.scheduledPlan.url) ?
+      request.scheduledPlan.url.split("/").slice(0, 3).join("/") : ""
 
-    const details: any = (request.attachment && request.attachment.dataJSON) ? request.attachment.dataJSON : null;
-    const webhook = (request.formParams.webhook_override) ? request.formParams.webhook_override : request.params.webhook;
-    const fields = (details && details.fields) ? details.fields : {} 
-    const fieldTypes: string[] = ['dimensions','measures','table_calculations'];
+    const details: any = (request.attachment && request.attachment.dataJSON) ? request.attachment.dataJSON : null
+    const webhook = (request.formParams.webhook_override) ? request.formParams.webhook_override : request.params.webhook
+    const fields = (details && details.fields) ? details.fields : {}
+    const fieldTypes: string[] = ["dimensions", "measures", "table_calculations"]
     const dataLen: number = details.data.length
-    
-    var fieldsOut: any = [];
 
-    fieldTypes.forEach(function (item: string) {
-      if(fields[item] && fields[item].length>0) {
-        for (var i=0; i<fields[item].length; i++) {
-          var tmp: any = fields[item][i]
-          tmp['_hidden'] = ( hiddenFields.indexOf(tmp.name) > -1 )
-          tmp['_type'] = item
-          fieldsOut.push(tmp)           
-        }
+    const fieldsOut: any = []
+
+    fieldTypes.forEach((item: string) => {
+      if (fields[item] && fields[item].length > 0) {
+        fields[item].forEach((fieldItem: any) => {
+          const tmp: any = fieldItem
+          tmp._hidden = ( hiddenFields.indexOf(tmp.name) > -1 )
+          tmp._type = item
+          fieldsOut.push(tmp)
+        })
       }
-    });
+    })
 
-    var mdObject: any = this.convertToMD(details.data, fieldsOut, hostName, request.formParams.include_links) || {};
- 
+    const mdObject: any = this.convertToMd(details.data, fieldsOut, hostName, request.formParams.include_links)
+
     // send title from action hub parameter
     let response
     try {
-      if ( request.formParams.send_title == 'yes' ) {
+      if ( request.formParams.send_title === "yes" ) {
         await this.webhook_post(webhook, request.scheduledPlan.title )
       }
-      
+
       // send table
-      var r: any = await this.webhook_post(webhook, mdObject.md);
-  
+      const r: any = await this.webhook_post(webhook, mdObject.md)
+      if (r && r.MessageId && r.RoomId) {
+        response = {success: true, message: "200"}
+      } else {
+        response = {success: false, message: "failed to send webhook to group"}
+      }
+
       if (mdObject.rows < dataLen) {
-        await this.webhook_post(webhook, 'Showing '+mdObject.rows.toLocaleString('en-US')+'/'+dataLen.toLocaleString('en-US')+' rows. [See all rows]('+request.scheduledPlan.url+')');
+        await this.webhook_post(webhook, "Showing " + mdObject.rows.toLocaleString("en-US") +
+          "/" + dataLen.toLocaleString("en-US") + " rows. [See all rows](" +
+          request.scheduledPlan.url + ")")
       }
     } catch (e) {
       response = {success: false, message: e.message}
     }
-    if (r && r.MessageId && r.RoomId) {
-      response = {success: true, message: '200'}
-    } else {
-      response = {success: false, message: 'failed to send webhook to group'}
-    }
+
     return new Hub.ActionResponse(response)
   }
 
@@ -117,46 +121,49 @@ export class ChimeMarkdownTable extends Hub.Action {
   }
 
   private linkURL(hostname: string, link: string) {
-    return hostname + link.replace(' ','+');
+    return hostname + link.replace(" ", "+")
   }
 
-  private convertToMD(data: any, fields_out: any, hostName: string, includeLinks: string) {
-    var columns: string[] = []
-    var out: string[] = []
+  private convertToMd(data: any, fieldsOut: any, hostName: string, includeLinks: string) {
+    const columns: string[] = []
+    const out: string[] = []
 
     data.forEach((row: any, index: number) => {
-      var temp: any = {};
+      const temp: any = {}
       Object.keys(row).map((key: string) => {
         // lookup the key in the fields collection
-        var findKey: any = find(fields_out, { 'name': key});
-        
+        const findKey: any = find(fieldsOut, { name: key})
+
         if (!findKey._hidden) {
 
-         var label: string = ( (findKey) ? (findKey.label_short || findKey.label) : findKey.name ) || ''; // find the label (short) of the field
-         var value: string = row[key].rendered || row[key].value || ''; // find the rendered value
-   
-         // if links are on, and the row has links, start the link generation
-         if ( includeLinks != 'none' && row[key] && row[key].links) {
-          
-           var tmpLinks: any = filter(row[key].links, function(o: any) { return o.type != 'action'; }) || {} // remove actions drills
+         const label: string = ( (findKey) ? (findKey.label_short ||
+          findKey.label) : findKey.name ) // find the label (short) of the field
+         let value: string = row[key].rendered || row[key].value // find the rendered value
 
-           tmpLinks.forEach((tempLink: any, j: number)=>{
-            if (j==0) {
-              value = ('['+value+'](' + this.linkURL(hostName,tempLink.url) + ')') || '';
-            } else if (includeLinks == 'all') {
-              value = ( value + ' [['+tempLink.label+']](' + this.linkURL(hostName,tempLink.url) + ')' )  || '';
+         // if links are on, and the row has links, start the link generation
+         if ( includeLinks !== "none" && row[key] && row[key].links) {
+
+           const tmpLinks: any = filter(row[key].links, (o: any) => {
+             return o.type !== "action"
+            }) // remove actions drills
+
+           tmpLinks.forEach((tempLink: any, j: number) => {
+            if (j === 0) {
+              value = ("[" + value + "](" + this.linkURL(hostName, tempLink.url) + ")")
+            } else if (includeLinks === "all") {
+              value = ( value + " [[" + tempLink.label + "]](" + this.linkURL(hostName, tempLink.url) + ")" )
             }
            })
          }
-         columns.push(label);
-         temp[label] = value;       
+         columns.push(label)
+         temp[label] = value
         }
-      });
-      var tempCheck: any = out.concat([temp]);
-      var tempCheckBytes: number = ('/md '+ j2md(tempCheck, uniq(columns))).length
-  
-      if (tempCheckBytes<=MAX_PAYLOAD) {
-        out.push(temp);
+      })
+      const tempCheck: any = out.concat([temp])
+      const tempCheckBytes: number = ("/md " + j2md(tempCheck, uniq(columns))).length
+
+      if (tempCheckBytes <= MAX_PAYLOAD) {
+        out.push(temp)
       } else {
         return {md: j2md(out, uniq(columns)), rows: index}
       }
@@ -164,27 +171,25 @@ export class ChimeMarkdownTable extends Hub.Action {
     return {md: j2md(out, uniq(columns)), rows: data.length}
   }
 
-  private webhook_post(webhook: string, data: any){
-    return new Promise((resolve, reject) => {
-      var req = require('request');
+  private async webhook_post(webhook: string, data: any) {
+    return new Promise<any>((resolve, reject) => {
+      const req = require("request")
 
-      var options = {
-        url: webhook, 
-        body: JSON.stringify({'Content': '/md '+data}),
-        headers: {}
+      const options = {
+        url: webhook,
+        body: JSON.stringify({Content: "/md " + data}),
+        headers: {},
       }
 
-      req.post(options, function optionalCallback(err: any, httpResponse: any, body: any) {
+      req.post(options, function optionalCallback(err: any, _httpResponse: any, body: any) {
         // console.log(httpResponse);
         if (err) {
-          console.log(err)
-          reject(err);
+          reject(err)
         }
-        console.log(httpResponse);
         resolve(body)
       })
-    });
-  } 
+    }) as any
+  }
 }
 
 Hub.addAction(new ChimeMarkdownTable())
