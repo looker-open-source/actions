@@ -62,7 +62,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       let _title_request:any | undefined | null
       let _datalen_request:any | undefined | null
       if ( request.formParams.send_title === "yes" ) {
-        _title_request = await this.webhook_post(webhook, request.scheduledPlan.title )
+        _title_request = await this.webhook_post(webhook, request.scheduledPlan.title ) || null
         if (_title_request === undefined || _datalen_request === null) {
           response = {success: false, message: "failed to send title to group"}
         }
@@ -79,7 +79,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       if (mdObject.rows < dataLen) {
         _datalen_request = await this.webhook_post(webhook, "Showing " + mdObject.rows.toLocaleString("en-US") +
           "/" + dataLen.toLocaleString("en-US") + " rows. [See all rows](" +
-          request.scheduledPlan.url + ")")
+          request.scheduledPlan.url + ")")  || null
         if (_datalen_request === undefined || _datalen_request === null ) {
           response = {success: false, message: "failed to send data length to group"}
         }
