@@ -190,7 +190,7 @@ export class ChimeMarkdownTable extends Hub.Action {
   }
 
   private async webhook_post(webhook: any, data: any) {
-    const response: any = new Promise<any>((resolve, reject) => {
+    const response: any = new Promise<any>( async (resolve, reject) => {
       const req = require("request")
 
       const options = {
@@ -199,8 +199,8 @@ export class ChimeMarkdownTable extends Hub.Action {
         headers: {},
       }
 
-      req.post(options, function optionalCallback(err: any, _httpResponse: any, body: any) {
-        // console.log(httpResponse);
+      await req.post(options, function optionalCallback(err: any, _httpResponse: any, body: any) {
+
         if (err) {
           reject(err)
         }
