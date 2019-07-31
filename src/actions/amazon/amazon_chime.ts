@@ -62,6 +62,8 @@ export class ChimeMarkdownTable extends Hub.Action {
     try {
       let _title_request:any | undefined | null
       let _datalen_request:any | undefined | null
+      let _table_request:any | undefined | null
+      
       if ( request.formParams.send_title === "yes" && webhook && request && 
             request.scheduledPlan && request.scheduledPlan.title && request.scheduledPlan.url) {
 
@@ -73,8 +75,8 @@ export class ChimeMarkdownTable extends Hub.Action {
       }
 
       // send table
-      const r: any = await this.webhook_post(webhook, mdObject.md)
-      if (r && r.MessageId && r.RoomId) {
+      _table_request = await this.webhook_post(webhook, mdObject.md)
+      if (_table_request && _table_request.MessageId && _table_request.RoomId) {
         response = {success: true, message: "200"}
       } else {
         response = {success: false, message: "failed to send webhook to group"}
