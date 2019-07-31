@@ -60,7 +60,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     let response
     try {
       if ( request.formParams.send_title === "yes" ) {
-        let _title_request:any = await this.webhook_post(webhook, request.scheduledPlan.title )!
+        await this.webhook_post(webhook, request.scheduledPlan.title ) || {}
       }
 
       // send table
@@ -72,9 +72,9 @@ export class ChimeMarkdownTable extends Hub.Action {
       }
 
       if (mdObject.rows < dataLen) {
-        let _datalen_request:any = await this.webhook_post(webhook, "Showing " + mdObject.rows.toLocaleString("en-US") +
+        await this.webhook_post(webhook, "Showing " + mdObject.rows.toLocaleString("en-US") +
           "/" + dataLen.toLocaleString("en-US") + " rows. [See all rows](" +
-          request.scheduledPlan.url + ")")!
+          request.scheduledPlan.url + ")")  || {}
       }
     } catch (e) {
       response = {success: false, message: e.message}
