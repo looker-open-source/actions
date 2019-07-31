@@ -75,7 +75,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       }
 
       // send table
-      _table_request = await this.webhook_post(webhook, mdObject.md)
+      _table_request = await this.webhook_post(webhook, mdObject.md);
       if (_table_request && _table_request.MessageId && _table_request.RoomId) {
         response = {success: true, message: "200"}
       } else {
@@ -189,8 +189,8 @@ export class ChimeMarkdownTable extends Hub.Action {
     return {md: j2md(out, uniq(columns)), rows: data.length}
   }
 
-  private async webhook_post(webhook: any, data: any) {
-    const response: any = new Promise<any>( async (resolve, reject) => {
+  private webhook_post(webhook: any, data: any): Promise<any> {
+    return new Promise<any>( (resolve, reject) => {
       const req = require("request")
 
       const options = {
@@ -199,7 +199,7 @@ export class ChimeMarkdownTable extends Hub.Action {
         headers: {},
       }
 
-      await req.post(options, function optionalCallback(err: any, _httpResponse: any, body: any) {
+      req.post(options, function optionalCallback(err: any, _httpResponse: any, body: any) {
 
         if (err) {
           reject(err)
@@ -207,7 +207,6 @@ export class ChimeMarkdownTable extends Hub.Action {
         resolve(body)
       })
     })
-    return await response
   }
 }
 
