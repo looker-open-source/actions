@@ -179,7 +179,8 @@ export class ChimeMarkdownTable extends Hub.Action {
     return {md: j2md(out, uniq(columns)), rows: data.length}
   }
 
-  private async webhook_post(webhook: any, data: any) {
+  private async webhook_post(webhook: any, data?: any) {
+    if (!data) { data = '' }
     const response: any = new Promise<any>((resolve, reject) => {
       const req = require("request")
 
