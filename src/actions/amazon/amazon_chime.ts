@@ -63,7 +63,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       let _title_request:any | undefined | null
       let _datalen_request:any | undefined | null
       let _table_request:any | undefined | null
-      
+
       if ( request.formParams.send_title === "yes" && webhook && request && 
             request.scheduledPlan && request.scheduledPlan.title && request.scheduledPlan.url) {
 
@@ -112,6 +112,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       }, {
         label: "Send Title",
         options: [{ label: "Yes", name: "yes"}, { label: "No", name: "no"}],
+        default: "yes",
         type: "select",
         name: "send_title",
       }, {
@@ -119,6 +120,7 @@ export class ChimeMarkdownTable extends Hub.Action {
         name: "include_links",
         description: "Include Drill Links in Markdown Table",
         options: [{ label: "All", name: "all"}, { label: "First", name: "first"}, { label: "None", name: "none"}],
+        default: "all",
         type: "select",
       }]
     } catch (e) {
@@ -205,7 +207,7 @@ export class ChimeMarkdownTable extends Hub.Action {
         resolve(body)
       })
     })
-    return response
+    return await response
   }
 }
 
