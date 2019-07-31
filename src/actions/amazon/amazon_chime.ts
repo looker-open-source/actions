@@ -76,10 +76,10 @@ export class ChimeMarkdownTable extends Hub.Action {
 
       // send table
       _table_request = await this.webhook_post(webhook, mdObject.md);
-      if (_table_request && _table_request.MessageId && _table_request.RoomId) {
+      if (_table_request.MessageId && _table_request.RoomId) {
         response = {success: true, message: "200"}
       } else {
-        response = {success: false, message: "failed to send webhook to group"}
+        response = {success: false, message: JSON.stringify(_table_request)}
       }
 
       if (mdObject.rows < dataLen && webhook && mdObject && mdObject.rows && dataLen && 
