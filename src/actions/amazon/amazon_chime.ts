@@ -61,7 +61,9 @@ export class ChimeMarkdownTable extends Hub.Action {
     try {
       let _title_request:any | undefined | null
       let _datalen_request:any | undefined | null
-      if ( request.formParams.send_title === "yes" ) {
+      if ( request.formParams.send_title === "yes" && webhook && request && 
+            request.scheduledPlan && request.scheduledPlan.title) {
+              
         _title_request = await this.webhook_post(webhook, request.scheduledPlan.title ) || null
         if (_title_request === undefined || _datalen_request === null) {
           response = {success: false, message: "failed to send title to group"}
@@ -76,7 +78,9 @@ export class ChimeMarkdownTable extends Hub.Action {
         response = {success: false, message: "failed to send webhook to group"}
       }
 
-      if (mdObject.rows < dataLen) {
+      if (mdObject.rows < dataLen && webhook && mdObject && mdObject.rows && dataLen && 
+              request && request.scheduledPlan && request.scheduledPlan.url) {
+
         _datalen_request = await this.webhook_post(webhook, "Showing " + mdObject.rows.toLocaleString("en-US") +
           "/" + dataLen.toLocaleString("en-US") + " rows. [See all rows](" +
           request.scheduledPlan.url + ")")  || null
@@ -179,8 +183,7 @@ export class ChimeMarkdownTable extends Hub.Action {
     return {md: j2md(out, uniq(columns)), rows: data.length}
   }
 
-  private async webhook_post(webhook: any, data?: any) {
-    if (!data) { data = '' }
+  private async webhook_post(webhook: any, data: any) {
     const response: any = new Promise<any>((resolve, reject) => {
       const req = require("request")
 
