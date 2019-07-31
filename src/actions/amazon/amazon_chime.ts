@@ -11,7 +11,8 @@ export class ChimeMarkdownTable extends Hub.Action {
   label = "Chime Table"
   iconName = "amazon/chime.png"
   description = "Write a markdown table to chime."
-  supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  supportedActionTypes = [Hub.ActionType.Query]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
   requiredFields = []
   params = [{
     name: "webhook",
@@ -36,7 +37,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       request.scheduledPlan.url.split("/").slice(0, 3).join("/") : ""
 
     const details: any = (request.attachment && request.attachment.dataJSON) ? request.attachment.dataJSON : {}
-    const webhook = (request.formParams.webhook_override) ? request.formParams.webhook_override : request.params.webhook
+    const webhook = request.formParams.webhook_override  || request.params.webhook;
     const fields = (details && details.fields) ? details.fields : {}
     const fieldTypes: string[] = ["dimensions", "measures", "table_calculations"]
     const dataLen: number = details.data.length
@@ -62,9 +63,10 @@ export class ChimeMarkdownTable extends Hub.Action {
       let _title_request:any | undefined | null
       let _datalen_request:any | undefined | null
       if ( request.formParams.send_title === "yes" && webhook && request && 
-            request.scheduledPlan && request.scheduledPlan.title) {
-              
-        _title_request = await this.webhook_post(webhook, request.scheduledPlan.title ) || null
+            request.scheduledPlan && request.scheduledPlan.title && request.scheduledPlan.url) {
+
+        _title_request = await this.webhook_post(webhook, "[" + request.scheduledPlan.title + 
+          "](" + request.scheduledPlan.url + ")" ) || null
         if (_title_request === undefined || _datalen_request === null) {
           response = {success: false, message: "failed to send title to group"}
         }
@@ -106,7 +108,7 @@ export class ChimeMarkdownTable extends Hub.Action {
         required: false,
         type: "string",
       }, {
-        label: "Comment",
+        label: "Send Title",
         options: [{ label: "Yes", name: "yes"}, { label: "No", name: "no"}],
         type: "select",
         name: "send_title",
