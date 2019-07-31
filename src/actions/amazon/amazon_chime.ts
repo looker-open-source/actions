@@ -1,4 +1,5 @@
 import "json-to-markdown"
+import * as req from "request-promise-native"
 import { filter, find, uniq } from "lodash"
 import * as Hub from "../../hub"
 
@@ -79,7 +80,7 @@ export class ChimeMarkdownTable extends Hub.Action {
       if (_table_request.MessageId && _table_request.RoomId) {
         response = {success: true, message: "200"}
       } else {
-        response = {success: false, message: JSON.stringify(_table_request)}
+        response = {success: false, message: JSON.stringify(_table_request)+' - '+typeof(_table_request) }
       }
 
       if (mdObject.rows < dataLen && webhook && mdObject && mdObject.rows && dataLen && 
@@ -191,14 +192,13 @@ export class ChimeMarkdownTable extends Hub.Action {
 
   private webhook_post(webhook: any, data: any): Promise<any> {
     return new Promise<any>( (resolve, reject) => {
-      const req = require("request")
 
       const options = {
-        url: webhook,
-        body: JSON.stringify({Content: "/md " + data}),
-        headers: {},
+        uri: webhook,
+        body: {Content: "/md " + data},
+        headers: {"Content-Type": "application/json"},
+        json: true,
       }
-
       req.post(options, function optionalCallback(err: any, _httpResponse: any, body: any) {
 
         if (err) {
