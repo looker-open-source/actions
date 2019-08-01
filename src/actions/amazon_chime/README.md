@@ -4,8 +4,13 @@
 ## Send markdown tables from Looker queries to Amazon Chime via webhooks.
 Take a Looker explore or look, and send the data to Amazon Chime through its [webhook integration](https://docs.aws.amazon.com/chime/latest/ug/webhooks.html). You can send data to team members or create real time alerts as data is being analyzed in Looker.
 
+![Image result for amazon chime](./chime_markdown_example.png)
+
+
 ## Setup
 While in a Chime chat room, administrators of the chat room have the ability to add a webhook through the `Manage webhooks and bots` settings options. To set up this integration follow these steps:
+
+![Image result for amazon chime](./chime_add_webhook.png)
 
  1. `Add webhook` through the `Manage webhooks and bots` modal for a chat room
  2. Add a name for the bot (e.g., `New Alert Bot`)
@@ -15,6 +20,8 @@ While in a Chime chat room, administrators of the chat room have the ability to 
  6. On the Chime Action page, enable it and paste the webhook url in the Webhook box and press Save.
 
 ## Test the Chime Integration
+
+![Image result for amazon chime](./chime_markdown_example.png)
 
  1. Open up a Looker explore and create a quick table by selecting dimensions and/or measures
  2. In the gear icon in the top right of the window, click `Send` 
