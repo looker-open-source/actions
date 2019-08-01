@@ -61,9 +61,9 @@ export class ChimeMarkdownTable extends Hub.Action {
     // send title from action hub parameter
     let response
     try {
-      let _title_request:any | undefined | null
-      let _datalen_request:any | undefined | null
-      let _table_request:any | undefined | null
+      let _title_request:any 
+      let _datalen_request:any
+      let _table_request:any 
 
       if ( request.formParams.send_title === "yes" && webhook && request && 
             request.scheduledPlan && request.scheduledPlan.title && request.scheduledPlan.url) {

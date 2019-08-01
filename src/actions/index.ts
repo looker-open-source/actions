@@ -1,1 +1,1 @@
-import "./amazon/amazon_chime"
+import "./amazon_chime/amazon_chime"
