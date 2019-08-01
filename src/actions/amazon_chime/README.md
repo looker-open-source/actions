@@ -1,4 +1,4 @@
-![Image result for amazon chime](https://images.g2crowd.com/uploads/product/image/social_landscape/social_landscape_dd2cb7ce28768d6490870c9453edea61/amazon-chime.png)
+![Image result for amazon chime](./amazon_chime_full.png)
 
 
 ## Send markdown tables from Looker queries to Amazon Chime via webhooks.
