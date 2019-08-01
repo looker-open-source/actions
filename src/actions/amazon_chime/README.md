@@ -21,7 +21,7 @@ While in a Chime chat room, administrators of the chat room have the ability to 
 
 ## Test the Chime Integration
 
-![Image result for amazon chime](./chime_markdown_example.png)
+![Image result for amazon chime](./chime_action_modal.png)
 
  1. Open up a Looker explore and create a quick table by selecting dimensions and/or measures
  2. In the gear icon in the top right of the window, click `Send` 
