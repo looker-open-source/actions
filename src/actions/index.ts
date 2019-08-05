@@ -1,6 +1,7 @@
 import "./airtable/airtable"
 import "./amazon/amazon_ec2"
 import "./amazon/amazon_s3"
+import "./auger/auger_train"
 import "./azure/azure_storage"
 import "./braze/braze"
 import "./datarobot/datarobot"
