@@ -137,7 +137,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       stubStartProject = sinon.stub(action as any, "startProject")
       stubUploadToS3 = sinon.stub(action as any, "uploadToS3")
 
-      const augerURL = "https://app.auger.com/api/v1"
+      const augerURL = "https://app.auger.ai/api/v1"
       const rawName = "looker_file"
       const fileName = `${rawName}_${Date.now()}`
       const records = [
