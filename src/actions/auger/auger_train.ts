@@ -3,7 +3,7 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 import { Poller, Transaction } from "./poller"
 
-const AUGER_URL = "https://app.auger.com/api/v1"
+const AUGER_URL = "https://app.auger.ai/api/v1"
 
 export class AugerTrainAction extends Hub.Action {
   name = "auger"
