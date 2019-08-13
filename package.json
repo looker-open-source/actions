@@ -31,8 +31,9 @@
   "license": "MIT",
   "dependencies": {
     "@google-cloud/storage": "^1.5.2",
-    "@sendgrid/helpers": "^6.1.5",
-    "@sendgrid/mail": "^6.1.4",
+    "@sendgrid/client": "^6.4.0",
+    "@sendgrid/helpers": "^6.4.0",
+    "@sendgrid/mail": "^6.4.0",
     "@slack/client": "^4.2.2",
     "@types/base64-url": "^2.2.0",
     "@types/body-parser": "^1.16.5",

@@ -1,8 +1,9 @@
 import * as Hub from "../../hub"
 
-import * as helpers from "@sendgrid/helpers"
+import {MailData} from "@sendgrid/helpers/classes/mail"
 
-const sendgridMail = require("@sendgrid/mail")
+import * as sendgridClient from "@sendgrid/client"
+import * as sendgridMail from "@sendgrid/mail"
 
 export class SendGridAction extends Hub.Action {
 
@@ -34,7 +35,7 @@ export class SendGridAction extends Hub.Action {
     const subject = request.formParams.subject || (plan && plan.title ? plan.title : "Looker")
     const from = request.formParams.from ? request.formParams.from : "Looker <noreply@lookermail.com>"
 
-    const msg = new helpers.classes.Mail({
+    const msg: MailData = {
       to: request.formParams.to,
       subject,
       from,
@@ -50,7 +51,7 @@ export class SendGridAction extends Hub.Action {
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
-    })
+    }
     let response
     try {
       await this.sendEmail(request, msg)
@@ -60,7 +61,7 @@ export class SendGridAction extends Hub.Action {
     return new Hub.ActionResponse(response)
   }
 
-  async sendEmail(request: Hub.ActionRequest, msg: helpers.classes.Mail) {
+  async sendEmail(request: Hub.ActionRequest, msg: MailData) {
     const client = this.sgMailClientFromRequest(request)
     return await client.send(msg)
   }
