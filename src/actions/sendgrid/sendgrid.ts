@@ -14,10 +14,17 @@ export class SendGridAction extends Hub.Action {
   params = [
     {
       description: "API key for SendGrid from https://app.sendgrid.com/settings/api_keys.",
-      label: "SendGrid API Key",
+      label: "API Key",
       name: "sendgrid_api_key",
       required: true,
       sensitive: true,
+    },
+    {
+      description: " SendGrid Dynamic Template Id from https://sendgrid.com/dynamic_templates.",
+      label: "Template Id",
+      name: "template",
+      required: false,
+      sensitive: false,
     },
   ]
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
@@ -46,8 +53,8 @@ export class SendGridAction extends Hub.Action {
       to: request.formParams.to,
       subject,
     }
-    if (request.formParams.template) {
-      msg.templateId = request.formParams.template
+    if (request.params.template) {
+      msg.templateId = request.params.template
       const templateData: { [key: string]: string } = {
         subject,
         to: request.formParams.to,
@@ -86,23 +93,33 @@ export class SendGridAction extends Hub.Action {
     return await client.send(msg)
   }
 
-  async getTemplates(request: Hub.ActionRequest) {
+  async getTemplate(request: Hub.ActionRequest) {
     const client = this.sgClientFromRequest(request)
     const req = {
       method: "GET",
-      url: "/v3/templates?generations=legacy,dynamic",
+      url: `/v3/templates/${request.params.template}`,
     }
 
     const [response] = await client.request(req)
-    const templates: { name: string, label: string }[] = response.body.templates.map((template: any) => ({
-      name: template.id,
-      label: template.name,
-    }))
-    return templates
+    return response.body
   }
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
+    if (request.params.template) {
+      try {
+        const template = await this.getTemplate(request)
+        if (!(template.id === request.params.template)) {
+          form.error = "Template not found"
+          return form
+        }
+      } catch (e) {
+        if (e.message === "NOT FOUND") {
+          form.error = "Template not found"
+          return form
+        }
+      }
+    }
     form.fields = [{
       name: "to",
       label: "To Email Address",
@@ -123,20 +140,6 @@ export class SendGridAction extends Hub.Action {
       name: "subject",
       type: "string",
     }]
-
-    const templates = await this.getTemplates(request)
-    if (templates.length > 0) {
-      form.fields.push({
-        label: "Template",
-        type: "select",
-        name: "template",
-        description: "SendGrid Template Name",
-        options: templates,
-        default: templates[0].name,
-        required: true,
-      })
-    }
-
     return form
   }
 
