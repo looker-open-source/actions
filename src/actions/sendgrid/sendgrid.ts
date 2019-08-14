@@ -36,22 +36,42 @@ export class SendGridAction extends Hub.Action {
     const from = request.formParams.from ? request.formParams.from : "Looker <noreply@lookermail.com>"
 
     const msg: MailData = {
-      to: request.formParams.to,
-      subject,
       from,
-      text: plan && plan.url ?
-          `View this data in Looker. ${plan.url}\n Results are attached.`
-        :
-          "Results are attached.",
-      html: plan && plan.url ?
-          `<p><a href="${plan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`
-        :
-          "Results are attached.",
+      personalizations: [{
+        to: request.formParams.to,
+        subject,
+      }],
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
     }
+
+    if (request.formParams.template) {
+      msg.templateId = request.formParams.template
+      const templateData: any = {
+        subject,
+        to: request.formParams.to,
+        from,
+      }
+      if (plan && plan.url) {
+        templateData.url = plan.url
+      }
+      msg.personalizations![0].dynamicTemplateData = templateData
+    } else {
+      let text
+      let html
+      if (plan && plan.url) {
+        text = `View this data in Looker. ${plan.url}\n Results are attached.`
+        html = `<p><a href="${plan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`
+      } else {
+        text = `Results are attached.`
+        html = `<p>Results are attached.</p>`
+      }
+      msg.text = text
+      msg.html = html
+    }
+
     let response
     try {
       await this.sendEmail(request, msg)
@@ -66,7 +86,22 @@ export class SendGridAction extends Hub.Action {
     return await client.send(msg)
   }
 
-  async form() {
+  async getTemplates(request: Hub.ActionRequest) {
+    const client = this.sgClientFromRequest(request)
+    const req = {
+      method: "GET",
+      url: "/v3/templates?generations=legacy,dynamic",
+    }
+
+    const [response] = await client.request(req)
+    const templates: { name: string, label: string }[] = response.body.templates.map((template: any) => ({
+      name: template.id,
+      label: template.name,
+    }))
+    return templates
+  }
+
+  async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     form.fields = [{
       name: "to",
@@ -88,7 +123,26 @@ export class SendGridAction extends Hub.Action {
       name: "subject",
       type: "string",
     }]
+
+    const templates = await this.getTemplates(request)
+    if (templates.length > 0) {
+      form.fields.push({
+        label: "Template",
+        type: "select",
+        name: "template",
+        description: "SendGrid Template Name",
+        options: templates,
+        default: templates[0].name,
+        required: true,
+      })
+    }
+
     return form
+  }
+
+  private sgClientFromRequest(request: Hub.ActionRequest) {
+    sendgridClient.setApiKey(request.params.sendgrid_api_key!)
+    return sendgridClient
   }
 
   private sgMailClientFromRequest(request: Hub.ActionRequest) {

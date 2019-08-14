@@ -66,8 +66,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
 
       const msg: MailData = {
-        to: request.formParams.to,
-        subject: request.scheduledPlan.title!,
+        personalizations: [{
+          to: request.formParams.to!,
+          subject: request.scheduledPlan.title!,
+        }],
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
@@ -93,8 +95,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
 
       const msg: MailData = {
-        to: request.formParams.to,
-        subject: "Hello attachment",
+        personalizations: [{
+          to: request.formParams.to!,
+          subject: "Hello attachment",
+        }],
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
@@ -120,8 +124,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
 
       const msg: MailData = {
-        to: request.formParams.to,
-        subject: request.scheduledPlan.title!,
+        personalizations: [{
+          to: request.formParams.to!,
+          subject: request.scheduledPlan.title!,
+        }],
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
@@ -148,8 +154,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = { dataBuffer: Buffer.from("1,2,3,4", "utf8") }
 
       const msg: MailData = {
-        to: request.formParams.to,
-        subject: request.formParams.subject,
+        personalizations: [{
+          to: request.formParams.to!,
+          subject: request.formParams.subject,
+        }],
         from: "Looker <noreply@lookermail.com>",
         text: `View this data in Looker. ${request.scheduledPlan.url}\n Results are attached.`,
         html: `<p><a href="${request.scheduledPlan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`,
