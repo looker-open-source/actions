@@ -1,6 +1,6 @@
 import * as Hub from "../../hub"
 
-import {MailData} from "@sendgrid/helpers/classes/mail"
+import { MailData } from "@sendgrid/helpers/classes/mail"
 
 import * as sendgridClient from "@sendgrid/client"
 import * as sendgridMail from "@sendgrid/mail"
@@ -37,19 +37,18 @@ export class SendGridAction extends Hub.Action {
 
     const msg: MailData = {
       from,
-      personalizations: [{
-        to: request.formParams.to,
-        subject,
-      }],
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
     }
-
+    const personalization: any = {
+      to: request.formParams.to,
+      subject,
+    }
     if (request.formParams.template) {
       msg.templateId = request.formParams.template
-      const templateData: any = {
+      const templateData: { [key: string]: string } = {
         subject,
         to: request.formParams.to,
         from,
@@ -57,7 +56,7 @@ export class SendGridAction extends Hub.Action {
       if (plan && plan.url) {
         templateData.url = plan.url
       }
-      msg.personalizations![0].dynamicTemplateData = templateData
+      personalization.dynamic_template_data = templateData
     } else {
       let text
       let html
@@ -71,6 +70,7 @@ export class SendGridAction extends Hub.Action {
       msg.text = text
       msg.html = html
     }
+    msg.personalizations = [personalization]
 
     let response
     try {
