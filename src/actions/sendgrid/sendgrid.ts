@@ -107,17 +107,20 @@ export class SendGridAction extends Hub.Action {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     if (request.params.template) {
+      const errorMessage = "Template not found"
       try {
         const template = await this.getTemplate(request)
         if (!(template.id === request.params.template)) {
-          form.error = "Template not found"
+          form.error = errorMessage
           return form
         }
       } catch (e) {
         if (e.message === "NOT FOUND") {
-          form.error = "Template not found"
-          return form
+          form.error = errorMessage
+        } else {
+          form.error = e.message
         }
+        return form
       }
     }
     form.fields = [{
