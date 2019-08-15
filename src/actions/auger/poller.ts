@@ -7,14 +7,14 @@ export interface Transaction {
   s3Path: string
   token: any
   url: string
-  modelType: any
-  records: any[],
-  augerURL: string,
-  successStatus: string,
-  errorStatus: string,
-  pollFunction?: (transaction: Transaction) => Promise<any>,
-  callbackFunction?: (transaction: Transaction) => Promise<any>,
-  projectFileId: number,
+  records: any[]
+  params: {[key: string]: any}
+  augerURL: string
+  successStatus: string
+  errorStatus: string
+  pollFunction?: (transaction: Transaction) => Promise<any>
+  callbackFunction?: (transaction: Transaction) => Promise<any>
+  projectFileId: number
   experimentId: number
 }
 
@@ -43,7 +43,7 @@ export class Poller {
 
   async checkStatus(transaction: Transaction) {
     winston.debug("polling training job status")
-    if (!transaction.pollFunction || !transaction.callbackFunction)  {
+    if (!transaction.pollFunction)  {
       throw new Error("pollFunction or callback not defined")
     }
     const response = await transaction.pollFunction(transaction)
@@ -53,7 +53,9 @@ export class Poller {
       case transaction.successStatus:
         winston.debug("polling running")
         this.stopPolling()
-        await transaction.callbackFunction(transaction)
+        if (transaction.callbackFunction !== undefined) {
+          await transaction.callbackFunction(transaction)
+        }
         break
       case transaction.errorStatus:
         winston.debug("polling undeployed")

@@ -4,6 +4,8 @@ import * as Hub from "../../hub"
 import { Poller, Transaction } from "./poller"
 
 const AUGER_URL = "https://app.auger.ai/api/v1"
+const MAX_TOTAL_TIME_MINS = "60"
+const MAX_N_TRIALS = "100"
 
 export class AugerTrainAction extends Hub.Action {
   name = "auger"
@@ -23,6 +25,20 @@ export class AugerTrainAction extends Hub.Action {
       required: true,
       sensitive: true,
     },
+    {
+      name: "max_n_trials",
+      label: "Max number of trials",
+      description: "The maximum number of trials to run on your data training",
+      required: false,
+      sensitive: false,
+    },
+    {
+      name: "max_total_time_mins",
+      label: "Max training time minutes",
+      description: "Maximum time alloted to train your data in minutes",
+      required: false,
+      sensitive: false,
+    },
   ]
 
   minimumSupportedLookerVersion = "5.24.0"
@@ -33,10 +49,10 @@ export class AugerTrainAction extends Hub.Action {
       const rawName = qr.fields.dimensions ? qr.fields.dimensions[0].source_file.split(".")[0] : "looker_file"
       const fileName = `${rawName}_${Date.now()}`
       const records = this.formatJSON(qr)
+      const params = this.formatParams(request.formParams)
       const projectName = request.formParams.project_name
       const filePath = `workspace/projects/${projectName}/files/${fileName}.json`
       const token = request.params.api_token
-      const modelType = request.formParams.model_type
 
       const projectFileUrl = await this.getProjectFileURL(projectName, filePath, token)
       const projectId = projectFileUrl.body.data.project_id
@@ -44,14 +60,15 @@ export class AugerTrainAction extends Hub.Action {
       const url = projectFileUrl.body.data.url
       const s3Path = `s3://${mainBucket}/workspace/projects/${projectName}/files/${fileName}.json`
       await this.uploadToS3(records, url)
+
       const transaction: Transaction = {
         projectId,
         fileName,
         s3Path,
         token,
         url,
-        modelType,
         records,
+        params,
         augerURL: AUGER_URL,
         successStatus: "running",
         errorStatus: "",
@@ -60,9 +77,17 @@ export class AugerTrainAction extends Hub.Action {
         projectFileId: 0,
         experimentId: 0,
       }
-
-      await this.startProject(transaction)
+      try {
+        await this.startProject(transaction)
+      } catch (e) {
+        if (e.name === "StatusCodeError") {
+          winston.debug("project already started")
+        } else {
+          throw new Error(`project start failed ${e}`)
+        }
+      }
       this.startPoller(transaction)
+
       return new Hub.ActionResponse({ success: true })
     } catch (e) {
       return new Hub.ActionResponse({ success: false, message: e.message })
@@ -79,11 +104,15 @@ export class AugerTrainAction extends Hub.Action {
 
     try {
       await this.validateAugerToken(request.params.api_token)
+      if (!request.params.max_n_trials) {
+        request.params.max_n_trials =  MAX_N_TRIALS
+      }
       form.fields = [
         {
           name: "project_name",
           label: "Project Name",
           required: true,
+          type: "string",
           description: "The Auger project to use.",
         },
         {
@@ -95,6 +124,25 @@ export class AugerTrainAction extends Hub.Action {
           options: [
             { name: "classification", label: "Classification" },
             { name: "regression", label: "Regression" },
+          ],
+        },
+        {
+          name: "max_n_trials",
+          label: "Trials to run",
+          type: "string",
+          default: request.params.max_n_trials,
+          required: false,
+          description: "How many trials to run for training.",
+        },
+        {
+          name: "train_data",
+          label: "Train after data transfer",
+          type: "select",
+          default: "false",
+          required: false,
+          options: [
+            { name: "true", label: "True" },
+            { name: "false", label: "False" },
           ],
         },
       ]
@@ -173,7 +221,11 @@ export class AugerTrainAction extends Hub.Action {
     transaction.successStatus = "processed"
     transaction.errorStatus = "processed_with_error"
     transaction.pollFunction = this.getProjectFile.bind(this)
-    transaction.callbackFunction = this.startExperiment.bind(this)
+    if (transaction.params.train_data === "true") {
+      transaction.callbackFunction = this.startExperiment.bind(this)
+    } else {
+      transaction.callbackFunction = undefined
+    }
     transaction.projectFileId = projectFile.body.data.id
     this.startPoller(transaction)
   }
@@ -235,7 +287,6 @@ export class AugerTrainAction extends Hub.Action {
         json: true,
         resolveWithFullResponse: true,
       }
-      winston.debug("get project", options)
       return httpRequest.get(options).promise()
     } catch (e) {
       throw new Error(`project file fetched: ${e}`)
@@ -277,7 +328,7 @@ export class AugerTrainAction extends Hub.Action {
         body: {
           experiment_id: transaction.experimentId,
           status: "preprocess",
-          model_type: transaction.modelType,
+          model_type: transaction.params.model_type,
           model_settings: this.formatModelSettings(transaction),
           token: transaction.token,
         },
@@ -303,7 +354,8 @@ export class AugerTrainAction extends Hub.Action {
     })
     const modelSettings = {
       features,
-      max_n_trials: 100,
+      max_n_trials: Number(transaction.params.max_n_trials),
+      max_total_time_mins: Number(transaction.params.max_total_time_mins),
     }
     return modelSettings
   }
@@ -317,6 +369,16 @@ export class AugerTrainAction extends Hub.Action {
       return "Your Auger API token is invalid."
     }
     return e.message
+  }
+
+  private formatParams(params: any) {
+    if (!params.max_n_trials) {
+      params.max_n_trials =  MAX_N_TRIALS
+    }
+    if (!params.max_total_time_mins) {
+      params.max_total_time_mins = MAX_TOTAL_TIME_MINS
+    }
+    return params
   }
 
   private formatJSON(qr: any) {

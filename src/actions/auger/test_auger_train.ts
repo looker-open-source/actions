@@ -36,6 +36,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {
         model_type: "classification",
         project_name: "lookerproj",
+        max_n_trials: "100",
+        train_data: "true",
       }
 
       const postSpy = sinon.spy((params: any) => {
@@ -43,6 +45,8 @@ describe(`${action.constructor.name} unit tests`, () => {
         chai.expect(params.headers.Authorization).to.equal("Token token")
         chai.expect(params.body.model_type).to.equal("classification")
         chai.expect(params.body.project_name).to.equal("lookerproj")
+        chai.expect(params.body.max_n_trials).to.equal("100")
+        chai.expect(params.body.train_data).to.equal("true")
         return {
           promise: async () => new Promise<void>((resolve: any) => resolve()),
         }
@@ -149,7 +153,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       const projectName = request.formParams.project_name
       const filePath = `workspace/projects/${projectName}/files/${fileName}.json`
       const token = request.params.api_token
-      const modelType = request.formParams.model_type
+      // const modelType = request.formParams.model_type
+      const params = request.formParams
       const projectId = 1
       const mainBucket = "main_bucket"
       const s3Path = `s3://${mainBucket}/workspace/projects/${projectName}/files/${fileName}.json`
@@ -159,7 +164,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         s3Path,
         token,
         url,
-        modelType,
+        params,
         records,
         augerURL,
         successStatus: "running",
