@@ -205,6 +205,7 @@ export class AugerTrainAction extends Hub.Action {
         body: {
           worker_type_id: 1,
           workers_count: 2,
+          cluster_autoterminate_minutes: 10,
           token: transaction.token,
         },
         json: true,
