@@ -42,11 +42,7 @@ export class AmazonS3Action extends Hub.Action {
 
     const s3 = this.amazonS3ClientFromRequest(request)
 
-    const filename = request.formParams.filename || request.suggestedFilename()
-
-    if (!filename) {
-      throw new Error("Couldn't determine filename.")
-    }
+    const filename = await request.templatedFilename(request.formParams.filename)
 
     const bucket = request.formParams.bucket
 

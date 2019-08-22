@@ -39,11 +39,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
       throw "Need Google Cloud Storage bucket."
     }
 
-    const filename = request.formParams.filename || request.suggestedFilename()
-
-    if (!filename) {
-      throw new Error("Couldn't determine filename.")
-    }
+    const filename = await request.templatedFilename(request.formParams.filename)
 
     const gcs = this.gcsClientFromRequest(request)
     const file = gcs.bucket(request.formParams.bucket)

@@ -1,5 +1,7 @@
 import * as Hub from "../../hub"
 
+import * as winston from "winston"
+
 import { WebClient } from "@slack/client"
 
 interface Channel {
@@ -29,6 +31,8 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
 
   async execute(request: Hub.ActionRequest) {
 
+    winston.info(`request: ${JSON.stringify(request)}`)
+
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -37,7 +41,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       throw "Missing channel."
     }
 
-    const fileName = request.formParams.filename || request.suggestedFilename()
+    const fileName = await request.templatedFilename(request.formParams.filename)
 
     const options = {
       file: request.attachment.dataBuffer,

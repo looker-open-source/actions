@@ -33,7 +33,7 @@ export class AzureStorageAction extends Hub.Action {
       throw "Need Azure container."
     }
 
-    const fileName = request.formParams.filename || request.suggestedFilename()
+    const fileName = await request.templatedFilename(request.formParams.filename)
     const container = request.formParams.container
 
     if (!fileName) {
