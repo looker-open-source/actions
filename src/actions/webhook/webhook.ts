@@ -13,7 +13,7 @@ export abstract class WebhookAction extends Hub.Action {
   usesStreaming = true
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  supportedFormats = [Hub.ActionFormat.JsonDetailLiteStream]
 
   async execute(request: Hub.ActionRequest) {
 
@@ -38,7 +38,7 @@ export abstract class WebhookAction extends Hub.Action {
 
     try {
       await request.stream(async (readable) => {
-        return req.post({ uri: providedUrl, body: readable } ).promise()
+        return req.post({ uri: providedUrl, body: readable, json: true } ).promise()
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e) {
