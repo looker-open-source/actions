@@ -59,7 +59,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
-    it("sends correct jira new issue", () => {
+    it("sends correct jira new issue", async () => {
       const request = new Hub.ActionRequest()
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
@@ -75,15 +75,14 @@ describe(`${action.constructor.name} unit tests`, () => {
       const dataBuffer = Buffer.from("1,2,3,4", "utf8")
       request.attachment = {dataBuffer}
       return expectJiraNewIssueMatch(request, {
-        fields: {
-          project: {
-            id: "1",
-          },
-          summary: "mysummary",
-          description: "mydescription\nLooker URL: looker_url",
-          issuetype: {
-            id: "10004",
-          },
+        project: {
+          id: "1",
+        },
+        summary: "mysummary",
+        description: "mydescription",
+        url: "looker_url",
+        issuetype: {
+          id: "10004",
         },
       }, {
         attachment: dataBuffer,

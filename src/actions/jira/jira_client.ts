@@ -3,6 +3,8 @@ import * as https from "request-promise-native"
 import { Readable } from "stream"
 import * as URL from "url"
 
+import { Document } from "adf-builder"
+
 interface Credentials {
   access_token: string
   scope: string
@@ -11,15 +13,14 @@ interface Credentials {
 }
 
 interface JiraIssue {
-  fields: {
-    project: {
-      id: string,
-    };
-    summary: string | undefined
-    description: string
-    issuetype: {
-      id: string,
-    }
+  project: {
+    id: string,
+  }
+  summary?: string
+  description?: string
+  url?: string
+  issuetype: {
+    id: string,
   }
 }
 
@@ -29,10 +30,10 @@ export class JiraClient {
   tokens?: Credentials
   cloudId?: string
 
-  constructor(redirectUri: string, tokens?: Credentials, apiVersion?: string) {
+  constructor(redirectUri: string, tokens?: Credentials, apiVersion = "3") {
     this.redirectUri = redirectUri
     this.tokens = tokens
-    this.apiVersion = apiVersion || "2"
+    this.apiVersion = apiVersion
   }
 
   generateAuthUrl(encryptedState: string, scope: string) {
@@ -70,8 +71,11 @@ export class JiraClient {
     }
 
     const response = await https.get(options)
-    // TODO protect from empty response
-    return response[0].id
+    if (response.length === 0) {
+      throw "no cloudId"
+    } else {
+      return response[0].id
+    }
   }
 
   async getToken(code: string) {
@@ -124,24 +128,60 @@ export class JiraClient {
     if (!this.tokens) {
       throw "unauthenticated"
     }
+    const description = new Document()
+    if (issue.description) {
+      description.paragraph().text(issue.description)
+    }
+    if (issue.url) {
+      description.paragraph().link("Looker URL", issue.url)
+    }
+
+    const body = {
+      fields: {
+        project: {
+          id: issue.project.id,
+        },
+        issuetype: {
+          id: issue.issuetype.id,
+        },
+        summary: issue.summary,
+        description,
+      },
+    }
+
     const baseUrl = await this.baseUrl()
     return https.post({
       url: `${baseUrl}/issue`,
       headers: {
         Authorization: `Bearer ${this.tokens.access_token}`,
       },
-      body: issue,
+      body,
       json: true,
       followAllRedirects: true,
     })
   }
 
-  async addAttachmentToIssue(attachment: Readable, issueId: string) {
+  async addAttachmentToIssue(attachment: Readable, issueId: string, contentLength?: number) {
     if (!this.tokens) {
       throw "unauthenticated"
     }
 
     const baseUrl = await this.baseUrl()
+    let formData
+    if (contentLength !== undefined) {
+      formData = {
+        file: {
+          value: attachment,
+          options: {
+            knownLength: contentLength,
+          },
+        },
+      }
+    } else {
+      formData = {
+        file: attachment,
+      }
+    }
 
     return https.post({
       url: `${baseUrl}/${issueId}/attachments`,
@@ -149,9 +189,7 @@ export class JiraClient {
         "Authorization": `Bearer ${this.tokens.access_token}`,
         "X-Atlassian-Token": "nocheck",
       },
-      formData: {
-        file: attachment,
-      },
+      formData,
       json: true,
     })
   }

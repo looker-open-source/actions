@@ -24,10 +24,6 @@ export class JiraAction extends Hub.OAuthAction {
   minimumSupportedLookerVersion = "6.8.0"
 
   async execute(request: Hub.ActionRequest) {
-    // if (!request.attachment || !request.attachment.dataBuffer) {
-    //   throw "Couldn't get data from attachment"
-    // }
-
     const resp = new Hub.ActionResponse()
 
     if (!request.params.state_json) {
@@ -37,41 +33,43 @@ export class JiraAction extends Hub.OAuthAction {
       return resp
     }
 
-    let description = ""
-    if (request.formParams.description) {
-      description = description.concat(`${request.formParams.description}\n`)
+    let url
+    if (request.scheduledPlan) {
+      if (request.scheduledPlan.url) {
+        url = request.scheduledPlan.url
+      }
     }
-    description = description.concat(`Looker URL: ${request.scheduledPlan && request.scheduledPlan.url}`)
-
     const issue = {
-      fields: {
-        project: {
-          id: request.formParams.project!,
-        },
-        summary: request.formParams.summary,
-        description,
-        issuetype: {
-          id: request.formParams.issueType!,
-        },
+      project: {
+        id: request.formParams.project!,
+      },
+      summary: request.formParams.summary,
+      description: request.formParams.description,
+      url,
+      issuetype: {
+        id: request.formParams.issueType!,
       },
     }
 
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
-      // try {
+      try {
         const client = await this.jiraClient(stateJson.redirect, stateJson.tokens)
         const newIssue = await client.newIssue(issue)
         winston.info(`newIssue: ${JSON.stringify(newIssue)}`)
         await request.stream(async (readable) => {
-          winston.info(`start attachment`)
-          const newAttachment = await client.addAttachmentToIssue(readable, newIssue.id)
-          winston.info(`newAttachment: ${JSON.stringify(newAttachment)}`)
+          let contentLength
+          if (request.attachment && request.attachment.dataBuffer) {
+            contentLength = request.attachment.dataBuffer.byteLength
+          }
+          // oauth 2.0 not supported by addAttachment
+          await client.addAttachmentToIssue(readable, newIssue.id, contentLength)
         })
         resp.success = true
-      // } catch (e) {
-      //   resp.success = false
-      //   resp.message = e.message
-      // }
+      } catch (e) {
+        resp.success = false
+        resp.message = e.message
+      }
     } else {
       resp.success = false
       resp.state = new Hub.ActionState()
