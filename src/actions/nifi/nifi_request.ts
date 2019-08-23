@@ -5,18 +5,8 @@ export interface IParamMap {
   [name: string]: string
 }
 
-export type DataActionType = "cell" | "query" | "dashboard"
-export type DataActionFormat =
-  "assembled_pdf" |
-  "csv" |
-  "html" |
-  "json" |
-  "json_detail" |
-  "inline_json" |
-  "txt" |
-  "wysiwyg_pdf" |
-  "wysiwyg_png" |
-  "xlsx"
+export type DataActionType = "query"
+export type DataActionFormat = "json_detail"
 
 export interface IDataActionAttachment {
   dataBuffer?: Buffer
