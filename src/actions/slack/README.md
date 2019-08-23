@@ -75,7 +75,7 @@ Note: Remember to invite the looker bot to any channels or groups that you might
 
 Legacy tokens aren't reccomended since they expose more permissions than neccessary for the Looker action to work. However, you can use a legacy token as your API token for this action if you need to for some reason. The legacy token will post as yourself on Slack rather than a bot account.
 
-1. Go to your Slack [action token page](https://api.slack.com/custom-actions/legacy-tokens#).
+1. Go to your Slack [action token page](https://api.slack.com/custom-integrations/legacy-tokens).
 
     ![](legacy-1.png)
 
