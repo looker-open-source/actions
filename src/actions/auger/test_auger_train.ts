@@ -10,7 +10,6 @@ import { AugerTrainAction } from "./auger_train"
 const action = new AugerTrainAction()
 const sandbox = sinon.createSandbox()
 const now = new Date()
-const clock = sinon.useFakeTimers(now.getTime())
 describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
@@ -18,15 +17,16 @@ describe(`${action.constructor.name} unit tests`, () => {
     let stubStartProject: sinon.SinonStub
     let stubPoller: sinon.SinonStub
     let stubUploadToS3: sinon.SinonStub
+    let stubChunkToS3: sinon.SinonStub
     let stubProjectFile: sinon.SinonStub
 
     afterEach(() => {
       stubHttpPost.restore()
       stubStartProject.restore()
       stubPoller.restore()
+      stubChunkToS3.restore()
       stubUploadToS3.restore()
       sandbox.restore()
-      clock.restore()
     })
 
     it("sends the right body with URL", async () => {
@@ -55,12 +55,14 @@ describe(`${action.constructor.name} unit tests`, () => {
       stubPoller = sinon.stub(action as any, "startPoller")
       stubStartProject = sinon.stub(action as any, "startProject")
       stubUploadToS3 = sinon.stub(action as any, "uploadToS3")
+      stubChunkToS3 = sinon.stub(action as any, "chunkToS3")
 
       chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
         chai.expect(postSpy).to.have.been.called
         chai.expect(stubPoller, "stubPoller").to.have.been.called
         chai.expect(stubStartProject, "stubStartProject").to.have.been.called
         chai.expect(stubUploadToS3, "stubUploadToS3").to.have.been.called
+        chai.expect(stubChunkToS3, "stubChunkToS3").to.have.been.called
       })
     })
 
@@ -70,15 +72,14 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params.api_token = "token"
       request.formParams = {
         model_type: "classification",
-        project_name: "lookerproj",
+        project_name: "",
       }
-      request.attachment = { dataJSON: {fields: []}}
 
       return chai.expect(action.execute(request))
         .to.be.fulfilled
         .then((result) => {
           chai.expect(result.success, "result.success").to.be.false
-          chai.expect(result.message, "result.message").to.equal("Request payload is an invalid format.")
+          chai.expect(result.message, "result.message").to.equal("Missing required param: project_name")
         })
     })
 
@@ -118,11 +119,9 @@ describe(`${action.constructor.name} unit tests`, () => {
           "distribution_centers.is_sold": { value: "No" },
         },
       ]
+
       request.attachment = {
-        dataJSON: {
-          fields,
-          data,
-        },
+        dataBuffer: Buffer.from(JSON.stringify({fields, data})),
       }
 
       const url = "https://testhost.com"
@@ -140,7 +139,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       stubPoller = sinon.stub(action as any, "startPoller")
       stubStartProject = sinon.stub(action as any, "startProject")
       stubUploadToS3 = sinon.stub(action as any, "uploadToS3")
-
+      sinon.stub(Date, "now").returns(now)
       const augerURL = "https://app.auger.ai/api/v1"
       const rawName = "looker_file"
       const fileName = `${rawName}_${Date.now()}`
@@ -150,22 +149,23 @@ describe(`${action.constructor.name} unit tests`, () => {
         { name: "Charleston SC", cost: 15.625000047, is_sold: "Yes" },
         { name: "Charleston SC", cost: 13.125000009, is_sold: "No" },
       ]
+      const columns = data[3]
+      const contentType = "application/json"
       const projectName = request.formParams.project_name
       const filePath = `workspace/projects/${projectName}/files/${fileName}.json`
       const token = request.params.api_token
-      // const modelType = request.formParams.model_type
       const params = request.formParams
       const projectId = 1
       const mainBucket = "main_bucket"
       const s3Path = `s3://${mainBucket}/workspace/projects/${projectName}/files/${fileName}.json`
       const transaction: Transaction = {
         projectId,
-        fileName,
         s3Path,
+        fileName,
+        columns,
         token,
-        url,
         params,
-        records,
+        contentType,
         augerURL,
         successStatus: "running",
         errorStatus: "",
@@ -182,7 +182,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           chai.expect(stubProjectFile, "stubProjectFile").to.have.been.calledWithMatch(projectName, filePath, token)
         })
     })
-
   })
 
   describe("form", () => {

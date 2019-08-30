@@ -3,12 +3,12 @@ import * as winston from "winston"
 
 export interface Transaction {
   projectId: number
-  fileName: string
   s3Path: string
+  fileName: string
+  columns: {[key: string]: any}
   token: any
-  url: string
-  records: any[]
   params: {[key: string]: any}
+  contentType: string
   augerURL: string
   successStatus: string
   errorStatus: string
@@ -16,6 +16,16 @@ export interface Transaction {
   callbackFunction?: (transaction: Transaction) => Promise<any>
   projectFileId: number
   experimentId: number
+}
+
+export interface FileInfo {
+  fileName: string
+  projectName?: string
+  filePath: string
+  token?: string
+  chunkRecords: any[]
+  allFields?: {[key: string]: any}
+  fieldMap: any[]
 }
 
 export class Poller {

@@ -1,11 +1,14 @@
 import * as httpRequest from "request-promise-native"
+import * as semver from "semver"
 import * as winston from "winston"
 import * as Hub from "../../hub"
-import { Poller, Transaction } from "./poller"
+import { FileInfo, Poller, Transaction } from "./poller"
+import { Queue } from "./queue"
 
 const AUGER_URL = "https://app.auger.ai/api/v1"
 const MAX_TOTAL_TIME_MINS = "60"
 const MAX_N_TRIALS = "100"
+const MAX_FILE_ROWS = 10000
 
 export class AugerTrainAction extends Hub.Action {
   name = "auger"
@@ -13,10 +16,10 @@ export class AugerTrainAction extends Hub.Action {
   iconName = "auger/auger.png"
   description = "Send data to Auger to start training."
   supportedActionTypes = [Hub.ActionType.Query]
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = []
+  usesStreaming = true
   params = [
     {
       name: "api_token",
@@ -42,33 +45,25 @@ export class AugerTrainAction extends Hub.Action {
   ]
 
   minimumSupportedLookerVersion = "5.24.0"
+  supportedFormats = (request: Hub.ActionRequest) => {
+    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
+      return [Hub.ActionFormat.JsonDetailLiteStream]
+    } else {
+      return [Hub.ActionFormat.JsonDetail]
+    }
+  }
 
   async execute(request: Hub.ActionRequest) {
     try {
-      const qr = this.validateParams(request)
-      const rawName = qr.fields.dimensions ? qr.fields.dimensions[0].source_file.split(".")[0] : "looker_file"
-      const fileName = `${rawName}_${Date.now()}`
-      const records = this.formatJSON(qr)
-      const params = this.formatParams(request.formParams)
-      const projectName = request.formParams.project_name
-      const filePath = `workspace/projects/${projectName}/files/${fileName}.json`
-      const token = request.params.api_token
-
-      const projectFileUrl = await this.getProjectFileURL(projectName, filePath, token)
-      const projectId = projectFileUrl.body.data.project_id
-      const mainBucket = projectFileUrl.body.data.main_bucket
-      const url = projectFileUrl.body.data.url
-      const s3Path = `s3://${mainBucket}/workspace/projects/${projectName}/files/${fileName}.json`
-      await this.uploadToS3(records, url)
-
+      this.validateParams(request)
       const transaction: Transaction = {
-        projectId,
-        fileName,
-        s3Path,
-        token,
-        url,
-        records,
-        params,
+        projectId: 0,
+        token: "",
+        s3Path: "",
+        fileName: "",
+        columns: [],
+        params: {},
+        contentType: "application/json",
         augerURL: AUGER_URL,
         successStatus: "running",
         errorStatus: "",
@@ -77,6 +72,9 @@ export class AugerTrainAction extends Hub.Action {
         projectFileId: 0,
         experimentId: 0,
       }
+
+      await this.processStream(request, transaction)
+
       try {
         await this.startProject(transaction)
       } catch (e) {
@@ -183,6 +181,97 @@ export class AugerTrainAction extends Hub.Action {
     }
   }
 
+  private async chunkToS3(fileInfo: FileInfo, transaction: Transaction): Promise<any> {
+    const projectFileUrl = await this.getProjectFileURL(fileInfo.projectName, fileInfo.filePath, fileInfo.token)
+    transaction.projectId = projectFileUrl.body.data.project_id
+    const mainBucket = projectFileUrl.body.data.main_bucket
+    const url = projectFileUrl.body.data.url
+
+    transaction.s3Path = `s3://${mainBucket}/workspace/projects/${fileInfo.projectName}/files/${fileInfo.fileName}.json`
+    winston.debug("calling upload to s3")
+    const recordsFormatted = this.formatRecords(fileInfo.chunkRecords, fileInfo.allFields, fileInfo.fieldMap)
+    await this.uploadToS3(recordsFormatted, url)
+  }
+
+  private async processStream(request: Hub.ActionRequest, transaction: Transaction): Promise<any>  {
+    transaction.params = this.formatParams(request.formParams)
+    const projectName = request.formParams.project_name
+    transaction.token = request.params.api_token
+    let records: Hub.JsonDetail.Row[] = []
+    let fileNumber = 1
+    let fieldMap: any = {}
+    let allFields: any[] = []
+    const queue = new Queue()
+
+    const sendChunk = (lastCall: boolean) => {
+      transaction.contentType = "multipart"
+      let filePath = `workspace/projects/${projectName}/files/${transaction.fileName}/${fileNumber}.json`
+      // if single file then don't chunk file names
+      if (lastCall && fileNumber === 1) {
+        transaction.contentType = "application/json"
+        filePath = `workspace/projects/${projectName}/files/${transaction.fileName}.json`
+      }
+
+      fileNumber += 1
+      let fileInfo: FileInfo
+      fileInfo = {
+        fileName: transaction.fileName,
+        projectName,
+        filePath,
+        token: transaction.token,
+        chunkRecords: records.slice(0),
+        allFields,
+        fieldMap,
+      }
+      // upload chunk to s3
+      const task = async () => this.chunkToS3(fileInfo, transaction)
+      records = []
+      queue.addTask(task)
+    }
+
+    await request.streamJsonDetail({
+      onFields: (fields) => {
+        const res = this.formatFields(fields)
+        allFields = res.allFields
+        fieldMap = res.fieldMap
+        transaction.fileName = fields.dimensions ? fields.dimensions[0].source_file.split(".")[0] : "looker_file"
+        transaction.fileName = `${transaction.fileName}_${Date.now()}`
+      },
+      onRow: (row) => {
+        transaction.columns = row
+        records.push(row)
+        if (records.length > MAX_FILE_ROWS ) {
+          sendChunk(false)
+        }
+      },
+    })
+    // send final records if any
+    if (records.length > 0) {
+      sendChunk(true)
+    }
+    const completed = await queue.finish()
+    winston.debug("completed is:", completed)
+  }
+
+  private formatFields(allFields: any) {
+    const fields: any[] = [].concat(...Object.keys(allFields).map((k) => allFields[k]))
+    const fieldMap: any = {}
+    for (const field of fields) {
+      fieldMap[field.name] = field.name.split(".")[1]
+    }
+    return { fieldMap, allFields: fields }
+  }
+
+  private formatRecords(data: any, fields: any, fieldMap: any) {
+    const records = data.map((row: any) => {
+      const record: any = {}
+      for (const field of fields) {
+        record[fieldMap[field.name]] = row[field.name].value
+      }
+      return record
+    })
+    return records
+  }
   private async uploadToS3(records: string[], url: string): Promise<any> {
     try {
       const signedOptions = {
@@ -252,6 +341,7 @@ export class AugerTrainAction extends Hub.Action {
           file_name: `${transaction.fileName}.json`,
           name: transaction.fileName,
           url: transaction.s3Path,
+          content_type: transaction.contentType,
           token: transaction.token,
         },
       }
@@ -344,7 +434,7 @@ export class AugerTrainAction extends Hub.Action {
   }
 
   private formatModelSettings(transaction: Transaction) {
-    const keys = Object.keys(transaction.records[0])
+    const keys = Object.keys(transaction.columns)
     const dataLength = keys.length
     const features = keys.map((feature, index) => {
       if (dataLength === index + 1) {
@@ -382,32 +472,7 @@ export class AugerTrainAction extends Hub.Action {
     return params
   }
 
-  private formatJSON(qr: any) {
-    const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
-    const fieldMap: any = {}
-    for (const field of fields) {
-      fieldMap[field.name] = field.name.split(".")[1]
-    }
-    const records = qr.data.map((row: any) => {
-
-      const record: any = {}
-      for (const field of fields) {
-        record[fieldMap[field.name]] = row[field.name].value
-      }
-      return record
-    })
-    return records
-  }
-
   private validateParams(request: Hub.ActionRequest) {
-    if (!request.attachment || !request.attachment.dataJSON) {
-      throw new Error("Couldn't get data from attachment")
-    }
-
-    const qr = request.attachment.dataJSON
-    if (!qr.fields || !qr.data) {
-      throw new Error("Request payload is an invalid format.")
-    }
     const {
       project_name,
       model_type,
@@ -420,9 +485,7 @@ export class AugerTrainAction extends Hub.Action {
     if (!model_type) {
       throw new Error("Missing required param: model_type")
     }
-    return qr
   }
-
 }
 
 Hub.addAction(new AugerTrainAction())
