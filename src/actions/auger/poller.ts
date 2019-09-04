@@ -48,7 +48,7 @@ export class Poller {
     this.timeoutTimer = setTimeout(() => {
       clearInterval(this.intervalTimer)
       this.logRejection
-    }, 180 * 1000)
+    }, 360 * 1000)
   }
 
   async checkStatus(transaction: Transaction) {
