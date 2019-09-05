@@ -1,8 +1,4 @@
 import * as Hub from "../../hub"
-
-import * as querystring from "querystring"
-import * as https from "request-promise-native"
-import {URL} from "url"
 import * as winston from "winston"
 
 import { WebClient } from "@slack/client"
@@ -25,8 +21,7 @@ export class SlackAttachmentAction extends Hub.OAuthAction {
   params = [{
     name: "slack_api_token",
     label: "Slack API Token",
-    // not required if oauth enabled via app client and secret env vars
-    required: !(process.env.SLACK_CLIENT && process.env.SLACK_SECRET),
+    required: false,
     description: `A Slack API token that includes the permissions "channels:read", \
 "users:read", and "files:write:user". You can follow the instructions to get a token at \
 https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
@@ -57,7 +52,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       response = new Hub.ActionResponse({success: false, message: e.message})
       if (!request.params.slack_api_token) {
         response.state = new Hub.ActionState()
-        response.state.data = "reset"
+        // response.state.data = "reset"
       }
     }
     return response
@@ -85,21 +80,15 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       }]
     } catch (e) {
       if (!request.params.slack_api_token) {
-        const actionCrypto = new Hub.ActionCrypto()
-        const jsonString = JSON.stringify({stateurl: request.params.state_url})
-        const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
-          winston.error("Encryption not correctly configured")
-          throw err
-        })
+        const oauthUrl = request.params.state_url || ""
         form.state = new Hub.ActionState()
-        form.state.data = "reset"
         form.fields.push({
           name: "login",
           type: "oauth_link",
           label: "Log in",
           description: "In order to send to a file, you will need to log in" +
             " once to your Slack account.",
-          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/slack/oauth?state=${ciphertextBlob}`,
+          oauth_url: oauthUrl,
         })
       } else {
         form.error = this.prettySlackError(e)
@@ -167,31 +156,14 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     return reformatted
   }
 
-  async oauthUrl(redirectUri: string, encryptedState: string) {
-    const url = new URL("https://slack.com/oauth/authorize")
-    url.search = querystring.stringify({
-      client_id: process.env.SLACK_CLIENT,
-      redirect_uri: redirectUri,
-      state: encryptedState,
-      scope: "channels:read,chat:write:user,files:write:user,groups:read,users:read",
-    })
-    return url.toString()
+  async oauthUrl() {
+    winston.error("Unsupported Slack oauthUrl")
+    return ""
   }
 
-  async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string) {
-    const actionCrypto = new Hub.ActionCrypto()
-    const plaintext = await actionCrypto.decrypt(urlParams.state).catch((err: string) => {
-      winston.error("Encryption not correctly configured" + err)
-      throw err
-    })
-
-    const credentials = await this.getCredentialsFromCode(urlParams.code, redirectUri)
-
-    const payload = JSON.parse(plaintext)
-    await https.post({
-      url: payload.stateurl,
-      body: JSON.stringify(credentials),
-    }).catch((_err) => { winston.error(_err.toString()) })
+  async oauthFetchInfo() {
+    winston.error("Unsupported Slack oauthFetchInfo")
+    return Promise.resolve()
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
@@ -208,19 +180,8 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     }
   }
 
-  protected async getCredentialsFromCode(code: string, redirect: string, refresh = false) {
-    if (code) {
-      const response = await this.slackClient().oauth.access({
-        client_id: process.env.SLACK_CLIENT!,
-        client_secret: process.env.SLACK_SECRET!,
-        code,
-        redirect_uri: redirect,
-        grant_type: refresh ? "refresh_token" : "authorization_code",
-      })
-      return response
-    } else {
-      throw "code does not exist"
-    }
+  protected async getCredentialsFromCode() {
+    throw "unsupported"
   }
 
   private prettySlackError(e: any) {
@@ -233,16 +194,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
     if (!request.params.slack_api_token) {
-      let accessToken
-      if (request.params.state_json) {
-        try {
-          const stateJson = JSON.parse(request.params.state_json)
-          accessToken = stateJson.access_token
-        } catch {
-          winston.warn("Could not parse state_json")
-        }
-      }
-      return this.slackClient(accessToken)
+      return this.slackClient(request.params.state_json)
     } else {
       return this.slackClient(request.params.slack_api_token)
     }
