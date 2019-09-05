@@ -437,10 +437,11 @@ export class AugerTrainAction extends Hub.Action {
     const keys = Object.keys(transaction.columns)
     const dataLength = keys.length
     const features = keys.map((feature, index) => {
+      const featureSplit = feature.split(".")[1]
       if (dataLength === index + 1) {
-        return { column_name: feature, isTarget: true}
+        return { column_name: featureSplit, isTarget: true}
       } else {
-        return { column_name: feature }
+        return { column_name: featureSplit }
       }
     })
     const modelSettings = {
