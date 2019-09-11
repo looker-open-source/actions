@@ -1,0 +1,6 @@
+export const MP_API_URL = "https://s2s.mparticle.com/v2/bulkevents/"
+export const EVENT_NAME = "looker_custom_action_test_event"
+export const EVENT_TYPE = "custom_event"
+export const ENVIRONMENT = "development"
+export const USER = "user_data"
+export const EVENT = "event_data"
