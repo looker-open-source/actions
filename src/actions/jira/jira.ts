@@ -3,14 +3,7 @@ import * as Hub from "../../hub"
 import * as https from "request-promise-native"
 import * as winston from "winston"
 
-import {JiraClient} from "./jira_client"
-
-interface JiraTokens {
-  access_token: string
-  scope: string
-  expires_in: number
-  token_type: string
-}
+import {Credentials, JiraClient} from "./jira_client"
 
 export class JiraAction extends Hub.OAuthAction {
   name = "jira_create_issue"
@@ -20,10 +13,17 @@ export class JiraAction extends Hub.OAuthAction {
   params = []
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
-  usesStreaming = true
+  usesStreaming = false
   minimumSupportedLookerVersion = "6.8.0"
 
   async execute(request: Hub.ActionRequest) {
+
+    if (!request.attachment || !request.attachment.dataBuffer) {
+      throw "Couldn't get data from attachment."
+    }
+    const buffer = request.attachment.dataBuffer
+    const filename  = request.formParams.filename || request.suggestedFilename()!
+
     const resp = new Hub.ActionResponse()
 
     if (!request.params.state_json) {
@@ -56,15 +56,7 @@ export class JiraAction extends Hub.OAuthAction {
       try {
         const client = await this.jiraClient(stateJson.redirect, stateJson.tokens)
         const newIssue = await client.newIssue(issue)
-        winston.info(`newIssue: ${JSON.stringify(newIssue)}`)
-        await request.stream(async (readable) => {
-          let contentLength
-          if (request.attachment && request.attachment.dataBuffer) {
-            contentLength = request.attachment.dataBuffer.byteLength
-          }
-          // oauth 2.0 not supported by addAttachment
-          await client.addAttachmentToIssue(readable, newIssue.id, contentLength)
-        })
+        await client.addAttachmentToIssue(newIssue.key, buffer, filename, request.attachment.mime)
         resp.success = true
       } catch (e) {
         resp.success = false
@@ -86,7 +78,6 @@ export class JiraAction extends Hub.OAuthAction {
       winston.error("Encryption not correctly configured")
       throw err
     })
-    // form.state = new Hub.ActionState()
     form.fields = [{
       name: "login",
       type: "oauth_link",
@@ -133,6 +124,13 @@ export class JiraAction extends Hub.OAuthAction {
             type: "select",
             required: true,
           }, {
+            default: issueTypesOptions[0].name,
+            label: "Issue Type",
+            name: "issueType",
+            type: "select",
+            options: issueTypesOptions,
+            required: true,
+          }, {
             label: "Summary",
             name: "summary",
             type: "string",
@@ -141,14 +139,12 @@ export class JiraAction extends Hub.OAuthAction {
             label: "Description",
             name: "description",
             type: "textarea",
-            required: true,
+            required: false,
           }, {
-            default: issueTypesOptions[0].name,
-            label: "Issue Type",
-            name: "issueType",
-            type: "select",
-            options: issueTypesOptions,
-            required: true,
+            label: "Filename",
+            name: "filename",
+            type: "string",
+            required: false,
           }]
         }
       } catch (e) { winston.warn(`Log in fail ${JSON.stringify(e)}`) }
@@ -158,7 +154,7 @@ export class JiraAction extends Hub.OAuthAction {
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
     const client = await this.jiraClient(redirectUri)
-    const scope = "read:jira-user read:jira-work write:jira-work"
+    const scope = "read:jira-user read:jira-work write:jira-work offline_access"
     return client.generateAuthUrl(encryptedState, scope)
   }
 
@@ -197,7 +193,7 @@ export class JiraAction extends Hub.OAuthAction {
     return false
   }
 
-  protected async jiraClient(redirect: string, tokens?: JiraTokens) {
+  protected async jiraClient(redirect: string, tokens?: Credentials) {
     const jiraClient = new JiraClient(redirect, tokens)
     if (tokens) {
       await jiraClient.setCloudIdFromTokens()

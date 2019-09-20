@@ -59,6 +59,13 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
+    it("errors if the input has no attachment", () => {
+      const request = new Hub.ActionRequest()
+
+      return chai.expect(action.execute(request)).to.eventually
+        .be.rejectedWith("Couldn't get data from attachment.")
+    })
+
     it("sends correct jira new issue", async () => {
       const request = new Hub.ActionRequest()
       request.params = {
@@ -123,16 +130,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "select",
           required: true,
         }, {
-          label: "Summary",
-          name: "summary",
-          type: "string",
-          required: true,
-        }, {
-          label: "Description",
-          name: "description",
-          type: "textarea",
-          required: true,
-        }, {
           default: "10004",
           label: "Issue Type",
           name: "issueType",
@@ -154,6 +151,21 @@ describe(`${action.constructor.name} unit tests`, () => {
             label: "Epic",
           }],
           required: true,
+        }, {
+          label: "Summary",
+          name: "summary",
+          type: "string",
+          required: true,
+        }, {
+          label: "Description",
+          name: "description",
+          type: "textarea",
+          required: false,
+        }, {
+          label: "Filename",
+          name: "filename",
+          type: "string",
+          required: false,
         }],
       }).and.notify(stubClient.restore).and.notify(done)
     })
@@ -216,7 +228,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       return chai.expect(prom).to.eventually.equal("https://auth.atlassian.com/authorize?" +
       "audience=api.atlassian.com&" +
       "client_id=testingkey&" +
-      "scope=read%3Ajira-user%20read%3Ajira-work%20write%3Ajira-work&" +
+      "scope=read%3Ajira-user%20read%3Ajira-work%20write%3Ajira-work%20offline_access&" +
       "redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fjira_create_issue%2Foauth_redirect&" +
       "state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0&" +
       "response_type=code&" +

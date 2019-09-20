@@ -1,14 +1,14 @@
 import * as querystring from "querystring"
 import * as https from "request-promise-native"
-import { Readable } from "stream"
 import * as URL from "url"
 
 import { Document } from "adf-builder"
 
-interface Credentials {
+export interface Credentials {
   access_token: string
-  scope: string
   expires_in: number
+  refresh_token?: string
+  scope: string
   token_type: string
 }
 
@@ -79,7 +79,7 @@ export class JiraClient {
   }
 
   async getToken(code: string) {
-    const response: Credentials = await https.post({
+    let tokens: Credentials = await https.post({
       url: "https://auth.atlassian.com/oauth/token",
       headers: {
         "Content-Type": "application/json",
@@ -87,6 +87,27 @@ export class JiraClient {
       body: {
         grant_type: "authorization_code",
         code,
+        client_id: process.env.JIRA_CLIENT_ID,
+        client_secret: process.env.JIRA_CLIENT_SECRET,
+        redirect_uri: this.redirectUri,
+      },
+      json: true,
+    })
+    if (tokens.refresh_token) {
+      tokens = await this.getRefreshToken(tokens.refresh_token)
+    }
+    return tokens
+  }
+
+  async getRefreshToken(refresh: string) {
+    const response: Credentials = await https.post({
+      url: "https://auth.atlassian.com/oauth/token",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: {
+        grant_type: "refresh_token",
+        refresh_token: refresh,
         client_id: process.env.JIRA_CLIENT_ID,
         client_secret: process.env.JIRA_CLIENT_SECRET,
         redirect_uri: this.redirectUri,
@@ -133,7 +154,7 @@ export class JiraClient {
       description.paragraph().text(issue.description)
     }
     if (issue.url) {
-      description.paragraph().link("Looker URL", issue.url)
+      description.paragraph().link("View data in Looker here.", issue.url)
     }
 
     const body = {
@@ -161,30 +182,24 @@ export class JiraClient {
     })
   }
 
-  async addAttachmentToIssue(attachment: Readable, issueId: string, contentLength?: number) {
+  async addAttachmentToIssue(issueKey: string, attachment: Buffer, filename: string, contentType?: string) {
     if (!this.tokens) {
       throw "unauthenticated"
     }
 
     const baseUrl = await this.baseUrl()
-    let formData
-    if (contentLength !== undefined) {
-      formData = {
-        file: {
-          value: attachment,
-          options: {
-            knownLength: contentLength,
-          },
+    const formData = {
+      file: {
+        value: attachment,
+        options: {
+          filename,
+          contentType,
         },
-      }
-    } else {
-      formData = {
-        file: attachment,
-      }
+      },
     }
 
     return https.post({
-      url: `${baseUrl}/${issueId}/attachments`,
+      url: `${baseUrl}/issue/${issueKey}/attachments`,
       headers: {
         "Authorization": `Bearer ${this.tokens.access_token}`,
         "X-Atlassian-Token": "nocheck",
