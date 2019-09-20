@@ -226,11 +226,7 @@
   version "2.2.48"
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.48.tgz#3523b126a0b049482e1c3c11877460f76622ffab"
 
-"@types/node@*":
-  version "10.1.2"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.1.2.tgz#1b928a0baa408fc8ae3ac012cc81375addc147c6"
-
-"@types/node@^10.7.0":
+"@types/node@*", "@types/node@^10.7.0":
   version "10.7.0"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.7.0.tgz#d384b2c8625414ab2aa18fdf989c288d6a7a8202"
 
@@ -241,7 +237,6 @@
 "@types/nodemailer@^4.6.5":
   version "4.6.5"
   resolved "https://registry.yarnpkg.com/@types/nodemailer/-/nodemailer-4.6.5.tgz#8bb799202f8cfcc8200a1c1627f6a8a74fe71da6"
-  integrity sha512-cbs2HFLj33TBqzcCqTrs+6/mgTX3xl0odbApv3vTdF2+JERLxh5rDZCasXhvy+YqaiUNBr2I1RjNCdbKGs1Bnw==
   dependencies:
     "@types/events" "*"
     "@types/node" "*"
@@ -576,7 +571,6 @@ atob@^2.1.1:
 aws-sdk@^2.362.0:
   version "2.362.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.362.0.tgz#42246bd0ee4fdb82f40138bf2a7d85b6343b1f77"
-  integrity sha512-EZOFs2XjJ9Zj1maDnVHEk2cXV1DFwPRUVEua0oA+oSRYhJ/8Arxm7S+6SRmoYki2V03ff8r1/CfxvA8acFkVrQ==
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
@@ -623,7 +617,6 @@ axios@^0.18.0:
 azure-storage@^2.10.3:
   version "2.10.3"
   resolved "https://registry.yarnpkg.com/azure-storage/-/azure-storage-2.10.3.tgz#c5966bf929d87587d78f6847040ea9a4b1d4a50a"
-  integrity sha512-IGLs5Xj6kO8Ii90KerQrrwuJKexLgSwYC4oLWmc11mzKe7Jt2E5IVg+ZQ8K53YWZACtVTMBNO3iGuA+4ipjJxQ==
   dependencies:
     browserify-mime "~1.2.9"
     extend "^3.0.2"
@@ -1483,7 +1476,7 @@ etag@~1.8.1:
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/etag/-/etag-1.8.1.tgz#41ae2eeb65efa62268aebfea83ac7d79299b0887"
 
-event-stream@3.3.4, event-stream@~3.3.0:
+event-stream@~3.3.0:
   version "3.3.4"
   resolved "http://registry.npmjs.org/event-stream/-/event-stream-3.3.4.tgz#4ab4c9a0f5a54db9338b4c34d86bfce8f4b35571"
   dependencies:
@@ -1582,11 +1575,11 @@ extend-shallow@^3.0.0, extend-shallow@^3.0.2:
     assign-symbols "^1.0.0"
     is-extendable "^1.0.1"
 
-extend@3, extend@^3.0.2:
+extend@3, extend@^3.0.1, extend@^3.0.2, extend@~3.0.0, extend@~3.0.1:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/extend/-/extend-3.0.2.tgz#f8b1136b4071fbd8eb140aff858b1019ec2915fa"
 
-extend@^3.0.0, extend@^3.0.1, extend@~3.0.0, extend@~3.0.1:
+extend@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/extend/-/extend-3.0.1.tgz#a755ea7bc1adfcc5a31ce7e762dbaadc5e636444"
 
@@ -1603,13 +1596,9 @@ extglob@^2.0.4:
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
 
-extsprintf@1.3.0:
+extsprintf@1.3.0, extsprintf@^1.2.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.3.0.tgz#96918440e3041a7a414f8c52e3c574eb3c3e1e05"
-
-extsprintf@^1.2.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.4.0.tgz#e2689f8f356fad62cca65a3a91c5df5f9551692f"
 
 eyes@0.1.x:
   version "0.1.8"
@@ -2171,13 +2160,9 @@ iconv-lite@0.4.23, iconv-lite@^0.4.4:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ieee754@1.1.8:
+ieee754@1.1.8, ieee754@^1.1.4:
   version "1.1.8"
   resolved "https://registry.yarnpkg.com/ieee754/-/ieee754-1.1.8.tgz#be33d40ac10ef1926701f6f08a2d86fbfd1ad3e4"
-
-ieee754@^1.1.4:
-  version "1.1.11"
-  resolved "https://registry.yarnpkg.com/ieee754/-/ieee754-1.1.11.tgz#c16384ffe00f5b7835824e67b6f2bd44a5229455"
 
 ignore-by-default@^1.0.1:
   version "1.0.1"
@@ -3052,7 +3037,6 @@ node-uuid@~1.4.7:
 nodemailer@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-5.1.1.tgz#0c48d1ecab02e86d9ff6c620ee75ed944b763505"
-  integrity sha512-hKGCoeNdFL2W7S76J/Oucbw0/qRlfG815tENdhzcqTpSjKgAN91mFOqU2lQUflRRxFM7iZvCyaFcAR9noc/CqQ==
 
 nodemon@^1.12.1:
   version "1.17.5"
@@ -3904,11 +3888,11 @@ sax@0.5.x:
   version "0.5.8"
   resolved "https://registry.yarnpkg.com/sax/-/sax-0.5.8.tgz#d472db228eb331c2506b0e8c15524adb939d12c1"
 
-sax@1.2.1:
+sax@1.2.1, sax@>=0.6.0:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.1.tgz#7b8e656190b228e81a66aea748480d828cd2d37a"
 
-sax@>=0.6.0, sax@^1.2.4:
+sax@^1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
 
@@ -4203,11 +4187,7 @@ static-extend@^0.1.1:
     define-property "^0.2.5"
     object-copy "^0.1.0"
 
-"statuses@>= 1.3.1 < 2", "statuses@>= 1.4.0 < 2":
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/statuses/-/statuses-1.5.0.tgz#161c7dac177659fd9811f43771fa99381478628c"
-
-statuses@~1.4.0:
+"statuses@>= 1.3.1 < 2", "statuses@>= 1.4.0 < 2", statuses@~1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-1.4.0.tgz#bb73d446da2796106efcc1b601a253d6c46bd087"
 
@@ -4303,7 +4283,6 @@ strip-json-comments@~2.0.1:
 striplines@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/striplines/-/striplines-1.0.2.tgz#142900359c19c6ccd5ab224806e01cee51de375d"
-  integrity sha1-FCkANZwZxszVqyJIBuAc7lHeN10=
 
 stubs@^3.0.0:
   version "3.0.0"
@@ -4778,7 +4757,6 @@ xml2js@0.4.0:
 xml2js@0.4.19:
   version "0.4.19"
   resolved "https://registry.yarnpkg.com/xml2js/-/xml2js-0.4.19.tgz#686c20f213209e94abf0d1bcf1efaa291c7827a7"
-  integrity sha512-esZnJZJOiJR9wWKMyuvSE1y6Dq5LCuJanqhxslH2bxM6duahNZ+HMpCLhBQGZkbX6xRf8x1Y2eJlgt2q3qo49Q==
   dependencies:
     sax ">=0.6.0"
     xmlbuilder "~9.0.1"
@@ -4787,14 +4765,9 @@ xmlbuilder@9.0.1:
   version "9.0.1"
   resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-9.0.1.tgz#91cd70897755363eba57c12ddeeab4a341a61f65"
 
-xmlbuilder@>=0.4.2:
-  version "10.0.0"
-  resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-10.0.0.tgz#c64e52f8ae097fe5fd46d1c38adaade071ee1b55"
-
-xmlbuilder@^9.0.7, xmlbuilder@~9.0.1:
+xmlbuilder@>=0.4.2, xmlbuilder@^9.0.7, xmlbuilder@~9.0.1:
   version "9.0.7"
   resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-9.0.7.tgz#132ee63d2ec5565c557e20f4c22df9aca686b10d"
-  integrity sha1-Ey7mPS7FVlxVfiD0wi35rKaGsQ0=
 
 xregexp@2.0.0:
   version "2.0.0"

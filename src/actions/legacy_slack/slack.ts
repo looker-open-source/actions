@@ -12,8 +12,8 @@ const apiLimitSize = 1000
 export class SlackAttachmentAction extends Hub.Action {
 
   name = "slack"
-  label = "Slack Attachment"
-  iconName = "slack/slack.png"
+  label = "Slack Attachment (Legacy)"
+  iconName = "legacy_slack/slack.png"
   description = "Write a data file to Slack."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
