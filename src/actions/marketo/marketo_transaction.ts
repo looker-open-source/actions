@@ -10,21 +10,58 @@ interface Result {
   leads: any[],
   skipped: any[],
   leadErrors: any[],
-  campaignErrors: any[],
+  membershipErrors: any[],
 }
 
 export class MarketoTransaction {
 
   fieldMap: any
   marketo: any
-  campaignId?: string
+  campaignIds: string[] = []
+  addListIds: string[] = []
+  removeListIds: string[] = []
   lookupField?: string
 
   async handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
-
-    this.campaignId = request.formParams.campaignId
-    if (!this.campaignId) {
-      throw "Missing Campaign ID."
+    this.campaignIds = []
+    this.addListIds = []
+    this.removeListIds = []
+    const subactionIds =
+      (request.formParams.subactionIds !== undefined ? request.formParams.subactionIds : "")
+      .split(/\s*,\s*/)
+      .filter(Boolean)
+    switch (request.formParams.subaction) {
+      case undefined:
+        // The older version of the action assumed an "addToCampaign" subaction
+        this.campaignIds = [request.formParams.campaignId !== undefined ? request.formParams.campaignId : ""]
+          .filter(Boolean) // Note singular parameter name
+        break
+      case "none":
+        if (subactionIds.length > 0) {
+          throw "Additional action of 'none' was selected, but additional action ID was provided"
+        }
+        break
+      case "addCampaign":
+        if (subactionIds.length === 0) {
+          throw "'Add to campaign' was selected, but additional action ID was not provided"
+        }
+        this.campaignIds = subactionIds
+        break
+      case "addList":
+        if (subactionIds.length === 0) {
+          throw "'Add to list' was selected, but additional action ID was not provided"
+        }
+        this.addListIds = subactionIds
+        break
+      case "removeList":
+        if (subactionIds.length === 0) {
+          throw "'Remove from list' was selected, but additional action ID was not provided"
+        }
+        this.removeListIds = subactionIds
+        break
+      default:
+        throw "Unrecognized additional action type"
+        break
     }
 
     this.lookupField = request.formParams.lookupField
@@ -92,7 +129,7 @@ export class MarketoTransaction {
       leads: results.reduce((memo: any[], r: Result) => memo.concat(r.leads), []),
       skipped: results.reduce((memo: any[], r: Result) => memo.concat(r.skipped), []),
       leadErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.leadErrors), []),
-      campaignErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.campaignErrors), []),
+      membershipErrors: results.reduce((memo: any[], r: Result) => memo.concat(r.membershipErrors), []),
       requestErrors: errors,
     }
 
@@ -114,7 +151,7 @@ export class MarketoTransaction {
       leads: this.getLeadList(chunk),
       skipped: [],
       leadErrors: [],
-      campaignErrors: [],
+      membershipErrors: [],
     }
 
     const leadResponse = await this.marketo.lead.createOrUpdate(result.leads, { lookupField: this.lookupField })
@@ -132,9 +169,25 @@ export class MarketoTransaction {
       }
     })
 
-    const campaignResponse = await this.marketo.campaign.request(this.campaignId, ids)
-    if (Array.isArray(campaignResponse.errors) && campaignResponse.errors.length) {
-      result.campaignErrors = campaignResponse.errors
+    for (const campaignId of this.campaignIds) {
+      const response = await this.marketo.campaign.request(campaignId, ids)
+      result.membershipErrors =
+        result.membershipErrors.concat(response.errors !== undefined ? response.errors : [])
+    }
+
+    for (const listId of this.addListIds) {
+      const response = await this.marketo.list.addLeadsToList(listId, ids)
+      result.membershipErrors =
+        result.membershipErrors.concat(response.errors !== undefined ? response.errors : [])
+    }
+
+    for (const listId of this.removeListIds) {
+      const leadIds = ids.map((obj) => obj.id)
+      // ^ Unlike the other two methods, removeLeadsFromList does not automatically pick the ID from an object
+      // https://github.com/MadKudu/node-marketo/blob/master/lib/api/list.js#L38
+      const response = await this.marketo.list.removeLeadsFromList(listId, leadIds)
+      result.membershipErrors =
+        result.membershipErrors.concat(response.errors !== undefined ? response.errors : [])
     }
 
     return result
@@ -182,7 +235,7 @@ export class MarketoTransaction {
     return (
       result.skipped.length
       || result.leadErrors.length
-      || result.campaignErrors.length
+      || result.membershipErrors.length
       || result.requestErrors.length
     )
   }
@@ -195,8 +248,8 @@ export class MarketoTransaction {
     if (result.leadErrors.length) {
       condensed.leadErrors = result.leadErrors
     }
-    if (result.campaignErrors.length) {
-      condensed.campaignErrors = result.campaignErrors
+    if (result.membershipErrors.length) {
+      condensed.membershipErrors = result.membershipErrors
     }
     if (result.requestErrors.length) {
       condensed.requestErrors = result.requestErrors

@@ -14,16 +14,67 @@ const sampleData = {
   fields: {
     measures: [],
     dimensions: [
-      {name: "some.field", tags: ["sometag"]},
+      {label_short: "ID", name: "users.id", tags: ["user_id", "marketo:Account__c"]},
+      {label_short: "Email", name: "users.email", tags: ["email", "marketo:email"]},
+      {label_short: "Gender", name: "users.gender", tags: ["marketo:gender"]},
+      {label_short: "random", name: "users.random"},
     ],
   },
-  data: [{"some.field": {value: "value"}}],
+  data: [
+    {
+      "users.id": {value: 4653},
+      "users.email": {value: "zoraida.gregoire@example.com"},
+      "users.gender": {value: "f"},
+      "users.random": {value: 7},
+    },
+    {
+      "users.id": {value: 629},
+      "users.email": {value: "zola.summers@example.com"},
+      "users.gender": {value: "m"},
+      "users.random": {value: 4},
+    },
+    {
+      "users.id": {value: 6980},
+      "users.email": {value: "zoe.brady@example.com"},
+      "users.gender": {value: "f"},
+      "users.random": {value: 5},
+    },
+  ],
 }
+const sampleTypeParamsAttachment = {
+  type: Hub.ActionType.Query,
+  params: {
+    url: "myurl",
+    clientID: "myclientID",
+    clientSecret: "myclientSecret",
+  },
+  attachment: {
+    dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+  },
+}
+const expectedLeadData = [
+  {
+    Account__c: 4653,
+    email: "zoraida.gregoire@example.com",
+    gender: "f",
+  },
+  {
+    Account__c: 629,
+    email: "zola.summers@example.com",
+    gender: "m",
+  },
+  {
+    Account__c: 6980,
+    email: "zoe.brady@example.com",
+    gender: "f",
+  },
+]
 
 describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
 
-    it("errors if there is no campaignId", () => {
+    it("errors if there is no subaction and no campaignId", () => {
+      // This is the old implicit mode
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
@@ -36,7 +87,66 @@ describe(`${action.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from(JSON.stringify(sampleData)),
       }
       return chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith("Missing Campaign ID.")
+        .be.rejected
+    })
+
+    it("errors if subaction is 'none' and there is subactionIds", () => {
+      // This is the old implicit mode
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "myurl",
+        clientID: "myclientID",
+        clientSecret: "myclientSecret",
+      }
+      request.formParams = {
+        subaction: "none",
+        subactionIds: "123",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejected
+    })
+
+    it("errors if subaction is not 'none' and there is no subactionIds", () => {
+      // This is the old implicit mode
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "myurl",
+        clientID: "myclientID",
+        clientSecret: "myclientSecret",
+      }
+      request.formParams = {
+        subaction: "addCampaign",
+        subactionIds: "",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejected
+    })
+
+    it("errors if subaction is not recognized", () => {
+      // This is the old implicit mode
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        url: "myurl",
+        clientID: "myclientID",
+        clientSecret: "myclientSecret",
+      }
+      request.formParams = {
+        subaction: "somethingUnexpected",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleData)),
+      }
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .be.rejected
     })
 
     it("errors if there is no lookupField", () => {
@@ -67,7 +177,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.formParams = {
         campaignId: "1243",
-        lookupField: "email",
+        lookupField: "guid",
       }
       request.attachment = {
         dataBuffer: Buffer.from(JSON.stringify(sampleData)),
@@ -77,96 +187,141 @@ describe(`${action.constructor.name} unit tests`, () => {
         .be.rejectedWith("Marketo Lookup Field for lead not present in query.")
     })
 
-    it("sends all the data to Marketo", () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.params = {
-        url: "myurl",
-        clientID: "myclientID",
-        clientSecret: "myclientSecret",
+    const leadIds = [{id: 1}, {id: 2}, {id: 3}]
+    const spies = [
+      async () => Promise.resolve({
+        success: true,
+        result: leadIds,
+      }),
+      async () => Promise.resolve({
+        success: true,
+        result: leadIds,
+      }),
+      async () => Promise.resolve({
+          success: true,
+        result: leadIds,
+      }),
+      async () => Promise.resolve({
+          success: true,
+      }),
+    ].map((fn) => sinon.spy(fn))
+    const spy = {
+      leadCreateOrUpdate: spies[0],
+      campaignRequest: spies[1],
+      listAddLeadsToList: spies[2],
+      listRemoveLeadsFromList: spies[3],
+    }
+
+    sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(() => {
+      return {
+        lead: {
+          createOrUpdate: spy.leadCreateOrUpdate,
+        },
+        campaign: {
+          request: spy.campaignRequest,
+        },
+        list: {
+          addLeadsToList: spy.listAddLeadsToList,
+          removeLeadsFromList: spy.listRemoveLeadsFromList,
+        },
       }
+    })
+
+    it("sends all the data to Marketo for the legacy request format", () => {
+      const request = new Hub.ActionRequest()
+      Object.assign(request, sampleTypeParamsAttachment)
       request.formParams = {
-        campaignId: "1243",
+        campaignId: "101",
         lookupField: "email",
       }
-      request.attachment = {
-        dataBuffer: Buffer.from(JSON.stringify({
-          fields: {
-            measures: [],
-            dimensions: [
-              {label_short: "ID", name: "users.id", tags: ["user_id", "marketo:Account__c"]},
-              {label_short: "Email", name: "users.email", tags: ["email", "marketo:email"]},
-              {label_short: "Gender", name: "users.gender", tags: ["marketo:gender"]},
-              {label_short: "random", name: "users.random"},
-            ],
-          },
-          data: [
-            {
-              "users.id": {value: 4653},
-              "users.email": {value: "zoraida.gregoire@gmail.com"},
-              "users.gender": {value: "f"},
-              "users.random": {value: 7},
-            },
-            {
-              "users.id": {value: 629},
-              "users.email": {value: "zola.summers@gmail.com"},
-              "users.gender": {value: "m"},
-              "users.random": {value: 4},
-            },
-            {
-              "users.id": {value: 6980},
-              "users.email": {value: "zoe.brady@gmail.com"},
-              "users.gender": {value: "f"},
-              "users.random": {value: 5},
-            },
-          ],
-        })),
-      }
 
-      const leadSpy = sinon.spy(async () => Promise.resolve({
-        success: true,
-        result: [{id: 1}, {id: 2}, {id: 3}],
-      }))
-      const requestSpy = sinon.spy(async () => Promise.resolve({
-        success: true,
-        result: [{id: 1}, {id: 2}, {id: 3}],
-      }))
+      spies.forEach((s) => s.resetHistory())
 
-      const stubClient = sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(() => {
-        return {
-          lead: {
-            createOrUpdate: leadSpy,
-          },
-          campaign: {
-            request: requestSpy,
-          },
-        }
-      })
       return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-        chai.expect(leadSpy).to.have.been.calledWith([
-          {
-            Account__c: 4653,
-            email: "zoraida.gregoire@gmail.com",
-            gender: "f",
-          },
-          {
-            Account__c: 629,
-            email: "zola.summers@gmail.com",
-            gender: "m",
-          },
-          {
-            Account__c: 6980,
-            email: "zoe.brady@gmail.com",
-            gender: "f",
-          },
-        ], {lookupField: "email"})
-        chai.expect(requestSpy).to.have.been.calledWith("1243",
-          [{id: 1}, {id: 2}, {id: 3}])
-        stubClient.restore()
+        chai.expect(spy.leadCreateOrUpdate).to.have.been.calledWith(expectedLeadData, {lookupField: "email"})
+        chai.expect(spy.campaignRequest).to.have.been.calledWith(
+          "101",
+          leadIds,
+        )
       })
     })
 
-  })
+    it("sends all the data to Marketo for the 'none' subaction", () => {
+      const request = new Hub.ActionRequest()
+      Object.assign(request, sampleTypeParamsAttachment)
+      request.formParams = {
+        subaction: "none",
+        lookupField: "email",
+      }
+
+      spies.forEach((s) => s.resetHistory())
+
+      return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
+        chai.expect(spy.leadCreateOrUpdate).to.have.been.calledWith(expectedLeadData, {lookupField: "email"})
+      })
+    })
+
+    it("sends all the data to Marketo for 'addCampaign' subaction", () => {
+      const request = new Hub.ActionRequest()
+      Object.assign(request, sampleTypeParamsAttachment)
+      request.formParams = {
+        subaction: "addCampaign",
+        subactionIds: "202",
+        lookupField: "email",
+      }
+
+      spies.forEach((s) => s.resetHistory())
+
+      return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
+        chai.expect(spy.leadCreateOrUpdate).to.have.been.calledWith(expectedLeadData, {lookupField: "email"})
+        chai.expect(spy.campaignRequest).to.have.been.calledWith(
+          "202",
+          leadIds,
+        )
+      })
+    })
+
+    it("sends all the data to Marketo for 'addList' subaction", () => {
+      const request = new Hub.ActionRequest()
+      Object.assign(request, sampleTypeParamsAttachment)
+      request.formParams = {
+          subaction: "addList",
+        subactionIds: "303",
+        lookupField: "email",
+      }
+
+      spies.forEach((s) => s.resetHistory())
+
+      return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
+        chai.expect(spy.leadCreateOrUpdate).to.have.been.calledWith(expectedLeadData, {lookupField: "email"})
+        chai.expect(spy.listAddLeadsToList).to.have.been.calledWith(
+          "303",
+          leadIds,
+        )
+      })
+    })
+
+    it("sends all the data to Marketo for 'removeList' subaction", () => {
+      const request = new Hub.ActionRequest()
+      Object.assign(request, sampleTypeParamsAttachment)
+      request.formParams = {
+        subaction: "removeList",
+        subactionIds: "404",
+        lookupField: "email",
+      }
+
+      spies.forEach((s) => s.resetHistory())
+
+      return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
+        chai.expect(spy.leadCreateOrUpdate).to.have.been.calledWith(expectedLeadData, {lookupField: "email"})
+        chai.expect(spy.listRemoveLeadsFromList).to.have.been.calledWith(
+          "404",
+          [1, 2, 3],
+        )
+      })
+    })
+
+})
 
   describe("asJSON", () => {
     it("supported format is json_detail on lookerVersion 6.0 and below", (done) => {

@@ -7,6 +7,8 @@ interface Channel {
   label: string,
 }
 
+const apiLimitSize = 1000
+
 export class SlackAttachmentAction extends Hub.Action {
 
   name = "slack"
@@ -68,7 +70,6 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
 
     try {
       const channels = await this.usableChannels(request)
-
       form.fields = [{
         description: "Name of the Slack channel you would like to post to.",
         label: "Share In",
@@ -96,6 +97,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async usableChannels(request: Hub.ActionRequest) {
     let channels = await this.usablePublicChannels(request)
     channels = channels.concat(await this.usableDMs(request))
+    channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
     return channels
   }
 
@@ -104,7 +106,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const options: any = {
       exclude_archived: true,
       exclude_members: true,
-      limit: 200,
+      limit: apiLimitSize,
     }
     async function pageLoaded(accumulatedChannels: any[], response: any): Promise<any[]> {
       const mergedChannels = accumulatedChannels.concat(response.channels)
@@ -128,7 +130,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   async usableDMs(request: Hub.ActionRequest) {
     const slack = this.slackClientFromRequest(request)
     const options: any = {
-      limit: 200,
+      limit: apiLimitSize,
     }
     async function pageLoaded(accumulatedUsers: any[], response: any): Promise<any[]> {
       const mergedUsers = accumulatedUsers.concat(response.members)

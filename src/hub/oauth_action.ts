@@ -11,7 +11,6 @@ export abstract class OAuthAction extends Action {
     json.uses_oauth = true
     return json
   }
-  // create_oauth_link() {} // make something cool
 }
 
 export function isOauthAction(action: Action): boolean {
