@@ -47,7 +47,8 @@ To target the flagged users, a Braze Segments can be created that matches the fl
 
 ## Limitations
   * Only works with non-pivoted data.
-  * Currently, the api is limited to 10,000 rows sent.
+  * Currently, the api is limited to 100,000 rows sent.
+    * **Please be aware of any data point usage.**
   * Final count of user's flag maybe be lower due to duplicates or non-users.
   * Optional Attribute tags are case sensitive and will be sent as defined.
     * If standard attributes are tagged, then they must matched the standard attribute name exactly.

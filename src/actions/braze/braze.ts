@@ -10,7 +10,7 @@ enum BrazeConfig {
   BRAZE_ID_TAG = "braze_id",
   BRAZE_ATTRIBUTE_REGEX = "(?<=braze\\[)(.*)(?=\\])",
   EXPORT_DEFAULT_VALUE = "LOOKER_EXPORT",
-  MAX_EXPORT = 10000,
+  MAX_EXPORT = 100000,
   DEFAULT_DOMAIN = ".braze.com",
 }
 
