@@ -8,6 +8,7 @@ enum BrazeConfig {
   LOOKER_ATTRIBUTE_NAME = "looker_export",
   MAX_LINES = 75,
   BRAZE_ID_TAG = "braze_id",
+  BRAZE_ATTRIBUTE_REGEX = "(?<=braze\\[)(.*)(?=\\])",
   EXPORT_DEFAULT_VALUE = "LOOKER_EXPORT",
   MAX_EXPORT = 10000,
   DEFAULT_DOMAIN = ".braze.com",
@@ -28,13 +29,17 @@ interface BrazeApiBody {
   attributes: BrazeApiRow[]
 }
 
+interface BrazeTags {
+  [key: string]: any
+}
+
 function isEmpty(obj: any) {
   return !obj || Object.keys(obj).length === 0
 }
 
 export class BrazeAction extends Hub.Action {
-  name = "braze"
-  label = "Braze"
+  name = "brazetest"
+  label = "Braze Test"
   description = "Flags users from Looker to Braze via the REST API for use with segmentation. "
     + "Ensure there's a '" + BrazeConfig.BRAZE_ID_TAG + "' field tagged in the results."
     + " MAX EXPORT: " + BrazeConfig.MAX_EXPORT + "."
@@ -96,14 +101,24 @@ export class BrazeAction extends Hub.Action {
     let totalCount = 0
     let fieldlist: Hub.Field[] = []
     let bzIdField = ""
+    const bzAttributeFields: BrazeTags[] = []
     let rows: BrazeApiRow[] = []
+    const bzRegExp = new RegExp(BrazeConfig.BRAZE_ATTRIBUTE_REGEX, "gi")
     try {
       await request.streamJsonDetail({
         onFields: (fields) => {
           fieldlist = Hub.allFields(fields)
           for (const field of fieldlist) {
-            if (field.tags  && field.tags.find((tag: string) => tag === BrazeConfig.BRAZE_ID_TAG )) {
-              bzIdField = field.name
+            if (field.tags) {
+              if (field.tags.find((tag: string) => tag === BrazeConfig.BRAZE_ID_TAG )) {
+                bzIdField = field.name
+              }
+              for (const tag of field.tags) {
+                const bzTagMatchs = tag.match(bzRegExp)
+                if (bzTagMatchs) {
+                    bzAttributeFields.push([bzTagMatchs[0], field.name])
+                }
+              }
             }
           }
           if (!bzIdField) {
@@ -116,10 +131,11 @@ export class BrazeAction extends Hub.Action {
               _update_existing_only: true,
             }
             entry[String(request.formParams.braze_key)] = row[bzIdField].value
+            for (const bzAttribute of bzAttributeFields) {
+              entry[bzAttribute[0]] = row[bzAttribute[1]].value
+            }
             entry[String(BrazeConfig.LOOKER_ATTRIBUTE_NAME)] = brazeAttribute
-            // Only update existing records to prevent unknown data sources
             rows.push(entry)
-
             totalCount++
             if (rows.length === BrazeConfig.MAX_LINES) {
               this.sendChunk(endpoint, brazeApiKey, rows)
