@@ -7,31 +7,34 @@ interface Channel {
   label: string,
 }
 
+interface AuthTestResult {
+  ok: boolean,
+  team: string,
+  team_id: string,
+}
+
 const apiLimitSize = 1000
 
-export class SlackAttachmentAction extends Hub.Action {
+export class SlackAction extends Hub.DelegateOAuthAction {
 
-  name = "slack"
-  label = "Slack Attachment (Legacy)"
-  iconName = "legacy_slack/slack.png"
-  description = "Write a data file to Slack."
+  name = "slack_app"
+  label = "Slack"
+  iconName = "slack/slack.png"
+  description = "Search, explore and share Looker content in Slack."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
   params = [{
-    name: "slack_api_token",
-    label: "Slack API Token",
-    required: true,
-    description: `A Slack API token that includes the permissions "channels:read", \
-"users:read", and "files:write:user". You can follow the instructions to get a token at \
-https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
-    sensitive: true,
+    name: "install",
+    label: "Connect to Slack",
+    delegate_oauth_url: "/admin/integrations/slack/install",
+    required: false,
+    sensitive: false,
+    description: `Allow users to view dashboards and looks without leaving Slack,
+     browse and view their favorites or folders, and search for content using Slack command.`
   }]
+  usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
-
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
-    }
 
     if (!request.formParams.channel) {
       throw "Missing channel."
@@ -39,38 +42,29 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
 
     const fileName = request.formParams.filename || request.suggestedFilename()
 
-    const options = {
-      file: request.attachment.dataBuffer,
-      filename: fileName,
-      channels: request.formParams.channel,
-      filetype: request.attachment.fileExtension,
-      initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
-    }
-
-    let response
+    let response = new Hub.ActionResponse({success: true})
     try {
       const slack = this.slackClientFromRequest(request)
-      await new Promise<void>((resolve, reject) => {
-        slack.files.upload(options, (err: any) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
+      await request.stream(async (readable) => {
+        await slack.files.upload({
+          file: readable,
+          filename: fileName,
+          channels: request.formParams.channel,
+          initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
         })
       })
     } catch (e) {
-      response = { success: false, message: e.message }
+      response = new Hub.ActionResponse({success: false, message: e.message})
     }
-    return new Hub.ActionResponse(response)
+    return response
   }
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-
     try {
       const channels = await this.usableChannels(request)
-      form.fields = [{
+      form.fields = [
+      {
         description: "Name of the Slack channel you would like to post to.",
         label: "Share In",
         name: "channel",
@@ -86,12 +80,27 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
         name: "filename",
         type: "string",
       }]
-
     } catch (e) {
-      form.error = this.prettySlackError(e)
+      const oauthUrl = request.params.state_json
+      if (oauthUrl) {
+        form.state = new Hub.ActionState()
+        form.fields.push({
+          name: "login",
+          type: "oauth_link",
+          label: "Log in",
+          description: "In order to send to a file, you will need to log in to your Slack account.",
+          oauth_url: oauthUrl,
+        })
+      } else {
+        form.error = this.prettySlackError(e)
+      }
     }
-
     return form
+  }
+
+  async authTest(request: Hub.ActionRequest) {
+    const slack = this.slackClientFromRequest(request)
+    return await slack.auth.test() as AuthTestResult
   }
 
   async usableChannels(request: Hub.ActionRequest) {
@@ -108,7 +117,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
       exclude_members: true,
       limit: apiLimitSize,
     }
-    async function pageLoaded(accumulatedChannels: any[], response: any): Promise<any[]> {
+    const pageLoaded = async (accumulatedChannels: any[], response: any): Promise<any[]> => {
       const mergedChannels = accumulatedChannels.concat(response.channels)
 
       // When a `next_cursor` exists, recursively call this function to get the next page.
@@ -132,7 +141,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     const options: any = {
       limit: apiLimitSize,
     }
-    async function pageLoaded(accumulatedUsers: any[], response: any): Promise<any[]> {
+    const pageLoaded = async (accumulatedUsers: any[], response: any): Promise<any[]> => {
       const mergedUsers = accumulatedUsers.concat(response.members)
 
       // When a `next_cursor` exists, recursively call this function to get the next page.
@@ -153,6 +162,27 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
     return reformatted
   }
 
+  async oauthCheck(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
+    if (!request.params.state_json) {
+        form.error = "You must connect to a Slack workspace first."
+        return form
+    }
+    try {
+      const resp = await this.authTest(request)
+
+      form.fields.push({
+        name: "Connected",
+        type: "message",
+
+        value: `Connected with ${resp.team} (${resp.team_id})`,
+      })
+    } catch (e) {
+      form.error = this.prettySlackError(e)
+    }
+    return form
+  }
+
   private prettySlackError(e: any) {
     if (e.message === "An API error occurred: invalid_auth") {
       return "Your Slack authentication credentials are not valid."
@@ -162,9 +192,8 @@ https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
-    return new WebClient(request.params.slack_api_token!)
+      return new WebClient(request.params.state_json)
   }
-
 }
 
-Hub.addAction(new SlackAttachmentAction())
+Hub.addAction(new SlackAction())
