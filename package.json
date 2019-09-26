@@ -33,7 +33,7 @@
     "@google-cloud/storage": "^1.5.2",
     "@sendgrid/helpers": "^6.1.5",
     "@sendgrid/mail": "^6.1.4",
-    "@slack/client": "^4.2.2",
+    "@slack/client": "^5.0.1",
     "@types/base64-url": "^2.2.0",
     "@types/body-parser": "^1.16.5",
     "@types/dotenv": "^4.0.1",

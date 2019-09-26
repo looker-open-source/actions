@@ -87,67 +87,26 @@ export const getDisplayedFormFields = async (slack: WebClient): Promise<ActionFo
 }
 
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
-    /**
-     * So the below logic is the streaming logic grab from https://github.com/looker/actions/pull/255
-     * I know it worked at some point but is no longer the case.
-     */
-    // if (!request.formParams.channel) {
-    //     throw "Missing channel."
-    // }
-    //
-    // const fileName = request.formParams.filename || request.suggestedFilename()
-    //
-    // let response = new Hub.ActionResponse({success: true})
-    // try {
-    //     await request.stream(async (readable) => {
-    //         await slack.files.upload({
-    //             file: readable,
-    //             filename: fileName,
-    //             channels: request.formParams.channel,
-    //             initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
-    //         })
-    //     })
-    // } catch (e) {
-    //     response = new Hub.ActionResponse({success: false, message: e.message})
-    // }
-    // return response
-
-    /**
-     * So the below logic is the non streaming logic that is currently in master
-     */
-    if (!request.attachment || !request.attachment.dataBuffer) {
-        throw "Couldn't get data from attachment."
-    }
-
     if (!request.formParams.channel) {
         throw "Missing channel."
     }
 
     const fileName = request.formParams.filename || request.suggestedFilename()
 
-    const options = {
-        file: request.attachment.dataBuffer,
-        filename: fileName,
-        channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
-    }
-
-    let response
+    let response = new Hub.ActionResponse({success: true})
     try {
-        await new Promise<void>((resolve, reject) => {
-            slack.files.upload(options, (err: any) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve()
-                }
+        await request.stream(async (readable) => {
+            await slack.files.upload({
+                file: readable,
+                filename: fileName,
+                channels: request.formParams.channel,
+                initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
             })
         })
     } catch (e) {
-        response = { success: false, message: e.message }
+        response = new Hub.ActionResponse({success: false, message: e.message})
     }
-    return new Hub.ActionResponse(response)
+    return response
 }
 
 export const displayError: { [key: string]: string; } = {
