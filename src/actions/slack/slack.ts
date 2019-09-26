@@ -26,7 +26,6 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     description: `Allow users to view dashboards and looks without leaving Slack,
      browse and view their favorites or folders, and search for content using Slack command.`
   }]
-  usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
     return await handleExecute(request, this.slackClientFromRequest(request))
