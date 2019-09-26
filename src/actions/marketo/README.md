@@ -1,6 +1,7 @@
 # Marketo
+## Send leads from an Explore into a campaign in Marketo
 
-This action takes a query result and uses it to update a set of leads in Marketo, and to edit the leads' memberships in campaigns and lists. 
+This action allows you to push rows from a query in Looker to a campaign in Marketo. 
 
 ## SETUP
 
@@ -19,18 +20,17 @@ This action takes a query result and uses it to update a set of leads in Marketo
 
 When you use the Marketo Action in Looker, Looker does two steps in sequence:
 
-1. It upserts lead records in Marketo with any new information. (That is, if a record already exists, it updates it, and if the record does not exist, it creates it.)
-2. It optionally adds or removes the lead in the campaign or list you specify
+1. It upserts records in Marketo with any new information. (That is, if a record already exists, it updates it, and if the record does not exist, it creates it.)
+2. It puts the upserted records in the campaign you specify.
 
 To use this Action, run a query in Looker with all the fields that you want to send to Marketo. This query must contain a lookup field that identifies each record (most commonly email).
     
 1. Run a query to generate the rows you want to push to Marketo.
 2. Click the gear icon, choose Send..., then choose Marketo as the destination.
-3. If you want to use a lookup field other than email, change that field to the REST API name of the lookup field. Otherwise leave it as `email`.
-4. Choose whether you want to just update leads, or whether you want to add/remove them to a campaign or list.
-5. If applicable, enter the id of the campaign or list for which you'd like to add/remove the leads.
-6. If you want to send all rows (and ignore the limit on the query), select "All Results" under Advanced Options.
-7. Hit send and let the magic happen.
+3. Enter the id of the campaign you'd like to send the leads to.
+4. If you want to use a lookup field other than email, change that field to the REST API name of the lookup field. Otherwise leave it as `email`.
+5. If you want to send all rows (and ignore the limit on the query), select "All Results" under Advanced Options.
+6. Hit send and let the magic happen.
 
 ## THINGS TO KNOW
 
