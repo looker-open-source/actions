@@ -8,7 +8,7 @@ import Server from "../../server/server"
 import { MarketoAction } from "./marketo"
 import { MarketoTransaction } from "./marketo_transaction"
 
-!async function(){
+(async () => {
   const action = new MarketoAction()
   const form = await action.form()
   const sampleData = {
@@ -91,8 +91,7 @@ import { MarketoTransaction } from "./marketo_transaction"
           .be.rejected
       })
 
-      it("errors if subaction is 'none' and there is subactionIds", () => {
-        // This is the old implicit mode
+      it("errors if subaction is 'none' and there is a campaignId", () => {
         const request = new Hub.ActionRequest()
         request.type = Hub.ActionType.Query
         request.params = {
@@ -102,7 +101,7 @@ import { MarketoTransaction } from "./marketo_transaction"
         }
         request.formParams = {
           subaction: "none",
-          subactionIds: "123",
+          campaignId: "123",
         }
         request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
@@ -111,8 +110,7 @@ import { MarketoTransaction } from "./marketo_transaction"
           .be.rejected
       })
 
-      it("errors if subaction is not 'none' and there is no subactionIds", () => {
-        // This is the old implicit mode
+      it("errors if subaction is not 'none' and there is no campaignId", () => {
         const request = new Hub.ActionRequest()
         request.type = Hub.ActionType.Query
         request.params = {
@@ -122,7 +120,7 @@ import { MarketoTransaction } from "./marketo_transaction"
         }
         request.formParams = {
           subaction: "addCampaign",
-          subactionIds: "",
+          campaignId: "",
         }
         request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
@@ -267,7 +265,7 @@ import { MarketoTransaction } from "./marketo_transaction"
         Object.assign(request, sampleTypeParamsAttachment)
         request.formParams = {
           subaction: "addCampaign",
-          subactionIds: "202",
+          campaignId: "202",
           lookupField: "email",
         }
 
@@ -286,8 +284,8 @@ import { MarketoTransaction } from "./marketo_transaction"
         const request = new Hub.ActionRequest()
         Object.assign(request, sampleTypeParamsAttachment)
         request.formParams = {
-            subaction: "addList",
-          subactionIds: "303",
+          subaction: "addList",
+          campaignId: "303", // Yes, we are using the name campaignId to hold list Ids, for backwards compatibility
           lookupField: "email",
         }
 
@@ -307,7 +305,7 @@ import { MarketoTransaction } from "./marketo_transaction"
         Object.assign(request, sampleTypeParamsAttachment)
         request.formParams = {
           subaction: "removeList",
-          subactionIds: "404",
+          campaignId: "404", // Yes, we are using the name campaignId to hold list Ids, for backwards compatibility
           lookupField: "email",
         }
 
@@ -353,22 +351,22 @@ import { MarketoTransaction } from "./marketo_transaction"
           })
       })
     })
-    
+
     describe("Backwards compatibility", () => {
       // If a Looker user attempts to edit a scheduled plan that was set up using
       // a prior version of this Action, any fields missing from the new form definition
       // will cause Looker to delete the historical form entries, even if the action is coded
       // to correctly handle historical form entries. So, we can't remove fields from the form
 
-      it("does not remove lookupField from the form", ()=>{
-        chai.expect(form.fields.find(field=>field.name==="lookupField")).not.to.be.undefined
+      it("does not remove lookupField from the form", () => {
+        chai.expect(form.fields.find((field) => field.name === "lookupField")).not.to.be.undefined
       } )
-      it("does not remove subaction from the form", ()=>{
-        chai.expect(form.fields.find(field=>field.name==="subaction")).not.to.be.undefined
+      it("does not remove subaction from the form", () => {
+        chai.expect(form.fields.find((field) => field.name === "subaction")).not.to.be.undefined
       })
-      it("does not remove campaignId from the form", ()=>{
-        chai.expect(form.fields.find(field=>field.name==="campaignId")).not.to.be.undefined
-      })  
+      it("does not remove campaignId from the form", () => {
+        chai.expect(form.fields.find((field) => field.name === "campaignId")).not.to.be.undefined
+      })
     })
   })
-}()
+})().catch((err: any) => {throw err})

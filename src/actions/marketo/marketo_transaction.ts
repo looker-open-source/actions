@@ -27,14 +27,13 @@ export class MarketoTransaction {
     this.addListIds = []
     this.removeListIds = []
     const subactionIds =
-      (request.formParams.subactionIds !== undefined ? request.formParams.subactionIds : "")
+      (request.formParams.campaignId === undefined ? "" : request.formParams.campaignId)
       .split(/\s*,\s*/)
       .filter(Boolean)
     switch (request.formParams.subaction) {
       case undefined:
         // The older version of the action assumed an "addToCampaign" subaction
-        this.campaignIds = [request.formParams.campaignId !== undefined ? request.formParams.campaignId : ""]
-          .filter(Boolean) // Note singular parameter name
+        this.campaignIds = subactionIds
         break
       case "none":
         if (subactionIds.length > 0) {
