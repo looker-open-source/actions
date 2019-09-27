@@ -24,7 +24,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     required: false,
     sensitive: false,
     description: `Allow users to view dashboards and looks without leaving Slack,
-     browse and view their favorites or folders, and search for content using Slack command.`
+     browse and view their favorites or folders, and search for content using Slack command.`,
   }]
   usesStreaming = true
 

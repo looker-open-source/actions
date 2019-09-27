@@ -1,5 +1,5 @@
 import {WebClient} from "@slack/client"
-import * as Hub from "../../hub";
+import * as Hub from "../../hub"
 import {ActionFormField} from "../../hub"
 
 export const API_LIMIT_SIZE = 1000
@@ -82,7 +82,7 @@ export const getDisplayedFormFields = async (slack: WebClient): Promise<ActionFo
             label: "Filename",
             name: "filename",
             type: "string",
-        }
+        },
     ]
 }
 
