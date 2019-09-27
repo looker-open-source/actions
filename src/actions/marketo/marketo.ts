@@ -84,7 +84,9 @@ export class MarketoAction extends Hub.Action {
       required: true,
     }, {
       label: "Campaign/List ID for Additional Action",
-      name: "subactionIds",
+      name: "campaignId",
+      // Named campaignId for backwards compatibility with older action, even though it may be
+      // either a campaignId or a listId
       type: "string",
       description: "Either a Campaign ID or a List ID, depending on above selection",
       required: false,
