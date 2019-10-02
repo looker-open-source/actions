@@ -81,7 +81,7 @@ export class MarketoAction extends Hub.Action {
         },
       ],
       description: "Additional action to take",
-      default: "none",
+      default: "addCampaign",
       required: true,
     }, {
       label: "Campaign/List ID for Additional Action",

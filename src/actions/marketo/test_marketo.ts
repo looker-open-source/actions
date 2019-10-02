@@ -364,15 +364,13 @@ import { MarketoTransaction } from "./marketo_transaction"
       it("does not remove subaction from the form", () => {
         chai.expect(form.fields.find((field) => field.name === "subaction")).not.to.be.undefined
       })
-      it("keeps addCampaign as the first/default subaction", () => {
+      it("keeps addCampaign as the default subaction", () => {
         // Since a legacy schedule would have subaction=undefined, but would have meant addCampaign,
         // then defaulting to addCampaign will preserve this functionality as users edit a legacy
         // schedule
-        const subactionField = form.fields.find((field) => field.name === "subaction")
-        const options = subactionField ? (subactionField as any).options : undefined
-        const firstOption = options ? options[0] : undefined
-        const firstOptionName = firstOption ? firstOption.name : undefined
-        chai.expect(firstOptionName).to.equal("addCampaign")
+        const maybeSubactionField = form.fields.find((field) => field.name === "subaction")
+        const subactionField = maybeSubactionField === undefined ? {default: null} : maybeSubactionField
+        chai.expect(subactionField.default).to.equal("addCampaign")
       })
       it("does not remove campaignId from the form", () => {
         chai.expect(form.fields.find((field) => field.name === "campaignId")).not.to.be.undefined
