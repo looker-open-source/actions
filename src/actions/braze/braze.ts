@@ -109,15 +109,16 @@ export class BrazeAction extends Hub.Action {
         onFields: (fields) => {
           fieldlist = Hub.allFields(fields)
           for (const field of fieldlist) {
-            if (field.tags) {
-              if (field.tags.find((tag: string) => tag === BrazeConfig.BRAZE_ID_TAG )) {
-                bzIdField = field.name
-              }
-              for (const tag of field.tags) {
-                const bzTagMatchs = tag.match(bzRegExp)
-                if (bzTagMatchs) {
-                    bzAttributeFields.push([bzTagMatchs[0], field.name])
-                }
+            if (!field.tags) {
+              continue
+            }
+            if (field.tags.find((tag: string) => tag === BrazeConfig.BRAZE_ID_TAG )) {
+              bzIdField = field.name
+            }
+            for (const tag of field.tags) {
+              const bzTagMatches = tag.match(bzRegExp)
+              if (bzTagMatches) {
+                  bzAttributeFields.push([bzTagMatches[0], field.name])
               }
             }
           }
