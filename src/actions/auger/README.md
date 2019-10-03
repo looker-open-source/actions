@@ -30,7 +30,7 @@ To use this Action, run a query in Looker with all the fields that you want to s
 6. Train after data transfer is set to False. This means you would need to go into Auger to trigger training. Set to true if you want to autmatically start training after transfer.
 7. Hit send and let the magic happen.
 
-![](auger_create_project.png)
+![](auger_send.png)
 
 ## Things to know
 
