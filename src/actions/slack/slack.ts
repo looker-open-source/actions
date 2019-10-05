@@ -48,7 +48,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
           oauth_url: oauthUrl,
         })
       } else {
-        form.error = displayError[e.message] || e
+        form.error = "Illegal State: state_url is empty."
       }
     }
     return form
@@ -57,6 +57,10 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async authTest(request: Hub.ActionRequest) {
     const slack = this.slackClientFromRequest(request)
     return await slack.auth.test() as AuthTestResult
+  }
+
+  async validateAndFetchForm(request: Hub.ActionRequest) {
+    return this.oauthCheck(request)
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
