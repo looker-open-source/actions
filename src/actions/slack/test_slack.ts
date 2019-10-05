@@ -151,4 +151,25 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
   })
+
+  describe("execute", () => {
+    let handleExecuteStub: any
+
+    afterEach(() => {
+      handleExecuteStub && handleExecuteStub.restore()
+    })
+
+    it("returns fields correctly from getDisplayedFormFields", () => {
+      const response = new Hub.ActionResponse({success: true})
+      handleExecuteStub = sinon.stub(utils, "handleExecute").returns(
+          Promise.resolve(response),
+      )
+
+      const request = new Hub.ActionRequest()
+
+      const form = action.execute(request)
+
+      return chai.expect(form).to.eventually.deep.equal(response)
+    })
+  })
 })
