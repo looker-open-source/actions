@@ -241,7 +241,6 @@
 "@types/nodemailer@^4.6.5":
   version "4.6.5"
   resolved "https://registry.yarnpkg.com/@types/nodemailer/-/nodemailer-4.6.5.tgz#8bb799202f8cfcc8200a1c1627f6a8a74fe71da6"
-  integrity sha512-cbs2HFLj33TBqzcCqTrs+6/mgTX3xl0odbApv3vTdF2+JERLxh5rDZCasXhvy+YqaiUNBr2I1RjNCdbKGs1Bnw==
   dependencies:
     "@types/events" "*"
     "@types/node" "*"
@@ -581,7 +580,6 @@ atob@^2.1.1:
 aws-sdk@^2.362.0:
   version "2.362.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.362.0.tgz#42246bd0ee4fdb82f40138bf2a7d85b6343b1f77"
-  integrity sha512-EZOFs2XjJ9Zj1maDnVHEk2cXV1DFwPRUVEua0oA+oSRYhJ/8Arxm7S+6SRmoYki2V03ff8r1/CfxvA8acFkVrQ==
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
@@ -628,7 +626,6 @@ axios@^0.18.0:
 azure-storage@^2.10.3:
   version "2.10.3"
   resolved "https://registry.yarnpkg.com/azure-storage/-/azure-storage-2.10.3.tgz#c5966bf929d87587d78f6847040ea9a4b1d4a50a"
-  integrity sha512-IGLs5Xj6kO8Ii90KerQrrwuJKexLgSwYC4oLWmc11mzKe7Jt2E5IVg+ZQ8K53YWZACtVTMBNO3iGuA+4ipjJxQ==
   dependencies:
     browserify-mime "~1.2.9"
     extend "^3.0.2"
@@ -2697,18 +2694,13 @@ lodash.once@^4.0.0:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/lodash.once/-/lodash.once-4.1.1.tgz#0dd3971213c7c56df880977d504c88fb471a97ac"
 
-lodash@2.4.x:
-  version "2.4.2"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-2.4.2.tgz#fadd834b9683073da179b3eae6d9c0d15053f73e"
-
-lodash@4.17.10, lodash@^4.17.10, lodash@^4.17.4, lodash@^4.5.1, lodash@~4.17.5:
+lodash@4.17.10, lodash@^4.13.1, lodash@^4.17.10, lodash@^4.17.4, lodash@^4.5.1, lodash@~4.17.5:
   version "4.17.10"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.10.tgz#1b7793cf7259ea38fb3661d4d38b3260af8ae4e7"
 
-lodash@^4.13.1:
+lodash@4.17.x:
   version "4.17.15"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
-  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
 
 log-driver@1.2.7:
   version "1.2.7"
@@ -3020,14 +3012,14 @@ node-forge@^0.7.4:
   version "0.7.5"
   resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-0.7.5.tgz#6c152c345ce11c52f465c2abd957e8639cd674df"
 
-node-marketo-rest@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/node-marketo-rest/-/node-marketo-rest-0.7.0.tgz#3939160ff077c3d18429d34144aaf530143520bf"
+node-marketo-rest@^0.7.5:
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/node-marketo-rest/-/node-marketo-rest-0.7.5.tgz#a84a891c5762f760f263d4ebf22d024b8d314011"
   dependencies:
     backoff "2.4.x"
     bluebird "2.3.x"
     bunyan "1.0.x"
-    lodash "2.4.x"
+    lodash "4.17.x"
     moment "2.20.x"
     restler "3.4.x"
 
@@ -3053,7 +3045,6 @@ node-uuid@~1.4.7:
 nodemailer@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-5.1.1.tgz#0c48d1ecab02e86d9ff6c620ee75ed944b763505"
-  integrity sha512-hKGCoeNdFL2W7S76J/Oucbw0/qRlfG815tENdhzcqTpSjKgAN91mFOqU2lQUflRRxFM7iZvCyaFcAR9noc/CqQ==
 
 nodemon@^1.12.1:
   version "1.17.5"
@@ -4309,7 +4300,6 @@ strip-json-comments@~2.0.1:
 striplines@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/striplines/-/striplines-1.0.2.tgz#142900359c19c6ccd5ab224806e01cee51de375d"
-  integrity sha1-FCkANZwZxszVqyJIBuAc7lHeN10=
 
 stubs@^3.0.0:
   version "3.0.0"
@@ -4793,7 +4783,6 @@ xml2js@0.4.0:
 xml2js@0.4.19:
   version "0.4.19"
   resolved "https://registry.yarnpkg.com/xml2js/-/xml2js-0.4.19.tgz#686c20f213209e94abf0d1bcf1efaa291c7827a7"
-  integrity sha512-esZnJZJOiJR9wWKMyuvSE1y6Dq5LCuJanqhxslH2bxM6duahNZ+HMpCLhBQGZkbX6xRf8x1Y2eJlgt2q3qo49Q==
   dependencies:
     sax ">=0.6.0"
     xmlbuilder "~9.0.1"
@@ -4809,7 +4798,6 @@ xmlbuilder@>=0.4.2:
 xmlbuilder@^9.0.7, xmlbuilder@~9.0.1:
   version "9.0.7"
   resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-9.0.7.tgz#132ee63d2ec5565c557e20f4c22df9aca686b10d"
-  integrity sha1-Ey7mPS7FVlxVfiD0wi35rKaGsQ0=
 
 xregexp@2.0.0:
   version "2.0.0"
