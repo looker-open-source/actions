@@ -59,10 +59,6 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     return await slack.auth.test() as AuthTestResult
   }
 
-  async validateAndFetchForm(request: Hub.ActionRequest) {
-    return this.oauthCheck(request)
-  }
-
   async oauthCheck(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     if (!request.params.state_json) {

@@ -71,21 +71,6 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
   })
 
-  describe("validateAndFetchForm", () => {
-    it("calls oauthCheck", () => {
-      const request = new Hub.ActionRequest()
-      const stubOauthCheck = sinon.spy(() => ({fields: [], error: "flooby"}))
-
-      sinon.stub(action as any, "oauthCheck").callsFake(stubOauthCheck)
-
-      const form = action.validateAndFetchForm(request)
-
-      chai.expect(stubOauthCheck).to.be.calledWith(request)
-
-      return chai.expect(form).to.eventually.deep.equal({fields: [], error: "flooby"})
-    })
-  })
-
   describe("form", () => {
     let getDisplayedFormFieldsStub: any
 
