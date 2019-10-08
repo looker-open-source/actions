@@ -173,7 +173,7 @@ export class JiraAction extends Hub.OAuthAction {
     await https.post({
       url: payload.stateurl,
       body: JSON.stringify({tokens, redirect: redirectUri}),
-    }).catch((_err) => { winston.error(_err.toString()) })
+    }).promise().catch((_err) => { winston.error(_err.toString()) })
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
