@@ -70,7 +70,7 @@ export class JiraClient {
       json: true,
     }
 
-    const response = await https.get(options)
+    const response = await https.get(options).promise()
     if (response.length === 0) {
       throw "no cloudId"
     } else {
@@ -92,7 +92,7 @@ export class JiraClient {
         redirect_uri: this.redirectUri,
       },
       json: true,
-    })
+    }).promise()
     if (tokens.refresh_token) {
       tokens = await this.getRefreshToken(tokens.refresh_token)
     }
@@ -113,7 +113,7 @@ export class JiraClient {
         redirect_uri: this.redirectUri,
       },
       json: true,
-    })
+    }).promise()
     return response
   }
 
