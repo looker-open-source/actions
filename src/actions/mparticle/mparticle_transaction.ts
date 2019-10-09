@@ -104,8 +104,8 @@ export class MparticleTransaction {
       body.push(eventEntry)
     })
 
-    // winston.debug("BODY", JSON.stringify(body))
-    winston.debug("SENDING CHUNK", body.length)
+    winston.debug("BODY", JSON.stringify(body))
+    // winston.debug("SENDING CHUNK", body.length)
     const options = this.postOptions(body)
     await httpRequest.post(options).promise().catch((e: any) => {
       this.errors.push(`${e.statusCode} - ${mparticleErrorCodes[e.statusCode]}`)
@@ -214,6 +214,9 @@ export class MparticleTransaction {
     fields.dimensions.forEach((field: ExploreField) => {
       this.mapObject(mapping, field)
     })
+    fields.table_calculations.forEach((field: ExploreField) => {
+      this.mapObject(mapping, field)
+    })
 
     if (!this.containsUserIdentity(mapping.userIdentities)) {
       const err = "Each row must specify at least 1 identity tag."
@@ -225,15 +228,14 @@ export class MparticleTransaction {
   }
 
   protected mapObject(mapping: any, field: ExploreField) {
+    const tag = field.tags && field.tags[0] ? field.tags[0] : ''
     if (this.eventType === USER) {
-      const tag = field.tags[0]
       if (Object.keys(this.userIdentities).indexOf(tag) !== -1) {
         mapping.userIdentities[field.name] = this.userIdentities[tag]
       } else {
         mapping.userAttributes[field.name] = `looker_${field.name}`
       }
     } else {
-      const tag = field.tags[0]
       if (Object.keys(this.userIdentities).indexOf(tag) !== -1) {
         mapping.userIdentities[field.name] = this.userIdentities[tag]
       // TODO: Move into enum
