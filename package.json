@@ -65,6 +65,7 @@
     "express-winston": "^2.4.0",
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.1",
+    "liquidjs": "^8.5.2",
     "mailchimp": "^1.2.0",
     "node-marketo-rest": "^0.7.5",
     "nodemailer": "^5.1.1",

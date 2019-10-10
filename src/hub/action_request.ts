@@ -7,6 +7,8 @@ import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
 import { truncateString } from "./utils"
 
+import Liquid from "liquidjs"
+
 import {
   DataWebhookPayload,
   DataWebhookPayloadType as ActionType,
@@ -341,14 +343,24 @@ export class ActionRequest {
     })
   }
 
+  async templatedFilename(template?: string) {
+    if (template) {
+      const engine = new Liquid()
+      const filename = await engine.parseAndRender(template, this.scheduledPlan)
+      return sanitizeFilename(filename)
+    }
+    return this.suggestedFilename()
+  }
+
   suggestedFilename() {
     if (this.attachment) {
       if (this.scheduledPlan && this.scheduledPlan.title) {
         return sanitizeFilename(`${this.scheduledPlan.title}.${this.attachment.fileExtension}`)
       } else {
-        return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
+        return sanitizeFilename(`looker_file_${new Date().toISOString()}.${this.attachment.fileExtension}`)
       }
     }
+    return sanitizeFilename(`looker_file_${new Date().toISOString()}`)
   }
 
   /** creates a truncated message with a max number of lines and max number of characters with Title, Url,

@@ -18,7 +18,7 @@ export class DropboxAction extends Hub.OAuthAction {
     params = []
 
   async execute(request: Hub.ActionRequest) {
-    const filename = request.formParams.filename
+    const filename = await request.templatedFilename(request.formParams.filename)
     const directory = request.formParams.directory
     const ext = request.attachment!.fileExtension
 
