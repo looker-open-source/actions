@@ -9,8 +9,9 @@ interface Channel {
     label: string,
 }
 
-const usablePublicChannels = async (slack: WebClient): Promise<Channel[]> => {
+const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
     const options: any = {
+        types: "public_channel,private_channel",
         exclude_archived: true,
         exclude_members: true,
         limit: API_LIMIT_SIZE,
@@ -24,11 +25,11 @@ const usablePublicChannels = async (slack: WebClient): Promise<Channel[]> => {
             response.response_metadata.next_cursor !== "") {
             const pageOptions = { ...options }
             pageOptions.cursor = response.response_metadata.next_cursor
-            return pageLoaded(mergedChannels, await slack.channels.list(pageOptions))
+            return pageLoaded(mergedChannels, await slack.conversations.list(pageOptions))
         }
         return mergedChannels
     }
-    const paginatedChannels = await pageLoaded([], await slack.channels.list(options))
+    const paginatedChannels = await pageLoaded([], await slack.conversations.list(options))
     const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
     return channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
 }
@@ -58,7 +59,7 @@ const usableDMs = async (slack: WebClient): Promise<Channel[]> => {
 }
 
 const usableChannels = async (slack: WebClient): Promise<Channel[]> => {
-    let channels = await usablePublicChannels(slack)
+    let channels = await _usableChannels(slack)
     channels = channels.concat(await usableDMs(slack))
     channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
     return channels
