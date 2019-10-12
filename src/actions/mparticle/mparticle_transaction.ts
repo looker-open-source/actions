@@ -227,8 +227,13 @@ export class MparticleTransaction {
     return mapping
   }
 
+  protected getTag(field: ExploreField): string {
+    if (!field.tags || !field.tags[0]) return ''
+    return field.tags.find((t) => t.startsWith('mp_')) || ''
+  }
+
   protected mapObject(mapping: any, field: ExploreField) {
-    const tag = field.tags && field.tags[0] ? field.tags[0] : ''
+    const tag = this.getTag(field)
     if (this.eventType === USER) {
       if (Object.keys(this.userIdentities).indexOf(tag) !== -1) {
         mapping.userIdentities[field.name] = this.userIdentities[tag]
