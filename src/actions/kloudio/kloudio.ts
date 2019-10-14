@@ -24,37 +24,33 @@ export class KloudioAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
-      throw "No attached json."
+        throw "No attached json."
     }
 
-    if (!(request.formParams.api_key && request.formParams.url)) {
-      throw "Missing API key or G sheets URL."
+    if (!(request.formParams.api_key)) {
+        throw "Missing API key"
     }
 
-    const qr = request.attachment.dataJSON
-    if (!qr.fields || !qr.data) {
+    if (!( request.formParams.url)) {
+        throw "Missing Google sheets URL"
+    }
+
+    if (!(request.formParams.token)) {
+        throw "Missing Google Sheets Access Token"
+    }
+
+    // const qr = request.attachment.dataJSON
+    /*if (!qr.fields || !qr.data) {
       throw "Request payload is an invalid format."
-    }
-
-    /*const fields: any[] = [].concat(...Object.keys(qr.fields).map((k) => qr.fields[k]))
-    const fieldMap: any = {}
-    for (const field of fields) {
-      fieldMap[field.name] = field.label_short || field.label || field.name
-    }
-    const records = qr.data.map((row: any) => {
-      const record: any = {}
-      for (const field of fields) {
-        record[fieldMap[field.name]] = row[field.name].value
-      }
-      return record
-    })*/
+    }*/
 
     let response
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
         response = await https.post({
         url: uri,
-        body: JSON.stringify({api_key: request.formParams.api_key, url: request.formParams.url, info: qr}),
+        body: JSON.stringify({api_key: request.formParams.api_key, url: request.formParams.url,
+            token: request.formParams.token, info: request.attachment.dataJSON}),
          }).catch((_err) => { winston.error(_err.toString()) })
     } catch (e) {
       response = { success: false, message: e.message }
@@ -74,7 +70,12 @@ export class KloudioAction extends Hub.Action {
       name: "url",
       required: true,
       type: "string",
-    }]
+    }, {
+        label: "Google Sheets Access Token",
+        name: "token",
+        required: true,
+        type: "string",
+      }]
     return form
   }
 
