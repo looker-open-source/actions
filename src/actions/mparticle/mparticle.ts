@@ -46,17 +46,30 @@ export class MparticleAction extends Hub.Action {
 
   async form() {
     const form = new Hub.ActionForm()
-    form.fields = [{
-      label: "Data Type",
-      name: "data_type",
-      description: "Specify data type: User Profiles or Events",
-      required: true,
-      options: [
-        {name: "user_data", label: "User Profiles"},
-        {name: "event_data", label: "Events"},
-      ],
-      type: "select",
-    }]
+    form.fields = [
+      {
+        label: "Data Type",
+        name: "data_type",
+        description: "Specify data type: User Profiles or Events",
+        required: true,
+        options: [
+          {name: "user_data", label: "User Profiles"},
+          {name: "event_data", label: "Events"},
+        ],
+        type: "select",
+      },
+      {
+        label: "Environment",
+        name: "environment",
+        description: "Specify environment to send to: Test/Development or Production",
+        required: true,
+        options: [
+          {name: "production", label: "Production"},
+          {name: "development", label: "Test/Development"},
+        ],
+        type: "select",
+      },
+    ]
     return form
   }
 }

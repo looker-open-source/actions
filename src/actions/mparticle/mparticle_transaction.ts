@@ -3,7 +3,7 @@ import * as Hub from "../../hub"
 
 import * as httpRequest from "request-promise-native"
 
-import { ENVIRONMENT, EVENT, EVENT_NAME, EVENT_TYPE, MP_API_URL, USER } from "./mparticle_constants"
+import { PROD_ENVIRONMENT, DEV_ENVIRONMENT, EVENT, EVENT_NAME, EVENT_TYPE, MP_API_URL, USER } from "./mparticle_constants"
 import { MparticleEventMaps, MparticleEventTags, MparticleUserMaps, MparticleUserTags } from "./mparticle_enums"
 import { mparticleErrorCodes } from "./mparticle_error_codes"
 
@@ -26,6 +26,7 @@ export class MparticleTransaction {
   apiKey: string | undefined
   apiSecret: string | undefined
   eventType = ""
+  environment = ""
   errors: any = []
 
   // The mapping for user-related data
@@ -56,6 +57,7 @@ export class MparticleTransaction {
     let rows: Hub.JsonDetail.Row[] = []
     let mapping: Mapping = {}
     this.eventType = this.setEventType(request.formParams.data_type)
+    this.environment = this.setEnvironment(request.formParams.environment)
 
     const { apiKey, apiSecret } = request.params
     this.apiKey = apiKey
@@ -172,7 +174,7 @@ export class MparticleTransaction {
       user_attributes: eventUserAttributes,
       user_identities: eventUserIdentities,
       schema_version: 2,
-      environment: ENVIRONMENT,
+      environment: this.environment,
     }
   }
 
@@ -187,6 +189,15 @@ export class MparticleTransaction {
       return EVENT
     }
     throw "Missing data type (user|event)."
+  }
+
+  protected setEnvironment(env: string | undefined) {
+    if (env === PROD_ENVIRONMENT) {
+      return PROD_ENVIRONMENT
+    } else if (env === DEV_ENVIRONMENT) {
+      return DEV_ENVIRONMENT
+    }
+    throw "Missing environment (test|production)."
   }
 
   // Sets up the map object and loops over all fields.
