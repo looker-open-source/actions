@@ -49,6 +49,7 @@ export class BrazeAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   requiredFields = [{ tag: String(BrazeConfig.BRAZE_ID_TAG) }]
   usesStreaming = true
+  executeInOwnProcess = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
 
   params = [{
