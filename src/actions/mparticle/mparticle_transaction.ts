@@ -191,13 +191,11 @@ export class MparticleTransaction {
     throw "Missing data type (user|event)."
   }
 
-  protected setEnvironment(env: string | undefined) {
+  protected setEnvironment(env: string | undefined): string {
     if (env === PROD_ENVIRONMENT) {
       return PROD_ENVIRONMENT
-    } else if (env === DEV_ENVIRONMENT) {
-      return DEV_ENVIRONMENT
     }
-    throw "Missing environment (test|production)."
+    return DEV_ENVIRONMENT
   }
 
   // Sets up the map object and loops over all fields.
