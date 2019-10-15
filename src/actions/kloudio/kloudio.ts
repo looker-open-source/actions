@@ -51,10 +51,12 @@ export class KloudioAction extends Hub.Action {
     winston.info(typeof request.attachment.dataJSON)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
+        const newUri = uri.replace(/['"]+/g, '')
         winston.info("uri is:" + uri)
+        winston.info("new uri is:" + newUri)
         console.log("uri is:" + uri);
         response = await https.post({
-        url: uri,
+        url: newUri,
         headers: {"Content-Type": "application/json"},
         json: true,
         body: JSON.stringify({api_key: request.formParams.api_key, url: request.formParams.url,
