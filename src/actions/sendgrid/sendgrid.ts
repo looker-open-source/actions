@@ -1,8 +1,9 @@
 import * as Hub from "../../hub"
 
-import * as helpers from "@sendgrid/helpers"
+import { MailData } from "@sendgrid/helpers/classes/mail"
 
-const sendgridMail = require("@sendgrid/mail")
+import * as sendgridClient from "@sendgrid/client"
+import * as sendgridMail from "@sendgrid/mail"
 
 export class SendGridAction extends Hub.Action {
 
@@ -13,10 +14,17 @@ export class SendGridAction extends Hub.Action {
   params = [
     {
       description: "API key for SendGrid from https://app.sendgrid.com/settings/api_keys.",
-      label: "SendGrid API Key",
+      label: "API Key",
       name: "sendgrid_api_key",
       required: true,
       sensitive: true,
+    },
+    {
+      description: " SendGrid Dynamic Template Id from https://sendgrid.com/dynamic_templates.",
+      label: "Template Id",
+      name: "template",
+      required: false,
+      sensitive: false,
     },
   ]
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
@@ -34,23 +42,43 @@ export class SendGridAction extends Hub.Action {
     const subject = request.formParams.subject || (plan && plan.title ? plan.title : "Looker")
     const from = request.formParams.from ? request.formParams.from : "Looker <noreply@lookermail.com>"
 
-    const msg = new helpers.classes.Mail({
-      to: request.formParams.to,
-      subject,
+    const msg: MailData = {
       from,
-      text: plan && plan.url ?
-          `View this data in Looker. ${plan.url}\n Results are attached.`
-        :
-          "Results are attached.",
-      html: plan && plan.url ?
-          `<p><a href="${plan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`
-        :
-          "Results are attached.",
       attachments: [{
         content: request.attachment.dataBuffer.toString(request.attachment.encoding),
         filename,
       }],
-    })
+    }
+    const personalization: any = {
+      to: request.formParams.to,
+      subject,
+    }
+    if (request.params.template) {
+      msg.templateId = request.params.template
+      const templateData: { [key: string]: string } = {
+        subject,
+        to: request.formParams.to,
+        from,
+      }
+      if (plan && plan.url) {
+        templateData.url = plan.url
+      }
+      personalization.dynamic_template_data = templateData
+    } else {
+      let text
+      let html
+      if (plan && plan.url) {
+        text = `View this data in Looker. ${plan.url}\n Results are attached.`
+        html = `<p><a href="${plan.url}">View this data in Looker.</a></p><p>Results are attached.</p>`
+      } else {
+        text = `Results are attached.`
+        html = `<p>Results are attached.</p>`
+      }
+      msg.text = text
+      msg.html = html
+    }
+    msg.personalizations = [personalization]
+
     let response
     try {
       await this.sendEmail(request, msg)
@@ -60,13 +88,41 @@ export class SendGridAction extends Hub.Action {
     return new Hub.ActionResponse(response)
   }
 
-  async sendEmail(request: Hub.ActionRequest, msg: helpers.classes.Mail) {
+  async sendEmail(request: Hub.ActionRequest, msg: MailData) {
     const client = this.sgMailClientFromRequest(request)
     return await client.send(msg)
   }
 
-  async form() {
+  async getTemplate(request: Hub.ActionRequest) {
+    const client = this.sgClientFromRequest(request)
+    const req = {
+      method: "GET",
+      url: `/v3/templates/${request.params.template}`,
+    }
+
+    const [response] = await client.request(req)
+    return response.body
+  }
+
+  async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
+    if (request.params.template) {
+      const errorMessage = "Template not found"
+      try {
+        const template = await this.getTemplate(request)
+        if (!(template.id === request.params.template)) {
+          form.error = errorMessage
+          return form
+        }
+      } catch (e) {
+        if (e.message === "NOT FOUND") {
+          form.error = errorMessage
+        } else {
+          form.error = e.message
+        }
+        return form
+      }
+    }
     form.fields = [{
       name: "to",
       label: "To Email Address",
@@ -88,6 +144,11 @@ export class SendGridAction extends Hub.Action {
       type: "string",
     }]
     return form
+  }
+
+  private sgClientFromRequest(request: Hub.ActionRequest) {
+    sendgridClient.setApiKey(request.params.sendgrid_api_key!)
+    return sendgridClient
   }
 
   private sgMailClientFromRequest(request: Hub.ActionRequest) {
