@@ -47,6 +47,7 @@ export class KloudioAction extends Hub.Action {
     let response
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
+        console.log("uri is:" + uri);
         response = await https.post({
         url: uri,
         body: JSON.stringify({api_key: request.formParams.api_key, url: request.formParams.url,
