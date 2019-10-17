@@ -8,8 +8,8 @@ export class KloudioAction extends Hub.Action {
   label = "Kloudio"
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
-  //supportedDownloadSettings = true
-  //usesStreaming = true
+  // supportedDownloadSettings = true
+  // usesStreaming = true
   params = [
     {
       description: "API URL for Kloudio from account page",
@@ -47,23 +47,23 @@ export class KloudioAction extends Hub.Action {
     }*/
 
     let response
-    //info: "JSON.stringify(request.attachment.dataJSON)"
+    // info: "JSON.stringify(request.attachment.dataJSON)"
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
     winston.info(request.attachment.dataJSON)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
-        const newUri = uri.replace(/['"]+/g, '')
+        const newUri = uri.replace(/['"]+/g, "")
         winston.info("uri is:" + uri)
         winston.info("new uri is:" + newUri)
-        console.log("uri is:" + uri);
+       // console.log("uri is:" + uri);
         response = await https.post({
         url: newUri,
         headers: {"Content-Type": "application/json"},
         json: true,
         body: JSON.stringify({api_key: request.formParams.api_key, url: request.formParams.url,
-            token: request.formParams.token, info: "hi there"}),
+            token: request.formParams.token}),
          }).catch((_err) => { winston.error(_err.toString()) })
     } catch (e) {
       response = { success: false, message: e.message }
