@@ -27,6 +27,7 @@ export class MparticleAction extends Hub.Action {
   ]
   supportedActionTypes = [Hub.ActionType.Query]
   usesStreaming = true
+  executeInOwnProcess = true
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedFormats = (request: Hub.ActionRequest) => {

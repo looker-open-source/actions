@@ -9,6 +9,7 @@ import { MparticleAction } from "./mparticle"
 import { USER } from "./mparticle_constants"
 
 const action = new MparticleAction()
+action.executeInOwnProcess = false
 
 const sampleData = {
   fields: {
