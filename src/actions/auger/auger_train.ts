@@ -323,11 +323,7 @@ export class AugerTrainAction extends Hub.Action {
   private async startExperiment(transaction: Transaction): Promise<any> {
     const experiment = await this.createExperiment(transaction)
     transaction.experimentId = experiment.body.data.id
-    transaction.successStatus = "success"
-    transaction.errorStatus = "error"
-    transaction.pollFunction = this.getExperiment.bind(this)
-    transaction.callbackFunction = this.startSession.bind(this)
-    this.startPoller(transaction)
+    await this.startSession(transaction)
   }
 
   private async createProjectFile(transaction: Transaction): Promise<any> {
@@ -384,19 +380,19 @@ export class AugerTrainAction extends Hub.Action {
     }
   }
 
-  private async getExperiment(transaction: Transaction): Promise<any> {
-    try {
-      const options = {
-        url: `${transaction.augerURL}/experiments/${transaction.experimentId}?token=${transaction.token}`,
-        json: true,
-        resolveWithFullResponse: true,
-      }
-      // winston.debug("get experiment", options)
-      return httpRequest.get(options).promise()
-    } catch (e) {
-      throw new Error(`project file fetched: ${e}`)
-    }
-  }
+  // private async getExperiment(transaction: Transaction): Promise<any> {
+  //   try {
+  //     const options = {
+  //       url: `${transaction.augerURL}/experiments/${transaction.experimentId}?token=${transaction.token}`,
+  //       json: true,
+  //       resolveWithFullResponse: true,
+  //     }
+  //     // winston.debug("get experiment", options)
+  //     return httpRequest.get(options).promise()
+  //   } catch (e) {
+  //     throw new Error(`project file fetched: ${e}`)
+  //   }
+  // }
 
   private async getProject(transaction: Transaction): Promise<any> {
     try {
