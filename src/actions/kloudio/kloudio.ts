@@ -51,7 +51,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
-    winston.info(request.attachment.dataJSON)
+    winston.info(typeof request.attachment.dataJSON)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = uri.replace(/['"]+/g, "")
@@ -68,6 +68,7 @@ export class KloudioAction extends Hub.Action {
     } catch (e) {
       response = { success: false, message: e.message }
     }
+    winston.info(response)
     return new Hub.ActionResponse(response)
   }
 
