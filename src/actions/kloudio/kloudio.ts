@@ -47,6 +47,7 @@ export class KloudioAction extends Hub.Action {
     }*/
 
     let response
+    //info: "JSON.stringify(request.attachment.dataJSON)"
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
@@ -62,7 +63,7 @@ export class KloudioAction extends Hub.Action {
         headers: {"Content-Type": "application/json"},
         json: true,
         body: JSON.stringify({api_key: request.formParams.api_key, url: request.formParams.url,
-            token: request.formParams.token, info: "JSON.stringify(request.attachment.dataJSON)"}),
+            token: request.formParams.token, info: "hi there"}),
          }).catch((_err) => { winston.error(_err.toString()) })
     } catch (e) {
       response = { success: false, message: e.message }
