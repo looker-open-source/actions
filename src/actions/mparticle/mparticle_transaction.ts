@@ -3,7 +3,9 @@ import * as Hub from "../../hub"
 
 import * as httpRequest from "request-promise-native"
 
-import { PROD_ENVIRONMENT, DEV_ENVIRONMENT, EVENT, EVENT_NAME, EVENT_TYPE, MP_API_URL, USER } from "./mparticle_constants"
+import {
+  DEV_ENVIRONMENT, EVENT, EVENT_NAME, EVENT_TYPE, MP_API_URL, PROD_ENVIRONMENT, USER,
+} from "./mparticle_constants"
 import { MparticleEventMaps, MparticleEventTags, MparticleUserMaps, MparticleUserTags } from "./mparticle_enums"
 import { mparticleErrorCodes } from "./mparticle_error_codes"
 
@@ -237,8 +239,8 @@ export class MparticleTransaction {
   }
 
   protected getTag(field: ExploreField): string {
-    if (!field.tags || !field.tags[0]) return ''
-    return field.tags.find((t) => t.startsWith('mp_')) || ''
+    if (!field.tags || !field.tags[0]) { return "" }
+    return field.tags.find((t) => t.startsWith("mp_")) || ""
   }
 
   protected mapObject(mapping: any, field: ExploreField) {
