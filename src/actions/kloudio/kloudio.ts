@@ -9,7 +9,7 @@ export class KloudioAction extends Hub.Action {
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
   //supportedDownloadSettings = true
-  usesStreaming = true
+  //usesStreaming = true
   params = [
     {
       description: "API URL for Kloudio from account page",
@@ -47,12 +47,10 @@ export class KloudioAction extends Hub.Action {
     }*/
 
     let response
-    //const sizeof = require("object-sizeof")
-    winston.info(request.attachment.dataJSON)
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
-    
+    winston.info(request.attachment.dataJSON)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = uri.replace(/['"]+/g, '')
