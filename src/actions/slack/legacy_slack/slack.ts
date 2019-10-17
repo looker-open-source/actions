@@ -6,9 +6,9 @@ import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
 export class SlackAttachmentAction extends Hub.Action {
 
   name = "slack"
-  label = "Slack Attachment (Legacy)"
+  label = "Slack Attachment (API Token)"
   iconName = "slack/legacy_slack/slack.png"
-  description = "Write a data file to Slack."
+  description = "Write a data file to Slack using a bot user token or legacy API token."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
   params = [{
@@ -17,7 +17,7 @@ export class SlackAttachmentAction extends Hub.Action {
     required: true,
     description: `A Slack API token that includes the permissions "channels:read", \
 "users:read", and "files:write:user". You can follow the instructions to get a token at \
-https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
+https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/README.md`,
     sensitive: true,
   }]
   usesStreaming = true

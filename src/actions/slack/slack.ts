@@ -12,9 +12,9 @@ interface AuthTestResult {
 export class SlackAction extends Hub.DelegateOAuthAction {
 
   name = "slack_app"
-  label = "Slack"
+  label = "Slack (Beta)"
   iconName = "slack/slack.png"
-  description = "Search, explore and share Looker content in Slack."
+  description = "Explore and share Looker content in Slack."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
   params = [{
@@ -23,8 +23,8 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     delegate_oauth_url: "/admin/integrations/slack/install",
     required: false,
     sensitive: false,
-    description: `Allow users to view dashboards and looks without leaving Slack,
-     browse and view their favorites or folders, and search for content using Slack command.`,
+    description: `View dashboards and looks,
+     browse your favorites or folders, and interact with Looker content without leaving Slack.`,
   }]
   minimumSupportedLookerVersion = "6.23.0"
   usesStreaming = true
