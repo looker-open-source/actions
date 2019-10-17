@@ -8,6 +8,8 @@ export class KloudioAction extends Hub.Action {
   label = "Kloudio"
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
+  supportedDownloadSettings = true
+  usesStreaming = true
   params = [
     {
       description: "API URL for Kloudio from account page",
