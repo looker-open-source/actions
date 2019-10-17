@@ -5,7 +5,7 @@ import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
-import {isOauthAction, OAuthAction} from "../hub"
+import {DelegateOAuthAction, isDelegateOauthAction, isOauthAction, OAuthAction} from "../hub"
 import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as apiKey from "./api_key"
 const expressWinston = require("express-winston")
@@ -126,8 +126,14 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/form", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action.hasForm) {
-        const form = await action.validateAndFetchForm(request)
+
+      let form
+      if (isDelegateOauthAction(action) && request.params.test) {
+        form = await (action as DelegateOAuthAction).oauthCheck(request)
+      } else if (action.hasForm) {
+        form = await action.validateAndFetchForm(request)
+      }
+      if (form) {
         complete(form.asJson())
       } else {
         throw "No form defined for action."
