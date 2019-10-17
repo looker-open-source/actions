@@ -8,7 +8,7 @@ export class KloudioAction extends Hub.Action {
   label = "Kloudio"
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
-  supportedDownloadSettings = true
+  //supportedDownloadSettings = true
   usesStreaming = true
   params = [
     {
@@ -47,10 +47,12 @@ export class KloudioAction extends Hub.Action {
     }*/
 
     let response
+    const sizeof = require("object-sizeof")
+    winston.info(sizeof(request.attachment.dataJSON))
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
-    winston.info(typeof request.attachment.dataJSON)
+    
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = uri.replace(/['"]+/g, '')
@@ -62,7 +64,7 @@ export class KloudioAction extends Hub.Action {
         headers: {"Content-Type": "application/json"},
         json: true,
         body: JSON.stringify({api_key: request.formParams.api_key, url: request.formParams.url,
-            token: request.formParams.token, info: JSON.stringify(request.attachment.dataJSON)}),
+            token: request.formParams.token, info: "JSON.stringify(request.attachment.dataJSON)"}),
          }).catch((_err) => { winston.error(_err.toString()) })
     } catch (e) {
       response = { success: false, message: e.message }
