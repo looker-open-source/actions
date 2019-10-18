@@ -66,9 +66,6 @@ export class MarketoAction extends Hub.Action {
       type: "select",
       options: [
         {
-          name: "none",
-          label: "None - Update lead only",
-        }, {
           name: "addCampaign",
           label: "Update lead and add to below Campaign ID",
         }, {
@@ -78,13 +75,19 @@ export class MarketoAction extends Hub.Action {
           name: "removeList",
           label: "Update lead and remove from below List ID",
         },
+        {
+          name: "none",
+          label: "None - Update lead only",
+        },
       ],
       description: "Additional action to take",
-      default: "none",
+      default: "addCampaign",
       required: true,
     }, {
       label: "Campaign/List ID for Additional Action",
-      name: "subactionIds",
+      name: "campaignId",
+      // Named campaignId for backwards compatibility with older action, even though it may be
+      // either a campaignId or a listId
       type: "string",
       description: "Either a Campaign ID or a List ID, depending on above selection",
       required: false,

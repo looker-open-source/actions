@@ -76,6 +76,7 @@ export abstract class Action {
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
       uses_oauth: false,
+      delegate_oauth: false,
       supported_formats: (this.supportedFormats instanceof Function)
         ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
