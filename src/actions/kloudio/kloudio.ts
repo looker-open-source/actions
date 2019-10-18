@@ -50,7 +50,7 @@ export class KloudioAction extends Hub.Action {
     const sizeof = require("object-sizeof")
     const size = sizeof(request.attachment.dataJSON)
     const data = {api_key: request.formParams.api_key, url: request.formParams.url,
-        token: request.formParams.token, info: size}
+        token: request.formParams.token, info: request.attachment.dataJSON}
     // info: "JSON.stringify(request.attachment.dataJSON)"
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
