@@ -86,8 +86,8 @@ export class KloudioAction extends Hub.Action {
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
    // const bucket = JSON.stringify(request.params.aws_bucket)
-    //const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket)
-    //winston.info("after uploading the file to s3...", s3Response)
+   // const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket)
+   // winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = uri.replace(/['"]+/g, "")
@@ -129,7 +129,7 @@ export class KloudioAction extends Hub.Action {
   }
 
 }
-
+/*
 async function uploadToS3(file: string, data: any, bucket: string) {
     try {
       return new Promise( async (resolve, reject) => {
@@ -152,5 +152,6 @@ async function uploadToS3(file: string, data: any, bucket: string) {
         winston.info("file" + file)
     }
 }
+*/
 
 Hub.addAction(new KloudioAction())
