@@ -79,8 +79,8 @@ export class KloudioAction extends Hub.Action {
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
     const bucket = JSON.stringify(request.params.aws_bucket)
 
-    // const newAwsKey = awsKey.replace(/['"]+/g, "")
-    // const newSecretKey = awsSecret.replace(/['"]+/g, "")
+    const newAwsKey = awsKey.replace(/['"]+/g, "")
+    const newSecretKey = awsSecret.replace(/['"]+/g, "")
     const newBucket = bucket.replace(/['"]+/g, "")
 
     winston.info(JSON.stringify(request.params.kloudio_api_url))
@@ -94,7 +94,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(typeof request.attachment.dataJSON)
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
-    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, awsKey, awsSecret)
+    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey, newSecretKey)
     winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
