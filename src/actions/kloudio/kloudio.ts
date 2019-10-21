@@ -2,7 +2,7 @@ import * as AWS from "aws-sdk"
 import * as https from "request-promise-native"
 import * as winston from "winston"
 import * as Hub from "../../hub"
-// const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
+const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
 
 export class KloudioAction extends Hub.Action {
 
@@ -86,8 +86,8 @@ export class KloudioAction extends Hub.Action {
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
    // const bucket = JSON.stringify(request.params.aws_bucket)
-   // const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket)
-   // winston.info("after uploading the file to s3...", s3Response)
+    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket)
+    winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = uri.replace(/['"]+/g, "")
@@ -129,10 +129,10 @@ export class KloudioAction extends Hub.Action {
   }
 
 }
-/*
-async function uploadToS3(file: string, data: any, bucket: string) {
+
+async function uploadToS3(file: string, data: any, bucket: any) {
     try {
-      return new Promise( async (resolve, reject) => {
+      return new Promise<any>( async (resolve, reject) => {
         winston.info("Inside uploadToS3 fn..")
         const uploadParams = { Bucket: bucket,
         Key: "", Body: JSON.stringify(data),
@@ -152,6 +152,5 @@ async function uploadToS3(file: string, data: any, bucket: string) {
         winston.info("file" + file)
     }
 }
-*/
 
 Hub.addAction(new KloudioAction())
