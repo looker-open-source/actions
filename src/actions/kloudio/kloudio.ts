@@ -10,8 +10,8 @@ export class KloudioAction extends Hub.Action {
   label = "Kloudio"
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
-  // supportedDownloadSettings = "url"
-   usesStreaming = true
+  // supportedDownloadSettings = ["url"]
+  // usesStreaming = true
   params = [
     {
       description: "API URL for Kloudio from account page",
@@ -75,15 +75,19 @@ export class KloudioAction extends Hub.Action {
     const data = {api_key: request.formParams.api_key, url: request.formParams.url,
         token: request.formParams.token, info: request.attachment.dataJSON}
     // info: "JSON.stringify(request.attachment.dataJSON)"
+    winston.info(JSON.stringify(request.params.kloudio_api_url))
+    winston.info(JSON.stringify(request.params.aws_access_key))
+    winston.info(JSON.stringify(request.params.aws_secret_key))
+
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
-    const bucket = JSON.stringify(request.params.aws_bucket)
-    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket)
-    winston.info("after uploading the file to s3...", s3Response)
+   // const bucket = JSON.stringify(request.params.aws_bucket)
+    //const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket)
+    //winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = uri.replace(/['"]+/g, "")
