@@ -77,6 +77,11 @@ export class KloudioAction extends Hub.Action {
 
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
+    const bucket = JSON.stringify(request.params.aws_bucket)
+
+    // const newAwsKey = awsKey.replace(/['"]+/g, "")
+    // const newSecretKey = awsSecret.replace(/['"]+/g, "")
+    const newBucket = bucket.replace(/['"]+/g, "")
 
     winston.info(JSON.stringify(request.params.kloudio_api_url))
     winston.info(JSON.stringify(request.params.aws_access_key))
@@ -89,8 +94,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(typeof request.attachment.dataJSON)
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
-    const bucket = JSON.stringify(request.params.aws_bucket)
-    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket, awsKey, awsSecret)
+    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, awsKey, awsSecret)
     winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
@@ -137,6 +141,7 @@ export class KloudioAction extends Hub.Action {
 async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, awsSecret: any) {
     try {
       AWS.config.update({ accessKeyId: awsKey, secretAccessKey: awsSecret})
+      AWS.config.region = "us-west-2"
       const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
       return new Promise<any>( async (resolve, reject) => {
         winston.info("Inside uploadToS3 fn..")
