@@ -87,7 +87,6 @@ export class KloudioAction extends Hub.Action {
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
-    winston.info(request.)
 
    // AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     // const bucket = JSON.stringify(request.params.aws_bucket)
