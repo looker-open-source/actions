@@ -86,7 +86,7 @@ export class KloudioAction extends Hub.Action {
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
    // const bucket = JSON.stringify(request.params.aws_bucket)
-    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, bucket)
+    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, request.params.aws_bucket)
     winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
