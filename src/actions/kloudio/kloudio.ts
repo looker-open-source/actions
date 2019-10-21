@@ -81,6 +81,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(JSON.stringify(request.params.kloudio_api_url))
     winston.info(JSON.stringify(request.params.aws_access_key))
     winston.info(JSON.stringify(request.params.aws_secret_key))
+    winston.info(JSON.stringify(request.params.aws_bucket))
 
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
