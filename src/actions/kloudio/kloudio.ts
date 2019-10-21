@@ -2,7 +2,7 @@ import * as AWS from "aws-sdk"
 import * as https from "request-promise-native"
 import * as winston from "winston"
 import * as Hub from "../../hub"
-const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
+// const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
 
 export class KloudioAction extends Hub.Action {
 
