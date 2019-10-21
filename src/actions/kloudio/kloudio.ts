@@ -71,8 +71,6 @@ export class KloudioAction extends Hub.Action {
     let response
     //  const sizeof = require("object-sizeof")
     // const size = sizeof(request.attachment.dataJSON)
-    const data = {api_key: request.formParams.api_key, url: request.formParams.url,
-        token: request.formParams.token, info: request.attachment.dataJSON}
     // info: "JSON.stringify(request.attachment.dataJSON)"
 
     const awsKey = JSON.stringify(request.params.aws_access_key)
@@ -95,6 +93,8 @@ export class KloudioAction extends Hub.Action {
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey, newSecretKey)
+    const data = {api_key: request.formParams.api_key, url: request.formParams.url,
+            token: request.formParams.token, s3_url: s3Response.Location, info: request.attachment.dataJSON}
     winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
@@ -155,7 +155,7 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
         try {
             const s3Response = await s3.upload(uploadParams).promise()
             winston.info(`File uploaded to S3 at ${s3Response.Bucket} bucket. File location: ${s3Response.Location}`)
-            return resolve(s3Response)
+            return resolve(s3Response.Location)
           } catch (error) {
             return reject(error)
           }
