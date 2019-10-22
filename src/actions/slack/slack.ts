@@ -36,7 +36,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     try {
-      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request))
+      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), false)
     } catch (e) {
       const oauthUrl = request.params.state_url
       if (oauthUrl) {

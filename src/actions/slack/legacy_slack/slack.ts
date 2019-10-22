@@ -30,7 +30,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
     const form = new Hub.ActionForm()
 
     try {
-      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request))
+      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), true)
     } catch (e) {
       form.error = displayError[e.message] || e
     }

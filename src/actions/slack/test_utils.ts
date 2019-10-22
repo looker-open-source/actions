@@ -59,6 +59,25 @@ describe(`slack/utils unit tests`, () => {
                     },
                 },
             )
+            sinon.stub(slackClient.channels, "list").callsFake((filters: any) => filters.cursor ?
+              {
+                  ok: true,
+                  channels: [
+                      {id: "3", name: "C", is_member: true},
+                      {id: "4", name: "D", is_member: true},
+                  ],
+              } :
+              {
+                  ok: true,
+                  channels: [
+                      {id: "1", name: "A", is_member: true},
+                      {id: "2", name: "B", is_member: true},
+                  ],
+                  response_metadata: {
+                      next_cursor: "cursor",
+                  },
+              },
+            )
             sinon.stub(slackClient.users, "list").callsFake((filters: any) => filters.cursor ?
                 {
                     ok: true,
@@ -77,7 +96,7 @@ describe(`slack/utils unit tests`, () => {
                         next_cursor: "cursor",
                     },
                 })
-            const result = getDisplayedFormFields(slackClient)
+            const result = getDisplayedFormFields(slackClient, true)
             chai.expect(result).to.eventually.deep.equal([
                 {
                     description: "Name of the Slack channel you would like to post to.",
