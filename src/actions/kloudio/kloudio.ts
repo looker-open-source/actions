@@ -9,7 +9,7 @@ export class KloudioAction extends Hub.Action {
   label = "Kloudio"
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
-  // usesStreaming = true
+  usesStreaming = true
   params = [
     {
       description: "API URL for Kloudio from account page",
@@ -85,6 +85,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(JSON.stringify(request.params.aws_access_key))
     winston.info(JSON.stringify(request.params.aws_secret_key))
     winston.info(JSON.stringify(request.params.aws_bucket))
+    winston.info(JSON.stringify(request.stream))
 
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
