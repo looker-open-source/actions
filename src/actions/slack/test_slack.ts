@@ -144,6 +144,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       handleExecuteStub && handleExecuteStub.restore()
     })
 
+    it("has streaming enabled", () => {
+      chai.expect(action.usesStreaming).equals(true)
+    })
+
     it("returns fields correctly from getDisplayedFormFields", () => {
       const response = new Hub.ActionResponse({success: true})
       handleExecuteStub = sinon.stub(utils, "handleExecute").returns(
