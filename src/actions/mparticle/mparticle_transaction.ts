@@ -4,7 +4,7 @@ import * as Hub from "../../hub"
 import * as httpRequest from "request-promise-native"
 
 import {
-  DEV_ENVIRONMENT, EVENT, EVENT_NAME, EVENT_TYPE, MP_API_URL, PROD_ENVIRONMENT, USER,
+  DEV_ENVIRONMENT, EVENT, EVENT_TYPE, MP_API_URL, PROD_ENVIRONMENT, USER,
 } from "./mparticle_constants"
 import { MparticleEventMaps, MparticleEventTags, MparticleUserMaps, MparticleUserTags } from "./mparticle_enums"
 import { mparticleErrorCodes } from "./mparticle_error_codes"
@@ -119,9 +119,7 @@ export class MparticleTransaction {
   protected createEvent(row: Hub.JsonDetail.Row, mapping: any) {
     const eventUserIdentities: any = {}
     const eventUserAttributes: any = {}
-    const data: any = {
-      event_name: EVENT_NAME,
-    }
+    const data: any = {}
 
     Object.keys(mapping.userIdentities).forEach((attr: any) => {
       const key = mapping.userIdentities[attr]
@@ -207,6 +205,7 @@ export class MparticleTransaction {
       mapping = {
         userIdentities: {},
         userAttributes: {},
+        eventName: {},
       }
     } else {
       mapping = {
