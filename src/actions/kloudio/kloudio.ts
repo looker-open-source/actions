@@ -47,10 +47,9 @@ export class KloudioAction extends Hub.Action {
   supportedDownloadSettings = [Hub.ActionDownloadSettings.Url]
 
   async execute(request: Hub.ActionRequest) {
-    /*
     if (!(request.attachment && request.attachment.dataJSON)) {
         throw "No attached json."
-    }*/
+    }
 
     if (!(request.formParams.api_key)) {
         throw "Missing API key"
@@ -86,18 +85,18 @@ export class KloudioAction extends Hub.Action {
     winston.info(JSON.stringify(request.params.aws_access_key))
     winston.info(JSON.stringify(request.params.aws_secret_key))
     winston.info(JSON.stringify(request.params.aws_bucket))
-    winston.info(JSON.stringify(request.stream))
+   // winston.info(JSON.stringify(request.stream))
 
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
-    winston.info(typeof "request.attachment.dataJSON")
+    winston.info(typeof request.attachment.dataJSON)
 
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
-    const s3Response = await uploadToS3("s3_filename", "request.attachment.dataJSON", newBucket, newAwsKey,
+    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey,
      newSecretKey)
     const data = {api_key: request.formParams.api_key, url: request.formParams.url,
-            token: request.formParams.token, s3_url: s3Response.Location, info: "request.attachment.dataJSON"}
+            token: request.formParams.token, s3_url: s3Response.Location, info: request.attachment.dataJSON}
     winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
