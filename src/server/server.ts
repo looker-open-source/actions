@@ -123,7 +123,7 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      const queue = action.extendedAction ? expensiveJobQueue : extendedJobQueue
+      const queue = action.extendedAction ? extendedJobQueue : expensiveJobQueue
       const actionResponse = await action.validateAndExecute(request, queue)
       complete(actionResponse.asJson())
     }))
