@@ -235,7 +235,11 @@ export class MparticleTransaction {
   }
 
   protected getTag(field: ExploreField): string {
-    if (!field.tags || !field.tags[0]) { return "" }
+    // tslint:disable-next-line: strict-type-predicates
+    if (field.tags === undefined) { return "" }
+    // tslint:disable-next-line: strict-type-predicates
+    if (field.tags[0] === undefined) { return "" }
+    // tslint:disable-next-line
     return field.tags.find((t) => t.startsWith("mp_")) || ""
   }
 
