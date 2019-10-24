@@ -1,6 +1,6 @@
 # Slack Attachment
 
-This action will post an attachment with your Looker data to a private Slack channel or direct message (DM).
+This action will post an attachment with your Looker data to a public Slack channel or direct message (DM).
 
 You can configure which user (usually a bot user) the action will post the attachments by using the appropriate API token for that user.
 
