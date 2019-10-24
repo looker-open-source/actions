@@ -1,4 +1,3 @@
-import * as winston from "winston"
 import * as Hub from "../../hub"
 
 import * as httpRequest from "request-promise-native"
@@ -108,8 +107,6 @@ export class MparticleTransaction {
       body.push(eventEntry)
     })
 
-    winston.debug("BODY", JSON.stringify(body))
-    // winston.debug("SENDING CHUNK", body.length)
     const options = this.postOptions(body)
     await httpRequest.post(options).promise().catch((e: any) => {
       this.errors.push(`${e.statusCode} - ${mparticleErrorCodes[e.statusCode]}`)

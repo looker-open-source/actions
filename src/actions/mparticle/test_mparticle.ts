@@ -17,6 +17,7 @@ const sampleData = {
     dimensions: [
       {name: "some.field", tags: ["sometag"]},
     ],
+    table_calculations: [],
   },
   data: [{"some.field": {value: "value"}}],
 }
