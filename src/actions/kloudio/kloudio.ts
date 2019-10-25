@@ -95,11 +95,11 @@ export class KloudioAction extends Hub.Action {
 
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
-    winston.info("length of row data is " + labels)
+    winston.info(labels[0])
     const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(labelIds[0])
-    const dataRows = await parseData(JSON.stringify(request.attachment.dataJSON.data), labelIds)
-    winston.info(JSON.stringify(dataRows))
+    const dataRows = parseData(JSON.stringify(request.attachment.dataJSON.data), labelIds)
+    winston.info("length of row data is " + JSON.stringify(dataRows))
     //
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey,
@@ -175,7 +175,7 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
     }
 }
 
-async function parseData(data: any, labels: any) {
+function parseData(data: any, labels: any) {
     const row = []
     const dataLen = data.length
     const rowL = labels.length
