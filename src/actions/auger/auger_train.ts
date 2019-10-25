@@ -20,6 +20,8 @@ export class AugerTrainAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = []
   usesStreaming = true
+  executeInOwnProcess = true
+  extendedAction = true
   params = [
     {
       name: "api_token",

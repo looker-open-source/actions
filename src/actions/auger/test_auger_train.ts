@@ -1,13 +1,13 @@
 import * as chai from "chai"
 import * as httpRequest from "request-promise-native"
 import * as sinon from "sinon"
-// import * as winston from "winston"
 import * as Hub from "../../hub"
 import { Transaction } from "./poller"
 
 import { AugerTrainAction } from "./auger_train"
 
 const action = new AugerTrainAction()
+action.executeInOwnProcess = false
 const sandbox = sinon.createSandbox()
 
 describe(`${action.constructor.name} unit tests`, () => {
