@@ -21,9 +21,18 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
     sensitive: true,
   }]
   usesStreaming = false
+  executeInOwnProcess = true
+  extendedAction = true
+
+  async callback() {
+    if (process.send) {
+      process.send("PROCESS FINISHED")
+    }
+  }
 
   async execute(request: Hub.ActionRequest) {
-    return await handleExecute(request, this.slackClientFromRequest(request))
+    setTimeout(this.callback, 1000 * 20 )
+    return handleExecute(request, this.slackClientFromRequest(request))
   }
 
   async form(request: Hub.ActionRequest) {

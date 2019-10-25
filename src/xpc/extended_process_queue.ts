@@ -30,12 +30,13 @@ export class ExtendedProcessQueue extends ProcessQueue {
         if (response !== this.DONE_MESSAGE) {
           outerResolve(response)
           winston.info(`execute process returning successful response to Looker`, {webhookId})
+        } else {
+          winston.info(`execute process finished successfully`, {webhookId})
+          succeeded = true
+          clearTimeout(timeout)
+          child.kill()
+          res()
         }
-        winston.info(`execute process finished successfully`, {webhookId})
-        succeeded = true
-        clearTimeout(timeout)
-        child.kill()
-        res()
       }).on("error", (err) => {
         clearTimeout(timeout)
         winston.warn(`execute process sent error message`, {webhookId, message: err.message})
@@ -87,15 +88,18 @@ export class ExtendedProcessQueue extends ProcessQueue {
         })
       }
       this.childCounter += 1
+      winston.info("Child Count: " + this.childCounter)
       return new Promise<string>((resolve, reject) => {
         const child = spawn.fork(`./src/xpc/execute_process.ts`)
         const webhookId = JSON.parse(data).webhookId
         winston.info(`execute process created`, {webhookId})
-        this.child_runner(child, data, webhookId, resolve, reject).then(() =>
+        this.child_runner(child, data, webhookId, resolve, reject).then(() => {
           this.childCounter -= 1
-        ).catch(() =>
+          winston.info("Child Count: " + this.childCounter)
+        }).catch(() => {
           this.childCounter -= 1
-        )
+          winston.info("Child Count: " + this.childCounter)
+        })
       })
     })
   }

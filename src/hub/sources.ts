@@ -35,5 +35,6 @@ export async function findAction(id: string, opts?: {lookerVersion?: string | nu
 }
 
 export async function findExtendedAction(id: string, opts?: {lookerVersion?: string | null}) {
-
+  const action = await findAction(id, opts)
+  return action.extendedAction ? action : null
 }
