@@ -2,7 +2,6 @@ import * as AWS from "aws-sdk"
 import * as https from "request-promise-native"
 import * as winston from "winston"
 import * as Hub from "../../hub"
-import { async } from "q"
 
 export class KloudioAction extends Hub.Action {
 
@@ -177,7 +176,6 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
 }
 
 async function parseData(data: any) {
-
     const row = []
     for (const rowIndex of Object.keys(data)) {
         row.push(rowIndex)
