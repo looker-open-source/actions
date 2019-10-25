@@ -382,20 +382,6 @@ export class AugerTrainAction extends Hub.Action {
     }
   }
 
-  // private async getExperiment(transaction: Transaction): Promise<any> {
-  //   try {
-  //     const options = {
-  //       url: `${transaction.augerURL}/experiments/${transaction.experimentId}?token=${transaction.token}`,
-  //       json: true,
-  //       resolveWithFullResponse: true,
-  //     }
-  //     // winston.debug("get experiment", options)
-  //     return httpRequest.get(options).promise()
-  //   } catch (e) {
-  //     throw new Error(`project file fetched: ${e}`)
-  //   }
-  // }
-
   private async getProject(transaction: Transaction): Promise<any> {
     try {
       const projOptions = {
@@ -403,7 +389,6 @@ export class AugerTrainAction extends Hub.Action {
         json: true,
         resolveWithFullResponse: true,
       }
-      // winston.debug("get project", projOptions)
       return httpRequest.get(projOptions).promise()
     } catch (e) {
       throw new Error(`project file not created: ${e}`)
