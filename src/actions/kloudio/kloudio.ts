@@ -179,6 +179,7 @@ function parseData(data: any, labels: any) {
     const row = []
     const dataLen = data.length
     const rowL = labels.length
+    winston.info("length of data is " +  dataLen)
     winston.info("length of row is " +  rowL)
 
     // tslint:disable-next-line: forin
