@@ -87,7 +87,7 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "10.8.0"
+    "node": "12.13.0"
   },
   "resolutions": {
     "**/event-stream": "3.3.4"
