@@ -98,7 +98,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(labels[0])
     const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(labelIds[0])
-    const dataRows = await parseData(request.attachment.dataJSON.data)
+    const dataRows = await parseData(JSON.stringify(request.attachment.dataJSON.data))
     winston.info(JSON.stringify(dataRows))
     //
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
@@ -191,9 +191,9 @@ async function parseData(data: any) {
                 row.push(dataRow.keyLabel.value)
             }
         }
-        break
         */
        // row = rowIndex
+        break
     }
     return row
 }
