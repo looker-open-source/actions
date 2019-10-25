@@ -178,7 +178,9 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
 async function parseData(data: any) {
     const row = []
     for (const rowIndex of Object.keys(data)) {
-        row.push(rowIndex)
+        const rowN = Number(rowIndex)
+        winston.info(data[rowN])
+        row.push(rowN)
         /*
         const dataRow = data[rowIndex]
         for (const labelIndex of Object.keys(labels)) {
