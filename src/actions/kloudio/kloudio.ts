@@ -73,6 +73,11 @@ export class KloudioAction extends Hub.Action {
     // const size = sizeof(request.attachment.dataJSON)
     // info: "JSON.stringify(request.attachment.dataJSON)"
 
+    const labels = request.attachment.dataJSON.dimensions.map((label: { label: any; }) => label.label)
+    winston.info(labels)
+    const labelIds = request.attachment.dataJSON.dimensions.map((labelId: { name: any; }) => labelId.name)
+    winston.info(labelIds)
+
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
     const bucket = JSON.stringify(request.params.aws_bucket)
