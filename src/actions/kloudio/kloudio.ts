@@ -90,13 +90,15 @@ export class KloudioAction extends Hub.Action {
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
-    winston.info(request.attachment.dataJSON.dimensions)
+    winston.info(typeof request.attachment.dataJSON)
+    winston.info(request.attachment.dataJSON)
 
-    const labels = request.attachment.dataJSON.dimensions.map((label: { label: any; }) => label.label)
+    // const dataFile = JSON.stringify(request.attachment.dataJSON)
+    const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
     winston.info(labels)
-    const labelIds = request.attachment.dataJSON.dimensions.map((labelId: { name: any; }) => labelId.name)
+    const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(labelIds)
-
+    //
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey,
      newSecretKey)
