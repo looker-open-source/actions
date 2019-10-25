@@ -184,7 +184,7 @@ function parseData(data: any, labels: any) {
     // tslint:disable-next-line: forin
     for (const i in dataLen) {
         if (data[i]) {
-            // winston.info(data[i].labels[0])
+            winston.info(data[i])
             row.push(data[i])
         }
     }
