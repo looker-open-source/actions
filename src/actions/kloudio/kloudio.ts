@@ -91,11 +91,11 @@ export class KloudioAction extends Hub.Action {
     winston.info(request.formParams.url)
     winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
-    winston.info(JSON.stringify(request.attachment.dataJSON.data))
+    // winston.info(JSON.stringify(request.attachment.dataJSON.data))
 
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
-    winston.info(labels[0])
+    winston.info("length of row data is " + labels)
     const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(labelIds[0])
     const dataRows = await parseData(JSON.stringify(request.attachment.dataJSON.data), labelIds)
@@ -179,15 +179,14 @@ async function parseData(data: any, labels: any) {
     const row = []
     const dataLen = data.length
     const rowL = labels.length
-    winston.info(rowL)
+    winston.info("length of row is " +  rowL)
 
     // tslint:disable-next-line: forin
     for (const i in dataLen) {
         if (data[i]) {
-            winston.info(data[i].labels[0])
+            // winston.info(data[i].labels[0])
             row.push(data[i])
         }
-        break
     }
 
     return row
