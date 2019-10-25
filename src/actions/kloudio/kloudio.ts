@@ -2,6 +2,7 @@ import * as AWS from "aws-sdk"
 import * as https from "request-promise-native"
 import * as winston from "winston"
 import * as Hub from "../../hub"
+import { async } from "q"
 
 export class KloudioAction extends Hub.Action {
 
@@ -98,6 +99,8 @@ export class KloudioAction extends Hub.Action {
     winston.info(labels[0])
     const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(labelIds[0])
+    const dataRows = await parseData(request.attachment.dataJSON.data)
+    winston.info(dataRows[0])
     //
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey,
@@ -171,6 +174,25 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
     })} finally {
         winston.info("file" + file)
     }
+}
+
+async function parseData(data: any) {
+
+    const row = []
+    for (const rowIndex of Object.keys(data)) {
+        row.push(rowIndex)
+        /*
+        for (const labelIndex of Object.keys(labels)) {
+            if (data[rowIndex].labels[labelIndex].rendered) {
+                row.push(data[rowIndex].labels[labelIndex].rendered)
+            } else {
+                row.push(data[rowIndex].labels[labelIndex].value)
+            }
+        }
+        */
+        break
+    }
+    return row
 }
 
 Hub.addAction(new KloudioAction())
