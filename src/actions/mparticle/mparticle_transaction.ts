@@ -3,7 +3,7 @@ import * as Hub from "../../hub"
 import * as httpRequest from "request-promise-native"
 
 import {
-  DEV_ENVIRONMENT, EVENT, EVENT_TYPE, MP_API_URL, PROD_ENVIRONMENT, USER,
+  DEFAULT_EVENT_NAME, DEV_ENVIRONMENT, EVENT, EVENT_TYPE, MP_API_URL, PROD_ENVIRONMENT, USER,
 } from "./mparticle_constants"
 import { MparticleEventMaps, MparticleEventTags, MparticleUserMaps, MparticleUserTags } from "./mparticle_enums"
 import { mparticleErrorCodes } from "./mparticle_error_codes"
@@ -130,10 +130,14 @@ export class MparticleTransaction {
       eventUserAttributes[key] = val
     })
 
-    Object.keys(mapping.eventName).forEach((attr: any) => {
-      const val = row[attr].value
-      data.event_name = val
-    })
+    if (Object.keys(mapping.eventName).length !== 0) {
+      Object.keys(mapping.eventName).forEach((attr: any) => {
+        const val = row[attr].value
+        data.event_name = val
+      })
+    } else {
+      data.event_name = DEFAULT_EVENT_NAME
+    }
 
     if (this.eventType === EVENT) {
       data.device_info = {}
@@ -247,7 +251,7 @@ export class MparticleTransaction {
       if (Object.keys(this.userIdentities).indexOf(tag) !== -1) {
         mapping.userIdentities[field.name] = this.userIdentities[tag]
       } else if (tag === MparticleEventTags.MpEventName) {
-        mapping.eventName[field.name] = field.name
+        mapping.eventName[field.name] = MparticleEventMaps.EventName
       } else {
         mapping.userAttributes[field.name] = `looker_${field.name}`
       }
@@ -259,7 +263,7 @@ export class MparticleTransaction {
       } else if (tag === "mp_user_attribute") {
         mapping.userAttributes[field.name] = `looker_${field.name}`
       } else if (tag === MparticleEventTags.MpEventName) {
-        mapping.eventName[field.name] = field.name
+        mapping.eventName[field.name] = MparticleEventMaps.EventName
       } else if (tag === MparticleEventTags.MpDeviceInfo) {
         mapping.deviceInfo[field.name] = `looker_${field.name}`
       } else if (Object.keys(this.dataEventAttributes).indexOf(tag) !== -1) {
