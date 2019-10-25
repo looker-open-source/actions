@@ -98,7 +98,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(labels[0])
     const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(labelIds[0])
-    const dataRows = await parseData(request.attachment.dataJSON.data, labelIds)
+    const dataRows = await parseData(JSON.stringify(request.attachment.dataJSON.data), labelIds)
     winston.info(JSON.stringify(dataRows))
     //
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
@@ -177,26 +177,19 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
 
 async function parseData(data: any, labels: any) {
     const row = []
-    for (const rowIndex of Object.keys(data)) {
-        const rowN = Number(rowIndex)
-        winston.info(data[rowN])
-        const dataRow = data[rowN]
-        for (const labelIndex of Object.keys(labels)) {
-            const colN = Number(labelIndex)
-            const keyLabel = labels[colN]
-            winston.info(dataRow.keyLabel)
-            row.push(keyLabel)
-            /*
-            if (dataRow.keyLabel.rendered) {
-                row.push(dataRow.keyLabel.rendered.rendered)
-            } else {
-                row.push(dataRow.keyLabel.value)
-            }
-            */
+    const dataLen = data.length
+    const rowL = labels.length
+    winston.info(rowL)
+
+    // tslint:disable-next-line: forin
+    for (const i in dataLen) {
+        if (data[i]) {
+            winston.info(data[i].labels[0])
+            row.push(data[i])
         }
-       // row = rowIndex
         break
     }
+
     return row
 }
 
