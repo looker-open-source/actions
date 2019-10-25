@@ -4,10 +4,10 @@
   "description": "",
   "main": "lib/index",
   "scripts": {
-    "start": "./node_modules/.bin/ts-node ./src/boot.ts",
+    "start": "./node_modules/.bin/ts-node --async-stack-traces ./src/boot.ts",
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
     "copy-api-types": "./node_modules/.bin/ts-node ./bin/copy_api_types.ts",
-    "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --no-cache --type-check -- ./src/boot.ts",
+    "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --async-stack-traces --no-cache --type-check -- ./src/boot.ts",
     "debug": "./node_modules/.bin/nodemon --exec node --inspect --trace-warnings -r ./node_modules/ts-node/register -- ./src/boot.ts",
     "debug-trace": "./node_modules/.bin/nodemon --exec node --inspect --trace-sync-io -r ./node_modules/ts-node/register -- ./src/boot.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
