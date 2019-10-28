@@ -59,9 +59,10 @@ export class KloudioAction extends Hub.Action {
         throw "Missing Google sheets URL"
     }
 
+    /*
     if (!(request.formParams.token)) {
         throw "Missing Google Sheets Access Token"
-    }
+    }*/
 
     // const qr = request.attachment.dataJSON
     /*if (!qr.fields || !qr.data) {
@@ -89,7 +90,7 @@ export class KloudioAction extends Hub.Action {
 
     winston.info(request.formParams.api_key)
     winston.info(request.formParams.url)
-    winston.info(request.formParams.token)
+    // winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
     // winston.info(JSON.stringify(request.attachment.dataJSON.data))
 
@@ -105,7 +106,7 @@ export class KloudioAction extends Hub.Action {
     const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey,
      newSecretKey)
     const data = {api_key: request.formParams.api_key, url: request.formParams.url,
-            token: request.formParams.token, s3_url: s3Response.Location, info: request.attachment.dataJSON}
+            s3_url: s3Response.Location, info: request.attachment.dataJSON}
     winston.info("after uploading the file to s3...", s3Response)
     try {
         const uri = JSON.stringify(request.params.kloudio_api_url)
