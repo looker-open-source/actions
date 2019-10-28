@@ -138,12 +138,7 @@ export class KloudioAction extends Hub.Action {
       name: "url",
       required: true,
       type: "string",
-    }, {
-        label: "Google Sheets Access Token",
-        name: "token",
-        required: true,
-        type: "string",
-      }]
+    }]
     return form
   }
 
