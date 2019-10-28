@@ -87,7 +87,8 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "10.8.0"
+    "node": "10.8.0",
+    "yarn": ">=1.19.1"
   },
   "resolutions": {
     "**/event-stream": "3.3.4"
