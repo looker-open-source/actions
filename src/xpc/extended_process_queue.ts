@@ -30,7 +30,7 @@ export class ExtendedProcessQueue extends ProcessQueue {
         child,
         webhookId,
         lookerResponseReject,
-        processReject
+        processReject,
       )
       let succeeded = false
       child.on("message", (response) => {

@@ -2,7 +2,6 @@ import * as Hub from "../../../hub"
 
 import { WebClient } from "@slack/client"
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
-import {ExtendedProcessQueue} from "../../../xpc/extended_process_queue"
 
 export class SlackAttachmentAction extends Hub.Action {
 
@@ -22,18 +21,9 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
     sensitive: true,
   }]
   usesStreaming = false
-  executeInOwnProcess = true
-  extendedAction = true
-
-  async callback() {
-    if (process.send) {
-      process.send(ExtendedProcessQueue.prototype.DONE_MESSAGE)
-    }
-  }
 
   async execute(request: Hub.ActionRequest) {
-    setTimeout(this.callback, 1000 * 20 )
-    return handleExecute(request, this.slackClientFromRequest(request))
+    return await handleExecute(request, this.slackClientFromRequest(request))
   }
 
   async form(request: Hub.ActionRequest) {
