@@ -97,13 +97,13 @@ export class KloudioAction extends Hub.Action {
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
     winston.info(labels[0])
-    const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
-    winston.info(labelIds[0])
-    const dataRows = parseData(request.attachment.dataJSON.data, labelIds)
+    const names = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
+    winston.info(names[0])
+    const dataRows = await parseData(request.attachment.dataJSON.data, names, labels)
     winston.info("first of row data is " + JSON.stringify(dataRows[0]))
     //
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
-    const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey,
+    const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
     const data = {api_key: request.formParams.api_key, url: request.formParams.url,
             s3_url: s3Response.Location, info: request.attachment.dataJSON}
@@ -171,28 +171,33 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
     }
 }
 
-function parseData(data: any, labels: any) {
-    const rowA = []
+async function parseData(data: any, names: any, labels: any) {
+    // const rowA: any[][] = []
     // const dataN = JSON.parse(data)
     const dataLen = data.length
-    const rowL = labels.length
+    const rowL = names.length
     winston.info("length of data is " +  dataLen)
     winston.info("length of row is " +  rowL)
     // winston.info("data after parsing is" + data)
     // tslint:disable-next-line: forin
-    for (const row of data) {
-        const tempA = []
-        for (const label of labels) {
-            if (row[label].rendered) {
-                tempA.push(row[label].rendered)
-            } else {
-                tempA.push(row[label].value)
+    return new Promise<any>( async (resolve, reject) => {
+        try {
+            for (const row of data) {
+                const tempA = []
+                for (const label of names) {
+                    if (row[label].rendered) {
+                        tempA.push(row[label].rendered)
+                    } else {
+                        tempA.push(row[label].value)
+                    }
+                }
+                labels.push(tempA)
             }
+            return resolve(labels)
+        } catch (error) {
+            return reject(error)
         }
-        rowA.push(tempA)
-    }
-
-    return rowA
+    })
 }
 
 Hub.addAction(new KloudioAction())
