@@ -66,10 +66,18 @@ export class Poller {
         if (transaction.callbackFunction !== undefined) {
           await transaction.callbackFunction(transaction)
         }
+        else {
+          if (process !== undefined) {
+            process.send("PROCESS FINISHED")
+          }
+        }
         break
       case transaction.errorStatus:
         winston.debug("polling undeployed")
         this.stopPolling()
+        if (process !== undefined) {
+          process.send("PROCESS FINISHED")
+        }
         break
     }
   }
