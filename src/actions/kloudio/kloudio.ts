@@ -100,7 +100,7 @@ export class KloudioAction extends Hub.Action {
     const labelIds = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(labelIds[0])
     const dataRows = parseData(request.attachment.dataJSON.data, labelIds)
-    winston.info("all of row data is " + dataRows)
+    winston.info("first of row data is " + JSON.stringify(dataRows[0]))
     //
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     const s3Response = await uploadToS3("s3_filename", request.attachment.dataJSON, newBucket, newAwsKey,
@@ -178,7 +178,7 @@ function parseData(data: any, labels: any) {
     const rowL = labels.length
     winston.info("length of data is " +  dataLen)
     winston.info("length of row is " +  rowL)
-    winston.info("data after parsing is" + data)
+    // winston.info("data after parsing is" + data)
     // tslint:disable-next-line: forin
     for (const row of data) {
         const tempA = []
