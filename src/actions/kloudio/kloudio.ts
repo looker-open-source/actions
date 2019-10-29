@@ -173,12 +173,12 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
 
 function parseData(data: any, labels: any) {
     const row = ["he"]
-    const dataN = JSON.parse(data)
-    // const dataLen = dataN.length
+    // const dataN = JSON.parse(data)
+    const dataLen = data.length
     const rowL = labels.length
-    // winston.info("length of data is " +  dataLen)
+    winston.info("length of data is " +  dataLen)
     winston.info("length of row is " +  rowL)
-    winston.info("data after parsing is" + dataN)
+    winston.info("data after parsing is" + data)
     // tslint:disable-next-line: forin
     /*
     for (let i = 0; i < 5; i++) {
