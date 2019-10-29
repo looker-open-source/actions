@@ -159,6 +159,10 @@ export default class Server implements Hub.RouteBuilder {
       }
     })
 
+    this.app.get("/dev/null", async (req, _) => {
+      winston.info(`/dev/null blackholed ${JSON.stringify(req)}`)
+    })
+
     this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})

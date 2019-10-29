@@ -28,8 +28,8 @@ export class TwilioCustomMessageAction extends Hub.Action {
       sensitive: true,
       description: "Auth Token from www.twilio.com/console.",
     }, {
-      name: "from",
-      label: "Twilio Verified Phone # Caller Id",
+      name: "Message SID",
+      label: "Twilio Verified SID",
       required: true,
       sensitive: false,
       description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
