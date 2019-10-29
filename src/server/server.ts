@@ -5,8 +5,9 @@ import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
-import {isOauthAction, OAuthAction} from "../hub"
+import {DelegateOAuthAction, isDelegateOauthAction, isOauthAction, OAuthAction} from "../hub"
 import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
+import * as ExtendedProcessQueue from "../xpc/extended_process_queue"
 import * as apiKey from "./api_key"
 const expressWinston = require("express-winston")
 const uparse = require("url")
@@ -16,7 +17,10 @@ const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
 const useRaven = () => !!process.env.ACTION_HUB_RAVEN_DSN
 
+// Should be used with actions that hold the event loop extensively
 const expensiveJobQueue = new ExecuteProcessQueue.ExecuteProcessQueue()
+// Should be used with actions that may exist for long periods of time
+const extendedJobQueue = new ExtendedProcessQueue.ExtendedProcessQueue()
 
 export default class Server implements Hub.RouteBuilder {
 
@@ -119,15 +123,22 @@ export default class Server implements Hub.RouteBuilder {
     this.route("/actions/:actionId/execute", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      const actionResponse = await action.validateAndExecute(request, expensiveJobQueue)
+      const queue = action.extendedAction ? extendedJobQueue : expensiveJobQueue
+      const actionResponse = await action.validateAndExecute(request, queue)
       complete(actionResponse.asJson())
     }))
 
     this.route("/actions/:actionId/form", this.jsonKeepAlive(async (req, complete) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (action.hasForm) {
-        const form = await action.validateAndFetchForm(request)
+
+      let form
+      if (isDelegateOauthAction(action) && request.params.test) {
+        form = await (action as DelegateOAuthAction).oauthCheck(request)
+      } else if (action.hasForm) {
+        form = await action.validateAndFetchForm(request)
+      }
+      if (form) {
         complete(form.asJson())
       } else {
         throw "No form defined for action."

@@ -33,7 +33,7 @@
     "@google-cloud/storage": "^1.5.2",
     "@sendgrid/helpers": "^6.1.5",
     "@sendgrid/mail": "^6.1.4",
-    "@slack/client": "^4.2.2",
+    "@slack/client": "^5.0.1",
     "@types/base64-url": "^2.2.0",
     "@types/body-parser": "^1.16.5",
     "@types/dotenv": "^4.0.1",
@@ -66,7 +66,7 @@
     "hipchatter": "^1.0.0",
     "jira-client": "^6.4.1",
     "mailchimp": "^1.2.0",
-    "node-marketo-rest": "^0.7.0",
+    "node-marketo-rest": "^0.7.5",
     "nodemailer": "^5.1.1",
     "nodemon": "^1.12.1",
     "oboe": "^2.1.4",
@@ -87,7 +87,8 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "10.8.0"
+    "node": "10.8.0",
+    "yarn": ">=1.19.1"
   },
   "resolutions": {
     "**/event-stream": "3.3.4"

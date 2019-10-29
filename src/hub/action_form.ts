@@ -27,6 +27,11 @@ interface ActionFormFieldString extends ActionFormFieldBase {
   type?: "string" | "textarea"
 }
 
+interface ActionFormFieldMessage extends ActionFormFieldBase {
+  type?: "message"
+  value: string
+}
+
 interface ActionFormFieldSelect extends ActionFormFieldBase {
   type: "select"
   options: { name: string, label: string }[]
@@ -38,3 +43,4 @@ interface ActionFormFieldOAuth extends ActionFormFieldBase {
 }
 
 export type ActionFormField = ActionFormFieldString | ActionFormFieldSelect | ActionFormFieldOAuth
+    | ActionFormFieldMessage
