@@ -8,34 +8,41 @@ export class ExtendedProcessQueue extends ProcessQueue {
   MAX_EXTENDED_CHILD_CONCURRENCY = 2
   childCounter = 0
 
-  processTimeoutKiller(child: spawn.ChildProcess, webhookId: string, cbOuter: any, cbInner: any) {
+  processTimeoutKiller(child: spawn.ChildProcess, webhookId: string, lookerReponseCallback: any, processCallback: any) {
     const msg = "Killed execute process due to timeout in responding to parent process"
     winston.warn(msg, {webhookId})
     if (!child.killed) {
       child.kill()
     }
-    cbOuter(msg)
-    cbInner()
+    lookerReponseCallback(msg)
+    processCallback()
   }
 
   async child_runner(child: spawn.ChildProcess,
                      data: string,
                      webhookId: string,
-                     outerResolve: (value?: string | PromiseLike<string> | undefined) => void,
-                     outerReject: (reason?: any) => void) {
-    return new Promise<void>((res, rej) => {
-      const timeout = setTimeout(this.processTimeoutKiller, this.PROCESS_TIMEOUT, child, webhookId, outerReject, rej)
+                     lookerResponseResolve: (value?: string | PromiseLike<string> | undefined) => void,
+                     lookerResponseReject: (reason?: any) => void) {
+    return new Promise<void>((processResolve, processReject) => {
+      const timeout = setTimeout(
+        this.processTimeoutKiller,
+        this.PROCESS_TIMEOUT,
+        child,
+        webhookId,
+        lookerResponseReject,
+        processReject
+      )
       let succeeded = false
       child.on("message", (response) => {
         if (response !== this.DONE_MESSAGE) {
-          outerResolve(response)
+          lookerResponseResolve(response)
           winston.info(`execute process returning successful response to Looker`, {webhookId})
         } else {
           winston.info(`execute process finished successfully`, {webhookId})
           succeeded = true
           clearTimeout(timeout)
           child.kill()
-          res()
+          processResolve()
         }
       }).on("error", (err) => {
         clearTimeout(timeout)
@@ -43,8 +50,8 @@ export class ExtendedProcessQueue extends ProcessQueue {
         if (!child.killed) {
           child.kill()
         }
-        outerReject(err)
-        rej()
+        lookerResponseReject(err)
+        processReject()
       }).on("exit", (code: number, signal: string) => {
         clearTimeout(timeout)
         if (!succeeded) {
@@ -53,8 +60,8 @@ export class ExtendedProcessQueue extends ProcessQueue {
         if (!child.killed) {
           child.kill()
         }
-        outerReject(signal)
-        rej()
+        lookerResponseReject(signal)
+        processReject()
       }).on("disconnect", () => {
         clearTimeout(timeout)
         if (!succeeded) {
@@ -63,8 +70,8 @@ export class ExtendedProcessQueue extends ProcessQueue {
         if (!child.killed) {
           child.kill()
         }
-        outerReject("Child Disconnected")
-        rej()
+        lookerResponseReject("Child Disconnected")
+        processReject()
       }).on("close", (code: number, signal: string) => {
         clearTimeout(timeout)
         if (!succeeded) {
@@ -73,8 +80,8 @@ export class ExtendedProcessQueue extends ProcessQueue {
         if (!child.killed) {
           child.kill()
         }
-        outerReject(signal)
-        rej()
+        lookerResponseReject(signal)
+        processReject()
       })
       child.send(data)
     })
@@ -88,17 +95,14 @@ export class ExtendedProcessQueue extends ProcessQueue {
         })
       }
       this.childCounter += 1
-      winston.info("Child Count: " + this.childCounter)
       return new Promise<string>((resolve, reject) => {
         const child = spawn.fork(`./src/xpc/execute_process.ts`)
         const webhookId = JSON.parse(data).webhookId
         winston.info(`execute process created`, {webhookId})
         this.child_runner(child, data, webhookId, resolve, reject).then(() => {
           this.childCounter -= 1
-          winston.info("Child Count: " + this.childCounter)
         }).catch(() => {
           this.childCounter -= 1
-          winston.info("Child Count: " + this.childCounter)
         })
       })
     })
