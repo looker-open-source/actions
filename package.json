@@ -47,7 +47,7 @@
     "@types/sanitize-filename": "^1.1.28",
     "@types/semver": "^5.4.0",
     "@types/ssh2-sftp-client": "^2.0.0",
-    "@types/twilio": "^0.0.9",
+    "@types/twilio": "^0.0.10",
     "@types/uuid": "^3.4.3",
     "@types/winston": "^2.3.6",
     "airtable": "^0.5.0",
@@ -80,7 +80,7 @@
     "striplines": "^1.0.2",
     "ts-node": "^6.0.5",
     "tslint-language-service": "^0.9.8",
-    "twilio": "^3.8.0",
+    "twilio": "^4.6.0",
     "typescript": "^3.0.1",
     "uuid": "^3.1.0",
     "winston": "^2.3.1"

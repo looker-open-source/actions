@@ -159,7 +159,7 @@ export default class Server implements Hub.RouteBuilder {
       }
     })
 
-    this.app.get("/dev/null", async (req, _) => {
+    this.app.post("/dev/null", async (req, _) => {
       winston.info(`/dev/null blackholed ${JSON.stringify(req)}`)
     })
 

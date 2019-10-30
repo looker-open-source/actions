@@ -28,11 +28,11 @@ export class TwilioCustomMessageAction extends Hub.Action {
       sensitive: true,
       description: "Auth Token from www.twilio.com/console.",
     }, {
-      name: "Message SID",
+      name: "MessageSID",
       label: "Twilio Verified SID",
       required: true,
       sensitive: false,
-      description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
+      description: "A valid Twilio message SID",
     },
   ]
 
@@ -65,7 +65,7 @@ export class TwilioCustomMessageAction extends Hub.Action {
       await Promise.all(sendValues.map(async (to: any) => {
         winston.info(to[0] + " // " + to[1])
         const message = {
-          from: request.params.from,
+          messagingServiceSid: request.params.MessageSID,
           to: to[0],
           body: to[1],
         }
