@@ -3,6 +3,7 @@ import * as Hub from "../../hub"
 import * as twilio from "twilio"
 import * as winston from "winston"
 
+const TWILIO_MAX_MESSAGE_BODY = 1600
 const TAGS = ["phone", "message"]
 
 export class TwilioCustomMessageAction extends Hub.Action {
@@ -56,18 +57,20 @@ export class TwilioCustomMessageAction extends Hub.Action {
     if (phoneField.length === 0 || messageField.length === 0) {
       throw `Query requires a field tagged ${TAGS}.`
     }
-    const sendValues = qr.data.map((row: any) => ([row[phoneField[0].name].value, row[messageField[0].name].value]))
+
+    winston.info(JSON.stringify(qr.data))
+    const sendValues = qr.data.map((row: any) => ([row[phoneField[0].name].value, row[messageField[0].name].html]))
 
     const client = this.twilioClientFromRequest(request)
 
     let response
     try {
       await Promise.all(sendValues.map(async (to: any) => {
-        winston.info(to[0] + " // " + to[1])
+        const messageBody = Hub.truncateString(to[1], TWILIO_MAX_MESSAGE_BODY)
         const message = {
           messagingServiceSid: request.params.MessageSID,
           to: to[0],
-          body: to[1],
+          body: messageBody,
         }
         return client.messages.create(message)
       }))
