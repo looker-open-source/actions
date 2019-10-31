@@ -3,7 +3,7 @@ import * as Hub from "../../hub"
 import * as httpRequest from "request-promise-native"
 
 import {
-  DEFAULT_EVENT_NAME, DEV_ENVIRONMENT, EVENT, EVENT_TYPE, MP_API_URL, PROD_ENVIRONMENT, USER,
+  DEFAULT_CUSTOM_EVENT_TYPE, DEFAULT_EVENT_NAME, DEV_ENVIRONMENT, EVENT, EVENT_TYPE, MP_API_URL, PROD_ENVIRONMENT, USER,
 } from "./mparticle_constants"
 import { MparticleEventMaps, MparticleEventTags, MparticleUserMaps, MparticleUserTags } from "./mparticle_enums"
 import { mparticleErrorCodes } from "./mparticle_error_codes"
@@ -130,18 +130,19 @@ export class MparticleTransaction {
       eventUserAttributes[key] = val
     })
 
-    if (Object.keys(mapping.eventName).length !== 0) {
-      Object.keys(mapping.eventName).forEach((attr: any) => {
-        const val = row[attr].value
-        data.event_name = val
-      })
-    } else {
-      data.event_name = DEFAULT_EVENT_NAME
-    }
-
     if (this.eventType === EVENT) {
       data.device_info = {}
       data.custom_attributes = {}
+
+      if (Object.keys(mapping.eventName).length !== 0) {
+        Object.keys(mapping.eventName).forEach((attr: any) => {
+          const val = row[attr].value
+          data.event_name = val
+        })
+      } else {
+        data.event_name = DEFAULT_EVENT_NAME
+      }
+
       if (mapping.deviceInfo) {
         Object.keys(mapping.deviceInfo).forEach((attr: any) => {
           const key = mapping.deviceInfo[attr]
@@ -163,15 +164,14 @@ export class MparticleTransaction {
           data.custom_attributes[key] = val
         })
       }
+      if (!data.hasOwnProperty(MparticleEventMaps.CustomEventType)) {
+        data[MparticleEventMaps.CustomEventType] = DEFAULT_CUSTOM_EVENT_TYPE
+      }
     }
+    const events = this.eventType === EVENT ? [{ data, event_type: EVENT_TYPE }] : []
 
     return {
-      events: [
-        {
-          data,
-          event_type: EVENT_TYPE,
-        },
-      ],
+      events,
       user_attributes: eventUserAttributes,
       user_identities: eventUserIdentities,
       schema_version: 2,
