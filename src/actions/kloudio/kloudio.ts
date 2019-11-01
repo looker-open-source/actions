@@ -97,7 +97,8 @@ export class KloudioAction extends Hub.Action {
     // winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
     // winston.info(JSON.stringify(request.attachment.dataJSON.data))
-
+    const anonymousId = this.generateAnonymousId()
+    winston.info("uuid is" + anonymousId)
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
     winston.info(labels[0])
