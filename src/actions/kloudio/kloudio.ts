@@ -1,7 +1,12 @@
 import * as AWS from "aws-sdk"
 import * as https from "request-promise-native"
+import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
+
+const sizeof = require("object-sizeof")
+// const MAX_DATA_BYTES = 5000000000
+const API_URL = "https://e3e0f52c.ngrok.io/sandbox"
 
 export class KloudioAction extends Hub.Action {
 
@@ -11,6 +16,7 @@ export class KloudioAction extends Hub.Action {
   description = "Add records to a Google Spreadsheet."
   // usesStreaming = true
   params = [
+    /*
     {
       description: "API URL for Kloudio from account page",
       label: "Kloudio API URL",
@@ -18,6 +24,7 @@ export class KloudioAction extends Hub.Action {
       required: true,
       sensitive: true,
     },
+    */
     {
         description: "AWS Access KEY for S3",
         label: "AWS Acess Key",
@@ -64,15 +71,12 @@ export class KloudioAction extends Hub.Action {
         throw "Missing Google Sheets Access Token"
     }*/
 
-    // const qr = request.attachment.dataJSON
-    /*if (!qr.fields || !qr.data) {
+    const qr = request.attachment.dataJSON
+    if (!qr.fields || !qr.data) {
       throw "Request payload is an invalid format."
-    }*/
+    }
 
     let response
-    //  const sizeof = require("object-sizeof")
-    // const size = sizeof(request.attachment.dataJSON)
-    // info: "JSON.stringify(request.attachment.dataJSON)"
 
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
@@ -82,7 +86,7 @@ export class KloudioAction extends Hub.Action {
     const newSecretKey = awsSecret.replace(/['"]+/g, "")
     const newBucket = bucket.replace(/['"]+/g, "")
 
-    winston.info(JSON.stringify(request.params.kloudio_api_url))
+    // winston.info(JSON.stringify(request.params.kloudio_api_url))
     winston.info(JSON.stringify(request.params.aws_access_key))
     winston.info(JSON.stringify(request.params.aws_secret_key))
     winston.info(JSON.stringify(request.params.aws_bucket))
@@ -102,6 +106,9 @@ export class KloudioAction extends Hub.Action {
     const dataRows = await parseData(request.attachment.dataJSON.data, names, labels)
     winston.info("first of row data is " + JSON.stringify(dataRows[0]))
     //
+
+    const dataSize = sizeof(dataRows)
+    winston.info("size of data" + dataSize)
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
@@ -109,9 +116,9 @@ export class KloudioAction extends Hub.Action {
             s3_url: s3Response.Location, info: request.attachment.dataJSON}
     winston.info("after uploading the file to s3...", s3Response)
     try {
-        const uri = JSON.stringify(request.params.kloudio_api_url)
-        const newUri = uri.replace(/['"]+/g, "")
-        winston.info("uri is:" + uri)
+        // const uri = JSON.stringify(request.params.kloudio_api_url)
+        const newUri = API_URL.replace(/['"]+/g, "")
+        winston.info("uri is:" + API_URL)
         winston.info("new uri is:" + newUri)
        // console.log("uri is:" + uri);
         response = await https.post({
@@ -141,6 +148,10 @@ export class KloudioAction extends Hub.Action {
       type: "string",
     }]
     return form
+  }
+
+  protected generateAnonymousId() {
+    return uuid.v4()
   }
 
 }
