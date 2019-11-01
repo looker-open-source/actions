@@ -1,6 +1,7 @@
 import * as semver from "semver"
 
 import { Action } from "./action"
+import { isDelegateOauthAction } from "./delegate_oauth_action"
 
 const actions: Action[] = []
 
@@ -8,7 +9,7 @@ export function addAction(action: Action) {
   actions.push(action)
 }
 
-export async function allActions(opts?: { lookerVersion?: string | null }) {
+export async function allActions(opts?: { lookerVersion?: string | null, supportDelegateOauth?: boolean }) {
   const whitelistNames = process.env.ACTION_WHITELIST
   let filtered: Action[]
   if (typeof whitelistNames === "string" && whitelistNames.length > 0) {
@@ -21,6 +22,9 @@ export async function allActions(opts?: { lookerVersion?: string | null }) {
     filtered = filtered.filter((a) =>
       semver.gte(opts.lookerVersion!, a.minimumSupportedLookerVersion),
     )
+  }
+  if (!(opts && opts.supportDelegateOauth)) {
+    filtered = filtered.filter((a) => !isDelegateOauthAction(a))
   }
   return filtered
 }
