@@ -58,7 +58,6 @@ export class TwilioCustomMessageAction extends Hub.Action {
       throw `Query requires a field tagged ${TAGS}.`
     }
 
-    winston.info(JSON.stringify(qr.data))
     const sendValues = qr.data.map((row: any) => ([row[phoneField[0].name].value, row[messageField[0].name].html]))
 
     const client = this.twilioClientFromRequest(request)
