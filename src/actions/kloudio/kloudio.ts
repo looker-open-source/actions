@@ -109,6 +109,7 @@ export class KloudioAction extends Hub.Action {
     //
 
     const dataSize = sizeof(dataRows)
+    winston.info("size of original data" + sizeof(request.attachment.dataJSON))
     winston.info("size of data" + dataSize)
     AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
     const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
