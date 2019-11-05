@@ -5,7 +5,7 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 
 const sizeof = require("object-sizeof")
-const MAX_DATA_BYTES = 5000000
+const MAX_DATA_BYTES = 5000
 const s3bucket = "kloudio-data-files"
 const API_URL = "https://3dd5d0ed.ngrok.io/sandbox"
 let s3Bool = false
