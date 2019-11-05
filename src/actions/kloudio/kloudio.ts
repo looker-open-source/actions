@@ -95,9 +95,12 @@ export class KloudioAction extends Hub.Action {
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
     winston.info(labels[0])
+    const finalLabels = []
+    finalLabels.push(labels)
+    winston.info(finalLabels[0])
     const names = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     winston.info(names[0])
-    const dataRows = await parseData(request.attachment.dataJSON.data, names, labels)
+    const dataRows = await parseData(request.attachment.dataJSON.data, names, finalLabels)
     winston.info("first of row data is " + JSON.stringify(dataRows[0]))
     //
 
