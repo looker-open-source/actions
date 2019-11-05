@@ -5,8 +5,11 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 
 const sizeof = require("object-sizeof")
-// const MAX_DATA_BYTES = 5000000000
-const API_URL = "https://e3e0f52c.ngrok.io/sandbox"
+const MAX_DATA_BYTES = 5000
+const s3bucket = "kloudio-data-files"
+const API_URL = "https://3dd5d0ed.ngrok.io/sandbox"
+let s3Bool = false
+let data = {}
 
 export class KloudioAction extends Hub.Action {
 
@@ -16,15 +19,6 @@ export class KloudioAction extends Hub.Action {
   description = "Add records to a Google Spreadsheet."
   // usesStreaming = true
   params = [
-    /*
-    {
-      description: "API URL for Kloudio from account page",
-      label: "Kloudio API URL",
-      name: "kloudio_api_url",
-      required: true,
-      sensitive: true,
-    },
-    */
     {
         description: "AWS Access KEY for S3",
         label: "AWS Acess Key",
@@ -80,11 +74,11 @@ export class KloudioAction extends Hub.Action {
 
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
-    const bucket = JSON.stringify(request.params.aws_bucket)
+    //  const bucket = JSON.stringify(request.params.aws_bucket)
 
     const newAwsKey = awsKey.replace(/['"]+/g, "")
     const newSecretKey = awsSecret.replace(/['"]+/g, "")
-    const newBucket = bucket.replace(/['"]+/g, "")
+    const newBucket = s3bucket.replace(/['"]+/g, "")
 
     // winston.info(JSON.stringify(request.params.kloudio_api_url))
     winston.info(JSON.stringify(request.params.aws_access_key))
@@ -97,8 +91,7 @@ export class KloudioAction extends Hub.Action {
     // winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
     // winston.info(JSON.stringify(request.attachment.dataJSON.data))
-    const anonymousId = this.generateAnonymousId()
-    winston.info("uuid is" + anonymousId)
+
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
     winston.info(labels[0])
@@ -109,14 +102,24 @@ export class KloudioAction extends Hub.Action {
     //
 
     const dataSize = sizeof(dataRows)
-    winston.info("size of original data" + sizeof(request.attachment.dataJSON))
+    // winston.info("size of original data" + sizeof(request.attachment.dataJSON))
     winston.info("size of data" + dataSize)
-    AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey: request.params.aws_secret_key })
-    const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
+    if ( dataSize > MAX_DATA_BYTES) {
+        s3Bool = true
+        const anonymousId = this.generateAnonymousId()
+        winston.info("uuid is" + anonymousId)
+        AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
+            request.params.aws_secret_key })
+        const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
-    const data = {api_key: request.formParams.api_key, url: request.formParams.url,
-            s3_url: s3Response.Location, info: request.attachment.dataJSON}
-    winston.info("after uploading the file to s3...", s3Response)
+        winston.info("after uploading the file to s3...", s3Response)
+        data = {api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
+            s3Uploaded: s3Bool, info: "s3_filename"}
+    } else {
+        data = {api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
+            s3Uploaded: s3Bool, info: dataRows}
+    }
+
     try {
         // const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = API_URL.replace(/['"]+/g, "")
@@ -158,7 +161,7 @@ export class KloudioAction extends Hub.Action {
 
 }
 
-async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, awsSecret: any) {
+async function uploadToS3(file: string, s3Data: any, bucket: any, awsKey: any, awsSecret: any) {
     try {
       AWS.config.update({ accessKeyId: awsKey, secretAccessKey: awsSecret})
       AWS.config.region = "us-west-2"
@@ -166,7 +169,7 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
       return new Promise<any>( async (resolve, reject) => {
         winston.info("Inside uploadToS3 fn..")
         const uploadParams = { Bucket: bucket,
-        Key: "", Body: JSON.stringify(data),
+        Key: "", Body: JSON.stringify(s3Data),
         ContentType: "application/json" }
         winston.info("file" + file)
         winston.info("upload params " + uploadParams)
@@ -184,10 +187,10 @@ async function uploadToS3(file: string, data: any, bucket: any, awsKey: any, aws
     }
 }
 
-async function parseData(data: any, names: any, labels: any) {
+async function parseData(lookerData: any, names: any, labels: any) {
     // const rowA: any[][] = []
     // const dataN = JSON.parse(data)
-    const dataLen = data.length
+    const dataLen = lookerData.length
     const rowL = names.length
     winston.info("length of data is " +  dataLen)
     winston.info("length of row is " +  rowL)
@@ -195,7 +198,7 @@ async function parseData(data: any, names: any, labels: any) {
     // tslint:disable-next-line: forin
     return new Promise<any>( async (resolve, reject) => {
         try {
-            for (const row of data) {
+            for (const row of lookerData) {
                 const tempA = []
                 for (const label of names) {
                     if (row[label].rendered) {
