@@ -5,7 +5,7 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 
 const sizeof = require("object-sizeof")
-const MAX_DATA_BYTES = 5000
+const MAX_DATA_BYTES = 5000000
 const s3bucket = "kloudio-data-files"
 const API_URL = "https://3dd5d0ed.ngrok.io/sandbox"
 let s3Bool = false
@@ -114,10 +114,10 @@ export class KloudioAction extends Hub.Action {
      newSecretKey)
         winston.info("after uploading the file to s3...", s3Response)
         data = {api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
-            s3Uploaded: s3Bool, info: "s3_filename"}
+            s3Uploaded: s3Bool, data: "s3_filename"}
     } else {
         data = {api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
-            s3Uploaded: s3Bool, info: dataRows}
+            s3Uploaded: s3Bool, data: dataRows}
     }
 
     try {
