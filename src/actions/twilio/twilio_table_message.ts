@@ -16,6 +16,7 @@ export class TwilioCustomMessageAction extends Hub.Action {
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetailLiteStream]
   requiredFields = [{ all_tags: TAGS }]
+  usesStreaming = true
   params = [
     {
       name: "accountSid",
