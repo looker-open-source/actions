@@ -7,7 +7,8 @@ import * as Hub from "../../hub"
 const sizeof = require("object-sizeof")
 const MAX_DATA_BYTES = 5000
 const s3bucket = "kloudio-data-files"
-const API_URL = "https://3dd5d0ed.ngrok.io/sandbox"
+// const API_URL = "https://3dd5d0ed.ngrok.io/sandbox"
+const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 let s3Bool = false
 let data = {}
 
@@ -52,7 +53,7 @@ export class KloudioAction extends Hub.Action {
         throw "No attached json."
     }
 
-    if (!(request.formParams.api_key)) {
+    if (!(request.formParams.apiKey)) {
         throw "Missing API key"
     }
 
@@ -86,7 +87,7 @@ export class KloudioAction extends Hub.Action {
     winston.info(JSON.stringify(request.params.aws_bucket))
    // winston.info(JSON.stringify(request.stream))
 
-    winston.info(request.formParams.api_key)
+    winston.info(request.formParams.apiKey)
     winston.info(request.formParams.url)
     // winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
@@ -116,10 +117,10 @@ export class KloudioAction extends Hub.Action {
         const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
         winston.info("after uploading the file to s3...", s3Response)
-        data = {api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
+        data = {destination: "looker", api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
             s3Uploaded: s3Bool, data: "s3_filename"}
     } else {
-        data = {api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
+        data = {destination: "looker", api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
             s3Uploaded: s3Bool, data: dataRows}
     }
 
@@ -146,7 +147,7 @@ export class KloudioAction extends Hub.Action {
     const form = new Hub.ActionForm()
     form.fields = [{
       label: "API Key",
-      name: "api_key",
+      name: "apiKey",
       required: true,
       type: "string",
     }, {
