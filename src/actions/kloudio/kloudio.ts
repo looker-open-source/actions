@@ -233,6 +233,7 @@ async function lambdaDest(body: any) {
     }
 
     winston.info("invoking lambda...")
+    winston.info(JSON.stringify(body))
     lambda.invoke(params, async (error, response) => {
       winston.info("--------------")
       // winston.info(error)
