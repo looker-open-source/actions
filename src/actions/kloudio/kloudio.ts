@@ -1,9 +1,11 @@
 import * as AWS from "aws-sdk"
-import * as https from "request-promise-native"
+// import * as https from "request-promise-native"
 import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
+const lambda = new AWS.Lambda({ region: "us-west-2" })
+const lambdaDestinationFunction = "kloudio-dest-api-dev-run"
 const sizeof = require("object-sizeof")
 const MAX_DATA_BYTES = 5000
 const s3bucket = "kloudio-data-files"
@@ -72,7 +74,8 @@ export class KloudioAction extends Hub.Action {
     }
 
     let response
-
+    AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
+      request.params.aws_secret_key })
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
     //  const bucket = JSON.stringify(request.params.aws_bucket)
@@ -112,8 +115,6 @@ export class KloudioAction extends Hub.Action {
         s3Bool = true
         const anonymousId = this.generateAnonymousId()
         winston.info("uuid is" + anonymousId)
-        AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
-            request.params.aws_secret_key })
         const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
         winston.info("after uploading the file to s3...", s3Response)
@@ -130,16 +131,18 @@ export class KloudioAction extends Hub.Action {
         winston.info("uri is:" + API_URL)
         winston.info("new uri is:" + newUri)
        // console.log("uri is:" + uri);
-        response = await https.post({
-        url: newUri,
-        headers: {"Content-Type": "application/json"},
-        json: true,
-        body: data,
-         }).catch((_err) => { winston.error(_err.toString()) })
+        // response = await https.post({
+        // url: newUri,
+        // headers: {"Content-Type": "application/json"},
+        // json: true,
+        // body: data,
+        //  }).catch((_err) => { winston.error(_err.toString()) })
+        await lambdaDest(data)
+        response = { success: true, message: "data uploaded" }
     } catch (e) {
       response = { success: false, message: e.message }
     }
-    winston.info(response)
+    winston.info(JSON.stringify(response))
     return new Hub.ActionResponse(response)
   }
 
@@ -220,4 +223,36 @@ async function parseData(lookerData: any, names: any, labels: any) {
     })
 }
 
+async function lambdaDest(body: any) {
+  return new Promise<any>((resolve, reject) => {
+    const params = {
+      FunctionName: lambdaDestinationFunction,
+      Payload: JSON.stringify(body),
+      InvocationType: "RequestResponse",
+    }
+
+    winston.info("invoking lambda...")
+    lambda.invoke(params, async (error, response) => {
+      winston.info("--------------")
+      // winston.info(error)
+      winston.info(JSON.stringify(response))
+      winston.info(JSON.stringify(error))
+      winston.info("--------------")
+      // tslint:disable-next-line: strict-boolean-expressions
+      if (error) {
+        return reject(error)
+      } else {
+        if (response.StatusCode === 504) {
+          return resolve({
+            message: "Error in getting data from RUN API. Status code is: " + response.StatusCode,
+            success: false,
+            emailCode: "CONN_ISSUE",
+          })
+        } else {
+          return resolve(JSON.parse(response.Payload as string).body)
+        }
+      }
+    })
+  })
+}
 Hub.addAction(new KloudioAction())
