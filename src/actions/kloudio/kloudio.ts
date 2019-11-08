@@ -117,10 +117,10 @@ export class KloudioAction extends Hub.Action {
         const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
         winston.info("after uploading the file to s3...", s3Response)
-        data = {destination: "looker", api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
+        data = {destination: "looker", apiKey: request.formParams.api_key, gsheetUrl: request.formParams.url,
             s3Uploaded: s3Bool, data: "s3_filename"}
     } else {
-        data = {destination: "looker", api_key: request.formParams.api_key, gsheetUrl: request.formParams.url,
+        data = {destination: "looker", apiKey: request.formParams.api_key, gsheetUrl: request.formParams.url,
             s3Uploaded: s3Bool, data: dataRows}
     }
 
