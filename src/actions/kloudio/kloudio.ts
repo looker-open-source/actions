@@ -4,7 +4,6 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const lambda = new AWS.Lambda({ region: "us-west-2" })
 const lambdaDestinationFunction = "kloudio-dest-api-dev-run"
 const sizeof = require("object-sizeof")
 const MAX_DATA_BYTES = 5000
@@ -224,6 +223,8 @@ async function parseData(lookerData: any, names: any, labels: any) {
 }
 
 async function lambdaDest(body: any) {
+
+  const lambda = new AWS.Lambda({ region: "us-west-2" })
   return new Promise<any>((resolve, reject) => {
     const params = {
       FunctionName: lambdaDestinationFunction,
