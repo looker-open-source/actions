@@ -139,7 +139,7 @@ export class KloudioAction extends Hub.Action {
         // body: data,
         //  }).catch((_err) => { winston.error(_err.toString()) })
         // tslint:disable-next-line: variable-name
-        response = { success: true, message: "data uploaded" }
+        // response = { success: true, message: "data uploaded" }
 
         // code to call lambda function
         const statusCode = await lambdaDest(data)
