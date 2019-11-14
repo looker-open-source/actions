@@ -75,8 +75,8 @@ export class KloudioAction extends Hub.Action {
     }
 
     let response
-    // AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
-      // request.params.aws_secret_key })
+    AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
+      request.params.aws_secret_key })
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
     //  const bucket = JSON.stringify(request.params.aws_bucket)
@@ -142,12 +142,13 @@ export class KloudioAction extends Hub.Action {
         response = { success: true, message: "data uploaded" }
 
         // code to call lambda function
-       /* const StatusCode = await lambdaDest(data)
-        if (StatusCode !== 200) {
+        const statusCode = await lambdaDest(data)
+        winston.info(statusCode)
+        if (statusCode !== 200) {
           response = { success: false, message: "data uploaded" }
         } else {
           response = { success: true, message: "data uploaded" }
-        }*/
+        }
 
     } catch (e) {
       response = { success: false, message: e.message }
@@ -180,7 +181,7 @@ export class KloudioAction extends Hub.Action {
 // @ts-ignore
 async function uploadToS3(file: string, s3Data: any, bucket: any, awsKey: any, awsSecret: any) {
     try {
-      // AWS.config.update({ accessKeyId: awsKey, secretAccessKey: awsSecret})
+      AWS.config.update({ accessKeyId: awsKey, secretAccessKey: awsSecret})
       AWS.config.region = "us-west-2"
       const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
       return new Promise<any>( async (resolve, reject) => {
