@@ -75,8 +75,8 @@ export class KloudioAction extends Hub.Action {
     }
 
     let response
-    AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
-      request.params.aws_secret_key })
+    // AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
+      // request.params.aws_secret_key })
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
     //  const bucket = JSON.stringify(request.params.aws_bucket)
@@ -233,6 +233,7 @@ async function parseData(lookerData: any, names: any, labels: any) {
     })
 }
 
+// @ts-ignore
 async function lambdaDest(body: any) {
 
   const lambda = new AWS.Lambda({ region: "us-west-2" })
