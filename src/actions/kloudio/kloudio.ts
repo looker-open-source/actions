@@ -144,9 +144,9 @@ export class KloudioAction extends Hub.Action {
         // code to call lambda function
         const lambResp = await lambdaDest(data)
         winston.info(lambResp)
-        const parseLambda = JSON.parse(lambResp.Payload)
-        if (parseLambda.statusCode !== 200) {
-          response = { success: false, message: parseLambda.body.error }
+        // const parseLambda = JSON.parse(lambResp.Payload)
+        if (lambResp.statusCode !== 200) {
+          response = { success: false, message: lambResp.body.error }
         } else {
           response = { success: true, message: "data uploaded" }
         }
@@ -265,7 +265,7 @@ async function lambdaDest(body: any) {
             emailCode: "CONN_ISSUE",
           })
         } else {
-          return resolve(JSON.parse(response.Payload as string).body)
+          return resolve(JSON.parse(response.Payload as string))
         }
       }
     })
