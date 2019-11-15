@@ -120,10 +120,10 @@ export class KloudioAction extends Hub.Action {
      newSecretKey)
         winston.info("after uploading the file to s3...", s3Response)
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
-            s3Uploaded: s3Bool, data: "s3_filename"}
+            s3Upload: s3Bool, data: "s3_filename"}
     } else {
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
-            s3Uploaded: s3Bool, data: dataRows}
+            s3Upload: s3Bool, data: dataRows}
     }
 
     try {
@@ -142,10 +142,11 @@ export class KloudioAction extends Hub.Action {
         response = { success: true, message: "data uploaded" }
 
         // code to call lambda function
-        const statusCode = await lambdaDest(data)
-        winston.info(statusCode)
-        if (statusCode !== 200) {
-          response = { success: false, message: "data uploaded" }
+        const lambResp = await lambdaDest(data)
+        winston.info(lambResp)
+        const parseLambda = JSON.parse(lambResp.Payload)
+        if (parseLambda.statusCode !== 200) {
+          response = { success: false, message: parseLambda.body.error }
         } else {
           response = { success: true, message: "data uploaded" }
         }
