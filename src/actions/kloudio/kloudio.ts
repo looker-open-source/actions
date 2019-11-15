@@ -1,5 +1,5 @@
 import * as AWS from "aws-sdk"
-// import * as https from "request-promise-native"
+import * as https from "request-promise-native"
 import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
@@ -132,24 +132,24 @@ export class KloudioAction extends Hub.Action {
         winston.info("uri is:" + API_URL)
         winston.info("new uri is:" + newUri)
        // console.log("uri is:" + uri);
-        // response = await https.post({
-        // url: newUri,
-        // headers: {"Content-Type": "application/json"},
-        // json: true,
-        // body: data,
-        //  }).catch((_err) => { winston.error(_err.toString()) })
+        response = await https.post({
+        url: newUri,
+        headers: {"Content-Type": "application/json"},
+        json: true,
+        body: data,
+         }).catch((_err) => { winston.error(_err.toString()) })
         // tslint:disable-next-line: variable-name
-        response = { success: true, message: "data uploaded" }
+        // response = { success: true, message: "data uploaded" }
 
         // code to call lambda function
-        const lambResp = await lambdaDest(data)
+       /* const lambResp = await lambdaDest(data)
         winston.info(lambResp)
         // const parseLambda = JSON.parse(lambResp.Payload)
         if (lambResp.statusCode !== 200) {
           response = { success: false, message: lambResp.body.error }
         } else {
           response = { success: true, message: "data uploaded" }
-        }
+        }*/
 
     } catch (e) {
       response = { success: false, message: e.message }
