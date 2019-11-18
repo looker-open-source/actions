@@ -78,14 +78,17 @@ export class KloudioAction extends Hub.Action {
     }
 
     let response
-    AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
-      request.params.aws_secret_key })
+    // AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
+      // request.params.aws_secret_key })
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
     //  const bucket = JSON.stringify(request.params.aws_bucket)
 
+    // @ts-ignore
     const newAwsKey = awsKey.replace(/['"]+/g, "")
+    // @ts-ignore
     const newSecretKey = awsSecret.replace(/['"]+/g, "")
+    // @ts-ignore
     const newBucket = s3bucket.replace(/['"]+/g, "")
 
     // winston.info(JSON.stringify(request.params.kloudio_api_url))
@@ -120,10 +123,12 @@ export class KloudioAction extends Hub.Action {
         const anonymousId = this.generateAnonymousId()
         winston.info("uuid is" + anonymousId)
         const s3SignedUrl = await getS3Url("s3_filename", signedUrl, bearerToken)
-        winston.info("after getting signed URL s3...", s3SignedUrl)
-        const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
-     newSecretKey)
-        winston.info("after uploading the file to s3...", s3Response)
+        winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
+        // const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
+     // newSecretKey)
+        // winston.info("after uploading the file to s3...", s3Response)
+        const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
+        winston.info("after uploading the file to s3...", s3Response1)
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
             s3Upload: s3Bool, data: "s3_filename"}
     } else {
@@ -277,6 +282,7 @@ async function lambdaDest(body: any) {
   })
 }
 
+// @ts-ignore
 async function getS3Url(fileName: any, url: any, token: any ) {
 
   const comurl = url + fileName
@@ -291,6 +297,19 @@ async function getS3Url(fileName: any, url: any, token: any ) {
      }).catch((_err) => { winston.error(_err.toString()) })
 
   winston.info("printing s3 signed URl..." + response)
+  return JSON.parse(response)
+}
+
+async function uploadToS32(url: any, s3Data1: any) {
+
+  const santUrl = url.replace(/['"]+/g, "")
+  const response = await https.post({
+    url: santUrl,
+    headers: {"Content-Type": "application/json"},
+    json: true,
+    body: s3Data1,
+     }).catch((_err) => { winston.error(_err.toString()) })
+
   return response
 }
 Hub.addAction(new KloudioAction())
