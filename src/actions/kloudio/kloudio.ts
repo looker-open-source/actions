@@ -139,8 +139,8 @@ export class KloudioAction extends Hub.Action {
     try {
         // const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = API_URL.replace(/['"]+/g, "")
-        winston.info("uri is:" + API_URL)
-        winston.info("new uri is:" + newUri)
+        // winston.info("uri is:" + API_URL)
+        winston.info("Lambda new uri is:" + newUri)
        // console.log("uri is:" + uri);
         response = await https.post({
         url: newUri,
@@ -148,6 +148,7 @@ export class KloudioAction extends Hub.Action {
         json: true,
         body: data,
          }).catch((_err) => { winston.error(_err.toString()) })
+        winston.info("lambda url resp " + response)
         // tslint:disable-next-line: variable-name
         // response = { success: true, message: "data uploaded" }
 
@@ -308,6 +309,6 @@ async function uploadToS32(url: any, s3Data1: any) {
     body: JSON.stringify(s3Data1),
      }).catch((_err) => { winston.error(_err.toString()) })
 
-  return response
+  return JSON.parse(response)
 }
 Hub.addAction(new KloudioAction())
