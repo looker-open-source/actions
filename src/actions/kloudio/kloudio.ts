@@ -9,6 +9,8 @@ const sizeof = require("object-sizeof")
 const MAX_DATA_BYTES = 500
 const s3bucket = "kloudio-data-files"
 // const API_URL = "https://b90979bc.ngrok.io"
+const signedUrl = "https://api-dev.kloud.io/v1/tools/signed-url-put-object?key="
+const bearerToken = ""
 const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 let s3Bool = false
 // remove the following rule while giving pr
@@ -116,6 +118,8 @@ export class KloudioAction extends Hub.Action {
         s3Bool = true
         const anonymousId = this.generateAnonymousId()
         winston.info("uuid is" + anonymousId)
+        const s3SignedUrl = await getS3Url("s3_filename", signedUrl, bearerToken)
+        winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
         const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
         winston.info("after uploading the file to s3...", s3Response)
@@ -270,5 +274,20 @@ async function lambdaDest(body: any) {
       }
     })
   })
+}
+
+async function getS3Url(fileName: any, url: any, token: any ) {
+
+  const comurl = url + fileName
+  const apiURL = comurl.replace(/['"]+/g, "")
+  const bToken = token.replace(/['"]+/g, "")
+  const response = await https.get({
+    url: apiURL,
+    headers: {"Content-Type": "application/json",
+              "Authorization": "Bearer" + bToken},
+     }).catch((_err) => { winston.error(_err.toString()) })
+
+  winston.info("printing s3 signed URl..." + response)
+  return response
 }
 Hub.addAction(new KloudioAction())
