@@ -120,7 +120,7 @@ export class KloudioAction extends Hub.Action {
         const anonymousId = this.generateAnonymousId()
         winston.info("uuid is" + anonymousId)
         const s3SignedUrl = await getS3Url("s3_filename", signedUrl, bearerToken)
-        winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
+        winston.info("after getting signed URL s3...", s3SignedUrl)
         const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      newSecretKey)
         winston.info("after uploading the file to s3...", s3Response)
@@ -279,13 +279,14 @@ async function lambdaDest(body: any) {
 
 async function getS3Url(fileName: any, url: any, token: any ) {
 
-  const comurl = url + fileName + "&token=" + token
+  const comurl = url + fileName
   const apiURL = comurl.replace(/['"]+/g, "")
   winston.info("printing kloudio URl..." + apiURL)
-  // const bToken = token.replace(/['"]+/g, "")
+  const bToken = token.replace(/['"]+/g, "")
   const response = await https.get({
     url: apiURL,
-    headers: { ContentType: "application/json"},
+    headers: { ContentType: "application/json",
+               Authorization : "token" + bToken},
      }).catch((_err) => { winston.error(_err.toString()) })
 
   winston.info("printing s3 signed URl..." + response)
