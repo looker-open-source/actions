@@ -282,11 +282,12 @@ async function getS3Url(fileName: any, url: any, token: any ) {
   const comurl = url + fileName
   const apiURL = comurl.replace(/['"]+/g, "")
   winston.info("printing kloudio URl..." + apiURL)
-  const bToken = token.replace(/['"]+/g, "")
+  const ttoken = "Bearer " + token
+  const bToken = ttoken.replace(/['"]+/g, "")
   const response = await https.get({
     url: apiURL,
     headers: { ContentType: "application/json",
-               Authorization : "Bearer" + bToken},
+               Authorization : bToken},
      }).catch((_err) => { winston.error(_err.toString()) })
 
   winston.info("printing s3 signed URl..." + response)
