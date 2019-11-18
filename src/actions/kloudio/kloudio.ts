@@ -286,7 +286,7 @@ async function getS3Url(fileName: any, url: any, token: any ) {
   const response = await https.get({
     url: apiURL,
     headers: { ContentType: "application/json",
-               Authorization : "token" + bToken},
+               Authorization : "Bearer" + bToken},
      }).catch((_err) => { winston.error(_err.toString()) })
 
   winston.info("printing s3 signed URl..." + response)
