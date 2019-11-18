@@ -11,7 +11,7 @@ const s3bucket = "kloudio-data-files"
 // const API_URL = "https://b90979bc.ngrok.io"
 const signedUrl = "https://api-dev.kloud.io/v1/tools/signed-url-put-object?key="
 // tslint:disable-next-line: max-line-length
-const bearerToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NjMyLCJrZXkiOiJVdUZ4R3Zoblc1N1g1bjFiIiwiZmlyc3ROYW1lIjoiQW5pcnVkZGgiLCJsYXN0TmFtZSI6IiIsImVtYWlsIjoiYW5pcnVkZGhAa2xvdWQuaW8iLCJkb21haW4iOiJrbG91ZC5pbyIsImFjY291bnRJZCI6MTU3LCJwbGFuIjo2LCJwbGFuRW5kRGF0ZSI6IjIwMjAtMDgtMTkiLCJwbGFuU3RhdHVzIjoiQWN0aXZlIiwiY29tcGFueUlkIjozMTQsInJvbGVzIjpbXSwiaWF0IjoxNTc0MDk4ODUyLCJleHAiOjE1NzQxODUyNTJ9.LjinBakDbODK0JEn1Lfb0pguu9wGYYol7XdPXkusJ20"
+const bearerToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NjMyLCJrZXkiOiJVdUZ4R3Zoblc1N1g1bjFiIiwiZmlyc3ROYW1lIjoiQW5pcnVkZGgiLCJsYXN0TmFtZSI6IiIsImVtYWlsIjoiYW5pcnVkZGhAa2xvdWQuaW8iLCJkb21haW4iOiJrbG91ZC5pbyIsImFjY291bnRJZCI6MTU3LCJwbGFuIjo2LCJwbGFuRW5kRGF0ZSI6IjIwMjAtMDgtMTkiLCJwbGFuU3RhdHVzIjoiQWN0aXZlIiwiY29tcGFueUlkIjozMTQsInJvbGVzIjpbXSwiaWF0IjoxNTc0MTE1NDg0LCJleHAiOjE1NzQyMDE4ODR9.IOqoiPU_sqjPnAlPmoeG2fhEwde_oRWEk9ubX8LvISk"
 const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 let s3Bool = false
 // remove the following rule while giving pr
