@@ -301,7 +301,7 @@ async function getS3Url(fileName: any, url: any, token: any ) {
 async function uploadToS32(url: any, s3Data1: any) {
 
   const santUrl = url.replace(/['"]+/g, "")
-  const response = await https.post({
+  const response = await https.put({
     url: santUrl,
     headers: {"Content-Type": "application/json"},
     json: true,
