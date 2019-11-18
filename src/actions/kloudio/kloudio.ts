@@ -295,8 +295,6 @@ async function getS3Url(fileName: any, url: any, token: any ) {
     headers: { ContentType: "application/json",
                Authorization : bToken},
      }).catch((_err) => { winston.error(_err.toString()) })
-
-  winston.info("printing s3 signed URl..." + response)
   return JSON.parse(response)
 }
 
@@ -307,7 +305,7 @@ async function uploadToS32(url: any, s3Data1: any) {
     url: santUrl,
     headers: {"Content-Type": "application/json"},
     json: true,
-    body: s3Data1,
+    body: JSON.stringify(s3Data1),
      }).catch((_err) => { winston.error(_err.toString()) })
 
   return response
