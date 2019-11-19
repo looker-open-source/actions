@@ -309,6 +309,6 @@ async function uploadToS32(url: any, s3Data1: any) {
     body: JSON.stringify(s3Data1),
      }).catch((_err) => { winston.error(_err.toString()) })
 
-  return JSON.parse(response)
+  return response
 }
 Hub.addAction(new KloudioAction())
