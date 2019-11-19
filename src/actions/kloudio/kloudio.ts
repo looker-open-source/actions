@@ -11,7 +11,7 @@ const s3bucket = "kloudio-data-files"
 // const API_URL = "https://b90979bc.ngrok.io"
 const signedUrl = "https://api-dev.kloud.io/v1/tools/signed-url-put-object?key="
 // tslint:disable-next-line: max-line-length
-const bearerToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NjMyLCJrZXkiOiJVdUZ4R3Zoblc1N1g1bjFiIiwiZmlyc3ROYW1lIjoiQW5pcnVkZGgiLCJsYXN0TmFtZSI6IiIsImVtYWlsIjoiYW5pcnVkZGhAa2xvdWQuaW8iLCJkb21haW4iOiJrbG91ZC5pbyIsImFjY291bnRJZCI6MTU3LCJwbGFuIjo2LCJwbGFuRW5kRGF0ZSI6IjIwMjAtMDgtMTkiLCJwbGFuU3RhdHVzIjoiQWN0aXZlIiwiY29tcGFueUlkIjozMTQsInJvbGVzIjpbXSwiaWF0IjoxNTc0MTE1NDg0LCJleHAiOjE1NzQyMDE4ODR9.IOqoiPU_sqjPnAlPmoeG2fhEwde_oRWEk9ubX8LvISk"
+// const bearerToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NjMyLCJrZXkiOiJVdUZ4R3Zoblc1N1g1bjFiIiwiZmlyc3ROYW1lIjoiQW5pcnVkZGgiLCJsYXN0TmFtZSI6IiIsImVtYWlsIjoiYW5pcnVkZGhAa2xvdWQuaW8iLCJkb21haW4iOiJrbG91ZC5pbyIsImFjY291bnRJZCI6MTU3LCJwbGFuIjo2LCJwbGFuRW5kRGF0ZSI6IjIwMjAtMDgtMTkiLCJwbGFuU3RhdHVzIjoiQWN0aXZlIiwiY29tcGFueUlkIjozMTQsInJvbGVzIjpbXSwiaWF0IjoxNTc0MTE1NDg0LCJleHAiOjE1NzQyMDE4ODR9.IOqoiPU_sqjPnAlPmoeG2fhEwde_oRWEk9ubX8LvISk"
 const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 let s3Bool = false
 // remove the following rule while giving pr
@@ -122,7 +122,7 @@ export class KloudioAction extends Hub.Action {
         s3Bool = true
         const anonymousId = this.generateAnonymousId()
         winston.info("uuid is" + anonymousId)
-        const s3SignedUrl = await getS3Url("s3_filename", signedUrl, bearerToken)
+        const s3SignedUrl = await getS3Url("s3_filename.json", signedUrl, request.formParams.apiKey)
         winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
         // const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
      // newSecretKey)
@@ -130,7 +130,7 @@ export class KloudioAction extends Hub.Action {
         const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
         winston.info("after uploading the file to s3...", s3Response1)
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
-            s3Upload: s3Bool, data: "s3_filename"}
+            s3Upload: s3Bool, data: "s3_filename.json"}
     } else {
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
             s3Upload: s3Bool, data: dataRows}
@@ -286,15 +286,12 @@ async function lambdaDest(body: any) {
 // @ts-ignore
 async function getS3Url(fileName: any, url: any, token: any ) {
 
-  const comurl = url + fileName
+  const comurl = url + fileName +"&apiKey=" + token
   const apiURL = comurl.replace(/['"]+/g, "")
   winston.info("printing kloudio URl..." + apiURL)
-  const ttoken = "Bearer " + token
-  const bToken = ttoken.replace(/['"]+/g, "")
   const response = await https.get({
     url: apiURL,
-    headers: { ContentType: "application/json",
-               Authorization : bToken},
+    headers: { ContentType: "application/json"},
      }).catch((_err) => { winston.error(_err.toString()) })
   return JSON.parse(response)
 }
@@ -306,7 +303,7 @@ async function uploadToS32(url: any, s3Data1: any) {
     url: santUrl,
     headers: {"Content-Type": "application/json"},
     json: true,
-    body: JSON.stringify(s3Data1),
+    body: s3Data1,
      }).catch((_err) => { winston.error(_err.toString()) })
 
   return response
