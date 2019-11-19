@@ -65,32 +65,9 @@ export class KloudioAction extends Hub.Action {
     }
 
     let response
-    // AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
-      // request.params.aws_secret_key })
-
-    /*
-    const awsKey = JSON.stringify(request.params.aws_access_key)
-    const awsSecret = JSON.stringify(request.params.aws_secret_key)
-    const bucket = JSON.stringify(request.params.aws_bucket)
-    */
-
-    /*
-    const newAwsKey = awsKey.replace(/['"]+/g, "")
-    const newSecretKey = awsSecret.replace(/['"]+/g, "")
-    const newBucket = s3bucket.replace(/['"]+/g, "")
-    */
-
-    // winston.info(JSON.stringify(request.params.kloudio_api_url))
-   /*
-    winston.info(JSON.stringify(request.params.aws_access_key))
-    winston.info(JSON.stringify(request.params.aws_secret_key))
-    winston.info(JSON.stringify(request.params.aws_bucket))
-    */
-   // winston.info(JSON.stringify(request.stream))
-
+    
     winston.info(request.formParams.apiKey)
     winston.info(request.formParams.url)
-    // winston.info(request.formParams.token)
     winston.info(typeof request.attachment.dataJSON)
     // winston.info(JSON.stringify(request.attachment.dataJSON.data))
 
@@ -111,7 +88,7 @@ export class KloudioAction extends Hub.Action {
     winston.info("size of data" + dataSize)
     if ( dataSize > MAX_DATA_BYTES) {
         s3Bool = true
-        const anonymousId = this.generateAnonymousId()
+        const anonymousId = this.generateAnonymousId() + ".json"
         winston.info("uuid is" + anonymousId)
         const s3SignedUrl = await getS3Url("s3_filename.json", signedUrl, request.formParams.apiKey)
         winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
