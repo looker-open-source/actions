@@ -1,21 +1,13 @@
-import * as AWS from "aws-sdk"
 import * as https from "request-promise-native"
 import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const lambdaDestinationFunction = "kloudio-dest-api-test-run"
 const sizeof = require("object-sizeof")
 const MAX_DATA_BYTES = 500
-const s3bucket = "kloudio-data-files"
-// const API_URL = "https://b90979bc.ngrok.io"
 const signedUrl = "https://api-dev.kloud.io/v1/tools/signed-url-put-object?key="
-// tslint:disable-next-line: max-line-length
-// const bearerToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NjMyLCJrZXkiOiJVdUZ4R3Zoblc1N1g1bjFiIiwiZmlyc3ROYW1lIjoiQW5pcnVkZGgiLCJsYXN0TmFtZSI6IiIsImVtYWlsIjoiYW5pcnVkZGhAa2xvdWQuaW8iLCJkb21haW4iOiJrbG91ZC5pbyIsImFjY291bnRJZCI6MTU3LCJwbGFuIjo2LCJwbGFuRW5kRGF0ZSI6IjIwMjAtMDgtMTkiLCJwbGFuU3RhdHVzIjoiQWN0aXZlIiwiY29tcGFueUlkIjozMTQsInJvbGVzIjpbXSwiaWF0IjoxNTc0MTE1NDg0LCJleHAiOjE1NzQyMDE4ODR9.IOqoiPU_sqjPnAlPmoeG2fhEwde_oRWEk9ubX8LvISk"
 const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 let s3Bool = false
-// remove the following rule while giving pr
-// @ts-ignore
 let data = {}
 
 export class KloudioAction extends Hub.Action {
@@ -67,11 +59,6 @@ export class KloudioAction extends Hub.Action {
         throw "Missing Google sheets URL"
     }
 
-    /*
-    if (!(request.formParams.token)) {
-        throw "Missing Google Sheets Access Token"
-    }*/
-
     const qr = request.attachment.dataJSON
     if (!qr.fields || !qr.data) {
       throw "Request payload is an invalid format."
@@ -80,21 +67,25 @@ export class KloudioAction extends Hub.Action {
     let response
     // AWS.config.update({ accessKeyId: request.params.aws_access_key, secretAccessKey:
       // request.params.aws_secret_key })
+
+    /*
     const awsKey = JSON.stringify(request.params.aws_access_key)
     const awsSecret = JSON.stringify(request.params.aws_secret_key)
-    //  const bucket = JSON.stringify(request.params.aws_bucket)
+    const bucket = JSON.stringify(request.params.aws_bucket)
+    */
 
-    // @ts-ignore
+    /*
     const newAwsKey = awsKey.replace(/['"]+/g, "")
-    // @ts-ignore
     const newSecretKey = awsSecret.replace(/['"]+/g, "")
-    // @ts-ignore
     const newBucket = s3bucket.replace(/['"]+/g, "")
+    */
 
     // winston.info(JSON.stringify(request.params.kloudio_api_url))
+   /*
     winston.info(JSON.stringify(request.params.aws_access_key))
     winston.info(JSON.stringify(request.params.aws_secret_key))
     winston.info(JSON.stringify(request.params.aws_bucket))
+    */
    // winston.info(JSON.stringify(request.stream))
 
     winston.info(request.formParams.apiKey)
@@ -124,9 +115,6 @@ export class KloudioAction extends Hub.Action {
         winston.info("uuid is" + anonymousId)
         const s3SignedUrl = await getS3Url("s3_filename.json", signedUrl, request.formParams.apiKey)
         winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
-        // const s3Response = await uploadToS3("s3_filename", dataRows, newBucket, newAwsKey,
-     // newSecretKey)
-        // winston.info("after uploading the file to s3...", s3Response)
         const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
         winston.info("after uploading the file to s3...", s3Response1)
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
@@ -137,7 +125,6 @@ export class KloudioAction extends Hub.Action {
     }
 
     try {
-        // const uri = JSON.stringify(request.params.kloudio_api_url)
         const newUri = API_URL.replace(/['"]+/g, "")
         // winston.info("uri is:" + API_URL)
         winston.info("Lambda new uri is:" + newUri)
@@ -190,36 +177,8 @@ export class KloudioAction extends Hub.Action {
   }
 
 }
-// @ts-ignore
-async function uploadToS3(file: string, s3Data: any, bucket: any, awsKey: any, awsSecret: any) {
-    try {
-      AWS.config.update({ accessKeyId: awsKey, secretAccessKey: awsSecret})
-      AWS.config.region = "us-west-2"
-      const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
-      return new Promise<any>( async (resolve, reject) => {
-        winston.info("Inside uploadToS3 fn..")
-        const uploadParams = { Bucket: bucket,
-        Key: "", Body: JSON.stringify(s3Data),
-        ContentType: "application/json" }
-        winston.info("file" + file)
-        winston.info("upload params " + uploadParams)
-        uploadParams.Key = file
-        winston.info("Before uploading the file to s3..." + uploadParams.Key)
-        try {
-            const s3Response = await s3.upload(uploadParams).promise()
-            winston.info(`File uploaded to S3 at ${s3Response.Bucket} bucket. File location: ${s3Response.Location}`)
-            return resolve(s3Response.Location)
-          } catch (error) {
-            return reject(error)
-          }
-    })} finally {
-        winston.info("file" + file)
-    }
-}
 
 async function parseData(lookerData: any, names: any, labels: any) {
-    // const rowA: any[][] = []
-    // const dataN = JSON.parse(data)
     const dataLen = lookerData.length
     const rowL = names.length
     winston.info("length of data is " +  dataLen)
@@ -246,47 +205,9 @@ async function parseData(lookerData: any, names: any, labels: any) {
     })
 }
 
-// @ts-ignore
-async function lambdaDest(body: any) {
-
-  const lambda = new AWS.Lambda({ region: "us-west-2" })
-  return new Promise<any>((resolve, reject) => {
-    const params = {
-      FunctionName: lambdaDestinationFunction,
-      Payload: JSON.stringify(body),
-      InvocationType: "RequestResponse",
-    }
-
-    winston.info("invoking lambda...")
-    winston.info(JSON.stringify(body))
-    lambda.invoke(params, async (error, response) => {
-      winston.info("--------------")
-      // winston.info(error)
-      winston.info(JSON.stringify(response))
-      winston.info(JSON.stringify(error))
-      winston.info("--------------")
-      // tslint:disable-next-line: strict-boolean-expressions
-      if (error) {
-        return reject(error)
-      } else {
-        if (response.StatusCode === 504) {
-          return resolve({
-            message: "Error in getting data from RUN API. Status code is: " + response.StatusCode,
-            success: false,
-            emailCode: "CONN_ISSUE",
-          })
-        } else {
-          return resolve(JSON.parse(response.Payload as string))
-        }
-      }
-    })
-  })
-}
-
-// @ts-ignore
 async function getS3Url(fileName: any, url: any, token: any ) {
 
-  const comurl = url + fileName +"&apiKey=" + token
+  const comurl = url + fileName + "&apiKey=" + token
   const apiURL = comurl.replace(/['"]+/g, "")
   winston.info("printing kloudio URl..." + apiURL)
   const response = await https.get({
