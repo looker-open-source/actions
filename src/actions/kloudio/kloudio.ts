@@ -90,12 +90,12 @@ export class KloudioAction extends Hub.Action {
         s3Bool = true
         const anonymousId = this.generateAnonymousId() + ".json"
         winston.info("uuid is" + anonymousId)
-        const s3SignedUrl = await getS3Url("s3_filename.json", signedUrl, request.formParams.apiKey)
+        const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
         winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
         const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
         winston.info("after uploading the file to s3...", s3Response1)
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
-            s3Upload: s3Bool, data: "s3_filename.json"}
+            s3Upload: s3Bool, data: anonymousId}
     } else {
         data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
             s3Upload: s3Bool, data: dataRows}
@@ -160,8 +160,6 @@ async function parseData(lookerData: any, names: any, labels: any) {
     const rowL = names.length
     winston.info("length of data is " +  dataLen)
     winston.info("length of row is " +  rowL)
-    // winston.info("data after parsing is" + data)
-    // tslint:disable-next-line: forin
     return new Promise<any>( async (resolve, reject) => {
         try {
             for (const row of lookerData) {
