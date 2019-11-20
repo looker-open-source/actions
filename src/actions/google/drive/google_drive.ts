@@ -63,24 +63,6 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
-    const form = new Hub.ActionForm()
-    form.fields = []
-
-    const actionCrypto = new Hub.ActionCrypto()
-    const jsonString = JSON.stringify({stateurl: request.params.state_url})
-    const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
-      winston.error("Encryption not correctly configured")
-      throw err
-    })
-    form.state = new Hub.ActionState()
-    form.fields.push({
-      name: "login",
-      type: "oauth_link",
-      label: "Log in",
-      description: "In order to send to Google Drive, you will need to log in" +
-        " once to your Google account.",
-      oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
-    })
 
     if (request.params.state_json) {
       try {
@@ -113,6 +95,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           const folders = paginatedFiles.filter((folder) => (
             !(folder.id === undefined) && !(folder.name === undefined)))
             .map((folder) => ({name: folder.id!, label: folder.name!}))
+
+          const form = new Hub.ActionForm()
           form.fields = [{
             description: "Google Drive folder where your file will be saved",
             label: "Select folder to save file",
@@ -132,7 +116,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         }
       } catch { winston.warn("Log in fail") }
     }
-    return form
+    return this.loginForm(request)
   }
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
@@ -192,6 +176,28 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const client = this.oauth2Client(redirect)
     client.setCredentials(tokens)
     return google.drive({version: "v3", auth: client})
+  }
+
+  private async loginForm(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
+    form.fields = []
+
+    const actionCrypto = new Hub.ActionCrypto()
+    const jsonString = JSON.stringify({stateurl: request.params.state_url})
+    const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
+      winston.error("Encryption not correctly configured")
+      throw err
+    })
+    form.state = new Hub.ActionState()
+    form.fields.push({
+      name: "login",
+      type: "oauth_link",
+      label: "Log in",
+      description: "In order to send to Google Drive, you will need to log in" +
+        " once to your Google account.",
+      oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
+    })
+    return form
   }
 
   private oauth2Client(redirectUri: string | undefined) {
