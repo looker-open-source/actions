@@ -53,6 +53,7 @@ class BrazeActionTest extends BrazeAction {
 }
 
 const action = new BrazeActionTest()
+action.executeInOwnProcess = false
 
 describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {

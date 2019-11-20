@@ -1,6 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
-import {ExecuteProcessQueue} from "../xpc/execute_process_queue"
+import {ProcessQueue} from "../xpc/process_queue"
 
 import * as winston from "winston"
 import {
@@ -52,6 +52,7 @@ export abstract class Action {
   abstract description: string
   usesStreaming = false
   executeInOwnProcess = false
+  extendedAction = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
@@ -76,6 +77,7 @@ export abstract class Action {
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
       uses_oauth: false,
+      delegate_oauth: false,
       supported_formats: (this.supportedFormats instanceof Function)
         ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
@@ -92,7 +94,7 @@ export abstract class Action {
     }
   }
 
-  async validateAndExecute(request: ActionRequest, queue?: ExecuteProcessQueue) {
+  async validateAndExecute(request: ActionRequest, queue?: ProcessQueue) {
     if (this.supportedActionTypes.indexOf(request.type) === -1) {
       const types = this.supportedActionTypes.map((at) => `"${at}"`).join(", ")
       if (request.type as any) {
