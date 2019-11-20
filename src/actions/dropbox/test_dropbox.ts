@@ -44,6 +44,10 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
 
+    it("has streaming disabled to support legacy schedules", () => {
+      chai.expect(action.usesStreaming).equals(false)
+    })
+
     it("successfully interprets execute request params", () => {
       const request = new Hub.ActionRequest()
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}

@@ -33,3 +33,8 @@ export async function findAction(id: string, opts?: {lookerVersion?: string | nu
   }
   return matching[0]
 }
+
+export async function findExtendedAction(id: string, opts?: {lookerVersion?: string | null}) {
+  const action = await findAction(id, opts)
+  return action.extendedAction ? action : null
+}
