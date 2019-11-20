@@ -71,22 +71,6 @@ export class JiraAction extends Hub.OAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
-    const form = new Hub.ActionForm()
-    const actionCrypto = new Hub.ActionCrypto()
-    const jsonString = JSON.stringify({stateurl: request.params.state_url})
-    const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
-      winston.error("Encryption not correctly configured")
-      throw err
-    })
-    form.fields = [{
-      name: "login",
-      type: "oauth_link",
-      label: "Log in",
-      description: "In order to create an Issue, you will need to log in" +
-        " to your Jira account.",
-      oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
-    }]
-
     if (request.params.state_json) {
       try {
         const stateJson = JSON.parse(request.params.state_json)
@@ -116,6 +100,7 @@ export class JiraAction extends Hub.OAuthAction {
           projectOptions.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
           issueTypesOptions.sort((a, b) => ((a.name > b.name) ? -1 : 1 ))
 
+          const form = new Hub.ActionForm()
           form.fields = [{
             default: projectOptions[0].name,
             label: "Project",
@@ -146,10 +131,11 @@ export class JiraAction extends Hub.OAuthAction {
             type: "string",
             required: false,
           }]
+          return form
         }
       } catch (e) { winston.warn(`Log in fail ${JSON.stringify(e)}`) }
     }
-    return form
+    return this.loginForm(request)
   }
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
@@ -199,6 +185,25 @@ export class JiraAction extends Hub.OAuthAction {
       await jiraClient.setCloudIdFromTokens()
     }
     return jiraClient
+  }
+
+  private async loginForm(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
+    const actionCrypto = new Hub.ActionCrypto()
+    const jsonString = JSON.stringify({stateurl: request.params.state_url})
+    const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
+      winston.error("Encryption not correctly configured")
+      throw err
+    })
+    form.fields = [{
+      name: "login",
+      type: "oauth_link",
+      label: "Log in",
+      description: "In order to create an Issue, you will need to log in" +
+        " to your Jira account.",
+      oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
+    }]
+    return form
   }
 }
 
