@@ -5,7 +5,8 @@ import * as Hub from "../../hub"
 
 const sizeof = require("object-sizeof")
 const MAX_DATA_BYTES = 500
-const signedUrl = "https://api-dev.kloud.io/v1/tools/signed-url-put-object?key="
+// const signedUrl = "https://api-dev.kloud.io/v1/tools/signed-url-put-object?key="
+const signedUrl = "https://api-test.kloud.io/v1/tools/signed-url-put-object?key="
 // const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 const API_URL = "https://czd7a5synj.execute-api.us-west-2.amazonaws.com/test/dest/send"
 let s3Bool = false
