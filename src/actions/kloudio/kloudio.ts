@@ -20,7 +20,7 @@ export class KloudioAction extends Hub.Action {
   description = "Add records to a Google Spreadsheet."
   // usesStreaming = true
   params = [
-    {
+   /* {
         description: "AWS Access KEY for S3",
         label: "AWS Acess Key",
         name: "aws_access_key",
@@ -40,7 +40,7 @@ export class KloudioAction extends Hub.Action {
         name: "aws_bucket",
         required: true,
         sensitive: true,
-      },
+      },*/
   ]
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetail]
