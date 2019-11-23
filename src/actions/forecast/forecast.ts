@@ -100,9 +100,81 @@ export class ForecastAction extends Hub.Action {
   }
 
   async form(request: Hub.ActionRequest) {
-    // TODO
     winston.debug(JSON.stringify(request.params, null, 2))
-    return new Hub.ActionForm()
+    const form = new Hub.ActionForm()
+    // TODO: for early development, these are string fields for now. Use more sane inputs after execute is implemented
+    // TODO: add description props to these fields
+    // TODO: populate options
+    // TODO: should include "include country for holidays" field?
+    form.fields = [
+      {
+        label: "Dataset group name",
+        name: "datasetGroupName",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Forecasting domain",
+        name: "forecastingDomain",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Dataset name",
+        name: "datasetName",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Frequency Period",
+        name: "frequencyPeriod",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Frequency Interval",
+        name: "frequencyInterval",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Data Schema",
+        name: "dataSchema",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Timestamp Format",
+        name: "timestampFormat",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Predictor Name",
+        name: "predictorName",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Forecast Horizon",
+        name: "forecastHorizon",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Forecast Name",
+        name: "forecastName",
+        required: true,
+        type: "string",
+      },
+      {
+        label: "Forecast Destination Bucket",
+        name: "forecastDestinationBucket",
+        required: true,
+        type: "string",
+      },
+    ]
+    return form
   }
 }
 
