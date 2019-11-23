@@ -1,5 +1,9 @@
+import * as S3 from "aws-sdk/clients/s3"
+import { PassThrough } from "stream"
 import * as winston from "winston"
 import * as Hub from "../../hub"
+
+const striplines = require("striplines")
 
 export class ForecastAction extends Hub.Action {
   // required fields
@@ -23,11 +27,18 @@ export class ForecastAction extends Hub.Action {
       description: "Your AWS secret access key.",
     },
     {
+      name: "bucketName",
+      label: "Bucket Name",
+      required: true,
+      sensitive: false,
+      description: "Name of the bucket Amazon Forecast will read your Looker data from",
+    },
+    {
       name: "roleArn",
       label: "Role ARN",
       required: true,
       sensitive: false,
-      description: "ARN of role allowing Forecast to read from your S3 bucket(s)",
+      description: "ARN of role allowing Forecast to read from your S3 bucket",
     },
     {
       name: "region",
@@ -94,10 +105,33 @@ export class ForecastAction extends Hub.Action {
   // supportedFormattings = [Hub.ActionFormatting.Unformatted]
   // supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
+    /* execution logic (this comment block will be removed)
+     0. validate parameters
+     1. upload payload from Looker to S3
+     2. when upload is complete, create dataset
+     3. create datasetgroup, specifying above-created dataset
+     4. create predictor
+     5. on predictor creation compelte, create a forecast
+     6. on forecast complete, create a forecast export
+     7. on forecast export complete, send email to user
+    */
   async execute(request: Hub.ActionRequest) {
-    // TODO
-    winston.debug(JSON.stringify(request.params, null, 2))
-    return new Hub.ActionResponse({ success: true })
+    // TODO: validate parameters here
+    const { bucketName } = request.params
+
+    if (!bucketName) {
+      throw new Error("Missing bucket name")
+    }
+
+    try {
+      // store data in S3 bucket
+      // TODO: do I need to worry about bucket region?
+      // TODO: calculate object key
+      await this.uploadToS3(request, bucketName, "testing")
+      return new Hub.ActionResponse({ success: true })
+    } catch (err) {
+      return new Hub.ActionResponse({ success: false, message: err.message })
+    }
   }
 
   async form(request: Hub.ActionRequest) {
@@ -176,6 +210,44 @@ export class ForecastAction extends Hub.Action {
       },
     ]
     return form
+  }
+
+  private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
+    return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
+      const s3 = this.getS3ClientFromRequest(request)
+
+      function uploadFromStream() {
+        const passthrough = new PassThrough()
+
+        const params = {
+          Bucket: bucket,
+          Key: key,
+          Body: passthrough,
+        }
+        s3.upload(params, (err: Error|null, data: S3.ManagedUpload.SendData) => {
+          if (err) {
+            return reject(err)
+          }
+          resolve(data)
+        })
+
+        return passthrough
+      }
+
+      request.stream(async (readable) => {
+        readable
+          .pipe(striplines(1))
+          .pipe(uploadFromStream())
+      }) // TODO: is this sensible error handle behavior?
+      .catch(winston.error)
+    })
+  }
+
+  private getS3ClientFromRequest(request: Hub.ActionRequest) {
+    return new S3({
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
+    })
   }
 }
 
