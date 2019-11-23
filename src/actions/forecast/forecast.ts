@@ -3,6 +3,7 @@ import * as Hub from "../../hub"
 
 export class ForecastAction extends Hub.Action {
   // required fields
+  // TODO: make email-related fields required
   name = "amazon_forecast"
   label = "Amazon Forecast"
   supportedActionTypes = [Hub.ActionType.Query]
@@ -38,7 +39,7 @@ export class ForecastAction extends Hub.Action {
     {
       name: "user_email",
       label: "Looker User Email",
-      required: true,
+      required: false,
       description: `
         Click the button on the right and select 'Email'.
         This is required for the action to send status emails
@@ -49,35 +50,35 @@ export class ForecastAction extends Hub.Action {
     {
       name: "smtpHost",
       label: "SMTP Host",
-      required: true,
+      required: false,
       sensitive: false,
       description: "Host for sending emails.",
     },
     {
       name: "smtpPort",
       label: "SMTP Port",
-      required: true,
+      required: false,
       sensitive: false,
       description: "Port for sending emails.",
     },
     {
       name: "smtpFrom",
       label: "SMTP From",
-      required: true,
+      required: false,
       sensitive: false,
       description: "From for sending emails.",
     },
     {
       name: "smtpUser",
       label: "SMTP User",
-      required: true,
+      required: false,
       sensitive: false,
       description: "User for sending emails.",
     },
     {
       name: "smtpPass",
       label: "SMTP Pass",
-      required: true,
+      required: false,
       sensitive: false,
       description: "Pass for sending emails.",
     },
