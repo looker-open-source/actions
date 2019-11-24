@@ -1,3 +1,4 @@
+import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as S3 from "aws-sdk/clients/s3"
 import { PassThrough } from "stream"
 import * as winston from "winston"
@@ -116,18 +117,77 @@ export class ForecastAction extends Hub.Action {
      7. on forecast export complete, send email to user
     */
   async execute(request: Hub.ActionRequest) {
-    // TODO: validate parameters here
-    const { bucketName } = request.params
+    const {
+      bucketName,
+      datasetName,
+      datasetGroupName,
+      forecastingDomain,
+      dataFrequency,
+    } = request.formParams
 
+    const {
+      accessKeyId,
+      secretAccessKey,
+      region,
+    } = request.params
+    // TODO: make required params checking more compact?
     if (!bucketName) {
-      throw new Error("Missing bucket name")
+      throw new Error("Missing bucketName")
+    }
+    if (!datasetName) {
+      throw new Error("Missing datasetName")
+    }
+    if (!datasetGroupName) {
+      throw new Error("Missing datasetGroupName")
+    }
+    if (!forecastingDomain) {
+      throw new Error("Missing forecastingDomain")
+    }
+    if (!dataFrequency) {
+      throw new Error("Missing dataFrequency")
+    }
+    if (!accessKeyId) {
+      throw new Error("Missing accessKeyId")
+    }
+    if (!secretAccessKey) {
+      throw new Error("Missing secretAccessKey")
+    }
+    if (!region) {
+      throw new Error("Missing region")
     }
 
     try {
-      // store data in S3 bucket
       // TODO: do I need to worry about bucket region?
-      // TODO: calculate object key
-      await this.uploadToS3(request, bucketName, "testing")
+      // TODO: calculate more meaningful object key?
+      await this.uploadToS3(request, bucketName, new Date().toUTCString())
+
+      const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
+      // TODO: possibly move some of these calls into private functions for improved readability
+      const params = {
+        DatasetName: datasetName,
+        DatasetType: "TARGET_TIME_SERIES", // TODO: there are other possible values here, do I need to consider them?
+        Domain: forecastingDomain,
+        Schema: { // TODO: schema hardcoded for now. What's the best way to make this work dynamically?
+          Attributes: [
+            {
+              AttributeName: "timestamp",
+              AttributeType: "timestamp",
+            },
+            {
+              AttributeName: "target_value",
+              AttributeType: "float",
+            },
+            {
+              AttributeName: "item_id",
+              AttributeType: "string",
+            },
+          ],
+        },
+        DataFrequency: dataFrequency,
+      }
+
+      await forecastService.createDataset(params).promise()
+
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
       return new Hub.ActionResponse({ success: false, message: err.message })
@@ -161,14 +221,8 @@ export class ForecastAction extends Hub.Action {
         type: "string",
       },
       {
-        label: "Frequency Period",
-        name: "frequencyPeriod",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Frequency Interval",
-        name: "frequencyInterval",
+        label: "Data Frequency",
+        name: "dataFrequency",
         required: false,
         type: "string",
       },
@@ -214,7 +268,10 @@ export class ForecastAction extends Hub.Action {
 
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
     return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
-      const s3 = this.getS3ClientFromRequest(request)
+      const s3 = new S3({
+        accessKeyId: request.params.accessKeyId,
+        secretAccessKey: request.params.secretAccessKey,
+      })
 
       function uploadFromStream() {
         const passthrough = new PassThrough()
@@ -240,13 +297,6 @@ export class ForecastAction extends Hub.Action {
           .pipe(uploadFromStream())
       }) // TODO: is this sensible error handle behavior?
       .catch(winston.error)
-    })
-  }
-
-  private getS3ClientFromRequest(request: Hub.ActionRequest) {
-    return new S3({
-      accessKeyId: request.params.accessKeyId,
-      secretAccessKey: request.params.secretAccessKey,
     })
   }
 }
