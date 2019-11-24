@@ -119,7 +119,6 @@ export class ForecastAction extends Hub.Action {
     */
   async execute(request: Hub.ActionRequest) {
     const {
-      bucketName,
       datasetName,
       datasetGroupName,
       forecastingDomain,
@@ -127,6 +126,7 @@ export class ForecastAction extends Hub.Action {
     } = request.formParams
 
     const {
+      bucketName,
       accessKeyId,
       secretAccessKey,
       region,
