@@ -1,8 +1,9 @@
+import * as Hub from "../../hub"
+
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as S3 from "aws-sdk/clients/s3"
 import { PassThrough } from "stream"
 import * as winston from "winston"
-import * as Hub from "../../hub"
 
 const striplines = require("striplines")
 
