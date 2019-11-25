@@ -167,9 +167,20 @@ export class ForecastAction extends Hub.Action {
       // TODO: calculate more meaningful object key?
       const s3ObjectKey = Date.now().toString()
 
-      winston.debug("upload starting")
+      winston.debug("upload starting ", s3ObjectKey)
       await this.uploadToS3(request, bucketName, s3ObjectKey)
       winston.debug("upload complete")
+
+      const testS3 = new S3({
+        accessKeyId: request.params.accessKeyId,
+        secretAccessKey: request.params.secretAccessKey,
+      })
+
+      winston.debug("GET starting")
+      const { LastModified } = await testS3.getObject({
+        Bucket: "examplebucket",
+        Key: "SampleFile.txt"}).promise()
+      winston.debug("GET done ", LastModified)
 
       const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
       // TODO: possibly move some of these calls into private functions for improved readability
