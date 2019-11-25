@@ -117,8 +117,13 @@ export class KloudioAction extends Hub.Action {
         headers: {"Content-Type": "application/json"},
         json: true,
         body: data,
-         }).catch((_err) => { winston.error(_err.toString()) })
+         }).catch((_err) => {
+           const error = JSON.parse(_err)
+           winston.info("parsing error code" + error.emailCode)
+           winston.error(_err.toString())
+          })
         winston.info("lambda url resp " + response)
+
         // tslint:disable-next-line: variable-name
         // response = { success: true, message: "data uploaded" }
 
