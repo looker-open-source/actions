@@ -73,6 +73,9 @@ export class KloudioAction extends Hub.Action {
     winston.info(typeof request.attachment.dataJSON)
     // winston.info(JSON.stringify(request.attachment.dataJSON.data))
 
+    const gsheeturl = encodeURIComponent(request.formParams.url)
+    winston.info("encoded gsheet url "+gsheeturl)
+
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
     winston.info(labels[0])
@@ -96,10 +99,10 @@ export class KloudioAction extends Hub.Action {
         winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
         const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
         winston.info("after uploading the file to s3...", s3Response1)
-        data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
+        data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: gsheeturl,
             s3Upload: s3Bool, data: anonymousId}
     } else {
-        data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: request.formParams.url,
+        data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: gsheeturl,
             s3Upload: s3Bool, data: dataRows}
     }
 
