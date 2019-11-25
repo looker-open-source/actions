@@ -223,6 +223,7 @@ export class ForecastAction extends Hub.Action {
 
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
+      winston.error(JSON.stringify(err, null, 2))
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
