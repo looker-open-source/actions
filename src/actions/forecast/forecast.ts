@@ -165,7 +165,7 @@ export class ForecastAction extends Hub.Action {
     try {
       // TODO: do I need to worry about bucket region?
       // TODO: calculate more meaningful object key?
-      const s3ObjectKey = Date.now().toString()
+      const s3ObjectKey = `${Date.now()}.csv`
 
       winston.debug("upload starting ", s3ObjectKey)
       await this.uploadToS3(request, bucketName, s3ObjectKey)
@@ -177,11 +177,11 @@ export class ForecastAction extends Hub.Action {
       })
 
       winston.debug("GET starting")
-      const { LastModified } = await testS3.getObject({
+      const { Body } = await testS3.getObject({
         Bucket: bucketName,
         Key: s3ObjectKey,
       }).promise()
-      winston.debug("GET done ", LastModified)
+      winston.debug("GET done ", JSON.stringify(Body).slice(0, 1000))
 
       const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
       // TODO: possibly move some of these calls into private functions for improved readability
