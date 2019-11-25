@@ -127,10 +127,11 @@ export class KloudioAction extends Hub.Action {
         const respP = JSON.parse(response)
         winston.info("parsed response is " + respP)
 
+        /*
         if (!response.success || response.success === false) {
           winston.info("lambda url resp is not sucess " + response)
           response = { success: false, message: response.message }
-        }
+        }*/
         // tslint:disable-next-line: variable-name
         // response = { success: true, message: "data uploaded" }
 
