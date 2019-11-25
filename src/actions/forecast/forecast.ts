@@ -167,7 +167,9 @@ export class ForecastAction extends Hub.Action {
       // TODO: calculate more meaningful object key?
       const s3ObjectKey = Date.now().toString()
 
+      winston.debug("upload starting")
       await this.uploadToS3(request, bucketName, s3ObjectKey)
+      winston.debug("upload complete")
 
       const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
       // TODO: possibly move some of these calls into private functions for improved readability
@@ -194,7 +196,9 @@ export class ForecastAction extends Hub.Action {
         DataFrequency: dataFrequency,
       }
 
+      winston.debug("createDataset start")
       const { DatasetArn } = await forecastService.createDataset(createDatasetParams).promise()
+      winston.debug("createDataset complete")
 
       const createDatasetGroupParams = {
         DatasetGroupName: datasetGroupName,
@@ -204,7 +208,9 @@ export class ForecastAction extends Hub.Action {
         ],
       }
 
+      winston.debug("createDatasetGroup start")
       await forecastService.createDatasetGroup(createDatasetGroupParams).promise()
+      winston.debug("createDatasetGroup complete")
 
       const createDatasetImportJobParams = {
         DataSource: {
@@ -218,7 +224,9 @@ export class ForecastAction extends Hub.Action {
         // TimestampFormat TODO: right now, we're using default timestamp format. Allow for customization here
       }
 
+      winston.debug("createDatasetImportJob start")
       await forecastService.createDatasetImportJob(createDatasetImportJobParams).promise()
+      winston.debug("createDatasetImportJob complete")
 
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -307,6 +315,7 @@ export class ForecastAction extends Hub.Action {
       })
 
       function uploadFromStream() {
+        winston.debug("calling uploadFromStream")
         const passthrough = new PassThrough()
 
         const params = {
@@ -315,6 +324,7 @@ export class ForecastAction extends Hub.Action {
           Body: passthrough,
         }
         s3.upload(params, (err: Error|null, data: S3.ManagedUpload.SendData) => {
+          winston.debug("calling s3.upload")
           if (err) {
             return reject(err)
           }
