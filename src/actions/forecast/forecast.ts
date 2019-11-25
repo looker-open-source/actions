@@ -176,18 +176,15 @@ export class ForecastAction extends Hub.Action {
         Schema: { // TODO: schema hardcoded for now. What's the best way to make this work dynamically?
           Attributes: [
             {
-              // AttributeName: "timestamp",
-              AttributeName: "Flights_Depart_Date",
+              AttributeName: "timestamp",
               AttributeType: "timestamp",
             },
             {
-              // AttributeName: "target_value",
-              AttributeName: "Aircraft_Distance_per_Flight",
+              AttributeName: "target_value",
               AttributeType: "float",
             },
             {
-              // AttributeName: "item_id",
-              AttributeName: "Aircraft_Aircraft_Model_Code",
+              AttributeName: "item_id",
               AttributeType: "string",
             },
           ],
