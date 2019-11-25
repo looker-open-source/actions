@@ -177,17 +177,17 @@ export class ForecastAction extends Hub.Action {
           Attributes: [
             {
               // AttributeName: "timestamp",
-              AttributeName: "Flights Depart Date",
+              AttributeName: "Flights_Depart_Date",
               AttributeType: "timestamp",
             },
             {
               // AttributeName: "target_value",
-              AttributeName: "Aircraft Distance per Flight",
+              AttributeName: "Aircraft_Distance_per_Flight",
               AttributeType: "float",
             },
             {
               // AttributeName: "item_id",
-              AttributeName: "Aircraft Aircraft Model Code",
+              AttributeName: "Aircraft_Aircraft_Model_Code",
               AttributeType: "string",
             },
           ],
