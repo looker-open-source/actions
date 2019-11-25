@@ -122,7 +122,7 @@ export class KloudioAction extends Hub.Action {
            winston.info("parsing error code" + error.emailCode)
            winston.error(_err.toString())
           })
-        winston.info("lambda url resp " + response)
+        winston.info("lambda url resp " + JSON.parse(response))
 
         const respP = JSON.parse(response)
         winston.info("parsed response is " + respP)
