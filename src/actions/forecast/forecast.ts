@@ -165,7 +165,7 @@ export class ForecastAction extends Hub.Action {
     try {
       // TODO: do I need to worry about bucket region?
       // TODO: calculate more meaningful object key?
-      const s3ObjectKey = new Date().toUTCString()
+      const s3ObjectKey = Date.now().toString()
 
       await this.uploadToS3(request, bucketName, s3ObjectKey)
 
