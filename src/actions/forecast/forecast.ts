@@ -132,6 +132,7 @@ export class ForecastAction extends Hub.Action {
       region,
     } = request.params
     // TODO: make required params checking more compact?
+    // TODO: are there AWS naming rules that I need to enforce in the UI?
     if (!bucketName) {
       throw new Error("Missing bucketName")
     }
@@ -164,7 +165,7 @@ export class ForecastAction extends Hub.Action {
 
       const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
       // TODO: possibly move some of these calls into private functions for improved readability
-      const params = {
+      const createDatasetParams = {
         DatasetName: datasetName,
         DatasetType: "TARGET_TIME_SERIES", // TODO: there are other possible values here, do I need to consider them?
         Domain: forecastingDomain,
@@ -187,7 +188,17 @@ export class ForecastAction extends Hub.Action {
         DataFrequency: dataFrequency,
       }
 
-      await forecastService.createDataset(params).promise()
+      const { DatasetArn } = await forecastService.createDataset(createDatasetParams).promise()
+
+      const createDatasetGroupParams = {
+        DatasetGroupName: datasetGroupName,
+        Domain: forecastingDomain,
+        DatasetArns: [
+          DatasetArn!, // TODO: is there a valid case in which the DatasetArn would be undefined?
+        ],
+      }
+
+      await forecastService.createDatasetGroup(createDatasetGroupParams).promise()
 
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
