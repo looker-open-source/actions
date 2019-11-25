@@ -165,7 +165,9 @@ export class ForecastAction extends Hub.Action {
     try {
       // TODO: do I need to worry about bucket region?
       // TODO: calculate more meaningful object key?
-      await this.uploadToS3(request, bucketName, new Date().toUTCString())
+      const s3ObjectKey = new Date().toUTCString()
+
+      await this.uploadToS3(request, bucketName, s3ObjectKey)
 
       const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
       // TODO: possibly move some of these calls into private functions for improved readability
@@ -207,7 +209,7 @@ export class ForecastAction extends Hub.Action {
       const createDatasetImportJobParams = {
         DataSource: {
           S3Config: {
-            Path: `s3://${bucketName}/${datasetName}`,
+            Path: `s3://${bucketName}/${s3ObjectKey}`,
             RoleArn: roleArn,
           },
         },
