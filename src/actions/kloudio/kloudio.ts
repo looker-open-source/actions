@@ -124,6 +124,10 @@ export class KloudioAction extends Hub.Action {
           })
         winston.info("lambda url resp " + response)
 
+        if (!response.success || response.success === false) {
+          winston.info("lambda url resp is not sucess " + response)
+          response = { success: false, message: response.message }
+        }
         // tslint:disable-next-line: variable-name
         // response = { success: true, message: "data uploaded" }
 
