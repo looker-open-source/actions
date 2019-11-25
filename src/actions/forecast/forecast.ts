@@ -171,18 +171,6 @@ export class ForecastAction extends Hub.Action {
       await this.uploadToS3(request, bucketName, s3ObjectKey)
       winston.debug("upload complete")
 
-      const testS3 = new S3({
-        accessKeyId: request.params.accessKeyId,
-        secretAccessKey: request.params.secretAccessKey,
-      })
-
-      winston.debug("GET starting")
-      const { Body } = await testS3.getObject({
-        Bucket: bucketName,
-        Key: s3ObjectKey,
-      }).promise()
-      winston.debug("GET done ", JSON.stringify(Body).slice(0, 1000))
-
       const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
       // TODO: possibly move some of these calls into private functions for improved readability
       const createDatasetParams = {
@@ -196,12 +184,12 @@ export class ForecastAction extends Hub.Action {
               AttributeType: "timestamp",
             },
             {
-              AttributeName: "target_value",
-              AttributeType: "float",
-            },
-            {
               AttributeName: "item_id",
               AttributeType: "string",
+            },
+            {
+              AttributeName: "target_value",
+              AttributeType: "float",
             },
           ],
         },
