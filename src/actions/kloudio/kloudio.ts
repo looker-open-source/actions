@@ -97,7 +97,7 @@ export class KloudioAction extends Hub.Action {
         const anonymousId = this.generateAnonymousId() + ".json"
         winston.info("uuid is" + anonymousId)
         const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
-        winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
+        // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
         const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
         winston.info("after uploading the file to s3...", s3Response1)
         data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
@@ -148,7 +148,7 @@ export class KloudioAction extends Hub.Action {
     } catch (e) {
       response = { success: false, message: e.message }
     }
-    winston.info(JSON.stringify(response))
+    winston.info("JSON stringify response" + JSON.stringify(response))
     return new Hub.ActionResponse(response)
   }
 
