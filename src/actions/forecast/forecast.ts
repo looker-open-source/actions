@@ -130,6 +130,7 @@ export class ForecastAction extends Hub.Action {
       accessKeyId,
       secretAccessKey,
       region,
+      roleArn,
     } = request.params
     // TODO: make required params checking more compact?
     // TODO: are there AWS naming rules that I need to enforce in the UI?
@@ -156,6 +157,9 @@ export class ForecastAction extends Hub.Action {
     }
     if (!region) {
       throw new Error("Missing region")
+    }
+    if (!roleArn) {
+      throw new Error("Missing roleArn")
     }
 
     try {
@@ -199,6 +203,20 @@ export class ForecastAction extends Hub.Action {
       }
 
       await forecastService.createDatasetGroup(createDatasetGroupParams).promise()
+
+      const createDatasetImportJobParams = {
+        DataSource: {
+          S3Config: {
+            Path: `s3://${bucketName}/${datasetName}`,
+            RoleArn: roleArn,
+          },
+        },
+        DatasetArn: DatasetArn!,
+        DatasetImportJobName: `${datasetName}_import_job`,
+        // TimestampFormat TODO: right now, we're using default timestamp format. Allow for customization here
+      }
+
+      await forecastService.createDatasetImportJob(createDatasetImportJobParams).promise()
 
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
