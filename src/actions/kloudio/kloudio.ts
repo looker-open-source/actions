@@ -124,6 +124,9 @@ export class KloudioAction extends Hub.Action {
           })
         winston.info("lambda url resp " + response)
 
+        const respP = JSON.parse(response)
+        winston.info("parsed response is " + respP)
+
         if (!response.success || response.success === false) {
           winston.info("lambda url resp is not sucess " + response)
           response = { success: false, message: response.message }
