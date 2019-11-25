@@ -221,7 +221,7 @@ export class ForecastAction extends Hub.Action {
         },
         DatasetArn: DatasetArn!,
         DatasetImportJobName: `${datasetName}_import_job`,
-        // TimestampFormat TODO: right now, we're using default timestamp format. Allow for customization here
+        TimestampFormat: "yyyy-MM-dd", // TODO: make this dynamic based on frequency selection
       }
 
       winston.debug("createDatasetImportJob start")
@@ -338,6 +338,7 @@ export class ForecastAction extends Hub.Action {
         readable
           .pipe(striplines(1))
           .pipe(uploadFromStream())
+          // TODO: can I do some formatting here (e.g., parseInt/float on numeric cols?)
       }) // TODO: is this sensible error handle behavior?
       .catch(winston.error)
     })
