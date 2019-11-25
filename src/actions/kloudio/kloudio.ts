@@ -146,6 +146,7 @@ export class KloudioAction extends Hub.Action {
         }*/
 
     } catch (e) {
+      winston.info("Inside catch statement")
       response = { success: false, message: e.message }
     }
     winston.info("JSON stringify response" + JSON.stringify(response))
