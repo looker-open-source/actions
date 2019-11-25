@@ -73,8 +73,9 @@ export class KloudioAction extends Hub.Action {
     winston.info(typeof request.attachment.dataJSON)
     // winston.info(JSON.stringify(request.attachment.dataJSON.data))
 
-    const gsheeturl = encodeURIComponent(request.formParams.url)
-    winston.info("encoded gsheet url "+gsheeturl)
+    const { spreadsheetId, sheetId }  = await parseGsheet(request.formParams.url)
+    // const gsheeturl = encodeURIComponent(request.formParams.url)
+    winston.info("encoded gsheet url " + spreadsheetId + " " + sheetId)
 
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
@@ -99,10 +100,10 @@ export class KloudioAction extends Hub.Action {
         winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
         const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
         winston.info("after uploading the file to s3...", s3Response1)
-        data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: gsheeturl,
+        data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
             s3Upload: s3Bool, data: anonymousId}
     } else {
-        data = {destination: "looker", apiKey: request.formParams.apiKey, gsheetUrl: gsheeturl,
+        data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
             s3Upload: s3Bool, data: dataRows}
     }
 
@@ -208,5 +209,17 @@ async function uploadToS32(url: any, s3Data1: any) {
      }).catch((_err) => { winston.error(_err.toString()) })
 
   return response
+}
+
+async function parseGsheet(gsheet: string) {
+  const urlRegex = /(https:\/\/docs.google.com\/spreadsheets\/d\/[a-zA-Z0-9_-]*\/edit#gid=[0-9]*)/g
+  if (!urlRegex.test(gsheet)) {
+    throw new Error("Invalid url")
+  }
+  const slashArray = gsheet.split("/")
+  const spreadsheetId = slashArray[5]
+  const assignmentArray = slashArray[6].split("=")
+  const sheetId = assignmentArray[1]
+  return {spreadsheetId, sheetId}
 }
 Hub.addAction(new KloudioAction())
