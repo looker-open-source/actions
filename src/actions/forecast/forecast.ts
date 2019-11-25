@@ -178,8 +178,9 @@ export class ForecastAction extends Hub.Action {
 
       winston.debug("GET starting")
       const { LastModified } = await testS3.getObject({
-        Bucket: "examplebucket",
-        Key: "SampleFile.txt"}).promise()
+        Bucket: bucketName,
+        Key: s3ObjectKey,
+      }).promise()
       winston.debug("GET done ", LastModified)
 
       const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
