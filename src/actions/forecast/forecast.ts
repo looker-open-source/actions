@@ -18,7 +18,7 @@ const POLL_TIMEOUT = MINUTE_MS * MAX_POLL_ATTEMPTS
 
 export class ForecastAction extends Hub.Action {
   // required fields
-  // TODO: make email-related fields required
+  // TODO: make email-related fields required?
   name = "amazon_forecast"
   label = "Amazon Forecast"
   supportedActionTypes = [Hub.ActionType.Query]
@@ -110,11 +110,10 @@ export class ForecastAction extends Hub.Action {
   description = "Import data into Amazon Forecast, train a model, and generate a forecast from that model"
   usesStreaming = true
   requiredFields = []
-  // TODO: for which of these optional fields should I provide values?
-  // iconName = ""
-  // supportedFormats = [Hub.ActionFormat.Csv]
-  // supportedFormattings = [Hub.ActionFormatting.Unformatted]
-  // supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  supportedFormats = [Hub.ActionFormat.Csv]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  // iconName = "" // TODO
 
   async form(request: Hub.ActionRequest) {
     winston.debug(JSON.stringify(request.params, null, 2))
@@ -199,6 +198,17 @@ export class ForecastAction extends Hub.Action {
      7. on forecast export complete, send email to user
     */
   async execute(request: Hub.ActionRequest) {
+    try {
+      this.startForecastWorkflow(request).catch(winston.error)
+      // response acknowledges that workflow has started, not that it's complete
+      return new Hub.ActionResponse({ success: true })
+    } catch (err) {
+      winston.error(JSON.stringify(err, null, 2)) // TODO: 
+      return new Hub.ActionResponse({ success: false, message: err.message })
+    }
+  }
+
+  private async startForecastWorkflow(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
       accessKeyId,
@@ -207,23 +217,15 @@ export class ForecastAction extends Hub.Action {
       bucketName,
       datasetName,
     } = actionParams
+    // upload looker data to S3
     const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
+    await this.uploadToS3(request, bucketName, s3ObjectKey)
 
-    try {
-      await this.uploadToS3(request, bucketName, s3ObjectKey)
-
-      const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
-
-      const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
-      await forecastImport.startResourceCreation()
-
-      this.pollFor(forecastImport.checkResourceCreationComplete).catch(winston.error)
-
-      return new Hub.ActionResponse({ success: true })
-    } catch (err) {
-      winston.error(JSON.stringify(err, null, 2))
-      return new Hub.ActionResponse({ success: false, message: err.message })
-    }
+    const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
+    // feed data in S3 to Forecast
+    const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
+    await forecastImport.startResourceCreation()
+    await this.pollFor(forecastImport.checkResourceCreationComplete)
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastActionParams {

@@ -1,5 +1,6 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import { ForecastActionParams } from "./forecast_types"
+import winston = require("winston")
 
 interface ForecastDataImportParams extends ForecastActionParams {
   forecastService: ForecastService
@@ -42,6 +43,7 @@ export default class ForecastDataImport {
     const { Status } = await this.forecastService.describeDatasetImportJob({
       DatasetImportJobArn: this.datasetImportJobArn!, // TODO: Could the arn be undefined in some case
     }).promise()
+    winston.debug("polling complete: ", Status === "ACTIVE")
     return Status === "ACTIVE" ? Status : null
   }
 
