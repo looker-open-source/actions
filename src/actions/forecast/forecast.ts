@@ -15,7 +15,7 @@ const striplines = require("striplines")
 // TODO: maybe move polling logic to its own class
 const MINUTE_MS = 60000
 const POLL_INTERVAL_MS = MINUTE_MS
-const MAX_POLL_ATTEMPTS = 60
+const MAX_POLL_ATTEMPTS = 120
 const POLL_TIMEOUT = MINUTE_MS * MAX_POLL_ATTEMPTS
 
 export class ForecastAction extends Hub.Action {
