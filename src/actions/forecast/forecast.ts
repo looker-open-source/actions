@@ -247,6 +247,7 @@ export class ForecastAction extends Hub.Action {
       forecastingDomain,
       dataFrequency,
       predictorName,
+      forecastName,
     } = request.formParams
 
     const {
@@ -255,7 +256,6 @@ export class ForecastAction extends Hub.Action {
       secretAccessKey,
       region,
       roleArn,
-      forecastName,
     } = request.params
     // TODO: make required params checking more compact?
     // TODO: are there AWS naming rules that I need to enforce in the UI?
