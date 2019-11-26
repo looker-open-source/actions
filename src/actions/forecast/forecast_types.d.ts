@@ -1,5 +1,3 @@
-// TODO: add interface for ForecastWorkflowStep
-
 export interface ForecastActionParams {
   bucketName: string
   datasetName: string
@@ -12,4 +10,9 @@ export interface ForecastActionParams {
   roleArn: string
   predictorName: string
   forecastName: string
+}
+
+export interface ForecastWorkflowStage {
+  startResourceCreation: () => Promise<void>
+  isResourceCreationComplete: () => Promise<boolean>
 }

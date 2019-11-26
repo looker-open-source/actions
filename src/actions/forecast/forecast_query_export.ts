@@ -1,13 +1,13 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import { ForecastActionParams } from "./forecast_types"
+import { ForecastActionParams, ForecastWorkflowStage } from "./forecast_types"
 
 interface ForecastQueryExporterParams extends ForecastActionParams {
   forecastService: ForecastService
   predictorArn: string
 }
 
-export default class ForecastQueryExporter {
+export default class ForecastQueryExporter implements ForecastWorkflowStage {
   private forecastService: ForecastService
   private forecastName: string
   private predictorArn: string
