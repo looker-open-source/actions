@@ -188,23 +188,13 @@ export class ForecastAction extends Hub.Action {
     return form
   }
 
-    /* execution logic (this comment block will be removed)
-     0. validate parameters
-     1. upload payload from Looker to S3
-     2. when upload is complete, create dataset
-     3. create datasetgroup, specifying above-created dataset
-     4. create predictor
-     5. on predictor creation compelte, create a forecast
-     6. on forecast complete, create a forecast export
-     7. on forecast export complete, send email to user
-    */
   async execute(request: Hub.ActionRequest) {
     try {
       this.startForecastWorkflow(request).catch(winston.error)
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
-      winston.error(JSON.stringify(err, null, 2)) // TODO: 
+      winston.error(JSON.stringify(err, null, 2))
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
