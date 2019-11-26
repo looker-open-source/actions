@@ -1,12 +1,12 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import { ForecastActionParams } from "./forecast_types"
 
-interface ForecastImportParams extends ForecastActionParams {
+interface ForecastDataImportParams extends ForecastActionParams {
   forecastService: ForecastService
   s3ObjectKey: string
 }
 
-export default class ForecastImport {
+export default class ForecastDataImport {
   private datasetImportJobArn: string | undefined
   private forecastService: ForecastService
   private s3ObjectKey: string
@@ -18,7 +18,7 @@ export default class ForecastImport {
   private roleArn: string
   private datasetArn: string | undefined
 
-  constructor(params: ForecastImportParams) {
+  constructor(params: ForecastDataImportParams) {
     this.forecastService = params.forecastService
     this.s3ObjectKey = params.s3ObjectKey
     this.bucketName = params.bucketName
