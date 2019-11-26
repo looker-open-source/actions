@@ -9,7 +9,7 @@ The mParticle action allows you to bulk export your user or event data from Look
   - Get the API key / secret for your mParticle user and enter them in the Looker Action Hub. ![](mparticle_settings.png)
 
 
-2. Tell Looker how columns in Looker map to fields in Marketo.
+2. Tell Looker how columns in Looker map to fields in mParticle.
   - For every dimension/measure that you want Looker to be able to send to mParticle, you must map it in the LookML to an mParticle field. ![](mparticle_tag.png)
   - The naming conventions are summarized in the following tables, with the first value representing the tag to place in the LookML, and the second value representing the associated mParticle field that it will map to.
   - **All rows are required to have at least 1 user identity tag present.** This applies to both user identities and events. Not doing so will result in a failure to send.
