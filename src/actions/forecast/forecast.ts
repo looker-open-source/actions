@@ -4,16 +4,17 @@ import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as S3 from "aws-sdk/clients/s3"
 import { PassThrough } from "stream"
 import * as winston from "winston"
+import ForecastDataImport from "./forecast_import"
+import { ForecastActionParams } from "./forecast_types"
 
 const striplines = require("striplines")
 
+// TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 // TODO: maybe move polling logic to its own class
 const MINUTE_MS = 60000
 const POLL_INTERVAL_MS = MINUTE_MS
 const MAX_POLL_ATTEMPTS = 60
 const POLL_TIMEOUT = MINUTE_MS * MAX_POLL_ATTEMPTS
-
-// TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 
 export class ForecastAction extends Hub.Action {
   // required fields
@@ -115,147 +116,6 @@ export class ForecastAction extends Hub.Action {
   // supportedFormattings = [Hub.ActionFormatting.Unformatted]
   // supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
-    /* execution logic (this comment block will be removed)
-     0. validate parameters
-     1. upload payload from Looker to S3
-     2. when upload is complete, create dataset
-     3. create datasetgroup, specifying above-created dataset
-     4. create predictor
-     5. on predictor creation compelte, create a forecast
-     6. on forecast complete, create a forecast export
-     7. on forecast export complete, send email to user
-    */
-  async execute(request: Hub.ActionRequest) {
-    const {
-      datasetName,
-      datasetGroupName,
-      forecastingDomain,
-      dataFrequency,
-    } = request.formParams
-
-    const {
-      bucketName,
-      accessKeyId,
-      secretAccessKey,
-      region,
-      roleArn,
-    } = request.params
-    // TODO: make required params checking more compact?
-    // TODO: are there AWS naming rules that I need to enforce in the UI?
-    if (!bucketName) {
-      throw new Error("Missing bucketName")
-    }
-    if (!datasetName) {
-      throw new Error("Missing datasetName")
-    }
-    if (!datasetGroupName) {
-      throw new Error("Missing datasetGroupName")
-    }
-    if (!forecastingDomain) {
-      throw new Error("Missing forecastingDomain")
-    }
-    if (!dataFrequency) {
-      throw new Error("Missing dataFrequency")
-    }
-    if (!accessKeyId) {
-      throw new Error("Missing accessKeyId")
-    }
-    if (!secretAccessKey) {
-      throw new Error("Missing secretAccessKey")
-    }
-    if (!region) {
-      throw new Error("Missing region")
-    }
-    if (!roleArn) {
-      throw new Error("Missing roleArn")
-    }
-
-    try {
-      // TODO: do I need to worry about bucket region?
-      // TODO: calculate more meaningful object key?
-      const s3ObjectKey = `${Date.now()}.csv`
-
-      winston.debug("upload starting ", s3ObjectKey)
-      await this.uploadToS3(request, bucketName, s3ObjectKey)
-      winston.debug("upload complete")
-
-      const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
-      // TODO: possibly move some of these calls into private functions for improved readability
-      const createDatasetParams = {
-        DatasetName: datasetName,
-        DatasetType: "TARGET_TIME_SERIES", // TODO: there are other possible values here, do I need to consider them?
-        Domain: forecastingDomain,
-        Schema: { // TODO: schema hardcoded for now. What's the best way to make this work dynamically?
-          Attributes: [
-            {
-              AttributeName: "timestamp",
-              AttributeType: "timestamp",
-            },
-            {
-              AttributeName: "item_id",
-              AttributeType: "string",
-            },
-            {
-              AttributeName: "target_value",
-              AttributeType: "float",
-            },
-          ],
-        },
-        DataFrequency: dataFrequency,
-      }
-
-      winston.debug("createDataset start")
-      const { DatasetArn } = await forecastService.createDataset(createDatasetParams).promise()
-      winston.debug("createDataset complete")
-
-      const createDatasetGroupParams = {
-        DatasetGroupName: datasetGroupName,
-        Domain: forecastingDomain,
-        DatasetArns: [
-          DatasetArn!, // TODO: is there a valid case in which the DatasetArn would be undefined?
-        ],
-      }
-
-      winston.debug("createDatasetGroup start")
-      await forecastService.createDatasetGroup(createDatasetGroupParams).promise()
-      winston.debug("createDatasetGroup complete")
-
-      const createDatasetImportJobParams = {
-        DataSource: {
-          S3Config: {
-            Path: `s3://${bucketName}/${s3ObjectKey}`,
-            RoleArn: roleArn,
-          },
-        },
-        DatasetArn: DatasetArn!,
-        DatasetImportJobName: `${datasetName}_import_job`,
-        TimestampFormat: "yyyy-MM-dd", // TODO: make this dynamic based on frequency selection
-      }
-
-      winston.debug("createDatasetImportJob start")
-      const {
-        DatasetImportJobArn,
-      } = await forecastService.createDatasetImportJob(createDatasetImportJobParams).promise()
-      winston.debug("createDatasetImportJob complete")
-
-      // TODO: is ! a good idea here? Could the arn be undefined in some case
-      // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
-      // TODO: when poller is moved into its own class, make function argument here a private method
-      // tslint:disable-next-line
-      this.pollFor(async () => {
-        const { Status } = await forecastService.describeDatasetImportJob({
-          DatasetImportJobArn: DatasetImportJobArn!,
-        }).promise()
-        return Status === "ACTIVE" ? Status : null
-      })
-
-      return new Hub.ActionResponse({ success: true })
-    } catch (err) {
-      winston.error(JSON.stringify(err, null, 2))
-      return new Hub.ActionResponse({ success: false, message: err.message })
-    }
-  }
-
   async form(request: Hub.ActionRequest) {
     winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
@@ -328,6 +188,102 @@ export class ForecastAction extends Hub.Action {
     return form
   }
 
+    /* execution logic (this comment block will be removed)
+     0. validate parameters
+     1. upload payload from Looker to S3
+     2. when upload is complete, create dataset
+     3. create datasetgroup, specifying above-created dataset
+     4. create predictor
+     5. on predictor creation compelte, create a forecast
+     6. on forecast complete, create a forecast export
+     7. on forecast export complete, send email to user
+    */
+  async execute(request: Hub.ActionRequest) {
+    const actionParams = this.getRequiredActionParamsFromRequest(request)
+    const {
+      accessKeyId,
+      secretAccessKey,
+      region,
+      bucketName,
+      datasetName,
+    } = actionParams
+    const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
+
+    try {
+      await this.uploadToS3(request, bucketName, s3ObjectKey)
+
+      const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
+
+      const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
+      await forecastImport.startResourceCreation()
+
+      this.pollFor(forecastImport.checkResourceCreationComplete).catch(winston.error)
+
+      return new Hub.ActionResponse({ success: true })
+    } catch (err) {
+      winston.error(JSON.stringify(err, null, 2))
+      return new Hub.ActionResponse({ success: false, message: err.message })
+    }
+  }
+
+  private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastActionParams {
+    const {
+      datasetName,
+      datasetGroupName,
+      forecastingDomain,
+      dataFrequency,
+    } = request.formParams
+
+    const {
+      bucketName,
+      accessKeyId,
+      secretAccessKey,
+      region,
+      roleArn,
+    } = request.params
+    // TODO: make required params checking more compact?
+    // TODO: are there AWS naming rules that I need to enforce in the UI?
+    if (!bucketName) {
+      throw new Error("Missing bucketName")
+    }
+    if (!datasetName) {
+      throw new Error("Missing datasetName")
+    }
+    if (!datasetGroupName) {
+      throw new Error("Missing datasetGroupName")
+    }
+    if (!forecastingDomain) {
+      throw new Error("Missing forecastingDomain")
+    }
+    if (!dataFrequency) {
+      throw new Error("Missing dataFrequency")
+    }
+    if (!accessKeyId) {
+      throw new Error("Missing accessKeyId")
+    }
+    if (!secretAccessKey) {
+      throw new Error("Missing secretAccessKey")
+    }
+    if (!region) {
+      throw new Error("Missing region")
+    }
+    if (!roleArn) {
+      throw new Error("Missing roleArn")
+    }
+
+    return {
+      bucketName,
+      datasetName,
+      datasetGroupName,
+      forecastingDomain,
+      dataFrequency,
+      accessKeyId,
+      secretAccessKey,
+      region,
+      roleArn,
+    }
+  }
+
   private async pollFor(
     checkJobComplete: () => Promise<string | null>,
     pollsRemaining: number = MAX_POLL_ATTEMPTS): Promise<string> {
@@ -346,6 +302,7 @@ export class ForecastAction extends Hub.Action {
     return this.pollFor(checkJobComplete, pollsRemaining - 1)
   }
 
+  // TODO: this may belong in its own module
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
     return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
       const s3 = new S3({
