@@ -1,15 +1,12 @@
 import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
-import * as S3 from "aws-sdk/clients/s3"
-import { PassThrough } from "stream"
 import * as winston from "winston"
 import ForecastDataImport from "./forecast_import"
 import ForecastPredictor from "./forecast_predictor"
 import ForecastQueryExporter from "./forecast_query_export"
 import { ForecastActionParams } from "./forecast_types"
-
-const striplines = require("striplines")
+import { uploadToS3 } from "./s3_upload"
 
 // TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 // TODO: maybe move polling logic to its own class
@@ -213,7 +210,7 @@ export class ForecastAction extends Hub.Action {
     } = actionParams
     // upload looker data to S3
     const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
-    await this.uploadToS3(request, bucketName, s3ObjectKey)
+    await uploadToS3(request, bucketName, s3ObjectKey)
 
     // create Forecast dataset resource & feed in S3 data
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
@@ -238,6 +235,8 @@ export class ForecastAction extends Hub.Action {
     })
     await forecastQueryExporter.startResourceCreation()
     await this.pollFor(forecastQueryExporter.checkResourceCreationComplete)
+
+    // TODO: send email on success?
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastActionParams {
@@ -325,43 +324,6 @@ export class ForecastAction extends Hub.Action {
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
 
     return this.pollFor(checkJobComplete, pollsRemaining - 1)
-  }
-
-  // TODO: this may belong in its own module
-  private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
-    return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
-      const s3 = new S3({
-        accessKeyId: request.params.accessKeyId,
-        secretAccessKey: request.params.secretAccessKey,
-      })
-
-      function uploadFromStream() {
-        winston.debug("calling uploadFromStream")
-        const passthrough = new PassThrough()
-
-        const params = {
-          Bucket: bucket,
-          Key: key,
-          Body: passthrough,
-        }
-        s3.upload(params, (err: Error|null, data: S3.ManagedUpload.SendData) => {
-          winston.debug("calling s3.upload")
-          if (err) {
-            return reject(err)
-          }
-          resolve(data)
-        })
-
-        return passthrough
-      }
-
-      request.stream(async (readable) => {
-        readable
-          .pipe(striplines(1))
-          .pipe(uploadFromStream())
-      }) // TODO: is this sensible error handle behavior?
-      .catch(winston.error)
-    })
   }
 }
 
