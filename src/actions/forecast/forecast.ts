@@ -7,6 +7,14 @@ import * as winston from "winston"
 
 const striplines = require("striplines")
 
+// TODO: maybe move polling logic to its own class
+const MINUTE_MS = 60000
+const POLL_INTERVAL_MS = MINUTE_MS
+const MAX_POLL_ATTEMPTS = 60
+const POLL_TIMEOUT = MINUTE_MS * MAX_POLL_ATTEMPTS
+
+// TODO: parseInt/Float on numeric cols from Looker, as they contain commas
+
 export class ForecastAction extends Hub.Action {
   // required fields
   // TODO: make email-related fields required
@@ -225,8 +233,20 @@ export class ForecastAction extends Hub.Action {
       }
 
       winston.debug("createDatasetImportJob start")
-      await forecastService.createDatasetImportJob(createDatasetImportJobParams).promise()
+      const {
+        DatasetImportJobArn,
+      } = await forecastService.createDatasetImportJob(createDatasetImportJobParams).promise()
       winston.debug("createDatasetImportJob complete")
+
+      // TODO: is ! a good idea here? Could the arn be undefined in some case
+      // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
+      // TODO: when poller is moved into its own class, make function argument here a private method
+      await this.pollFor(async () => {
+        const { Status } = await forecastService.describeDatasetImportJob({
+          DatasetImportJobArn: DatasetImportJobArn!,
+        }).promise()
+        return Status === "ACTIVE" ? Status : null
+      })
 
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -307,6 +327,24 @@ export class ForecastAction extends Hub.Action {
     return form
   }
 
+  private async pollFor(
+    checkJobComplete: () => Promise<string | null>,
+    pollsRemaining: number = MAX_POLL_ATTEMPTS): Promise<string> {
+    winston.debug("polls remaining ", pollsRemaining)
+    if (pollsRemaining <= 0) {
+      throw new Error(`dataset import job did not complete within ${POLL_TIMEOUT} miliseconds`)
+    }
+    const jobResult = await checkJobComplete()
+
+    if (jobResult) {
+      return jobResult
+    }
+    // job not done, so sleep for POLL_INTERVAL_MS
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
+
+    return this.pollFor(checkJobComplete, pollsRemaining - 1)
+  }
+
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
     return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
       const s3 = new S3({
@@ -338,7 +376,6 @@ export class ForecastAction extends Hub.Action {
         readable
           .pipe(striplines(1))
           .pipe(uploadFromStream())
-          // TODO: can I do some formatting here (e.g., parseInt/float on numeric cols?)
       }) // TODO: is this sensible error handle behavior?
       .catch(winston.error)
     })
