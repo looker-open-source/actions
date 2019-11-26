@@ -1,6 +1,6 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
+import * as winston from "winston"
 import { ForecastActionParams } from "./forecast_types"
-import winston = require("winston")
 
 interface ForecastDataImportParams extends ForecastActionParams {
   forecastService: ForecastService
@@ -28,6 +28,7 @@ export default class ForecastDataImport {
     this.forecastingDomain = params.forecastingDomain
     this.dataFrequency = params.dataFrequency
     this.roleArn = params.roleArn
+    this.checkResourceCreationComplete = this.checkResourceCreationComplete.bind(this)
   }
 
   async startResourceCreation() {
