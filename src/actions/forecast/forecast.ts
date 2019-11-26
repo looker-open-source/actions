@@ -5,6 +5,7 @@ import * as S3 from "aws-sdk/clients/s3"
 import { PassThrough } from "stream"
 import * as winston from "winston"
 import ForecastDataImport from "./forecast_import"
+import ForecastPredictor from "./forecast_predictor"
 import { ForecastActionParams } from "./forecast_types"
 
 const striplines = require("striplines")
@@ -226,6 +227,15 @@ export class ForecastAction extends Hub.Action {
     const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
     await forecastImport.startResourceCreation()
     await this.pollFor(forecastImport.checkResourceCreationComplete)
+
+    // build Forecast predictor
+    const forecastPredictor = new ForecastPredictor({
+      forecastService,
+      datasetGroupArn: forecastImport.datasetGroupArn!,
+      ...actionParams,
+    })
+    await forecastPredictor.startResourceCreation()
+    await this.pollFor(forecastPredictor.checkResourceCreationComplete)
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastActionParams {
@@ -234,6 +244,7 @@ export class ForecastAction extends Hub.Action {
       datasetGroupName,
       forecastingDomain,
       dataFrequency,
+      predictorName,
     } = request.formParams
 
     const {
@@ -272,6 +283,9 @@ export class ForecastAction extends Hub.Action {
     if (!roleArn) {
       throw new Error("Missing roleArn")
     }
+    if (!predictorName) {
+      throw new Error("Missing predictorName")
+    }
 
     return {
       bucketName,
@@ -283,20 +297,22 @@ export class ForecastAction extends Hub.Action {
       secretAccessKey,
       region,
       roleArn,
+      predictorName,
     }
   }
 
   private async pollFor(
-    checkJobComplete: () => Promise<string | null>,
-    pollsRemaining: number = MAX_POLL_ATTEMPTS): Promise<string> {
+    checkJobComplete: () => Promise<boolean>,
+    pollsRemaining: number = MAX_POLL_ATTEMPTS): Promise<boolean> {
     winston.debug("polls remaining ", pollsRemaining)
     if (pollsRemaining <= 0) {
+      // TODO: return false and log here instead?
       throw new Error(`dataset import job did not complete within ${POLL_TIMEOUT} miliseconds`)
     }
-    const jobResult = await checkJobComplete()
+    const jobComplete = await checkJobComplete()
 
-    if (jobResult) {
-      return jobResult
+    if (jobComplete) {
+      return true
     }
     // job not done, so sleep for POLL_INTERVAL_MS
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))

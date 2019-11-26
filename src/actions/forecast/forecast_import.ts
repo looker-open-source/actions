@@ -8,6 +8,7 @@ interface ForecastDataImportParams extends ForecastActionParams {
 }
 
 export default class ForecastDataImport {
+  datasetGroupArn: string | undefined
   private datasetImportJobArn: string | undefined
   private forecastService: ForecastService
   private s3ObjectKey: string
@@ -38,18 +39,19 @@ export default class ForecastDataImport {
   }
 
   // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
-  // TODO: when poller is moved into its own class, make function argument here a private method
-  // tslint:disable-next-line
   async checkResourceCreationComplete() {
+    if (!this.datasetImportJobArn) {
+      return false
+    }
     const { Status } = await this.forecastService.describeDatasetImportJob({
-      DatasetImportJobArn: this.datasetImportJobArn!, // TODO: Could the arn be undefined in some case
+      DatasetImportJobArn: this.datasetImportJobArn,
     }).promise()
-    winston.debug("polling complete: ", Status === "ACTIVE")
-    return Status === "ACTIVE" ? Status : null
+    winston.debug("describeDatasetImportJob polling complete: ", Status === "ACTIVE")
+    return Status === "ACTIVE"
   }
 
   private async createDataset() {
-    const createDatasetParams = {
+    const params = {
       DatasetName: this.datasetName,
       DatasetType: "TARGET_TIME_SERIES", // TODO: there are other possible values here, do I need to consider them?
       Domain: this.forecastingDomain,
@@ -72,12 +74,12 @@ export default class ForecastDataImport {
       DataFrequency: this.dataFrequency,
     }
 
-    const { DatasetArn } = await this.forecastService.createDataset(createDatasetParams).promise()
+    const { DatasetArn } = await this.forecastService.createDataset(params).promise()
     this.datasetArn = DatasetArn
   }
 
   private async createDatasetGroup() {
-    const createDatasetGroupParams = {
+    const params = {
       DatasetGroupName: this.datasetGroupName,
       Domain: this.forecastingDomain,
       DatasetArns: [
@@ -85,11 +87,12 @@ export default class ForecastDataImport {
       ],
     }
 
-    await this.forecastService.createDatasetGroup(createDatasetGroupParams).promise()
+    const { DatasetGroupArn } = await this.forecastService.createDatasetGroup(params).promise()
+    this.datasetGroupArn = DatasetGroupArn
   }
 
   private async createDatasetImportJob() {
-    const createDatasetImportJobParams = {
+    const params = {
       DataSource: {
         S3Config: {
           Path: `s3://${this.bucketName}/${this.s3ObjectKey}`,
@@ -103,7 +106,7 @@ export default class ForecastDataImport {
 
     const {
       DatasetImportJobArn,
-    } = await this.forecastService.createDatasetImportJob(createDatasetImportJobParams).promise()
+    } = await this.forecastService.createDatasetImportJob(params).promise()
     this.datasetImportJobArn = DatasetImportJobArn
   }
 }

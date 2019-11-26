@@ -1,3 +1,5 @@
+// TODO: add interface for ForecastWorkflowStep
+
 export interface ForecastActionParams {
   bucketName: string
   datasetName: string
@@ -8,4 +10,5 @@ export interface ForecastActionParams {
   secretAccessKey: string
   region: string
   roleArn: string
+  predictorName: string
 }
