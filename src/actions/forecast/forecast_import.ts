@@ -29,7 +29,7 @@ export default class ForecastDataImport {
     this.forecastingDomain = params.forecastingDomain
     this.dataFrequency = params.dataFrequency
     this.roleArn = params.roleArn
-    this.checkResourceCreationComplete = this.checkResourceCreationComplete.bind(this)
+    this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
   }
 
   async startResourceCreation() {
@@ -39,7 +39,7 @@ export default class ForecastDataImport {
   }
 
   // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
-  async checkResourceCreationComplete() {
+  async isResourceCreationComplete() {
     if (!this.datasetImportJobArn) {
       return false
     }

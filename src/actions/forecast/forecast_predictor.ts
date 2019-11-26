@@ -19,7 +19,7 @@ export default class ForecastPredictor {
     this.dataFrequency = params.dataFrequency
     this.datasetGroupArn = params.datasetGroupArn
     this.predictorName = params.predictorName
-    this.checkResourceCreationComplete = this.checkResourceCreationComplete.bind(this)
+    this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
   }
 
   async startResourceCreation() {
@@ -27,7 +27,7 @@ export default class ForecastPredictor {
   }
 
   // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
-  async checkResourceCreationComplete() {
+  async isResourceCreationComplete() {
     if (!this.predictorArn) {
       return false
     }

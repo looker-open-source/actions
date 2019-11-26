@@ -22,7 +22,7 @@ export default class ForecastQueryExporter {
     this.predictorArn = params.predictorArn
     this.bucketName = params.bucketName
     this.roleArn = params.roleArn
-    this.checkResourceCreationComplete = this.checkResourceCreationComplete.bind(this)
+    this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
   }
 
   async startResourceCreation() {
@@ -30,7 +30,7 @@ export default class ForecastQueryExporter {
     await this.createForecastExportJob()
   }
   // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
-  async checkResourceCreationComplete() {
+  async isResourceCreationComplete() {
     if (!this.forecastExportJobArn) {
       return false
     }

@@ -6,15 +6,10 @@ import ForecastDataImport from "./forecast_import"
 import ForecastPredictor from "./forecast_predictor"
 import ForecastQueryExporter from "./forecast_query_export"
 import { ForecastActionParams } from "./forecast_types"
+import { poll } from "./poller"
 import { uploadToS3 } from "./s3_upload"
 
 // TODO: parseInt/Float on numeric cols from Looker, as they contain commas
-// TODO: maybe move polling logic to its own class
-const MINUTE_MS = 60000
-const POLL_INTERVAL_MS = MINUTE_MS
-const MAX_POLL_ATTEMPTS = 120
-const POLL_TIMEOUT = MINUTE_MS * MAX_POLL_ATTEMPTS
-
 export class ForecastAction extends Hub.Action {
   // required fields
   // TODO: make email-related fields required?
@@ -216,7 +211,7 @@ export class ForecastAction extends Hub.Action {
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
     const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
     await forecastImport.startResourceCreation()
-    await this.pollFor(forecastImport.checkResourceCreationComplete)
+    await poll(forecastImport.isResourceCreationComplete)
 
     // build Forecast predictor
     const forecastPredictor = new ForecastPredictor({
@@ -225,7 +220,7 @@ export class ForecastAction extends Hub.Action {
       ...actionParams,
     })
     await forecastPredictor.startResourceCreation()
-    await this.pollFor(forecastPredictor.checkResourceCreationComplete)
+    await poll(forecastPredictor.isResourceCreationComplete)
 
     // perform time series prediction and export results to S3
     const forecastQueryExporter = new ForecastQueryExporter({
@@ -234,7 +229,7 @@ export class ForecastAction extends Hub.Action {
       ...actionParams,
     })
     await forecastQueryExporter.startResourceCreation()
-    await this.pollFor(forecastQueryExporter.checkResourceCreationComplete)
+    await poll(forecastQueryExporter.isResourceCreationComplete)
 
     // TODO: send email on success?
   }
@@ -305,25 +300,6 @@ export class ForecastAction extends Hub.Action {
       predictorName,
       forecastName,
     }
-  }
-
-  private async pollFor(
-    checkJobComplete: () => Promise<boolean>,
-    pollsRemaining: number = MAX_POLL_ATTEMPTS): Promise<boolean> {
-    winston.debug("polls remaining ", pollsRemaining)
-    if (pollsRemaining <= 0) {
-      // TODO: return false and log here instead?
-      throw new Error(`dataset import job did not complete within ${POLL_TIMEOUT} miliseconds`)
-    }
-    const jobComplete = await checkJobComplete()
-
-    if (jobComplete) {
-      return true
-    }
-    // job not done, so sleep for POLL_INTERVAL_MS
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
-
-    return this.pollFor(checkJobComplete, pollsRemaining - 1)
   }
 }
 
