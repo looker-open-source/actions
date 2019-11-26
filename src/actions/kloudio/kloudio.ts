@@ -45,8 +45,6 @@ export class KloudioAction extends Hub.Action {
       throw "Request payload is an invalid format."
     }
 
-    let response
-
     winston.info(request.formParams.apiKey)
     winston.info(request.formParams.url)
     winston.info(typeof request.attachment.dataJSON)
@@ -86,12 +84,13 @@ export class KloudioAction extends Hub.Action {
             s3Upload: s3Bool, data: dataRows}
     }
 
+    let response
     try {
         const newUri = API_URL.replace(/['"]+/g, "")
         // winston.info("uri is:" + API_URL)
         winston.info("Lambda new uri is:" + newUri)
        // console.log("uri is:" + uri);
-        response = await https.post({
+        const lambdaResponse = await https.post({
         url: newUri,
         headers: {"Content-Type": "application/json"},
         json: true,
@@ -101,14 +100,13 @@ export class KloudioAction extends Hub.Action {
            winston.info("parsing error code" + error.emailCode)
            winston.error(_err.toString())
           })
-        winston.info("lambda url resp " + response)
+        winston.info("lambda url resp " + lambdaResponse)
 
-        // const respP = JSON.parse(response)
-        // winston.info("parsed response is " + respP)
-
-        if (!response.success || response.success === false) {
-          winston.info("lambda url resp is not sucess " + response)
-          response = { success: false, message: response.message }
+        if (!lambdaResponse.success || lambdaResponse.success === false) {
+          winston.info("lambda url resp is not sucess " + lambdaResponse)
+          response = { success: false, message: lambdaResponse.message }
+        } else {
+          response = { success: true, message: lambdaResponse.message }
         }
         // tslint:disable-next-line: variable-name
         // response = { success: true, message: "data uploaded" }
@@ -124,7 +122,7 @@ export class KloudioAction extends Hub.Action {
         }*/
 
     } catch (e) {
-      winston.info("Inside catch statement")
+      winston.info("Inside catch statement" + e)
       response = { success: false, message: e.message }
     }
     winston.info("JSON stringify response" + JSON.stringify(response))
