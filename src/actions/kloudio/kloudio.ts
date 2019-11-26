@@ -1,4 +1,5 @@
 import * as https from "request-promise-native"
+
 import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
@@ -19,29 +20,7 @@ export class KloudioAction extends Hub.Action {
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
   // usesStreaming = true
-  params = [
-   /* {
-        description: "AWS Access KEY for S3",
-        label: "AWS Acess Key",
-        name: "aws_access_key",
-        required: true,
-        sensitive: true,
-      },
-      {
-        description: "AWS Secret KEY for S3",
-        label: "AWS Secret Key",
-        name: "aws_secret_key",
-        required: true,
-        sensitive: true,
-      },
-      {
-        description: "AWS Bucket",
-        label: "AWS Bucket",
-        name: "aws_bucket",
-        required: true,
-        sensitive: true,
-      },*/
-  ]
+  params = []
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
@@ -122,16 +101,15 @@ export class KloudioAction extends Hub.Action {
            winston.info("parsing error code" + error.emailCode)
            winston.error(_err.toString())
           })
-        winston.info("lambda url resp " + JSON.parse(response))
+        winston.info("lambda url resp " + response.message)
 
-        const respP = JSON.parse(response)
-        winston.info("parsed response is " + respP)
+        // const respP = JSON.parse(response)
+        // winston.info("parsed response is " + respP)
 
-        /*
         if (!response.success || response.success === false) {
           winston.info("lambda url resp is not sucess " + response)
           response = { success: false, message: response.message }
-        }*/
+        }
         // tslint:disable-next-line: variable-name
         // response = { success: true, message: "data uploaded" }
 
