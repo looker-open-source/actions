@@ -241,7 +241,8 @@ export class ForecastAction extends Hub.Action {
       // TODO: is ! a good idea here? Could the arn be undefined in some case
       // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
       // TODO: when poller is moved into its own class, make function argument here a private method
-      await this.pollFor(async () => {
+      // tslint:disable-next-line
+      this.pollFor(async () => {
         const { Status } = await forecastService.describeDatasetImportJob({
           DatasetImportJobArn: DatasetImportJobArn!,
         }).promise()
