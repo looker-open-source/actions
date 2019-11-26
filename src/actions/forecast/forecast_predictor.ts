@@ -8,11 +8,11 @@ interface ForecastPredictorParams extends ForecastActionParams {
 }
 
 export default class ForecastPredictor {
+  predictorArn: string | undefined
   private forecastService: ForecastService
   private dataFrequency: string
   private datasetGroupArn: string
   private predictorName: string
-  private predictorArn: string | undefined
 
   constructor(params: ForecastPredictorParams) {
     this.forecastService = params.forecastService

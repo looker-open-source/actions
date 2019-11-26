@@ -6,6 +6,7 @@ import { PassThrough } from "stream"
 import * as winston from "winston"
 import ForecastDataImport from "./forecast_import"
 import ForecastPredictor from "./forecast_predictor"
+import ForecastQueryExporter from "./forecast_query_export"
 import { ForecastActionParams } from "./forecast_types"
 
 const striplines = require("striplines")
@@ -38,6 +39,8 @@ export class ForecastAction extends Hub.Action {
       sensitive: true,
       description: "Your AWS secret access key.",
     },
+    // TODO: use sourceBucketName and destinationBucketName. put results under /forecast-import
+    // and /forecast-export paths so buckets can safely be the same or different
     {
       name: "bucketName",
       label: "Bucket Name",
@@ -212,7 +215,7 @@ export class ForecastAction extends Hub.Action {
     const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
     await this.uploadToS3(request, bucketName, s3ObjectKey)
 
-    // feed data in S3 to Forecast
+    // create Forecast dataset resource & feed in S3 data
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
     const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
     await forecastImport.startResourceCreation()
@@ -226,6 +229,15 @@ export class ForecastAction extends Hub.Action {
     })
     await forecastPredictor.startResourceCreation()
     await this.pollFor(forecastPredictor.checkResourceCreationComplete)
+
+    // perform time series prediction and export results to S3
+    const forecastQueryExporter = new ForecastQueryExporter({
+      forecastService,
+      predictorArn: forecastPredictor.predictorArn!,
+      ...actionParams,
+    })
+    await forecastQueryExporter.startResourceCreation()
+    await this.pollFor(forecastQueryExporter.checkResourceCreationComplete)
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastActionParams {
@@ -243,6 +255,7 @@ export class ForecastAction extends Hub.Action {
       secretAccessKey,
       region,
       roleArn,
+      forecastName,
     } = request.params
     // TODO: make required params checking more compact?
     // TODO: are there AWS naming rules that I need to enforce in the UI?
@@ -276,6 +289,9 @@ export class ForecastAction extends Hub.Action {
     if (!predictorName) {
       throw new Error("Missing predictorName")
     }
+    if (!forecastName) {
+      throw new Error("Missing forecastName")
+    }
 
     return {
       bucketName,
@@ -288,6 +304,7 @@ export class ForecastAction extends Hub.Action {
       region,
       roleArn,
       predictorName,
+      forecastName,
     }
   }
 

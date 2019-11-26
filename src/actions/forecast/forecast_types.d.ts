@@ -11,4 +11,5 @@ export interface ForecastActionParams {
   region: string
   roleArn: string
   predictorName: string
+  forecastName: string
 }

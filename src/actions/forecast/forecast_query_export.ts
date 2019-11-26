@@ -1,0 +1,67 @@
+import * as ForecastService from "aws-sdk/clients/forecastservice"
+import * as winston from "winston"
+import { ForecastActionParams } from "./forecast_types"
+
+interface ForecastQueryExporterParams extends ForecastActionParams {
+  forecastService: ForecastService
+  predictorArn: string
+}
+
+export default class ForecastQueryExporter {
+  private forecastService: ForecastService
+  private forecastName: string
+  private predictorArn: string
+  private bucketName: string
+  private roleArn: string
+  private forecastArn: string | undefined
+  private forecastExportJobArn: string | undefined
+
+  constructor(params: ForecastQueryExporterParams) {
+    this.forecastService = params.forecastService
+    this.forecastName = params.forecastName
+    this.predictorArn = params.predictorArn
+    this.bucketName = params.bucketName
+    this.roleArn = params.roleArn
+    this.checkResourceCreationComplete = this.checkResourceCreationComplete.bind(this)
+  }
+
+  async startResourceCreation() {
+    await this.createForecast()
+    await this.createForecastExportJob()
+  }
+  // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
+  async checkResourceCreationComplete() {
+    if (!this.forecastExportJobArn) {
+      return false
+    }
+    const { Status } = await this.forecastService.describeForecastExportJob({
+      ForecastExportJobArn: this.forecastExportJobArn,
+    }).promise()
+    winston.debug("describeForecastExportJob polling complete: ", Status === "ACTIVE")
+    return Status === "ACTIVE"
+  }
+
+  private async createForecast() {
+    const params = {
+      ForecastName: this.forecastName,
+      PredictorArn: this.predictorArn,
+    }
+    const { ForecastArn } = await this.forecastService.createForecast(params).promise()
+    this.forecastArn = ForecastArn
+  }
+
+  private async createForecastExportJob() {
+    const params = {
+      Destination: {
+        S3Config: {
+          Path: `s3://${this.bucketName}/forecastExport/`,
+          RoleArn: this.roleArn,
+        },
+      },
+      ForecastArn: this.forecastArn!,
+      ForecastExportJobName: `${this.forecastName}_export_${Date.now()}`,
+    }
+    const { ForecastExportJobArn } = await this.forecastService.createForecastExportJob(params).promise()
+    this.forecastExportJobArn = ForecastExportJobArn
+  }
+}
