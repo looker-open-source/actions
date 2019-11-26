@@ -1,11 +1,10 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
+import { ForecastActionParams } from "./forecast_types"
 
-interface ForecastPredictorParams {
+interface ForecastPredictorParams extends ForecastActionParams {
   forecastService: ForecastService
-  dataFrequency: string
   datasetGroupArn: string
-  predictorName: string
 }
 
 export default class ForecastPredictor {
