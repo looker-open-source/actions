@@ -222,8 +222,8 @@ export class ForecastAction extends Hub.Action {
     const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
     await this.uploadToS3(request, bucketName, s3ObjectKey)
 
-    const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
     // feed data in S3 to Forecast
+    const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
     const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
     await forecastImport.startResourceCreation()
     await this.pollFor(forecastImport.checkResourceCreationComplete)

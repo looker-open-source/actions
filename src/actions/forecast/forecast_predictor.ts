@@ -19,6 +19,7 @@ export default class ForecastPredictor {
     this.dataFrequency = params.dataFrequency
     this.datasetGroupArn = params.datasetGroupArn
     this.predictorName = params.predictorName
+    this.checkResourceCreationComplete = this.checkResourceCreationComplete.bind(this)
   }
 
   async startResourceCreation() {
