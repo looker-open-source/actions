@@ -77,7 +77,7 @@ export class KloudioAction extends Hub.Action {
         winston.info("uuid is" + anonymousId)
         const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
         // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
-        const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
+        const s3Response1 = uploadToS32(s3SignedUrl.signedURL, dataRows)
         winston.info("after uploading the file to s3...", s3Response1)
         data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
             s3Upload: s3Bool, data: anonymousId}
@@ -193,7 +193,7 @@ async function getS3Url(fileName: any, url: any, token: any ) {
 async function uploadToS32(url: any, s3Data1: any) {
 
   const santUrl = url.replace(/['"]+/g, "")
-  const response = await https.put({
+  const response = https.put({
     url: santUrl,
     headers: {"Content-Type": "application/json"},
     json: true,
