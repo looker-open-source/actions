@@ -20,7 +20,6 @@ export class KloudioAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  // supportedDownloadSettings = [Hub.ActionDownloadSettings.Url]
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
