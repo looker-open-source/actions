@@ -197,11 +197,11 @@ async function parseData(lookerData: any, names: any, labels: any) {
 
 async function getS3Url(fileName: any, url: any, token: any ) {
 
-  let s3UrlResponse
+  let errsResponse = { success: true, message:  "success"}
   const comurl = url + fileName + "&apiKey=" + token
   const apiURL = comurl.replace(/['"]+/g, "")
   winston.info("printing kloudio URl..." + apiURL)
-  s3UrlResponse = await https.get({
+  const s3UrlResponse = await https.get({
     url: apiURL,
     headers: { ContentType: "application/json"},
      }).catch((_err) => {
@@ -210,12 +210,12 @@ async function getS3Url(fileName: any, url: any, token: any ) {
         winston.info("error message JSON" + _err.error)
         const s3Error = JSON.parse(_err.error)
         winston.info("error message parsed" + s3Error.error)
-        s3UrlResponse = { success: false, message:  _err.error}
+        errsResponse = { success: false, message:  _err.error}
         winston.error(_err.toString())
       })
-  if (s3UrlResponse.success) {
+  if (errsResponse.success === false || !errsResponse.success) {
     winston.info("block in error case after try catch in getS3Url")
-    return s3UrlResponse
+    return errsResponse
   } else {
     winston.info("block not in error case after try catch in getS3Url")
     return JSON.parse(s3UrlResponse)
