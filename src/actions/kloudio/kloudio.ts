@@ -206,11 +206,15 @@ async function getS3Url(fileName: any, url: any, token: any ) {
     headers: { ContentType: "application/json"},
      }).catch((_err) => {
         winston.info("error success bool" + _err.success)
-        winston.info("error message " + _err.error.error)
+        winston.info("type oferror message JSON" +  typeof _err.error)
+        winston.info("error message JSON" + _err.error)
+        const s3Error = JSON.parse(_err.error)
+        winston.info("error message parsed" + s3Error.error)
         s3UrlResponse = { success: false, message:  _err.error}
         winston.error(_err.toString())
         return s3UrlResponse
       })
+  winston.info("block after try catch in getS3Url")
   return JSON.parse(s3UrlResponse)
 }
 
