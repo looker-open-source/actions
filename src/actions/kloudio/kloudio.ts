@@ -87,16 +87,23 @@ export class KloudioAction extends Hub.Action {
     */
 
     s3Bool = true
+    let response
     const anonymousId = this.generateAnonymousId() + ".json"
     winston.info("uuid is" + anonymousId)
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
     // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
+
+    if (!s3SignedUrl.signedURL) {
+      winston.info("signed url not generated because" + s3SignedUrl)
+      response = { success: false, message: "Please check Kloudio API key" }
+      return new Hub.ActionResponse(response)
+    }
+
     const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
     winston.info("after uploading the file to s3...", s3Response1)
     data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
        s3Upload: s3Bool, data: anonymousId}
 
-    let response
     try {
         const newUri = API_URL.replace(/['"]+/g, "")
         // winston.info("uri is:" + API_URL)
@@ -190,14 +197,21 @@ async function parseData(lookerData: any, names: any, labels: any) {
 
 async function getS3Url(fileName: any, url: any, token: any ) {
 
+  let s3UrlResponse
   const comurl = url + fileName + "&apiKey=" + token
   const apiURL = comurl.replace(/['"]+/g, "")
   winston.info("printing kloudio URl..." + apiURL)
-  const response = await https.get({
+  s3UrlResponse = await https.get({
     url: apiURL,
     headers: { ContentType: "application/json"},
-     }).catch((_err) => { winston.error(_err.toString()) })
-  return JSON.parse(response)
+     }).catch((_err) => {
+        winston.info("error success bool" + _err.success)
+        winston.info("error message " + _err.error)
+        s3UrlResponse = { success: false, message:  _err.error}
+        winston.error(_err.toString())
+        return s3UrlResponse
+      })
+  return JSON.parse(s3UrlResponse)
 }
 
 async function uploadToS32(url: any, s3Data1: any) {
