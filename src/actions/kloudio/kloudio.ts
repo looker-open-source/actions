@@ -94,8 +94,8 @@ export class KloudioAction extends Hub.Action {
     // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
 
     if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
-      winston.info("signed url not generated because" + s3SignedUrl)
-      response = { success: false, message: "Please check Kloudio API key" }
+      // winston.info("signed url not generated because" + s3SignedUrl)
+      response = { success: false, message: "Invalid Kloudio API key" }
       return new Hub.ActionResponse(response)
     }
 
@@ -200,24 +200,24 @@ async function getS3Url(fileName: any, url: any, token: any ) {
   let errsResponse = { success: true, message:  "success"}
   const comurl = url + fileName + "&apiKey=" + token
   const apiURL = comurl.replace(/['"]+/g, "")
-  winston.info("printing kloudio URl..." + apiURL)
+  // winston.info("printing kloudio URl..." + apiURL)
   const s3UrlResponse = await https.get({
     url: apiURL,
     headers: { ContentType: "application/json"},
      }).catch((_err) => {
-        winston.info("error success bool" + _err.success)
+       /* winston.info("error success bool" + _err.success)
         winston.info("type oferror message JSON" +  typeof _err.error)
         winston.info("error message JSON" + _err.error)
         const s3Error = JSON.parse(_err.error)
-        winston.info("error message parsed" + s3Error.error)
+        winston.info("error message parsed" + s3Error.error) */
         errsResponse = { success: false, message:  _err.error}
         winston.error(_err.toString())
       })
   if (errsResponse.success === false || !errsResponse.success) {
-    winston.info("block in error case after try catch in getS3Url")
+    // winston.info("block in error case after try catch in getS3Url")
     return errsResponse
   } else {
-    winston.info("block not in error case after try catch in getS3Url")
+    // winston.info("block not in error case after try catch in getS3Url")
     return JSON.parse(s3UrlResponse)
   }
 }
