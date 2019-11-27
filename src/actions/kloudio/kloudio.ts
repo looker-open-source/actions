@@ -20,7 +20,7 @@ export class KloudioAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  supportedDownloadSettings = [Hub.ActionDownloadSettings.Url]
+  // supportedDownloadSettings = [Hub.ActionDownloadSettings.Url]
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
@@ -59,8 +59,7 @@ export class KloudioAction extends Hub.Action {
       return new Hub.ActionResponse(response)
     }
 
-    const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
-    winston.info("after uploading the file to s3..." + s3Response1)
+    await uploadToS32(s3SignedUrl.signedURL, dataRows)
     data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
        s3Upload: s3Bool, data: anonymousId}
 
