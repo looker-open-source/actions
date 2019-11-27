@@ -5,8 +5,7 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 
 const sizeof = require("object-sizeof")
-const MAX_DATA_BYTES = 500
-// const signedUrl = "https://api-dev.kloud.io/v1/tools/signed-url-put-object?key="
+// const MAX_DATA_BYTES = 500
 const signedUrl = "https://api-test.kloud.io/v1/tools/signed-url-put-object?key="
 // const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 const API_URL = "https://czd7a5synj.execute-api.us-west-2.amazonaws.com/test/dest/send"
@@ -69,6 +68,8 @@ export class KloudioAction extends Hub.Action {
     const dataSize = sizeof(dataRows)
     // winston.info("size of original data" + sizeof(request.attachment.dataJSON))
     winston.info("size of data" + dataSize)
+
+    /*
     if ( dataSize > MAX_DATA_BYTES) {
         s3Bool = true
         const anonymousId = this.generateAnonymousId() + ".json"
@@ -83,6 +84,17 @@ export class KloudioAction extends Hub.Action {
         data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
             s3Upload: s3Bool, data: dataRows}
     }
+    */
+
+    s3Bool = true
+    const anonymousId = this.generateAnonymousId() + ".json"
+    winston.info("uuid is" + anonymousId)
+    const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
+    // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
+    const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
+    winston.info("after uploading the file to s3...", s3Response1)
+    data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
+       s3Upload: s3Bool, data: anonymousId}
 
     let response
     try {
@@ -100,7 +112,7 @@ export class KloudioAction extends Hub.Action {
            winston.info("parsing error code" + error.emailCode)
            winston.error(_err.toString())
           })
-        winston.info("lambda url resp " + lambdaResponse)
+       // winston.info("lambda url resp " + lambdaResponse)
 
         if (!lambdaResponse.success || lambdaResponse.success === false) {
           winston.info("lambda url resp is not sucess " + lambdaResponse)
@@ -125,7 +137,7 @@ export class KloudioAction extends Hub.Action {
       winston.info("Inside catch statement" + e)
       response = { success: false, message: e.message }
     }
-    winston.info("JSON stringify response" + JSON.stringify(response))
+   // winston.info("JSON stringify response" + JSON.stringify(response))
     return new Hub.ActionResponse(response)
   }
 
