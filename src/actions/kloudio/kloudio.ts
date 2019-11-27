@@ -4,12 +4,9 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-// const sizeof = require("object-sizeof")
-// const MAX_DATA_BYTES = 500
 const signedUrl = "https://api-test.kloud.io/v1/tools/signed-url-put-object?key="
-// const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
 const API_URL = "https://czd7a5synj.execute-api.us-west-2.amazonaws.com/test/dest/send"
-let s3Bool = false
+const s3Bool = true
 let data = {}
 
 export class KloudioAction extends Hub.Action {
@@ -18,7 +15,6 @@ export class KloudioAction extends Hub.Action {
   label = "Kloudio"
   iconName = "kloudio/kloudio.svg"
   description = "Add records to a Google Spreadsheet."
-  // usesStreaming = true
   params = []
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetail]
@@ -44,34 +40,18 @@ export class KloudioAction extends Hub.Action {
       throw "Request payload is an invalid format."
     }
 
-    // winston.info(request.formParams.apiKey)
-    // winston.info(request.formParams.url)
     winston.info(typeof request.attachment.dataJSON)
-    // winston.info(JSON.stringify(request.attachment.dataJSON.data))
 
     const { spreadsheetId, sheetId }  = await parseGsheet(request.formParams.url)
-    // const gsheeturl = encodeURIComponent(request.formParams.url)
-   // winston.info("encoded gsheet url " + spreadsheetId + " " + sheetId)
 
-    // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
-   // winston.info(labels[0])
     const finalLabels = []
     finalLabels.push(labels)
-    // winston.info(finalLabels[0])
     const names = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
-   // winston.info(names[0])
     const dataRows = await parseData(request.attachment.dataJSON.data, names, finalLabels)
-    // winston.info("first of row data is " + JSON.stringify(dataRows[0]))
-    //
 
-    // const dataSize = sizeof(dataRows)
-    // winston.info("size of data" + dataSize)
-
-    s3Bool = true
     let response
     const anonymousId = this.generateAnonymousId() + ".json"
-    // winston.info("uuid is" + anonymousId)
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
 
     if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) { 
@@ -86,7 +66,6 @@ export class KloudioAction extends Hub.Action {
 
     try {
         const newUri = API_URL.replace(/['"]+/g, "")
-        // winston.info("Lambda new uri is:" + newUri)
         const lambdaResponse = await https.post({
         url: newUri,
         headers: {"Content-Type": "application/json"},
@@ -134,10 +113,6 @@ export class KloudioAction extends Hub.Action {
 }
 
 async function parseData(lookerData: any, names: any, labels: any) {
-    // const dataLen = lookerData.length
-    // const rowL = names.length
-    // winston.info("length of data is " +  dataLen)
-    // winston.info("length of row is " +  rowL)
     return new Promise<any>( async (resolve, reject) => {
         try {
             for (const row of lookerData) {
