@@ -93,7 +93,7 @@ export class KloudioAction extends Hub.Action {
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
     // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
 
-    if (!s3SignedUrl.signedURL) {
+    if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
       winston.info("signed url not generated because" + s3SignedUrl)
       response = { success: false, message: "Please check Kloudio API key" }
       return new Hub.ActionResponse(response)
@@ -206,7 +206,7 @@ async function getS3Url(fileName: any, url: any, token: any ) {
     headers: { ContentType: "application/json"},
      }).catch((_err) => {
         winston.info("error success bool" + _err.success)
-        winston.info("error message " + _err.error)
+        winston.info("error message " + _err.error.error)
         s3UrlResponse = { success: false, message:  _err.error}
         winston.error(_err.toString())
         return s3UrlResponse
