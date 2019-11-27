@@ -4,7 +4,7 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const sizeof = require("object-sizeof")
+// const sizeof = require("object-sizeof")
 // const MAX_DATA_BYTES = 500
 const signedUrl = "https://api-test.kloud.io/v1/tools/signed-url-put-object?key="
 // const API_URL = "https://9zwd9odg8i.execute-api.us-west-2.amazonaws.com/dev/dest/send"
@@ -44,71 +44,49 @@ export class KloudioAction extends Hub.Action {
       throw "Request payload is an invalid format."
     }
 
-    winston.info(request.formParams.apiKey)
-    winston.info(request.formParams.url)
+    // winston.info(request.formParams.apiKey)
+    // winston.info(request.formParams.url)
     winston.info(typeof request.attachment.dataJSON)
     // winston.info(JSON.stringify(request.attachment.dataJSON.data))
 
     const { spreadsheetId, sheetId }  = await parseGsheet(request.formParams.url)
     // const gsheeturl = encodeURIComponent(request.formParams.url)
-    winston.info("encoded gsheet url " + spreadsheetId + " " + sheetId)
+   // winston.info("encoded gsheet url " + spreadsheetId + " " + sheetId)
 
     // const dataFile = JSON.stringify(request.attachment.dataJSON)
     const labels = request.attachment.dataJSON.fields.dimensions.map((label: { label: any; }) => label.label)
-    winston.info(labels[0])
+   // winston.info(labels[0])
     const finalLabels = []
     finalLabels.push(labels)
-    winston.info(finalLabels[0])
+    // winston.info(finalLabels[0])
     const names = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
-    winston.info(names[0])
+   // winston.info(names[0])
     const dataRows = await parseData(request.attachment.dataJSON.data, names, finalLabels)
-    winston.info("first of row data is " + JSON.stringify(dataRows[0]))
+    // winston.info("first of row data is " + JSON.stringify(dataRows[0]))
     //
 
-    const dataSize = sizeof(dataRows)
-    // winston.info("size of original data" + sizeof(request.attachment.dataJSON))
-    winston.info("size of data" + dataSize)
-
-    /*
-    if ( dataSize > MAX_DATA_BYTES) {
-        s3Bool = true
-        const anonymousId = this.generateAnonymousId() + ".json"
-        winston.info("uuid is" + anonymousId)
-        const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
-        // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
-        const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
-        winston.info("after uploading the file to s3...", s3Response1)
-        data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
-            s3Upload: s3Bool, data: anonymousId}
-    } else {
-        data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
-            s3Upload: s3Bool, data: dataRows}
-    }
-    */
+    // const dataSize = sizeof(dataRows)
+    // winston.info("size of data" + dataSize)
 
     s3Bool = true
     let response
     const anonymousId = this.generateAnonymousId() + ".json"
-    winston.info("uuid is" + anonymousId)
+    // winston.info("uuid is" + anonymousId)
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
-    // winston.info("after getting signed URL s3...", s3SignedUrl.signedURL)
 
-    if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
-      // winston.info("signed url not generated because" + s3SignedUrl)
+    if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) { 
       response = { success: false, message: "Invalid Kloudio API key" }
       return new Hub.ActionResponse(response)
     }
 
     const s3Response1 = await uploadToS32(s3SignedUrl.signedURL, dataRows)
-    winston.info("after uploading the file to s3...", s3Response1)
+    winston.info("after uploading the file to s3..." + s3Response1)
     data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
        s3Upload: s3Bool, data: anonymousId}
 
     try {
         const newUri = API_URL.replace(/['"]+/g, "")
-        // winston.info("uri is:" + API_URL)
-        winston.info("Lambda new uri is:" + newUri)
-       // console.log("uri is:" + uri);
+        // winston.info("Lambda new uri is:" + newUri)
         const lambdaResponse = await https.post({
         url: newUri,
         headers: {"Content-Type": "application/json"},
@@ -119,7 +97,6 @@ export class KloudioAction extends Hub.Action {
            winston.info("parsing error code" + error.emailCode)
            winston.error(_err.toString())
           })
-       // winston.info("lambda url resp " + lambdaResponse)
 
         if (!lambdaResponse.success || lambdaResponse.success === false) {
           winston.info("lambda url resp is not sucess " + lambdaResponse)
@@ -127,24 +104,10 @@ export class KloudioAction extends Hub.Action {
         } else {
           response = { success: true, message: lambdaResponse.message }
         }
-        // tslint:disable-next-line: variable-name
-        // response = { success: true, message: "data uploaded" }
-
-        // code to call lambda function
-       /* const lambResp = await lambdaDest(data)
-        winston.info(lambResp)
-        // const parseLambda = JSON.parse(lambResp.Payload)
-        if (lambResp.statusCode !== 200) {
-          response = { success: false, message: lambResp.body.error }
-        } else {
-          response = { success: true, message: "data uploaded" }
-        }*/
-
     } catch (e) {
       winston.info("Inside catch statement" + e)
       response = { success: false, message: e.message }
     }
-   // winston.info("JSON stringify response" + JSON.stringify(response))
     return new Hub.ActionResponse(response)
   }
 
@@ -171,10 +134,10 @@ export class KloudioAction extends Hub.Action {
 }
 
 async function parseData(lookerData: any, names: any, labels: any) {
-    const dataLen = lookerData.length
-    const rowL = names.length
-    winston.info("length of data is " +  dataLen)
-    winston.info("length of row is " +  rowL)
+    // const dataLen = lookerData.length
+    // const rowL = names.length
+    // winston.info("length of data is " +  dataLen)
+    // winston.info("length of row is " +  rowL)
     return new Promise<any>( async (resolve, reject) => {
         try {
             for (const row of lookerData) {
@@ -200,24 +163,16 @@ async function getS3Url(fileName: any, url: any, token: any ) {
   let errsResponse = { success: true, message:  "success"}
   const comurl = url + fileName + "&apiKey=" + token
   const apiURL = comurl.replace(/['"]+/g, "")
-  // winston.info("printing kloudio URl..." + apiURL)
   const s3UrlResponse = await https.get({
     url: apiURL,
     headers: { ContentType: "application/json"},
      }).catch((_err) => {
-       /* winston.info("error success bool" + _err.success)
-        winston.info("type oferror message JSON" +  typeof _err.error)
-        winston.info("error message JSON" + _err.error)
-        const s3Error = JSON.parse(_err.error)
-        winston.info("error message parsed" + s3Error.error) */
         errsResponse = { success: false, message:  _err.error}
         winston.error(_err.toString())
       })
   if (errsResponse.success === false || !errsResponse.success) {
-    // winston.info("block in error case after try catch in getS3Url")
     return errsResponse
   } else {
-    // winston.info("block not in error case after try catch in getS3Url")
     return JSON.parse(s3UrlResponse)
   }
 }
