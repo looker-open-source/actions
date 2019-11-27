@@ -212,10 +212,14 @@ async function getS3Url(fileName: any, url: any, token: any ) {
         winston.info("error message parsed" + s3Error.error)
         s3UrlResponse = { success: false, message:  _err.error}
         winston.error(_err.toString())
-        return s3UrlResponse
       })
-  winston.info("block after try catch in getS3Url")
-  return JSON.parse(s3UrlResponse)
+  if (s3UrlResponse.success) {
+    winston.info("block in error case after try catch in getS3Url")
+    return s3UrlResponse
+  } else {
+    winston.info("block not in error case after try catch in getS3Url")
+    return JSON.parse(s3UrlResponse)
+  }
 }
 
 async function uploadToS32(url: any, s3Data1: any) {
