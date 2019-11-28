@@ -53,7 +53,7 @@ export class KloudioAction extends Hub.Action {
     const anonymousId = this.generateAnonymousId() + ".json"
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
 
-    if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) { 
+    if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
       response = { success: false, message: "Invalid Kloudio API key" }
       return new Hub.ActionResponse(response)
     }
