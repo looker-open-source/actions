@@ -8,8 +8,6 @@ export interface ForecastActionParams {
   secretAccessKey: string
   region: string
   roleArn: string
-  predictorName: string
-  forecastName: string
 }
 
 export interface ForecastWorkflowStage {
