@@ -1,4 +1,4 @@
-export interface ForecastActionParams {
+export interface ForecastDataImportActionParams {
   bucketName: string
   datasetName: string
   datasetGroupName: string
@@ -8,6 +8,27 @@ export interface ForecastActionParams {
   secretAccessKey: string
   region: string
   roleArn: string
+}
+
+export interface ForecastTrainPredictorActionParams {
+  datasetGroupArn: string
+  forecastingDomain: string
+  dataFrequency: string
+  predictorName: string
+  accessKeyId: string
+  secretAccessKey: string
+  region: string
+  roleArn: string
+}
+
+export interface ForecastExportActionParams {
+  bucketName: string
+  accessKeyId: string
+  secretAccessKey: string
+  region: string
+  roleArn: string
+  predictorArn: string
+  forecastName: string
 }
 
 export interface ForecastWorkflowStage {

@@ -1,13 +1,12 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import { ForecastActionParams, ForecastWorkflowStage } from "./forecast_types"
+import { ForecastExportActionParams, ForecastWorkflowStage } from "./forecast_types"
 
-interface ForecastQueryExporterParams extends ForecastActionParams {
+interface ForecastExportParams extends ForecastExportActionParams {
   forecastService: ForecastService
-  predictorArn: string
 }
 
-export default class ForecastQueryExporter implements ForecastWorkflowStage {
+export default class ForecastExport implements ForecastWorkflowStage {
   private forecastService: ForecastService
   private forecastName: string
   private predictorArn: string
@@ -16,7 +15,7 @@ export default class ForecastQueryExporter implements ForecastWorkflowStage {
   private forecastArn: string | undefined
   private forecastExportJobArn: string | undefined
 
-  constructor(params: ForecastQueryExporterParams) {
+  constructor(params: ForecastExportParams) {
     this.forecastService = params.forecastService
     this.forecastName = params.forecastName
     this.predictorArn = params.predictorArn
@@ -54,7 +53,7 @@ export default class ForecastQueryExporter implements ForecastWorkflowStage {
     const params = {
       Destination: {
         S3Config: {
-          Path: `s3://${this.bucketName}/forecastExport/`,
+          Path: `s3://${this.bucketName}/ForecastExport/`,
           RoleArn: this.roleArn,
         },
       },

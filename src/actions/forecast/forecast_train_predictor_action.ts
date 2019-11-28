@@ -2,25 +2,17 @@ import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import ForecastDataImport from "./forecast_import"
-import { ForecastDataImportActionParams } from "./forecast_types"
+import ForecastPredictor from "./forecast_predictor"
+import { ForecastTrainPredictorActionParams } from "./forecast_types"
 import { poll } from "./poller"
-import { uploadToS3 } from "./s3_upload"
 
 // TODO: parseInt/Float on numeric cols from Looker, as they contain commas
-export class ForecastDataImportAction extends Hub.Action {
+export class ForecastTrainPredictorAction extends Hub.Action {
+  // required fields
   // TODO: make email-related fields required?
-  name = "amazon_forecast_data_import"
-  label = "Amazon Forecast Data Import"
+  name = "amazon_forecast_predictor"
+  label = "Amazon Forecast Train Predictor"
   supportedActionTypes = [Hub.ActionType.Query]
-  description = "Import data into Amazon Forecast"
-  usesStreaming = true
-  requiredFields = []
-  supportedFormats = [Hub.ActionFormat.Csv]
-  supportedFormattings = [Hub.ActionFormatting.Unformatted]
-  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  // iconName = "" // TODO
-
   params = [
     {
       name: "accessKeyId",
@@ -35,22 +27,6 @@ export class ForecastDataImportAction extends Hub.Action {
       required: true,
       sensitive: true,
       description: "Your AWS secret access key.",
-    },
-    // TODO: use sourceBucketName and destinationBucketName. put results under /forecast-import
-    // and /forecast-export paths so buckets can safely be the same or different
-    {
-      name: "bucketName",
-      label: "Bucket Name",
-      required: true,
-      sensitive: false,
-      description: "Name of the bucket Amazon Forecast will read your Looker data from",
-    },
-    {
-      name: "roleArn",
-      label: "Role ARN",
-      required: true,
-      sensitive: false,
-      description: "ARN of role allowing Forecast to read from your S3 bucket",
     },
     {
       name: "region",
@@ -107,29 +83,25 @@ export class ForecastDataImportAction extends Hub.Action {
     },
   ]
 
+  // optional fields
+  description = "Train a time series prediction model with Amazon Forecast"
+  usesStreaming = true
+  requiredFields = []
+  supportedFormats = [Hub.ActionFormat.Csv] // TODO: can be empty array, since this action needs no data?
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  // iconName = "" // TODO
+
   async form(request: Hub.ActionRequest) {
     winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
-    // TODO: for early development, these are string fields for now. Use more sane inputs after execute is implemented
     // TODO: add description props to these fields
     // TODO: populate options
-    // TODO: include "include country for holidays" field
+    // TODO: include extra params: "country for holidays", backtest window, other backtest param
     form.fields = [
       {
-        label: "Dataset group name",
-        name: "datasetGroupName",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Forecasting domain",
-        name: "forecastingDomain",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Dataset name",
-        name: "datasetName",
+        label: "Dataset group ARN",
+        name: "datasetGroupArn",
         required: false,
         type: "string",
       },
@@ -140,14 +112,8 @@ export class ForecastDataImportAction extends Hub.Action {
         type: "string",
       },
       {
-        label: "Data Schema",
-        name: "dataSchema",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Timestamp Format",
-        name: "timestampFormat",
+        label: "Predictor Name",
+        name: "predictorName",
         required: false,
         type: "string",
       },
@@ -157,8 +123,8 @@ export class ForecastDataImportAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.importFromS3ToForecast(request).catch(winston.error)
-      // response acknowledges that import has started, not that it's complete
+      this.trainPredictorModel(request).catch(winston.error)
+      // response acknowledges that predictor training has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
       winston.error(JSON.stringify(err, null, 2))
@@ -167,37 +133,30 @@ export class ForecastDataImportAction extends Hub.Action {
   }
 
   // TODO: better function name?
-  private async importFromS3ToForecast(request: Hub.ActionRequest) {
+  private async trainPredictorModel(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
       accessKeyId,
       secretAccessKey,
       region,
-      bucketName,
-      datasetName,
     } = actionParams
-    // upload looker data to S3
-    const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
-    await uploadToS3(request, bucketName, s3ObjectKey)
-
     // create Forecast dataset resource & feed in S3 data
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
-    const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
-    await forecastImport.startResourceCreation()
-    await poll(forecastImport.isResourceCreationComplete)
-    // TODO: send email on success or failure
+    const forecastPredictor = new ForecastPredictor({ forecastService, ...actionParams })
+    await forecastPredictor.startResourceCreation()
+    await poll(forecastPredictor.isResourceCreationComplete)
+    // TODO: send email on success/fail?
   }
 
-  private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastDataImportActionParams {
+  private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastTrainPredictorActionParams {
     const {
-      datasetName,
-      datasetGroupName,
+      datasetGroupArn,
       forecastingDomain,
       dataFrequency,
+      predictorName,
     } = request.formParams
 
     const {
-      bucketName,
       accessKeyId,
       secretAccessKey,
       region,
@@ -205,15 +164,6 @@ export class ForecastDataImportAction extends Hub.Action {
     } = request.params
     // TODO: make required params checking more compact?
     // TODO: are there AWS naming rules that I need to enforce in the UI?
-    if (!bucketName) {
-      throw new Error("Missing bucketName")
-    }
-    if (!datasetName) {
-      throw new Error("Missing datasetName")
-    }
-    if (!datasetGroupName) {
-      throw new Error("Missing datasetGroupName")
-    }
     if (!forecastingDomain) {
       throw new Error("Missing forecastingDomain")
     }
@@ -229,22 +179,27 @@ export class ForecastDataImportAction extends Hub.Action {
     if (!region) {
       throw new Error("Missing region")
     }
+    if (!predictorName) {
+      throw new Error("Missing predictorName")
+    }
+    if (!datasetGroupArn) {
+      throw new Error("Missing datasetGroupArn")
+    }
     if (!roleArn) {
       throw new Error("Missing roleArn")
     }
 
     return {
-      bucketName,
-      datasetName,
-      datasetGroupName,
       forecastingDomain,
       dataFrequency,
       accessKeyId,
       secretAccessKey,
       region,
+      predictorName,
+      datasetGroupArn,
       roleArn,
     }
   }
 }
 
-Hub.addAction(new ForecastDataImportAction())
+Hub.addAction(new ForecastTrainPredictorAction())

@@ -1,10 +1,9 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import { ForecastActionParams, ForecastWorkflowStage } from "./forecast_types"
+import { ForecastTrainPredictorActionParams, ForecastWorkflowStage } from "./forecast_types"
 
-interface ForecastPredictorParams extends ForecastActionParams {
+interface ForecastPredictorParams extends ForecastTrainPredictorActionParams {
   forecastService: ForecastService
-  datasetGroupArn: string
 }
 
 export default class ForecastPredictor implements ForecastWorkflowStage {

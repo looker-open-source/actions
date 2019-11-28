@@ -2,20 +2,25 @@ import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import ForecastDataImport from "./forecast_import"
-import ForecastPredictor from "./forecast_predictor"
-import ForecastQueryExporter from "./forecast_query_export"
-import { ForecastActionParams } from "./forecast_types"
+import ForecastQueryExporter from "./forecast_export"
+import { ForecastExportActionParams } from "./forecast_types"
 import { poll } from "./poller"
-import { uploadToS3 } from "./s3_upload"
 
-// TODO: parseInt/Float on numeric cols from Looker, as they contain commas
-export class ForecastAction extends Hub.Action {
+// TODO: change nomenclature: export -> generate prediction
+export class ForecastExportAction extends Hub.Action {
   // required fields
-  // TODO: make email-related fields required?
-  name = "amazon_forecast"
-  label = "Amazon Forecast"
+  // TODO: make email-related fields required
+  name = "amazon_forecast_export"
+  label = "Amazon Forecast Export"
+  description = "Import data into Amazon Forecast, train a model, and generate a forecast from that model"
+  usesStreaming = true
+  requiredFields = []
+  supportedFormats = [Hub.ActionFormat.Csv]
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedActionTypes = [Hub.ActionType.Query]
+  // iconName = "" // TODO
+
   params = [
     {
       name: "accessKeyId",
@@ -31,21 +36,21 @@ export class ForecastAction extends Hub.Action {
       sensitive: true,
       description: "Your AWS secret access key.",
     },
-    // TODO: use sourceBucketName and destinationBucketName. put results under /forecast-import
+    // TODO: put results under /forecast-import
     // and /forecast-export paths so buckets can safely be the same or different
     {
       name: "bucketName",
       label: "Bucket Name",
       required: true,
       sensitive: false,
-      description: "Name of the bucket Amazon Forecast will read your Looker data from",
+      description: "Name of the bucket Amazon Forecast will write prediction to",
     },
     {
       name: "roleArn",
       label: "Role ARN",
       required: true,
       sensitive: false,
-      description: "ARN of role allowing Forecast to read from your S3 bucket",
+      description: "ARN of role allowing Forecast to write to your S3 bucket",
     },
     {
       name: "region",
@@ -102,62 +107,16 @@ export class ForecastAction extends Hub.Action {
     },
   ]
 
-  // optional fields
-  description = "Import data into Amazon Forecast, train a model, and generate a forecast from that model"
-  usesStreaming = true
-  requiredFields = []
-  supportedFormats = [Hub.ActionFormat.Csv]
-  supportedFormattings = [Hub.ActionFormatting.Unformatted]
-  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  // iconName = "" // TODO
-
   async form(request: Hub.ActionRequest) {
     winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
     // TODO: for early development, these are string fields for now. Use more sane inputs after execute is implemented
     // TODO: add description props to these fields
     // TODO: populate options
-    // TODO: should include "include country for holidays" field?
     form.fields = [
       {
-        label: "Dataset group name",
-        name: "datasetGroupName",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Forecasting domain",
-        name: "forecastingDomain",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Dataset name",
-        name: "datasetName",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Data Frequency",
-        name: "dataFrequency",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Data Schema",
-        name: "dataSchema",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Timestamp Format",
-        name: "timestampFormat",
-        required: false,
-        type: "string",
-      },
-      {
-        label: "Predictor Name",
-        name: "predictorName",
+        label: "Predictor ARN",
+        name: "predictorArn",
         required: false,
         type: "string",
       },
@@ -175,7 +134,7 @@ export class ForecastAction extends Hub.Action {
       },
       {
         label: "Forecast Destination Bucket",
-        name: "forecastDestinationBucket",
+        name: "bucketName",
         required: false,
         type: "string",
       },
@@ -185,7 +144,7 @@ export class ForecastAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.startForecastWorkflow(request).catch(winston.error)
+      this.generateForecastAndExport(request).catch(winston.error)
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -194,53 +153,28 @@ export class ForecastAction extends Hub.Action {
     }
   }
 
-  private async startForecastWorkflow(request: Hub.ActionRequest) {
+  // TODO: different method name?
+  private async generateForecastAndExport(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
       accessKeyId,
       secretAccessKey,
       region,
-      bucketName,
-      datasetName,
     } = actionParams
-    // upload looker data to S3
-    const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
-    await uploadToS3(request, bucketName, s3ObjectKey)
-
     // create Forecast dataset resource & feed in S3 data
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
-    const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
-    await forecastImport.startResourceCreation()
-    await poll(forecastImport.isResourceCreationComplete)
-
-    // build Forecast predictor
-    const forecastPredictor = new ForecastPredictor({
-      forecastService,
-      datasetGroupArn: forecastImport.datasetGroupArn!,
-      ...actionParams,
-    })
-    await forecastPredictor.startResourceCreation()
-    await poll(forecastPredictor.isResourceCreationComplete)
-
-    // perform time series prediction and export results to S3
     const forecastQueryExporter = new ForecastQueryExporter({
       forecastService,
-      predictorArn: forecastPredictor.predictorArn!,
       ...actionParams,
     })
     await forecastQueryExporter.startResourceCreation()
     await poll(forecastQueryExporter.isResourceCreationComplete)
-
-    // TODO: send email on success?
+    // TODO: send email on success/failure
   }
 
-  private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastActionParams {
+  private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastExportActionParams {
     const {
-      datasetName,
-      datasetGroupName,
-      forecastingDomain,
-      dataFrequency,
-      predictorName,
+      predictorArn,
       forecastName,
     } = request.formParams
 
@@ -256,18 +190,6 @@ export class ForecastAction extends Hub.Action {
     if (!bucketName) {
       throw new Error("Missing bucketName")
     }
-    if (!datasetName) {
-      throw new Error("Missing datasetName")
-    }
-    if (!datasetGroupName) {
-      throw new Error("Missing datasetGroupName")
-    }
-    if (!forecastingDomain) {
-      throw new Error("Missing forecastingDomain")
-    }
-    if (!dataFrequency) {
-      throw new Error("Missing dataFrequency")
-    }
     if (!accessKeyId) {
       throw new Error("Missing accessKeyId")
     }
@@ -280,8 +202,8 @@ export class ForecastAction extends Hub.Action {
     if (!roleArn) {
       throw new Error("Missing roleArn")
     }
-    if (!predictorName) {
-      throw new Error("Missing predictorName")
+    if (!predictorArn) {
+      throw new Error("Missing predictorArn")
     }
     if (!forecastName) {
       throw new Error("Missing forecastName")
@@ -289,18 +211,14 @@ export class ForecastAction extends Hub.Action {
 
     return {
       bucketName,
-      datasetName,
-      datasetGroupName,
-      forecastingDomain,
-      dataFrequency,
       accessKeyId,
       secretAccessKey,
       region,
       roleArn,
-      predictorName,
+      predictorArn,
       forecastName,
     }
   }
 }
 
-Hub.addAction(new ForecastAction())
+Hub.addAction(new ForecastExportAction())

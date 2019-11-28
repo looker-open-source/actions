@@ -1,8 +1,8 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import { ForecastActionParams, ForecastWorkflowStage } from "./forecast_types"
+import { ForecastDataImportActionParams, ForecastWorkflowStage } from "./forecast_types"
 
-interface ForecastDataImportParams extends ForecastActionParams {
+interface ForecastDataImportParams extends ForecastDataImportActionParams {
   forecastService: ForecastService
   s3ObjectKey: string
 }
