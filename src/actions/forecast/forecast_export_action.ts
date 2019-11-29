@@ -1,6 +1,7 @@
 import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
+import * as S3 from "aws-sdk/clients/s3"
 import * as winston from "winston"
 import ForecastQueryExporter from "./forecast_export"
 import { ForecastExportActionParams } from "./forecast_types"
@@ -110,33 +111,34 @@ export class ForecastExportAction extends Hub.Action {
   async form(request: Hub.ActionRequest) {
     winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
-    // TODO: for early development, these are string fields for now. Use more sane inputs after execute is implemented
-    // TODO: add description props to these fields
-    // TODO: populate options
+    const predictorOptions = await this.listPredictors(request)
+    const bucketOptions = await this.listBuckets(request)
+
     form.fields = [
       {
         label: "Predictor ARN",
         name: "predictorArn",
-        required: false,
-        type: "string",
+        required: true,
+        type: "select",
+        options: predictorOptions
+        .map((p) => ({ name: p.PredictorArn!, label: p.PredictorName! })),
+        description: "The predictor you want to use to create forecasts",
       },
-      {
-        label: "Forecast Horizon",
-        name: "forecastHorizon",
-        required: false,
-        type: "string",
-      },
-      {
+      { // TODO: should I eliminate this input and use the predictor name  + _forecast_export
+        // that way there is less user input required
         label: "Forecast Name",
         name: "forecastName",
-        required: false,
+        required: true,
         type: "string",
+        description: "Choose a name to identify this forecast",
       },
       {
         label: "Forecast Destination Bucket",
         name: "bucketName",
-        required: false,
-        type: "string",
+        required: true,
+        type: "select",
+        description: "Choose a destination bucket for your forecast",
+        options: bucketOptions.map(({ Name }) => ({ name: Name!, label: Name! })),
       },
     ]
     return form
@@ -170,6 +172,37 @@ export class ForecastExportAction extends Hub.Action {
     await forecastQueryExporter.startResourceCreation()
     await poll(forecastQueryExporter.isResourceCreationComplete)
     // TODO: send email on success/failure
+  }
+
+  private async listBuckets(request: Hub.ActionRequest) {
+    const s3 = new S3({
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
+    })
+    const results = []
+    const { Buckets } = await s3.listBuckets().promise()
+    if (Buckets) {
+      results.push(...Buckets)
+    }
+    return results
+  }
+
+  private async listPredictors(request: Hub.ActionRequest) {
+    const forecastService = this.forecastServiceFromRequest(request)
+    const { Predictors } = await forecastService.listPredictors().promise()
+    const results = []
+    if (Predictors) {
+      results.push(...Predictors)
+    }
+    return results
+  }
+
+  private forecastServiceFromRequest(request: Hub.ActionRequest) {
+    return new ForecastService({
+      region: request.params.region,
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
+    })
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastExportActionParams {

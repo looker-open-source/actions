@@ -104,7 +104,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       {
         label: "Dataset group ARN",
         name: "datasetGroupArn",
-        required: false,
+        required: true,
         type: "select",
         description: "ARN of the dataset group to use when building the predictor",
         options: datasetGroupOptions
@@ -118,6 +118,13 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         type: "select",
         options: Object.entries(dataFrequencyOptions).map(([name, label]) => ({ name, label })),
         description: "This is the frequency at which entries are registered into your data file",
+      },
+      {
+        label: "Forecast Horizon",
+        name: "forecastHorizon",
+        required: true,
+        type: "string",
+        description: "Specifies the number of time-steps that the model is trained to predict",
       },
       {
         label: "Predictor Name",
@@ -181,6 +188,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       forecastingDomain,
       dataFrequency,
       predictorName,
+      forecastHorizon,
     } = request.formParams
 
     const {
@@ -215,6 +223,9 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     if (!roleArn) {
       throw new Error("Missing roleArn")
     }
+    if (!forecastHorizon) {
+      throw new Error("Missing forecastHorizon")
+    }
 
     return {
       forecastingDomain,
@@ -225,6 +236,8 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       predictorName,
       datasetGroupArn,
       roleArn,
+      // TODO: handle case where this is NaN
+      forecastHorizon: parseInt(forecastHorizon, 10),
     }
   }
 

@@ -19,6 +19,7 @@ export interface ForecastTrainPredictorActionParams {
   secretAccessKey: string
   region: string
   roleArn: string
+  forecastHorizon: number
 }
 
 export interface ForecastExportActionParams {

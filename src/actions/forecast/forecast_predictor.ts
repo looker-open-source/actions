@@ -12,12 +12,14 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
   private dataFrequency: string
   private datasetGroupArn: string
   private predictorName: string
+  private forecastHorizon: number
 
   constructor(params: ForecastPredictorParams) {
     this.forecastService = params.forecastService
     this.dataFrequency = params.dataFrequency
     this.datasetGroupArn = params.datasetGroupArn
     this.predictorName = params.predictorName
+    this.forecastHorizon = params.forecastHorizon
     this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
   }
 
@@ -48,7 +50,7 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
       //   BackTestWindowOffset: 'NUMBER_VALUE',
       //   NumberOfBacktestWindows: 'NUMBER_VALUE'
       // },
-      ForecastHorizon: 50, // TODO: calculate this dynamically
+      ForecastHorizon: this.forecastHorizon,
       InputDataConfig: {
         DatasetGroupArn: this.datasetGroupArn,
       },

@@ -1,3 +1,4 @@
+// TODO: add links to documentation where these options are enumerated
 export const domainOptions = [
   "RETAIL",
    "CUSTOM",
