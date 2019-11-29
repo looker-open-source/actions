@@ -98,7 +98,9 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     // TODO: any error handling needed here?
-    const datasetGroupOptions = await this.listDatasetGroups(request)
+    const datasetGroups = await this.listDatasetGroups(request)
+    const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
+    datasetGroupOptions.unshift({ name: "New Group", label: "New Group" })
 
     form.fields = [
       {
@@ -107,9 +109,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         required: true,
         type: "select",
         description: "ARN of the dataset group to use when building the predictor",
-        options: datasetGroupOptions
-        .map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
-        .concat({ name: "New Group", label: "New Group" }),
+        options: datasetGroupOptions,
       },
       {
         label: "Data Frequency",
@@ -136,7 +136,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       {
         label: "Country for holidays",
         name: "countryForHolidays",
-        required: true,
+        required: false,
         type: "select",
         options: Object.entries(holidayCalendarOptions).map(([name, label]) => ({ name, label })),
         description: "The holiday you want to include for model training",

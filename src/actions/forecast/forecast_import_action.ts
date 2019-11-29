@@ -111,18 +111,25 @@ export class ForecastDataImportAction extends Hub.Action {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     // TODO: any error handling needed here?
-    const datasetGroupOptions = await this.listDatasetGroups(request)
+    const datasetGroups = await this.listDatasetGroups(request)
+    const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
+    datasetGroupOptions.unshift({ name: "New Group", label: "New Group" })
 
     form.fields = [
+      {
+        label: "Dataset name",
+        name: "datasetName",
+        required: true,
+        type: "string",
+        description: "choose a name to distinguish this dataset from others in the dataset group",
+      },
       {
         label: "Dataset group name",
         name: "datasetGroupName",
         required: true,
         type: "select",
         description: "Choose an existing dataset group for this dataset, or create a new one",
-        options: datasetGroupOptions
-        .map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
-        .concat({ name: "New Group", label: "New Group" }),
+        options: datasetGroupOptions,
       },
       {
         label: "Forecasting domain",
@@ -131,13 +138,6 @@ export class ForecastDataImportAction extends Hub.Action {
         type: "select",
         options: domainOptions.map((str) => ({ name: str, label: str })),
         description: "Domain defines the forecasting use case. Choose CUSTOM if no other option applies",
-      },
-      {
-        label: "Dataset name",
-        name: "datasetName",
-        required: true,
-        type: "string",
-        description: "choose a name to distinguish this dataset from others in the dataset group",
       },
       {
         label: "Data Frequency",
