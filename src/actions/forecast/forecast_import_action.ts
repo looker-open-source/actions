@@ -223,6 +223,7 @@ export class ForecastDataImportAction extends Hub.Action {
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastDataImportActionParams {
+    winston.debug(JSON.stringify(request.formParams, null, 2))
     const {
       datasetName,
       datasetGroupArn,
