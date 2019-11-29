@@ -36,8 +36,8 @@ export class ForecastDataImportAction extends Hub.Action {
       sensitive: true,
       description: "Your AWS secret access key.",
     },
-    // TODO: use sourceBucketName and destinationBucketName. put results under /forecast-import
-    // and /forecast-export paths so buckets can safely be the same or different
+    // TODO: put results under /forecast-import and /forecast-export paths
+    // so buckets can safely be the same or different
     {
       name: "bucketName",
       label: "Bucket Name",
@@ -107,49 +107,92 @@ export class ForecastDataImportAction extends Hub.Action {
     },
   ]
 
+  // TODO: add description props to these fields
+  // TODO: include "include country for holidays" field
   async form(request: Hub.ActionRequest) {
-    winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
-    // TODO: for early development, these are string fields for now. Use more sane inputs after execute is implemented
-    // TODO: add description props to these fields
-    // TODO: populate options
-    // TODO: include "include country for holidays" field
+
+    const forecastService = this.forecastServiceFromRequest(request)
+    let datasetGroupOptions = [{ name: "New Group", label: "New Group" }]
+    const { DatasetGroups } = await forecastService.listDatasetGroups().promise()
+    if (DatasetGroups) {
+      const currDatasetGroups = DatasetGroups
+      .map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
+      // aws typings claim DatasetGroupArn/Name can be undefined, hence the filter
+      .filter(({ name, label }) => name && label)
+      datasetGroupOptions = datasetGroupOptions.concat(...currDatasetGroups)
+    }
+
+    const domainOptions = [
+      "RETAIL",
+       "CUSTOM",
+       "INVENTORY_PLANNING",
+       "EC2_CAPACITY",
+       "WORK_FORCE",
+       "WEB_TRAFFIC",
+       "METRICS"]
+
+    const dataFrequencyOptions = {
+      "Y": "Yearly",
+      "M": "Monthly",
+      "W": "Weekly",
+      "D": "Daily",
+      "H": "Hourly",
+      "30min": "Every 30 minutes",
+      "15min": "Every 15 minutes",
+      "10min": "Every 10 minutes",
+      "5min": "Every 5 minutes",
+      "1min": "Every minute",
+    }
+
     form.fields = [
       {
         label: "Dataset group name",
         name: "datasetGroupName",
-        required: false,
-        type: "string",
+        required: true,
+        type: "select",
+        description: "Choose an existing dataset group, or create a new one",
+        options: datasetGroupOptions,
       },
       {
         label: "Forecasting domain",
         name: "forecastingDomain",
-        required: false,
-        type: "string",
+        required: true,
+        type: "select",
+        options: domainOptions.map((str) => ({ name: str, label: str })),
+        description: "Domain defines the forecasting use case. Choose CUSTOM if no other option applies",
       },
       {
         label: "Dataset name",
         name: "datasetName",
-        required: false,
+        required: true,
         type: "string",
+        description: "choose a name to distinguish this dataset from others in the dataset group",
       },
       {
         label: "Data Frequency",
         name: "dataFrequency",
-        required: false,
-        type: "string",
+        required: true,
+        type: "select",
+        options: Object.entries(dataFrequencyOptions).map(([k, v]) => ({ name: k, label: v })),
+        description: "This is the frequency at which entries are registered into your data file",
       },
       {
         label: "Data Schema",
         name: "dataSchema",
-        required: false,
-        type: "string",
+        required: true,
+        type: "textarea",
+        description: `To help Forecast understand the fields of your data, supply a schema.
+        Specify attributes in the same order as your CSV file. See AWS documention for more details.`,
       },
       {
         label: "Timestamp Format",
         name: "timestampFormat",
-        required: false,
+        required: true,
         type: "string",
+        default: "yyyy-MM-dd HH:mm:ss",
+        description: `The format of the timestamp in your dataset.
+        The format you enter here must match the format in your data file`,
       },
     ]
     return form
@@ -170,9 +213,6 @@ export class ForecastDataImportAction extends Hub.Action {
   private async importFromS3ToForecast(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
-      accessKeyId,
-      secretAccessKey,
-      region,
       bucketName,
       datasetName,
     } = actionParams
@@ -181,7 +221,7 @@ export class ForecastDataImportAction extends Hub.Action {
     await uploadToS3(request, bucketName, s3ObjectKey)
 
     // create Forecast dataset resource & feed in S3 data
-    const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
+    const forecastService = this.forecastServiceFromRequest(request)
     const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
     await forecastImport.startResourceCreation()
     await poll(forecastImport.isResourceCreationComplete)
@@ -244,6 +284,14 @@ export class ForecastDataImportAction extends Hub.Action {
       region,
       roleArn,
     }
+  }
+
+  private forecastServiceFromRequest(request: Hub.ActionRequest) {
+    return new ForecastService({
+      region: request.params.region,
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
+    })
   }
 }
 
