@@ -119,7 +119,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         options: Object.entries(dataFrequencyOptions).map(([name, label]) => ({ name, label })),
         description: "The frequency of predictions in a forecast",
       },
-      {
+      { // TODO: should I calculate this value instead of asking for input
         label: "Forecast Horizon",
         name: "forecastHorizon",
         required: true,
@@ -185,7 +185,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastTrainPredictorActionParams {
     const {
       datasetGroupArn,
-      forecastingDomain,
       forecastFrequency,
       predictorName,
       forecastHorizon,
@@ -197,11 +196,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       region,
       roleArn,
     } = request.params
-    // TODO: make required params checking more compact?
     // TODO: are there AWS naming rules that I need to enforce in the UI?
-    if (!forecastingDomain) {
-      throw new Error("Missing forecastingDomain")
-    }
     if (!forecastFrequency) {
       throw new Error("Missing forecastFrequency")
     }
@@ -228,7 +223,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     }
 
     return {
-      forecastingDomain,
       forecastFrequency,
       accessKeyId,
       secretAccessKey,

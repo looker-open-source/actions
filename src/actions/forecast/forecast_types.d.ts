@@ -15,7 +15,6 @@ export interface ForecastDataImportActionParams {
 
 export interface ForecastTrainPredictorActionParams {
   datasetGroupArn: string
-  forecastingDomain: string
   forecastFrequency: string
   predictorName: string
   accessKeyId: string
