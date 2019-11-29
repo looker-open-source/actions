@@ -160,7 +160,7 @@ export class ForecastDataImportAction extends Hub.Action {
       },
       {
         label: "Data Schema",
-        name: "dataSchema",
+        name: "datasetSchema",
         required: true,
         type: "textarea",
         description: `To help Forecast understand the fields of your data, supply a schema.
