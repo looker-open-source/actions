@@ -9,14 +9,14 @@ interface ForecastPredictorParams extends ForecastTrainPredictorActionParams {
 export default class ForecastPredictor implements ForecastWorkflowStage {
   predictorArn: string | undefined
   private forecastService: ForecastService
-  private dataFrequency: string
+  private forecastFrequency: string
   private datasetGroupArn: string
   private predictorName: string
   private forecastHorizon: number
 
   constructor(params: ForecastPredictorParams) {
     this.forecastService = params.forecastService
-    this.dataFrequency = params.dataFrequency
+    this.forecastFrequency = params.forecastFrequency
     this.datasetGroupArn = params.datasetGroupArn
     this.predictorName = params.predictorName
     this.forecastHorizon = params.forecastHorizon
@@ -43,7 +43,7 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
     // TODO: any additonal params required here?
     const params = {
       FeaturizationConfig: {
-        ForecastFrequency: this.dataFrequency,
+        ForecastFrequency: this.forecastFrequency,
       },
       // TODO: include these parameters
       // EvaluationParameters: {

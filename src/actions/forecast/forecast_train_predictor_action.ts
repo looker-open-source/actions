@@ -112,12 +112,12 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         options: datasetGroupOptions,
       },
       {
-        label: "Data Frequency",
-        name: "dataFrequency",
+        label: "Forecast Frequency",
+        name: "forecastFrequency",
         required: true,
         type: "select",
         options: Object.entries(dataFrequencyOptions).map(([name, label]) => ({ name, label })),
-        description: "This is the frequency at which entries are registered into your data file",
+        description: "The frequency of predictions in a forecast",
       },
       {
         label: "Forecast Horizon",
@@ -186,7 +186,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     const {
       datasetGroupArn,
       forecastingDomain,
-      dataFrequency,
+      forecastFrequency,
       predictorName,
       forecastHorizon,
     } = request.formParams
@@ -202,8 +202,8 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     if (!forecastingDomain) {
       throw new Error("Missing forecastingDomain")
     }
-    if (!dataFrequency) {
-      throw new Error("Missing dataFrequency")
+    if (!forecastFrequency) {
+      throw new Error("Missing forecastFrequency")
     }
     if (!accessKeyId) {
       throw new Error("Missing accessKeyId")
@@ -229,7 +229,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
 
     return {
       forecastingDomain,
-      dataFrequency,
+      forecastFrequency,
       accessKeyId,
       secretAccessKey,
       region,
