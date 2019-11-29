@@ -1,7 +1,7 @@
 export interface ForecastDataImportActionParams {
   bucketName: string
   datasetName: string
-  datasetGroupArn: string
+  datasetGroupArn?: string
   forecastingDomain: string
   dataFrequency: string
   accessKeyId: string

@@ -110,11 +110,12 @@ export class ForecastDataImportAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    // TODO: any error handling needed here?
+    // TODO: error handling needed here
     const datasetGroups = await this.listDatasetGroups(request)
     const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
     datasetGroupOptions.unshift({ name: "", label: "New Group" })
 
+    // TODO: parameterize time series type
     form.fields = [
       {
         label: "Dataset name",
@@ -224,16 +225,12 @@ export class ForecastDataImportAction extends Hub.Action {
       region,
       roleArn,
     } = request.params
-    // TODO: make required params checking more compact?
     // TODO: are there AWS naming rules that I need to enforce in the UI?
     if (!bucketName) {
       throw new Error("Missing bucketName")
     }
     if (!datasetName) {
       throw new Error("Missing datasetName")
-    }
-    if (!datasetGroupArn) {
-      throw new Error("Missing datasetGroupArn")
     }
     if (!forecastingDomain) {
       throw new Error("Missing forecastingDomain")

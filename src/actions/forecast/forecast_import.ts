@@ -8,17 +8,17 @@ interface ForecastDataImportParams extends ForecastDataImportActionParams {
 }
 
 export default class ForecastDataImport implements ForecastWorkflowStage {
-  private datasetImportJobArn: string | undefined
   private forecastService: ForecastService
   private s3ObjectKey: string
   private bucketName: string
   private datasetName: string
-  private datasetGroupArn: string
   private forecastingDomain: string
   private dataFrequency: string
   private roleArn: string
-  private datasetArn: string | undefined
   private timestampFormat: string
+  private datasetArn?: string
+  private datasetGroupArn?: string
+  private datasetImportJobArn?: string
 
   constructor(params: ForecastDataImportParams) {
     this.forecastService = params.forecastService
