@@ -16,6 +16,8 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
   private dataFrequency: string
   private roleArn: string
   private timestampFormat: string
+  private datasetSchema: string
+  private datasetType: string
   private datasetArn?: string
   private datasetGroupArn?: string
   private datasetImportJobArn?: string
@@ -30,6 +32,8 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
     this.dataFrequency = params.dataFrequency
     this.roleArn = params.roleArn
     this.timestampFormat = params.timestampFormat
+    this.datasetSchema = params.datasetSchema
+    this.datasetType = params.datasetType
     this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
   }
 
@@ -54,24 +58,9 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
   private async createDataset() {
     const params = {
       DatasetName: this.datasetName,
-      DatasetType: "TARGET_TIME_SERIES", // TODO: there are other possible values here, do I need to consider them?
+      DatasetType: this.datasetType,
       Domain: this.forecastingDomain,
-      Schema: { // TODO: schema hardcoded for now. What's the best way to make this work dynamically?
-        Attributes: [
-          {
-            AttributeName: "timestamp",
-            AttributeType: "timestamp",
-          },
-          {
-            AttributeName: "item_id",
-            AttributeType: "string",
-          },
-          {
-            AttributeName: "target_value",
-            AttributeType: "float",
-          },
-        ],
-      },
+      Schema: this.datasetSchema,
       DataFrequency: this.dataFrequency,
     }
 

@@ -9,6 +9,8 @@ export interface ForecastDataImportActionParams {
   region: string
   roleArn: string
   timestampFormat: string
+  datasetSchema: string
+  datasetType: string
 }
 
 export interface ForecastTrainPredictorActionParams {

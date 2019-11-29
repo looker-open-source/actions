@@ -28,3 +28,26 @@ export const holidayCalendarOptions = {
   US: "United States",
   UK: "United Kingdom",
 }
+
+export const datasetTypeOptions = {
+  TARGET_TIME_SERIES: "Target time series",
+  RELATED_TIME_SERIES: "Related time series",
+  ITEM_METADATA: "Item metadata",
+}
+
+export const datasetSchemaDefault = {
+  Attributes: [
+    {
+      AttributeName: "timestamp",
+      AttributeType: "timestamp",
+    },
+    {
+      AttributeName: "item_id",
+      AttributeType: "string",
+    },
+    {
+      AttributeName: "target_value",
+      AttributeType: "float",
+    },
+  ],
+}

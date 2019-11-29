@@ -2,7 +2,7 @@ import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import { dataFrequencyOptions, domainOptions } from "./forecast_form_options"
+import { dataFrequencyOptions, datasetTypeOptions, domainOptions, datasetSchemaDefault } from "./forecast_form_options"
 import ForecastDataImport from "./forecast_import"
 import { ForecastDataImportActionParams } from "./forecast_types"
 import { poll } from "./poller"
@@ -149,12 +149,25 @@ export class ForecastDataImportAction extends Hub.Action {
         description: "This is the frequency at which entries are registered into your data file",
       },
       {
+        label: "Dataset Type",
+        name: "datasetType",
+        required: true,
+        type: "select",
+        options: Object.entries(datasetTypeOptions).map(([name, label]) => ({ name, label })),
+        description: `Choose the type of dataset you're adding to the group.
+        This will determine which fields are expected in the schema.
+        See the Forecast documentation for more details.`,
+      },
+      {
         label: "Data Schema",
         name: "dataSchema",
         required: true,
         type: "textarea",
         description: `To help Forecast understand the fields of your data, supply a schema.
-        Specify attributes in the same order as your CSV file. See AWS documention for more details.`,
+        Specify schema attributes in the same order as the columns of your query result.
+        The default shown is valid for the "Custom" domain option only.
+        Column headers need not match the schema. See Forecast documention for more details.`,
+        default: JSON.stringify(datasetSchemaDefault, null, 2),
       },
       {
         label: "Timestamp Format",
@@ -216,6 +229,8 @@ export class ForecastDataImportAction extends Hub.Action {
       forecastingDomain,
       dataFrequency,
       timestampFormat,
+      datasetSchema,
+      datasetType,
     } = request.formParams
 
     const {
@@ -253,6 +268,12 @@ export class ForecastDataImportAction extends Hub.Action {
     if (!timestampFormat) {
       throw new Error("Missing timestampFormat")
     }
+    if (!datasetSchema) {
+      throw new Error("Missing datasetSchema")
+    }
+    if (!datasetType) {
+      throw new Error("Missing datasetType")
+    }
 
     return {
       bucketName,
@@ -265,6 +286,8 @@ export class ForecastDataImportAction extends Hub.Action {
       region,
       roleArn,
       timestampFormat,
+      datasetSchema,
+      datasetType,
     }
   }
 
