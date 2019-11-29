@@ -124,7 +124,7 @@ export class ForecastExportAction extends Hub.Action {
         .map((p) => ({ name: p.PredictorArn!, label: p.PredictorName! })),
         description: "The predictor you want to use to create forecasts",
       },
-      { // TODO: should I eliminate this input and use the predictor name  + _forecast_export
+      { // TODO: should I eliminate this input and use the predictor name  + _export + time
         // that way there is less user input required
         label: "Forecast Name",
         name: "forecastName",
