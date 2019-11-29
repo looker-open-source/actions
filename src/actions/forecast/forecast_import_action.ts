@@ -2,6 +2,7 @@ import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
+import { dataFrequencyOptions, domainOptions } from "./forecast_form_options"
 import ForecastDataImport from "./forecast_import"
 import { ForecastDataImportActionParams } from "./forecast_types"
 import { poll } from "./poller"
@@ -107,43 +108,10 @@ export class ForecastDataImportAction extends Hub.Action {
     },
   ]
 
-  // TODO: add description props to these fields
-  // TODO: include "include country for holidays" field
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-
-    const forecastService = this.forecastServiceFromRequest(request)
-    let datasetGroupOptions = [{ name: "New Group", label: "New Group" }]
-    const { DatasetGroups } = await forecastService.listDatasetGroups().promise()
-    if (DatasetGroups) {
-      const currDatasetGroups = DatasetGroups
-      .map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
-      // aws typings claim DatasetGroupArn/Name can be undefined, hence the filter
-      .filter(({ name, label }) => name && label)
-      datasetGroupOptions = datasetGroupOptions.concat(...currDatasetGroups)
-    }
-
-    const domainOptions = [
-      "RETAIL",
-       "CUSTOM",
-       "INVENTORY_PLANNING",
-       "EC2_CAPACITY",
-       "WORK_FORCE",
-       "WEB_TRAFFIC",
-       "METRICS"]
-
-    const dataFrequencyOptions = {
-      "Y": "Yearly",
-      "M": "Monthly",
-      "W": "Weekly",
-      "D": "Daily",
-      "H": "Hourly",
-      "30min": "Every 30 minutes",
-      "15min": "Every 15 minutes",
-      "10min": "Every 10 minutes",
-      "5min": "Every 5 minutes",
-      "1min": "Every minute",
-    }
+    // TODO: any error handling needed here?
+    const datasetGroupOptions = await this.listDatasetGroups(request)
 
     form.fields = [
       {
@@ -151,8 +119,10 @@ export class ForecastDataImportAction extends Hub.Action {
         name: "datasetGroupName",
         required: true,
         type: "select",
-        description: "Choose an existing dataset group, or create a new one",
-        options: datasetGroupOptions,
+        description: "Choose an existing dataset group for this dataset, or create a new one",
+        options: datasetGroupOptions
+        .map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
+        .concat({ name: "New Group", label: "New Group" }),
       },
       {
         label: "Forecasting domain",
@@ -174,7 +144,7 @@ export class ForecastDataImportAction extends Hub.Action {
         name: "dataFrequency",
         required: true,
         type: "select",
-        options: Object.entries(dataFrequencyOptions).map(([k, v]) => ({ name: k, label: v })),
+        options: Object.entries(dataFrequencyOptions).map(([name, label]) => ({ name, label })),
         description: "This is the frequency at which entries are registered into your data file",
       },
       {
@@ -207,6 +177,16 @@ export class ForecastDataImportAction extends Hub.Action {
       winston.error(JSON.stringify(err, null, 2))
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
+  }
+
+  private async listDatasetGroups(request: Hub.ActionRequest) {
+    const forecastService = this.forecastServiceFromRequest(request)
+    const { DatasetGroups } = await forecastService.listDatasetGroups().promise()
+    const results = []
+    if (DatasetGroups) {
+      results.push(...DatasetGroups)
+    }
+    return results
   }
 
   // TODO: better function name?

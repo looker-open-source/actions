@@ -43,6 +43,11 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
       FeaturizationConfig: {
         ForecastFrequency: this.dataFrequency,
       },
+      // TODO: include these parameters
+      // EvaluationParameters: {
+      //   BackTestWindowOffset: 'NUMBER_VALUE',
+      //   NumberOfBacktestWindows: 'NUMBER_VALUE'
+      // },
       ForecastHorizon: 50, // TODO: calculate this dynamically
       InputDataConfig: {
         DatasetGroupArn: this.datasetGroupArn,

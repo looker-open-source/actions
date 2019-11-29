@@ -2,6 +2,7 @@ import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
+import { dataFrequencyOptions, holidayCalendarOptions } from "./forecast_form_options"
 import ForecastPredictor from "./forecast_predictor"
 import { ForecastTrainPredictorActionParams } from "./forecast_types"
 import { poll } from "./poller"
@@ -92,30 +93,46 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   // iconName = "" // TODO
 
+  // TODO: include extra params: "country for holidays", backtest window, other backtest param
+  // TODO: move form field options to external module
   async form(request: Hub.ActionRequest) {
-    winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
-    // TODO: add description props to these fields
-    // TODO: populate options
-    // TODO: include extra params: "country for holidays", backtest window, other backtest param
+    // TODO: any error handling needed here?
+    const datasetGroupOptions = await this.listDatasetGroups(request)
+
     form.fields = [
       {
         label: "Dataset group ARN",
         name: "datasetGroupArn",
         required: false,
-        type: "string",
+        type: "select",
+        description: "ARN of the dataset group to use when building the predictor",
+        options: datasetGroupOptions
+        .map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
+        .concat({ name: "New Group", label: "New Group" }),
       },
       {
         label: "Data Frequency",
         name: "dataFrequency",
-        required: false,
-        type: "string",
+        required: true,
+        type: "select",
+        options: Object.entries(dataFrequencyOptions).map(([name, label]) => ({ name, label })),
+        description: "This is the frequency at which entries are registered into your data file",
       },
       {
         label: "Predictor Name",
         name: "predictorName",
-        required: false,
+        required: true,
         type: "string",
+        description: "This name can help you distinguish this predictor from others",
+      },
+      {
+        label: "Country for holidays",
+        name: "countryForHolidays",
+        required: true,
+        type: "select",
+        options: Object.entries(holidayCalendarOptions).map(([name, label]) => ({ name, label })),
+        description: "The holiday you want to include for model training",
       },
     ]
     return form
@@ -130,6 +147,16 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       winston.error(JSON.stringify(err, null, 2))
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
+  }
+
+  private async listDatasetGroups(request: Hub.ActionRequest) {
+    const forecastService = this.forecastServiceFromRequest(request)
+    const { DatasetGroups } = await forecastService.listDatasetGroups().promise()
+    const results = []
+    if (DatasetGroups) {
+      results.push(...DatasetGroups)
+    }
+    return results
   }
 
   // TODO: better function name?
@@ -199,6 +226,14 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       datasetGroupArn,
       roleArn,
     }
+  }
+
+  private forecastServiceFromRequest(request: Hub.ActionRequest) {
+    return new ForecastService({
+      region: request.params.region,
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
+    })
   }
 }
 
