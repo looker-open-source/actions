@@ -8,27 +8,28 @@ interface ForecastDataImportParams extends ForecastDataImportActionParams {
 }
 
 export default class ForecastDataImport implements ForecastWorkflowStage {
-  datasetGroupArn: string | undefined
   private datasetImportJobArn: string | undefined
   private forecastService: ForecastService
   private s3ObjectKey: string
   private bucketName: string
   private datasetName: string
-  private datasetGroupName: string
+  private datasetGroupArn: string
   private forecastingDomain: string
   private dataFrequency: string
   private roleArn: string
   private datasetArn: string | undefined
+  private timestampFormat: string
 
   constructor(params: ForecastDataImportParams) {
     this.forecastService = params.forecastService
     this.s3ObjectKey = params.s3ObjectKey
     this.bucketName = params.bucketName
     this.datasetName = params.datasetName
-    this.datasetGroupName = params.datasetGroupName
+    this.datasetGroupArn = params.datasetGroupArn
     this.forecastingDomain = params.forecastingDomain
     this.dataFrequency = params.dataFrequency
     this.roleArn = params.roleArn
+    this.timestampFormat = params.timestampFormat
     this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
   }
 
@@ -79,16 +80,17 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
   }
 
   private async createDatasetGroup() {
-    const params = {
-      DatasetGroupName: this.datasetGroupName,
-      Domain: this.forecastingDomain,
-      DatasetArns: [
-        this.datasetArn!, // TODO: is there a valid case in which the DatasetArn would be undefined?
-      ],
+    if (!this.datasetGroupArn) {
+      const params = {
+        DatasetGroupName: `${this.datasetName}_group`,
+        Domain: this.forecastingDomain,
+        DatasetArns: [
+          this.datasetArn!, // TODO: is there a valid case in which the DatasetArn would be undefined?
+        ],
+      }
+      const { DatasetGroupArn } = await this.forecastService.createDatasetGroup(params).promise()
+      this.datasetGroupArn = DatasetGroupArn!
     }
-
-    const { DatasetGroupArn } = await this.forecastService.createDatasetGroup(params).promise()
-    this.datasetGroupArn = DatasetGroupArn
   }
 
   private async createDatasetImportJob() {
@@ -101,7 +103,7 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
       },
       DatasetArn: this.datasetArn!,
       DatasetImportJobName: `${this.datasetName}_import_job`,
-      TimestampFormat: "yyyy-MM-dd", // TODO: make this dynamic based on frequency selection
+      TimestampFormat: this.timestampFormat,
     }
 
     const {

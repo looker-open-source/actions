@@ -1,13 +1,14 @@
 export interface ForecastDataImportActionParams {
   bucketName: string
   datasetName: string
-  datasetGroupName: string
+  datasetGroupArn: string
   forecastingDomain: string
   dataFrequency: string
   accessKeyId: string
   secretAccessKey: string
   region: string
   roleArn: string
+  timestampFormat: string
 }
 
 export interface ForecastTrainPredictorActionParams {

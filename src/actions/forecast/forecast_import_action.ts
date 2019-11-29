@@ -113,7 +113,7 @@ export class ForecastDataImportAction extends Hub.Action {
     // TODO: any error handling needed here?
     const datasetGroups = await this.listDatasetGroups(request)
     const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
-    datasetGroupOptions.unshift({ name: "New Group", label: "New Group" })
+    datasetGroupOptions.unshift({ name: "", label: "New Group" })
 
     form.fields = [
       {
@@ -124,8 +124,8 @@ export class ForecastDataImportAction extends Hub.Action {
         description: "choose a name to distinguish this dataset from others in the dataset group",
       },
       {
-        label: "Dataset group name",
-        name: "datasetGroupName",
+        label: "Dataset group",
+        name: "datasetGroupArn",
         required: true,
         type: "select",
         description: "Choose an existing dataset group for this dataset, or create a new one",
@@ -211,9 +211,10 @@ export class ForecastDataImportAction extends Hub.Action {
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastDataImportActionParams {
     const {
       datasetName,
-      datasetGroupName,
+      datasetGroupArn,
       forecastingDomain,
       dataFrequency,
+      timestampFormat,
     } = request.formParams
 
     const {
@@ -231,8 +232,8 @@ export class ForecastDataImportAction extends Hub.Action {
     if (!datasetName) {
       throw new Error("Missing datasetName")
     }
-    if (!datasetGroupName) {
-      throw new Error("Missing datasetGroupName")
+    if (!datasetGroupArn) {
+      throw new Error("Missing datasetGroupArn")
     }
     if (!forecastingDomain) {
       throw new Error("Missing forecastingDomain")
@@ -252,17 +253,21 @@ export class ForecastDataImportAction extends Hub.Action {
     if (!roleArn) {
       throw new Error("Missing roleArn")
     }
+    if (!timestampFormat) {
+      throw new Error("Missing timestampFormat")
+    }
 
     return {
       bucketName,
       datasetName,
-      datasetGroupName,
+      datasetGroupArn,
       forecastingDomain,
       dataFrequency,
       accessKeyId,
       secretAccessKey,
       region,
       roleArn,
+      timestampFormat,
     }
   }
 
