@@ -139,7 +139,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         required: false,
         type: "select",
         options: Object.entries(holidayCalendarOptions).map(([name, label]) => ({ name, label })),
-        description: "The holiday you want to include for model training",
+        description: "The holiday calendar you want to include for model training",
       },
     ]
     return form
@@ -194,7 +194,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       accessKeyId,
       secretAccessKey,
       region,
-      roleArn,
     } = request.params
     // TODO: are there AWS naming rules that I need to enforce in the UI?
     if (!forecastFrequency) {
@@ -215,9 +214,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     if (!datasetGroupArn) {
       throw new Error("Missing datasetGroupArn")
     }
-    if (!roleArn) {
-      throw new Error("Missing roleArn")
-    }
     if (!forecastHorizon) {
       throw new Error("Missing forecastHorizon")
     }
@@ -229,7 +225,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       region,
       predictorName,
       datasetGroupArn,
-      roleArn,
       // TODO: handle case where this is NaN
       forecastHorizon: parseInt(forecastHorizon, 10),
     }
