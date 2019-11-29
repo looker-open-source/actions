@@ -2,7 +2,7 @@ import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
-import { dataFrequencyOptions, datasetTypeOptions, domainOptions, datasetSchemaDefault } from "./forecast_form_options"
+import { dataFrequencyOptions, datasetSchemaDefault, datasetTypeOptions, domainOptions } from "./forecast_form_options"
 import ForecastDataImport from "./forecast_import"
 import { ForecastDataImportActionParams } from "./forecast_types"
 import { poll } from "./poller"
@@ -241,6 +241,7 @@ export class ForecastDataImportAction extends Hub.Action {
       roleArn,
     } = request.params
     // TODO: are there AWS naming rules that I need to enforce in the UI?
+    // TODO: do some parameter validation, e.g. make sure schema is valid json
     if (!bucketName) {
       throw new Error("Missing bucketName")
     }
@@ -286,7 +287,7 @@ export class ForecastDataImportAction extends Hub.Action {
       region,
       roleArn,
       timestampFormat,
-      datasetSchema,
+      datasetSchema: JSON.parse(datasetSchema),
       datasetType,
     }
   }

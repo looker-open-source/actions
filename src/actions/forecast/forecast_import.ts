@@ -16,7 +16,7 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
   private dataFrequency: string
   private roleArn: string
   private timestampFormat: string
-  private datasetSchema: string
+  private datasetSchema: any // TODO: fix this typing
   private datasetType: string
   private datasetArn?: string
   private datasetGroupArn?: string
