@@ -147,7 +147,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.trainPredictorModel(request).catch(winston.error)
+      this.startPredictorTraining(request).catch(winston.error)
       // response acknowledges that predictor training has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -166,8 +166,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     return results
   }
 
-  // TODO: better function name?
-  private async trainPredictorModel(request: Hub.ActionRequest) {
+  private async startPredictorTraining(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
       accessKeyId,

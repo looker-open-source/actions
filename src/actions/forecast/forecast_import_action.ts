@@ -184,7 +184,7 @@ export class ForecastDataImportAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.importFromS3ToForecast(request).catch(winston.error)
+      this.startForecastImport(request).catch(winston.error)
       // response acknowledges that import has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -203,8 +203,7 @@ export class ForecastDataImportAction extends Hub.Action {
     return results
   }
 
-  // TODO: better function name?
-  private async importFromS3ToForecast(request: Hub.ActionRequest) {
+  private async startForecastImport(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
       bucketName,
