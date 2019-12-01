@@ -4,7 +4,7 @@ import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
 import ForecastGenerate from "./forecast_generate"
 import { ForecastGenerateActionParams } from "./forecast_types"
-import { poll } from "./poller"
+import { pollForCreateComplete } from "./poller"
 
 export class ForecastGenerateAction extends Hub.Action {
   // required fields
@@ -142,7 +142,7 @@ export class ForecastGenerateAction extends Hub.Action {
       ...actionParams,
     })
     await forecastGenerate.startResourceCreation()
-    await poll(forecastGenerate.isResourceCreationComplete)
+    await pollForCreateComplete(forecastGenerate.getResourceCreationStatus)
     // TODO: send email on success/failure
   }
 

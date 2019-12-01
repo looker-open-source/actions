@@ -1,5 +1,4 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
-import * as winston from "winston"
 import { ForecastDataImportActionParams, ForecastWorkflowStage } from "./forecast_types"
 
 interface ForecastDataImportParams extends ForecastDataImportActionParams {
@@ -34,7 +33,7 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
     this.timestampFormat = params.timestampFormat
     this.datasetSchema = params.datasetSchema
     this.datasetType = params.datasetType
-    this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
+    this.getResourceCreationStatus = this.getResourceCreationStatus.bind(this)
   }
 
   async startResourceCreation() {
@@ -44,15 +43,14 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
   }
 
   // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
-  async isResourceCreationComplete() {
+  async getResourceCreationStatus() {
     if (!this.datasetImportJobArn) {
-      return false
+      return ""
     }
     const { Status } = await this.forecastService.describeDatasetImportJob({
       DatasetImportJobArn: this.datasetImportJobArn,
     }).promise()
-    winston.debug("describeDatasetImportJob polling complete: ", Status === "ACTIVE")
-    return Status === "ACTIVE"
+    return Status ? Status : ""
   }
 
   private async createDataset() {

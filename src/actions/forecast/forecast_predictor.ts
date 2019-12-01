@@ -1,5 +1,4 @@
 import * as ForecastService from "aws-sdk/clients/forecastservice"
-import * as winston from "winston"
 import { ForecastTrainPredictorActionParams, ForecastWorkflowStage } from "./forecast_types"
 
 interface ForecastPredictorParams extends ForecastTrainPredictorActionParams {
@@ -20,27 +19,24 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
     this.datasetGroupArn = params.datasetGroupArn
     this.predictorName = params.predictorName
     this.forecastHorizon = params.forecastHorizon
-    this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
+    this.getResourceCreationStatus = this.getResourceCreationStatus.bind(this)
   }
 
   async startResourceCreation() {
     await this.createPredictor()
   }
 
-  // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
-  async isResourceCreationComplete() {
+  async getResourceCreationStatus() {
     if (!this.predictorArn) {
-      return false
+      return ""
     }
     const { Status } = await this.forecastService.describePredictor({
       PredictorArn: this.predictorArn,
     }).promise()
-    winston.debug("describePredictor polling complete: ", Status === "ACTIVE")
-    return Status === "ACTIVE"
+    return Status ? Status : ""
   }
 
   private async createPredictor() {
-    // TODO: any additonal params required here?
     const params = {
       FeaturizationConfig: {
         ForecastFrequency: this.forecastFrequency,

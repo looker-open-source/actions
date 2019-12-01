@@ -5,10 +5,9 @@ import * as winston from "winston"
 import { dataFrequencyOptions, datasetSchemaDefault, datasetTypeOptions, domainOptions } from "./forecast_form_options"
 import ForecastDataImport from "./forecast_import"
 import { ForecastDataImportActionParams } from "./forecast_types"
-import { poll } from "./poller"
+import { pollForCreateComplete } from "./poller"
 import { uploadToS3 } from "./s3_upload"
 
-// TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 export class ForecastDataImportAction extends Hub.Action {
   // TODO: make email-related fields required?
   name = "amazon_forecast_data_import"
@@ -37,8 +36,6 @@ export class ForecastDataImportAction extends Hub.Action {
       sensitive: true,
       description: "Your AWS secret access key.",
     },
-    // TODO: put results under /forecast-import and /forecast-export paths
-    // so buckets can safely be the same or different
     {
       name: "bucketName",
       label: "Bucket Name",
@@ -115,7 +112,6 @@ export class ForecastDataImportAction extends Hub.Action {
     const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
     datasetGroupOptions.unshift({ name: "", label: "New Group" })
 
-    // TODO: parameterize time series type
     form.fields = [
       {
         label: "Dataset name",
@@ -210,14 +206,14 @@ export class ForecastDataImportAction extends Hub.Action {
       datasetName,
     } = actionParams
     // upload looker data to S3
-    const s3ObjectKey = `${datasetName}_${Date.now()}.csv`
+    const s3ObjectKey = `/ForecastImport/${datasetName}_${Date.now()}.csv`
     await uploadToS3(request, bucketName, s3ObjectKey)
 
     // create Forecast dataset resource & feed in S3 data
     const forecastService = this.forecastServiceFromRequest(request)
     const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
     await forecastImport.startResourceCreation()
-    await poll(forecastImport.isResourceCreationComplete)
+    await pollForCreateComplete(forecastImport.getResourceCreationStatus)
     // TODO: send email on success or failure
   }
 

@@ -5,7 +5,7 @@ import * as winston from "winston"
 import { dataFrequencyOptions, holidayCalendarOptions } from "./forecast_form_options"
 import ForecastPredictor from "./forecast_predictor"
 import { ForecastTrainPredictorActionParams } from "./forecast_types"
-import { poll } from "./poller"
+import { pollForCreateComplete } from "./poller"
 
 // TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 export class ForecastTrainPredictorAction extends Hub.Action {
@@ -177,7 +177,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
     const forecastPredictor = new ForecastPredictor({ forecastService, ...actionParams })
     await forecastPredictor.startResourceCreation()
-    await poll(forecastPredictor.isResourceCreationComplete)
+    await pollForCreateComplete(forecastPredictor.getResourceCreationStatus)
     // TODO: send email on success/fail?
   }
 

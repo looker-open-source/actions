@@ -1,4 +1,4 @@
-// TODO: add links to documentation where these options are enumerated
+// https://docs.aws.amazon.com/forecast/latest/dg/howitworks-domains-ds-types.html
 export const domainOptions = [
   "RETAIL",
    "CUSTOM",
@@ -8,6 +8,7 @@ export const domainOptions = [
    "WEB_TRAFFIC",
    "METRICS"]
 
+   // https://docs.aws.amazon.com/forecast/latest/dg/API_CreateDataset.html#API_CreateDataset_RequestSyntax
 export const dataFrequencyOptions = {
   "Y": "Yearly",
   "M": "Monthly",
@@ -21,6 +22,7 @@ export const dataFrequencyOptions = {
   "1min": "Every minute",
 }
 
+// https://docs.aws.amazon.com/forecast/latest/dg/API_SupplementaryFeature.html
 export const holidayCalendarOptions = {
   AU: "Australia",
   DE: "Germany",
@@ -29,12 +31,16 @@ export const holidayCalendarOptions = {
   UK: "United Kingdom",
 }
 
+// https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html#howitworks-dataset
 export const datasetTypeOptions = {
   TARGET_TIME_SERIES: "Target time series",
   RELATED_TIME_SERIES: "Related time series",
   ITEM_METADATA: "Item metadata",
 }
 
+// this is the default schema for the CUSTOM domain, TARGET_TIME_SERIES dataset type
+// more info on schemas for different domains/dataset types:
+// https://docs.aws.amazon.com/forecast/latest/dg/howitworks-domains-ds-types.html
 export const datasetSchemaDefault = {
   Attributes: [
     {

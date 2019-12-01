@@ -5,7 +5,7 @@ import * as S3 from "aws-sdk/clients/s3"
 import * as winston from "winston"
 import ForecastExporter from "./forecast_export"
 import { ForecastExportActionParams } from "./forecast_types"
-import { poll } from "./poller"
+import { pollForCreateComplete } from "./poller"
 
 export class ForecastExportAction extends Hub.Action {
   // required fields
@@ -36,8 +36,6 @@ export class ForecastExportAction extends Hub.Action {
       sensitive: true,
       description: "Your AWS secret access key.",
     },
-    // TODO: put results under /forecast-import
-    // and /forecast-export paths so buckets can safely be the same or different
     {
       name: "bucketName",
       label: "Bucket Name",
@@ -160,7 +158,7 @@ export class ForecastExportAction extends Hub.Action {
       ...actionParams,
     })
     await forecastExporter.startResourceCreation()
-    await poll(forecastExporter.isResourceCreationComplete)
+    await pollForCreateComplete(forecastExporter.getResourceCreationStatus)
     // TODO: send email on success/failure
   }
 

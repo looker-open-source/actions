@@ -42,5 +42,5 @@ export interface ForecastExportActionParams {
 
 export interface ForecastWorkflowStage {
   startResourceCreation: () => Promise<void>
-  isResourceCreationComplete: () => Promise<boolean>
+  getResourceCreationStatus: () => Promise<string>
 }
