@@ -7,12 +7,12 @@ interface ForecastPredictorParams extends ForecastTrainPredictorActionParams {
 }
 
 export default class ForecastPredictor implements ForecastWorkflowStage {
-  predictorArn: string | undefined
   private forecastService: ForecastService
   private forecastFrequency: string
   private datasetGroupArn: string
   private predictorName: string
   private forecastHorizon: number
+  private predictorArn?: string
 
   constructor(params: ForecastPredictorParams) {
     this.forecastService = params.forecastService

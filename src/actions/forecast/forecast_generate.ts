@@ -10,7 +10,7 @@ export default class ForecastGenerate implements ForecastWorkflowStage {
   private forecastService: ForecastService
   private forecastName: string
   private predictorArn: string
-  private forecastArn: string | undefined
+  private forecastArn?: string
 
   constructor(params: ForecastGenerateParams) {
     this.forecastService = params.forecastService

@@ -1,18 +1,17 @@
 import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
-import * as S3 from "aws-sdk/clients/s3"
 import * as winston from "winston"
 import ForecastGenerate from "./forecast_generate"
-import { ForecastExportActionParams } from "./forecast_types"
+import { ForecastGenerateActionParams } from "./forecast_types"
 import { poll } from "./poller"
 
-export class ForecastExportAction extends Hub.Action {
+export class ForecastGenerateAction extends Hub.Action {
   // required fields
   // TODO: make email-related fields required
   name = "amazon_forecast_export"
   label = "Amazon Forecast Export"
-  description = "Import data into Amazon Forecast, train a model, and generate a forecast from that model"
+  description = "Generate timeseries forecast using Amazon Forecast"
   usesStreaming = true
   requiredFields = []
   supportedFormats = [Hub.ActionFormat.Csv]
@@ -35,22 +34,6 @@ export class ForecastExportAction extends Hub.Action {
       required: true,
       sensitive: true,
       description: "Your AWS secret access key.",
-    },
-    // TODO: put results under /forecast-import
-    // and /forecast-export paths so buckets can safely be the same or different
-    {
-      name: "bucketName",
-      label: "Bucket Name",
-      required: true,
-      sensitive: false,
-      description: "Name of the bucket Amazon Forecast will write prediction to",
-    },
-    {
-      name: "roleArn",
-      label: "Role ARN",
-      required: true,
-      sensitive: false,
-      description: "ARN of role allowing Forecast to write to your S3 bucket",
     },
     {
       name: "region",
@@ -111,7 +94,6 @@ export class ForecastExportAction extends Hub.Action {
     winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
     const predictorOptions = await this.listPredictors(request)
-    const bucketOptions = await this.listBuckets(request)
 
     form.fields = [
       {
@@ -131,21 +113,13 @@ export class ForecastExportAction extends Hub.Action {
         type: "string",
         description: "Choose a name to identify this forecast",
       },
-      {
-        label: "Forecast Destination Bucket",
-        name: "bucketName",
-        required: true,
-        type: "select",
-        description: "Choose a destination bucket for your forecast",
-        options: bucketOptions.map(({ Name }) => ({ name: Name!, label: Name! })),
-      },
     ]
     return form
   }
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.generateForecastAndExport(request).catch(winston.error)
+      this.startForecastGeneration(request).catch(winston.error)
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -154,36 +128,22 @@ export class ForecastExportAction extends Hub.Action {
     }
   }
 
-  // TODO: different method name? (prepend with "start")
-  private async generateForecastAndExport(request: Hub.ActionRequest) {
+  private async startForecastGeneration(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
       accessKeyId,
       secretAccessKey,
       region,
     } = actionParams
-    // create Forecast dataset resource & feed in S3 data
+
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
-    const forecastQueryExporter = new ForecastQueryExporter({
+    const forecastGenerate = new ForecastGenerate({
       forecastService,
       ...actionParams,
     })
-    await forecastQueryExporter.startResourceCreation()
-    await poll(forecastQueryExporter.isResourceCreationComplete)
+    await forecastGenerate.startResourceCreation()
+    await poll(forecastGenerate.isResourceCreationComplete)
     // TODO: send email on success/failure
-  }
-
-  private async listBuckets(request: Hub.ActionRequest) {
-    const s3 = new S3({
-      accessKeyId: request.params.accessKeyId,
-      secretAccessKey: request.params.secretAccessKey,
-    })
-    const results = []
-    const { Buckets } = await s3.listBuckets().promise()
-    if (Buckets) {
-      results.push(...Buckets)
-    }
-    return results
   }
 
   private async listPredictors(request: Hub.ActionRequest) {
@@ -204,23 +164,18 @@ export class ForecastExportAction extends Hub.Action {
     })
   }
 
-  private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastExportActionParams {
+  private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastGenerateActionParams {
     const {
       predictorArn,
       forecastName,
     } = request.formParams
 
     const {
-      bucketName,
       accessKeyId,
       secretAccessKey,
       region,
-      roleArn,
     } = request.params
     // TODO: are there AWS naming rules that I need to enforce in the UI?
-    if (!bucketName) {
-      throw new Error("Missing bucketName")
-    }
     if (!accessKeyId) {
       throw new Error("Missing accessKeyId")
     }
@@ -230,9 +185,6 @@ export class ForecastExportAction extends Hub.Action {
     if (!region) {
       throw new Error("Missing region")
     }
-    if (!roleArn) {
-      throw new Error("Missing roleArn")
-    }
     if (!predictorArn) {
       throw new Error("Missing predictorArn")
     }
@@ -241,15 +193,13 @@ export class ForecastExportAction extends Hub.Action {
     }
 
     return {
-      bucketName,
       accessKeyId,
       secretAccessKey,
       region,
-      roleArn,
       predictorArn,
       forecastName,
     }
   }
 }
 
-Hub.addAction(new ForecastExportAction())
+Hub.addAction(new ForecastGenerateAction())

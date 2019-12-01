@@ -29,7 +29,6 @@ export interface ForecastGenerateActionParams {
   region: string
   forecastName: string
   predictorArn: string
-  forecastArn?: string
 }
 
 export interface ForecastExportActionParams {
