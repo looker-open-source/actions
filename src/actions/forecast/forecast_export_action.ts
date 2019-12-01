@@ -7,7 +7,6 @@ import ForecastQueryExporter from "./forecast_export"
 import { ForecastExportActionParams } from "./forecast_types"
 import { poll } from "./poller"
 
-// TODO: change nomenclature: export -> generate prediction
 export class ForecastExportAction extends Hub.Action {
   // required fields
   // TODO: make email-related fields required
@@ -218,7 +217,6 @@ export class ForecastExportAction extends Hub.Action {
       region,
       roleArn,
     } = request.params
-    // TODO: make required params checking more compact?
     // TODO: are there AWS naming rules that I need to enforce in the UI?
     if (!bucketName) {
       throw new Error("Missing bucketName")

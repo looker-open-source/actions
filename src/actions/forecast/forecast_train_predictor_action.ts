@@ -93,7 +93,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   // iconName = "" // TODO
 
-  // TODO: include extra params: "country for holidays", backtest window, other backtest param
+  // TODO: include extra params: backtest window, other backtest param
   // TODO: move form field options to external module
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
