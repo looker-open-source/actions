@@ -15,7 +15,7 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
   private dataFrequency: string
   private roleArn: string
   private timestampFormat: string
-  private datasetSchema: any // TODO: fix this typing
+  private datasetSchema: object
   private datasetType: string
   private datasetArn?: string
   private datasetGroupArn?: string
@@ -42,7 +42,6 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
     await this.createDatasetImportJob()
   }
 
-  // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
   async getResourceCreationStatus() {
     if (!this.datasetImportJobArn) {
       return ""
@@ -72,7 +71,7 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
         DatasetGroupName: `${this.datasetName}_group`,
         Domain: this.forecastingDomain,
         DatasetArns: [
-          this.datasetArn!, // TODO: is there a valid case in which the DatasetArn would be undefined?
+          this.datasetArn!,
         ],
       }
       const { DatasetGroupArn } = await this.forecastService.createDatasetGroup(params).promise()

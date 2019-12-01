@@ -8,7 +8,6 @@ import { notifyJobStatus } from "./mail_transporter"
 import { pollForCreateComplete } from "./poller"
 
 export class ForecastGenerateAction extends Hub.Action {
-  // TODO: make email-related fields required
   name = "amazon_forecast_export"
   label = "Amazon Forecast Export"
   description = "Generate timeseries forecast using Amazon Forecast"
@@ -45,7 +44,7 @@ export class ForecastGenerateAction extends Hub.Action {
     {
       name: "user_email",
       label: "Looker User Email",
-      required: false,
+      required: true,
       description: `
         Click the button on the right and select 'Email'.
         This is required for the action to send status emails
@@ -56,35 +55,35 @@ export class ForecastGenerateAction extends Hub.Action {
     {
       name: "smtpHost",
       label: "SMTP Host",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Host for sending emails.",
     },
     {
       name: "smtpPort",
       label: "SMTP Port",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Port for sending emails.",
     },
     {
       name: "smtpFrom",
       label: "SMTP From",
-      required: false,
+      required: true,
       sensitive: false,
       description: "From for sending emails.",
     },
     {
       name: "smtpUser",
       label: "SMTP User",
-      required: false,
+      required: true,
       sensitive: false,
       description: "User for sending emails.",
     },
     {
       name: "smtpPass",
       label: "SMTP Pass",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Pass for sending emails.",
     },

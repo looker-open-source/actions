@@ -9,7 +9,7 @@ export interface ForecastDataImportActionParams {
   region: string
   roleArn: string
   timestampFormat: string
-  datasetSchema: string
+  datasetSchema: object
   datasetType: string
 }
 

@@ -10,7 +10,6 @@ import { pollForCreateComplete } from "./poller"
 import { uploadToS3 } from "./s3_upload"
 
 export class ForecastDataImportAction extends Hub.Action {
-  // TODO: make email-related fields required?
   name = "amazon_forecast_data_import"
   label = "Amazon Forecast Data Import"
   supportedActionTypes = [Hub.ActionType.Query]
@@ -61,7 +60,7 @@ export class ForecastDataImportAction extends Hub.Action {
     {
       name: "user_email",
       label: "Looker User Email",
-      required: false,
+      required: true,
       description: `
         Click the button on the right and select 'Email'.
         This is required for the action to send status emails
@@ -72,35 +71,35 @@ export class ForecastDataImportAction extends Hub.Action {
     {
       name: "smtpHost",
       label: "SMTP Host",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Host for sending emails.",
     },
     {
       name: "smtpPort",
       label: "SMTP Port",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Port for sending emails.",
     },
     {
       name: "smtpFrom",
       label: "SMTP From",
-      required: false,
+      required: true,
       sensitive: false,
       description: "From for sending emails.",
     },
     {
       name: "smtpUser",
       label: "SMTP User",
-      required: false,
+      required: true,
       sensitive: false,
       description: "User for sending emails.",
     },
     {
       name: "smtpPass",
       label: "SMTP Pass",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Pass for sending emails.",
     },
@@ -108,7 +107,6 @@ export class ForecastDataImportAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    // TODO: error handling needed here
     const datasetGroups = await this.listDatasetGroups(request)
     const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
     datasetGroupOptions.unshift({ name: "", label: "New Group" })
@@ -119,7 +117,7 @@ export class ForecastDataImportAction extends Hub.Action {
         name: "datasetName",
         required: true,
         type: "string",
-        description: "choose a name to distinguish this dataset from others in the dataset group",
+        description: "The dataset name must have 1 to 63 characters. Valid characters: a-z, A-Z, 0-9, and _",
       },
       {
         label: "Dataset group",
@@ -251,8 +249,7 @@ export class ForecastDataImportAction extends Hub.Action {
       region,
       roleArn,
     } = request.params
-    // TODO: are there AWS naming rules that I need to enforce in the UI?
-    // TODO: do some parameter validation, e.g. make sure schema is valid json
+
     if (!bucketName) {
       throw new Error("Missing bucketName")
     }
@@ -289,7 +286,7 @@ export class ForecastDataImportAction extends Hub.Action {
 
     return {
       bucketName,
-      datasetName,
+      datasetName: this.validateDatasetName(datasetName),
       datasetGroupArn,
       forecastingDomain,
       dataFrequency,
@@ -298,8 +295,27 @@ export class ForecastDataImportAction extends Hub.Action {
       region,
       roleArn,
       timestampFormat,
-      datasetSchema: JSON.parse(datasetSchema),
+      datasetSchema: this.validateDatasetSchema(datasetSchema),
       datasetType,
+    }
+  }
+
+  private validateDatasetName(name: string) {
+    const regex = /^([a-z0-9_]){1,63}$/i
+    if (!regex.test(name)) {
+      throw new Error("Dataset name must between 1 and 63 characters. Only alphanumeric characters and _ allowed")
+    }
+    return name
+  }
+
+  // this is a lightweight validity check because the Forecast API will perform it's own check against
+  // the schema structure
+  private validateDatasetSchema(str: string) {
+    try {
+      const schema = JSON.parse(str)
+      return schema
+    } catch (e) {
+      throw new Error("dataset schema must be valid JSON")
     }
   }
 

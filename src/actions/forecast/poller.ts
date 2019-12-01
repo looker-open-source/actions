@@ -2,7 +2,7 @@ import * as winston from "winston"
 
 const MINUTE_MS = 60000
 const POLL_INTERVAL_MS = MINUTE_MS
-const MAX_POLL_ATTEMPTS = 120
+const MAX_POLL_ATTEMPTS = 240
 
 export async function pollForCreateComplete(
   getJobStatus: () => Promise<string>,

@@ -5,19 +5,18 @@ import * as winston from "winston"
 import { dataFrequencyOptions, holidayCalendarOptions } from "./forecast_form_options"
 import ForecastPredictor from "./forecast_predictor"
 import { ForecastTrainPredictorActionParams } from "./forecast_types"
-import { pollForCreateComplete } from "./poller"
 import { notifyJobStatus } from "./mail_transporter"
+import { pollForCreateComplete } from "./poller"
 
 // TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 export class ForecastTrainPredictorAction extends Hub.Action {
-  // TODO: make email-related fields required?
   name = "amazon_forecast_predictor"
   label = "Amazon Forecast Train Predictor"
   supportedActionTypes = [Hub.ActionType.Query]
   description = "Train a time series prediction model with Amazon Forecast"
   usesStreaming = true
   requiredFields = []
-  supportedFormats = [Hub.ActionFormat.Csv] // TODO: can be empty array, since this action needs no data?
+  supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   // iconName = "" // TODO
@@ -47,7 +46,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     {
       name: "user_email",
       label: "Looker User Email",
-      required: false,
+      required: true,
       description: `
         Click the button on the right and select 'Email'.
         This is required for the action to send status emails
@@ -58,35 +57,35 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     {
       name: "smtpHost",
       label: "SMTP Host",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Host for sending emails.",
     },
     {
       name: "smtpPort",
       label: "SMTP Port",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Port for sending emails.",
     },
     {
       name: "smtpFrom",
       label: "SMTP From",
-      required: false,
+      required: true,
       sensitive: false,
       description: "From for sending emails.",
     },
     {
       name: "smtpUser",
       label: "SMTP User",
-      required: false,
+      required: true,
       sensitive: false,
       description: "User for sending emails.",
     },
     {
       name: "smtpPass",
       label: "SMTP Pass",
-      required: false,
+      required: true,
       sensitive: false,
       description: "Pass for sending emails.",
     },
@@ -95,7 +94,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   // TODO: include extra params: backtest window, other backtest param
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    // TODO: any error handling needed here?
     const datasetGroups = await this.listDatasetGroups(request)
     const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
     datasetGroupOptions.unshift({ name: "New Group", label: "New Group" })

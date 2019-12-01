@@ -7,7 +7,7 @@ import * as winston from "winston"
 const striplines = require("striplines")
 
 export async function uploadToS3(request: ActionRequest, bucket: string, key: string) {
-  return new Promise<S3.ManagedUpload.SendData>((resolve, reject) => {
+  return new Promise<S3.ManagedUpload.SendData>(async (resolve, reject) => {
     const s3 = new S3({
       accessKeyId: request.params.accessKeyId,
       secretAccessKey: request.params.secretAccessKey,
@@ -33,11 +33,10 @@ export async function uploadToS3(request: ActionRequest, bucket: string, key: st
       return passthrough
     }
 
-    request.stream(async (readable) => {
+    return request.stream(async (readable) => {
       readable
         .pipe(striplines(1))
         .pipe(uploadFromStream())
-    }) // TODO: is this sensible error handle behavior?
-    .catch(winston.error)
+    })
   })
 }

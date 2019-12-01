@@ -56,18 +56,24 @@ interface JobStatusNotificationParams {
     message?: string
 }
 
-// TODO: include text about nextstage?
+// TODO: include text about which action user should start next?
 export async function notifyJobStatus(request: Hub.ActionRequest, data: JobStatusNotificationParams) {
     const transporter = getMailTransporter(request)
+    const jobNotCompleteWithinPollingWindow = data.status === "INCOMPLETE"
     const jobSucceeded = data.status === "ACTIVE"
 
     let subject = `${data.action} completed successfully`
     let text = `${data.resource} is now available for use.`
 
-    // TODO: handle incomplete case
-    if (!jobSucceeded) {
+    if (jobNotCompleteWithinPollingWindow) {
+        subject = `${data.action} creation in progress`
+        text = `${data.resource} creation still in progress.
+        Please check AWS console for job status.`
+
+    } else if (!jobSucceeded) {
         subject = `${data.action} failed`
         text = `${data.resource ? `${data.resource} could not be created.` : ""} Reason: ${data.message}`
     }
+
     return transporter.sendMail({ subject, text })
 }
