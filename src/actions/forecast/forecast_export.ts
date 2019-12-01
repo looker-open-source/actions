@@ -7,6 +7,7 @@ interface ForecastExportParams extends ForecastExportActionParams {
 }
 
 export default class ForecastExport implements ForecastWorkflowStage {
+  forecastExportJobName?: string
   private forecastService: ForecastService
   private bucketName: string
   private roleArn: string
@@ -39,6 +40,8 @@ export default class ForecastExport implements ForecastWorkflowStage {
     const { ForecastName } = await this.forecastService
     .describeForecast({ ForecastArn: this.forecastArn }).promise()
 
+    this.forecastExportJobName = `${ForecastName}_export_${Date.now()}`
+
     const params = {
       Destination: {
         S3Config: {
@@ -47,7 +50,7 @@ export default class ForecastExport implements ForecastWorkflowStage {
         },
       },
       ForecastArn: this.forecastArn,
-      ForecastExportJobName: `${ForecastName}_export_${Date.now()}`,
+      ForecastExportJobName: this.forecastExportJobName,
     }
     const { ForecastExportJobArn } = await this.forecastService.createForecastExportJob(params).promise()
     this.forecastExportJobArn = ForecastExportJobArn

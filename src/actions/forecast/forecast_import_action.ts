@@ -5,6 +5,7 @@ import * as winston from "winston"
 import { dataFrequencyOptions, datasetSchemaDefault, datasetTypeOptions, domainOptions } from "./forecast_form_options"
 import ForecastDataImport from "./forecast_import"
 import { ForecastDataImportActionParams } from "./forecast_types"
+import { notifyJobStatus } from "./mail_transporter"
 import { pollForCreateComplete } from "./poller"
 import { uploadToS3 } from "./s3_upload"
 
@@ -180,7 +181,8 @@ export class ForecastDataImportAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.startForecastImport(request).catch(winston.error)
+      this.startForecastImport(request)
+      .catch(async (err) => this.handleFailure(request, err))
       // response acknowledges that import has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -208,13 +210,26 @@ export class ForecastDataImportAction extends Hub.Action {
     // upload looker data to S3
     const s3ObjectKey = `/ForecastImport/${datasetName}_${Date.now()}.csv`
     await uploadToS3(request, bucketName, s3ObjectKey)
-
     // create Forecast dataset resource & feed in S3 data
     const forecastService = this.forecastServiceFromRequest(request)
     const forecastImport = new ForecastDataImport({ forecastService, s3ObjectKey, ...actionParams })
     await forecastImport.startResourceCreation()
-    await pollForCreateComplete(forecastImport.getResourceCreationStatus)
-    // TODO: send email on success or failure
+    const { jobStatus } = await pollForCreateComplete(forecastImport.getResourceCreationStatus)
+    // notify user of job result
+    await notifyJobStatus(request, {
+      action: this.label,
+      status: jobStatus,
+      resource: datasetName,
+    })
+  }
+
+  private async handleFailure(request: Hub.ActionRequest, err: Error) {
+    winston.error(JSON.stringify(err, null, 2))
+    await notifyJobStatus(request, {
+      action: request.actionId!,
+      status: err.name,
+      message: err.message,
+    })
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastDataImportActionParams {

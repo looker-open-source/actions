@@ -4,10 +4,10 @@ import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as winston from "winston"
 import ForecastGenerate from "./forecast_generate"
 import { ForecastGenerateActionParams } from "./forecast_types"
+import { notifyJobStatus } from "./mail_transporter"
 import { pollForCreateComplete } from "./poller"
 
 export class ForecastGenerateAction extends Hub.Action {
-  // required fields
   // TODO: make email-related fields required
   name = "amazon_forecast_export"
   label = "Amazon Forecast Export"
@@ -119,7 +119,8 @@ export class ForecastGenerateAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.startForecastGeneration(request).catch(winston.error)
+      this.startForecastGeneration(request)
+      .catch(async (err) => this.handleFailure(request, err))
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -134,6 +135,7 @@ export class ForecastGenerateAction extends Hub.Action {
       accessKeyId,
       secretAccessKey,
       region,
+      forecastName,
     } = actionParams
 
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
@@ -142,8 +144,22 @@ export class ForecastGenerateAction extends Hub.Action {
       ...actionParams,
     })
     await forecastGenerate.startResourceCreation()
-    await pollForCreateComplete(forecastGenerate.getResourceCreationStatus)
-    // TODO: send email on success/failure
+    const { jobStatus } = await pollForCreateComplete(forecastGenerate.getResourceCreationStatus)
+    // notify user of job result
+    await notifyJobStatus(request, {
+      action: this.label,
+      status: jobStatus,
+      resource: forecastName,
+    })
+  }
+
+  private async handleFailure(request: Hub.ActionRequest, err: Error) {
+    winston.error(JSON.stringify(err, null, 2))
+    await notifyJobStatus(request, {
+      action: request.actionId!,
+      status: err.name,
+      message: err.message,
+    })
   }
 
   private async listPredictors(request: Hub.ActionRequest) {

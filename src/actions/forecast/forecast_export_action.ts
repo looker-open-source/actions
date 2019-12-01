@@ -5,10 +5,10 @@ import * as S3 from "aws-sdk/clients/s3"
 import * as winston from "winston"
 import ForecastExporter from "./forecast_export"
 import { ForecastExportActionParams } from "./forecast_types"
+import { notifyJobStatus } from "./mail_transporter"
 import { pollForCreateComplete } from "./poller"
 
 export class ForecastExportAction extends Hub.Action {
-  // required fields
   // TODO: make email-related fields required
   name = "amazon_forecast_export"
   label = "Amazon Forecast Export"
@@ -135,7 +135,8 @@ export class ForecastExportAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.startForecastExport(request).catch(winston.error)
+      this.startForecastExport(request)
+      .catch(async (err) => this.handleFailure(request, err))
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -158,8 +159,13 @@ export class ForecastExportAction extends Hub.Action {
       ...actionParams,
     })
     await forecastExporter.startResourceCreation()
-    await pollForCreateComplete(forecastExporter.getResourceCreationStatus)
-    // TODO: send email on success/failure
+    const { jobStatus } = await pollForCreateComplete(forecastExporter.getResourceCreationStatus)
+    // notify user of job result
+    await notifyJobStatus(request, {
+      action: this.label,
+      status: jobStatus,
+      resource: forecastExporter.forecastExportJobName,
+    })
   }
 
   private async listBuckets(request: Hub.ActionRequest) {
@@ -173,6 +179,15 @@ export class ForecastExportAction extends Hub.Action {
       results.push(...Buckets)
     }
     return results
+  }
+
+  private async handleFailure(request: Hub.ActionRequest, err: Error) {
+    winston.error(JSON.stringify(err, null, 2))
+    await notifyJobStatus(request, {
+      action: request.actionId!,
+      status: err.name,
+      message: err.message,
+    })
   }
 
   private async listForecasts(request: Hub.ActionRequest) {

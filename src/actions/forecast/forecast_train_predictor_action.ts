@@ -6,14 +6,22 @@ import { dataFrequencyOptions, holidayCalendarOptions } from "./forecast_form_op
 import ForecastPredictor from "./forecast_predictor"
 import { ForecastTrainPredictorActionParams } from "./forecast_types"
 import { pollForCreateComplete } from "./poller"
+import { notifyJobStatus } from "./mail_transporter"
 
 // TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 export class ForecastTrainPredictorAction extends Hub.Action {
-  // required fields
   // TODO: make email-related fields required?
   name = "amazon_forecast_predictor"
   label = "Amazon Forecast Train Predictor"
   supportedActionTypes = [Hub.ActionType.Query]
+  description = "Train a time series prediction model with Amazon Forecast"
+  usesStreaming = true
+  requiredFields = []
+  supportedFormats = [Hub.ActionFormat.Csv] // TODO: can be empty array, since this action needs no data?
+  supportedFormattings = [Hub.ActionFormatting.Unformatted]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  // iconName = "" // TODO
+
   params = [
     {
       name: "accessKeyId",
@@ -84,17 +92,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     },
   ]
 
-  // optional fields
-  description = "Train a time series prediction model with Amazon Forecast"
-  usesStreaming = true
-  requiredFields = []
-  supportedFormats = [Hub.ActionFormat.Csv] // TODO: can be empty array, since this action needs no data?
-  supportedFormattings = [Hub.ActionFormatting.Unformatted]
-  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  // iconName = "" // TODO
-
   // TODO: include extra params: backtest window, other backtest param
-  // TODO: move form field options to external module
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     // TODO: any error handling needed here?
@@ -147,7 +145,8 @@ export class ForecastTrainPredictorAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.startPredictorTraining(request).catch(winston.error)
+      this.startPredictorTraining(request)
+      .catch(async (err) => this.handleFailure(request, err))
       // response acknowledges that predictor training has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -172,13 +171,28 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       accessKeyId,
       secretAccessKey,
       region,
+      predictorName,
     } = actionParams
     // create Forecast dataset resource & feed in S3 data
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
     const forecastPredictor = new ForecastPredictor({ forecastService, ...actionParams })
     await forecastPredictor.startResourceCreation()
-    await pollForCreateComplete(forecastPredictor.getResourceCreationStatus)
-    // TODO: send email on success/fail?
+    const { jobStatus } = await pollForCreateComplete(forecastPredictor.getResourceCreationStatus)
+    // notify user of job result
+    await notifyJobStatus(request, {
+      action: this.label,
+      status: jobStatus,
+      resource: predictorName,
+    })
+  }
+
+  private async handleFailure(request: Hub.ActionRequest, err: Error) {
+    winston.error(JSON.stringify(err, null, 2))
+    await notifyJobStatus(request, {
+      action: request.actionId!,
+      status: err.name,
+      message: err.message,
+    })
   }
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastTrainPredictorActionParams {
