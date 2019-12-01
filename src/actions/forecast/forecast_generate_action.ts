@@ -190,7 +190,7 @@ export class ForecastGenerateAction extends Hub.Action {
       secretAccessKey,
       region,
     } = request.params
-    // TODO: are there AWS naming rules that I need to enforce in the UI?
+
     if (!accessKeyId) {
       throw new Error("Missing accessKeyId")
     }
@@ -212,8 +212,16 @@ export class ForecastGenerateAction extends Hub.Action {
       secretAccessKey,
       region,
       predictorArn,
-      forecastName,
+      forecastName: this.validateForecastName(forecastName),
     }
+  }
+
+  private validateForecastName(name: string) {
+    const regex = /^([a-z0-9_]){1,63}$/i
+    if (!regex.test(name)) {
+      throw new Error("Predictor name must between 1 and 63 characters. Only alphanumeric characters and _ allowed")
+    }
+    return name
   }
 }
 

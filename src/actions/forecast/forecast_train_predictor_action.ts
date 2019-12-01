@@ -8,7 +8,6 @@ import { ForecastTrainPredictorActionParams } from "./forecast_types"
 import { notifyJobStatus } from "./mail_transporter"
 import { pollForCreateComplete } from "./poller"
 
-// TODO: parseInt/Float on numeric cols from Looker, as they contain commas
 export class ForecastTrainPredictorAction extends Hub.Action {
   name = "amazon_forecast_predictor"
   label = "Amazon Forecast Train Predictor"
@@ -91,7 +90,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     },
   ]
 
-  // TODO: include extra params: backtest window, other backtest param
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     const datasetGroups = await this.listDatasetGroups(request)
@@ -115,19 +113,36 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         options: Object.entries(dataFrequencyOptions).map(([name, label]) => ({ name, label })),
         description: "The frequency of predictions in a forecast",
       },
-      { // TODO: should I calculate this value instead of asking for input
+      {
         label: "Forecast Horizon",
         name: "forecastHorizon",
         required: true,
         type: "string",
-        description: "Specifies the number of time-steps that the model is trained to predict",
+        description: `Specifies the number of time-steps that the model is trained to predict.
+        The maximum forecast horizon is the lesser of 500 time-steps or 1/3 of the Target Time Series dataset length`,
       },
       {
+        label: "Number Of Backtest Windows",
+        name: "numberOfBacktestWindows",
+        required: false,
+        type: "string",
+        description: `The number of times to split the input data. The default is 1. Valid values are 1 through 5`,
+      },
+      {
+        label: "Backtest Window Offset",
+        name: "backTestWindowOffset",
+        required: false,
+        type: "string",
+        description: `The point from the end of the dataset where you want to split the data for model training and
+        testing (evaluation). Specify the value as the number of data points.
+        The default is the value of the forecast horizon`,
+      },
+      { // TODO: should I calculate this instead of asking for user input
         label: "Predictor Name",
         name: "predictorName",
         required: true,
         type: "string",
-        description: "This name can help you distinguish this predictor from others",
+        description: "The predictor name must have 1 to 63 characters. Valid characters: a-z, A-Z, 0-9, and _",
       },
       {
         label: "Country for holidays",
@@ -199,6 +214,8 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       forecastFrequency,
       predictorName,
       forecastHorizon,
+      numberOfBacktestWindows,
+      backTestWindowOffset,
     } = request.formParams
 
     const {
@@ -206,7 +223,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       secretAccessKey,
       region,
     } = request.params
-    // TODO: are there AWS naming rules that I need to enforce in the UI?
+
     if (!forecastFrequency) {
       throw new Error("Missing forecastFrequency")
     }
@@ -234,11 +251,39 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       accessKeyId,
       secretAccessKey,
       region,
-      predictorName,
+      predictorName: this.validatePredictorName(predictorName),
       datasetGroupArn,
-      // TODO: handle case where this is NaN
-      forecastHorizon: parseInt(forecastHorizon, 10),
+      forecastHorizon: this.validateInteger("forecastHorizon", forecastHorizon),
+      backTestWindowOffset: backTestWindowOffset ?
+      this.validateInteger("backTestWindowOffset", backTestWindowOffset) : undefined,
+      numberOfBacktestWindows: numberOfBacktestWindows ?
+      this.validateNumberOfBacktestWindows(numberOfBacktestWindows) : undefined,
     }
+  }
+
+  private validatePredictorName(name: string) {
+    const regex = /^([a-z0-9_]){1,63}$/i
+    if (!regex.test(name)) {
+      throw new Error("Predictor name must between 1 and 63 characters. Only alphanumeric characters and _ allowed")
+    }
+    return name
+  }
+
+  private validateInteger(propName: string, value: string) {
+    const result = parseInt(value, 10)
+    if (isNaN(result)) {
+      throw new Error(`${propName} must be an integer`)
+    }
+    return result
+  }
+
+  private validateNumberOfBacktestWindows(value: string) {
+    const propName = "numberOfBacktestWindows"
+    const result = this.validateInteger(propName, value)
+    if (result < 1 || result > 5) {
+      throw new Error(`${propName} must be an integer between 1 and 5`)
+    }
+    return result
   }
 
   private forecastServiceFromRequest(request: Hub.ActionRequest) {

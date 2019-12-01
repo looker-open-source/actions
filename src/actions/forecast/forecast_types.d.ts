@@ -21,6 +21,8 @@ export interface ForecastTrainPredictorActionParams {
   secretAccessKey: string
   region: string
   forecastHorizon: number
+  numberOfBacktestWindows?: number
+  backTestWindowOffset?: number
 }
 
 export interface ForecastGenerateActionParams {
