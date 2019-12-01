@@ -23,14 +23,22 @@ export interface ForecastTrainPredictorActionParams {
   forecastHorizon: number
 }
 
+export interface ForecastGenerateActionParams {
+  accessKeyId: string
+  secretAccessKey: string
+  region: string
+  forecastName: string
+  predictorArn: string
+  forecastArn?: string
+}
+
 export interface ForecastExportActionParams {
   bucketName: string
   accessKeyId: string
   secretAccessKey: string
   region: string
   roleArn: string
-  predictorArn: string
-  forecastName: string
+  forecastArn: string
 }
 
 export interface ForecastWorkflowStage {

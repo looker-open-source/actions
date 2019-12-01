@@ -3,7 +3,7 @@ import * as Hub from "../../hub"
 import * as ForecastService from "aws-sdk/clients/forecastservice"
 import * as S3 from "aws-sdk/clients/s3"
 import * as winston from "winston"
-import ForecastExporter from "./forecast_export"
+import ForecastGenerate from "./forecast_generate"
 import { ForecastExportActionParams } from "./forecast_types"
 import { poll } from "./poller"
 
@@ -12,7 +12,7 @@ export class ForecastExportAction extends Hub.Action {
   // TODO: make email-related fields required
   name = "amazon_forecast_export"
   label = "Amazon Forecast Export"
-  description = "Export data from Amazon Forecast to S3"
+  description = "Import data into Amazon Forecast, train a model, and generate a forecast from that model"
   usesStreaming = true
   requiredFields = []
   supportedFormats = [Hub.ActionFormat.Csv]
@@ -110,10 +110,27 @@ export class ForecastExportAction extends Hub.Action {
   async form(request: Hub.ActionRequest) {
     winston.debug(JSON.stringify(request.params, null, 2))
     const form = new Hub.ActionForm()
+    const predictorOptions = await this.listPredictors(request)
     const bucketOptions = await this.listBuckets(request)
-    const forecastOptions = await this.listForecasts(request)
 
     form.fields = [
+      {
+        label: "Predictor ARN",
+        name: "predictorArn",
+        required: true,
+        type: "select",
+        options: predictorOptions
+        .map((p) => ({ name: p.PredictorArn!, label: p.PredictorName! })),
+        description: "The predictor you want to use to create forecasts",
+      },
+      { // TODO: should I eliminate this input and use the predictor name  + _export + time
+        // that way there is less user input required
+        label: "Forecast Name",
+        name: "forecastName",
+        required: true,
+        type: "string",
+        description: "Choose a name to identify this forecast",
+      },
       {
         label: "Forecast Destination Bucket",
         name: "bucketName",
@@ -122,22 +139,13 @@ export class ForecastExportAction extends Hub.Action {
         description: "Choose a destination bucket for your forecast",
         options: bucketOptions.map(({ Name }) => ({ name: Name!, label: Name! })),
       },
-      {
-        label: "Forecast",
-        name: "forecastArn",
-        required: true,
-        type: "select",
-        description: "Choose a Forecast to export",
-        options: forecastOptions
-        .map(({ ForecastArn, ForecastName }) => ({ name: ForecastArn!, label: ForecastName! })),
-      },
     ]
     return form
   }
 
   async execute(request: Hub.ActionRequest) {
     try {
-      this.startForecastExport(request).catch(winston.error)
+      this.generateForecastAndExport(request).catch(winston.error)
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
@@ -146,21 +154,22 @@ export class ForecastExportAction extends Hub.Action {
     }
   }
 
-  private async startForecastExport(request: Hub.ActionRequest) {
+  // TODO: different method name? (prepend with "start")
+  private async generateForecastAndExport(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
     const {
       accessKeyId,
       secretAccessKey,
       region,
     } = actionParams
-
+    // create Forecast dataset resource & feed in S3 data
     const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
-    const forecastExporter = new ForecastExporter({
+    const forecastQueryExporter = new ForecastQueryExporter({
       forecastService,
       ...actionParams,
     })
-    await forecastExporter.startResourceCreation()
-    await poll(forecastExporter.isResourceCreationComplete)
+    await forecastQueryExporter.startResourceCreation()
+    await poll(forecastQueryExporter.isResourceCreationComplete)
     // TODO: send email on success/failure
   }
 
@@ -177,12 +186,12 @@ export class ForecastExportAction extends Hub.Action {
     return results
   }
 
-  private async listForecasts(request: Hub.ActionRequest) {
+  private async listPredictors(request: Hub.ActionRequest) {
     const forecastService = this.forecastServiceFromRequest(request)
-    const { Forecasts } = await forecastService.listForecasts().promise()
+    const { Predictors } = await forecastService.listPredictors().promise()
     const results = []
-    if (Forecasts) {
-      results.push(...Forecasts)
+    if (Predictors) {
+      results.push(...Predictors)
     }
     return results
   }
@@ -197,7 +206,8 @@ export class ForecastExportAction extends Hub.Action {
 
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastExportActionParams {
     const {
-      forecastArn,
+      predictorArn,
+      forecastName,
     } = request.formParams
 
     const {
@@ -223,8 +233,11 @@ export class ForecastExportAction extends Hub.Action {
     if (!roleArn) {
       throw new Error("Missing roleArn")
     }
-    if (!forecastArn) {
-      throw new Error("Missing forecastArn")
+    if (!predictorArn) {
+      throw new Error("Missing predictorArn")
+    }
+    if (!forecastName) {
+      throw new Error("Missing forecastName")
     }
 
     return {
@@ -233,7 +246,8 @@ export class ForecastExportAction extends Hub.Action {
       secretAccessKey,
       region,
       roleArn,
-      forecastArn,
+      predictorArn,
+      forecastName,
     }
   }
 }

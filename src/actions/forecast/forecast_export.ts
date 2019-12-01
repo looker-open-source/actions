@@ -4,28 +4,25 @@ import { ForecastExportActionParams, ForecastWorkflowStage } from "./forecast_ty
 
 interface ForecastExportParams extends ForecastExportActionParams {
   forecastService: ForecastService
+  forecastArn: string
 }
 
 export default class ForecastExport implements ForecastWorkflowStage {
   private forecastService: ForecastService
-  private forecastName: string
-  private predictorArn: string
   private bucketName: string
   private roleArn: string
-  private forecastArn: string | undefined
-  private forecastExportJobArn: string | undefined
+  private forecastArn: string
+  private forecastExportJobArn?: string
 
   constructor(params: ForecastExportParams) {
     this.forecastService = params.forecastService
-    this.forecastName = params.forecastName
-    this.predictorArn = params.predictorArn
+    this.forecastArn = params.forecastArn
     this.bucketName = params.bucketName
     this.roleArn = params.roleArn
     this.isResourceCreationComplete = this.isResourceCreationComplete.bind(this)
   }
 
   async startResourceCreation() {
-    await this.createForecast()
     await this.createForecastExportJob()
   }
   // TODO: handle case where job is done because failure has occured (i.e. Status !== ACTIVE)
@@ -40,16 +37,10 @@ export default class ForecastExport implements ForecastWorkflowStage {
     return Status === "ACTIVE"
   }
 
-  private async createForecast() {
-    const params = {
-      ForecastName: this.forecastName,
-      PredictorArn: this.predictorArn,
-    }
-    const { ForecastArn } = await this.forecastService.createForecast(params).promise()
-    this.forecastArn = ForecastArn
-  }
-
   private async createForecastExportJob() {
+    const { ForecastName } = await this.forecastService
+    .describeForecast({ ForecastArn: this.forecastArn }).promise()
+
     const params = {
       Destination: {
         S3Config: {
@@ -57,8 +48,8 @@ export default class ForecastExport implements ForecastWorkflowStage {
           RoleArn: this.roleArn,
         },
       },
-      ForecastArn: this.forecastArn!,
-      ForecastExportJobName: `${this.forecastName}_export_${Date.now()}`,
+      ForecastArn: this.forecastArn,
+      ForecastExportJobName: `${ForecastName}_export_${Date.now()}`,
     }
     const { ForecastExportJobArn } = await this.forecastService.createForecastExportJob(params).promise()
     this.forecastExportJobArn = ForecastExportJobArn
