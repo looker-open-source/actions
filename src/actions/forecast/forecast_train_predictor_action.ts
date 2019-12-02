@@ -94,7 +94,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
     const form = new Hub.ActionForm()
     const datasetGroups = await this.listDatasetGroups(request)
     const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
-    datasetGroupOptions.unshift({ name: "New Group", label: "New Group" })
 
     form.fields = [
       {
