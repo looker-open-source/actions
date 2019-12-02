@@ -85,7 +85,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       name: "smtpPass",
       label: "SMTP Pass",
       required: true,
-      sensitive: false,
+      sensitive: true,
       description: "Pass for sending emails.",
     },
   ]
@@ -163,7 +163,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       // response acknowledges that predictor training has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
-      winston.error(JSON.stringify(err, null, 2))
+      await this.handleFailure(request, err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
