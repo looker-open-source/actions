@@ -10,7 +10,7 @@ import { pollForCreateComplete } from "./poller"
 
 export class ForecastExportAction extends Hub.Action {
   name = "amazon_forecast_export"
-  label = "Amazon Forecast Export"
+  label = "Amazon Forecast: Export Forecast"
   description = "Export data from Amazon Forecast to S3"
   usesStreaming = true
   requiredFields = []

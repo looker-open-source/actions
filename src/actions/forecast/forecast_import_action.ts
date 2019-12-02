@@ -11,7 +11,7 @@ import { uploadToS3 } from "./s3_upload"
 
 export class ForecastDataImportAction extends Hub.Action {
   name = "amazon_forecast_data_import"
-  label = "Amazon Forecast Data Import"
+  label = "Amazon Forecast: Data Import"
   supportedActionTypes = [Hub.ActionType.Query]
   description = "Import data into Amazon Forecast"
   usesStreaming = true

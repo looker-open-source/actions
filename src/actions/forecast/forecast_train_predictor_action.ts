@@ -10,7 +10,7 @@ import { pollForCreateComplete } from "./poller"
 
 export class ForecastTrainPredictorAction extends Hub.Action {
   name = "amazon_forecast_predictor"
-  label = "Amazon Forecast Train Predictor"
+  label = "Amazon Forecast: Train Predictor"
   supportedActionTypes = [Hub.ActionType.Query]
   description = "Train a time series prediction model with Amazon Forecast"
   usesStreaming = true

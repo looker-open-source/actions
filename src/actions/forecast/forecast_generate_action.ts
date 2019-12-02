@@ -8,8 +8,8 @@ import { notifyJobStatus } from "./mail_transporter"
 import { pollForCreateComplete } from "./poller"
 
 export class ForecastGenerateAction extends Hub.Action {
-  name = "amazon_forecast_export"
-  label = "Amazon Forecast Export"
+  name = "amazon_forecast_generate"
+  label = "Amazon Forecast: Generate Forecast"
   description = "Generate timeseries forecast using Amazon Forecast"
   usesStreaming = true
   requiredFields = []
