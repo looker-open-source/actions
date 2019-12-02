@@ -6,6 +6,7 @@ interface ForecastPredictorParams extends ForecastTrainPredictorActionParams {
 }
 
 export default class ForecastPredictor implements ForecastWorkflowStage {
+  failedReason?: string
   private forecastService: ForecastService
   private forecastFrequency: string
   private datasetGroupArn: string
@@ -36,9 +37,12 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
     if (!this.predictorArn) {
       return ""
     }
-    const { Status } = await this.forecastService.describePredictor({
+    const { Status, Message } = await this.forecastService.describePredictor({
       PredictorArn: this.predictorArn,
     }).promise()
+    if (Message) {
+      this.failedReason = Message
+    }
     return Status ? Status : ""
   }
 

@@ -148,6 +148,7 @@ export class ForecastGenerateAction extends Hub.Action {
       action: this.label,
       status: jobStatus,
       resource: forecastName,
+      message: forecastGenerate.failedReason!,
     })
   }
 

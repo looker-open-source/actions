@@ -194,6 +194,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       action: this.label,
       status: jobStatus,
       resource: predictorName,
+      message: forecastPredictor.failedReason!,
     })
   }
 

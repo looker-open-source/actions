@@ -8,6 +8,7 @@ interface ForecastExportParams extends ForecastExportActionParams {
 
 export default class ForecastExport implements ForecastWorkflowStage {
   forecastExportJobName?: string
+  failedReason?: string
   private forecastService: ForecastService
   private bucketName: string
   private roleArn: string
@@ -30,9 +31,12 @@ export default class ForecastExport implements ForecastWorkflowStage {
     if (!this.forecastExportJobArn) {
       return ""
     }
-    const { Status } = await this.forecastService.describeForecastExportJob({
+    const { Status, Message } = await this.forecastService.describeForecastExportJob({
       ForecastExportJobArn: this.forecastExportJobArn,
     }).promise()
+    if (Message) {
+      this.failedReason = Message
+    }
     return Status ? Status : ""
   }
 

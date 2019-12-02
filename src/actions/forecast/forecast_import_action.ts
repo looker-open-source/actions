@@ -217,6 +217,7 @@ export class ForecastDataImportAction extends Hub.Action {
       action: this.label,
       status: jobStatus,
       resource: datasetName,
+      message: forecastImport.failedReason!,
     })
   }
 

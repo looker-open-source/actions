@@ -163,6 +163,7 @@ export class ForecastExportAction extends Hub.Action {
       action: this.label,
       status: jobStatus,
       resource: forecastExporter.forecastExportJobName,
+      message: forecastExporter.failedReason,
     })
   }
 

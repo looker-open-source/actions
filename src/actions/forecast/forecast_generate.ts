@@ -6,6 +6,7 @@ interface ForecastGenerateParams extends ForecastGenerateActionParams {
 }
 
 export default class ForecastGenerate implements ForecastWorkflowStage {
+  failedReason?: string
   private forecastService: ForecastService
   private forecastName: string
   private predictorArn: string
@@ -26,9 +27,12 @@ export default class ForecastGenerate implements ForecastWorkflowStage {
     if (!this.forecastArn) {
       return ""
     }
-    const { Status } = await this.forecastService.describeForecast({
+    const { Status, Message } = await this.forecastService.describeForecast({
       ForecastArn: this.forecastArn,
     }).promise()
+    if (Message) {
+      this.failedReason = Message
+    }
     return Status ? Status : ""
   }
 

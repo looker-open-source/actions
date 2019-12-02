@@ -7,6 +7,7 @@ interface ForecastDataImportParams extends ForecastDataImportActionParams {
 }
 
 export default class ForecastDataImport implements ForecastWorkflowStage {
+  failedReason?: string
   private forecastService: ForecastService
   private s3ObjectKey: string
   private bucketName: string
@@ -46,9 +47,12 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
     if (!this.datasetImportJobArn) {
       return ""
     }
-    const { Status } = await this.forecastService.describeDatasetImportJob({
+    const { Status, Message } = await this.forecastService.describeDatasetImportJob({
       DatasetImportJobArn: this.datasetImportJobArn,
     }).promise()
+    if (Message) {
+      this.failedReason = Message
+    }
     return Status ? Status : ""
   }
 
