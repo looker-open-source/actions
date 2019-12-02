@@ -14,6 +14,7 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
   private backTestWindowOffset?: number
   private numberOfBacktestWindows?: number
   private predictorArn?: string
+  private countryForHolidays?: string
 
   constructor(params: ForecastPredictorParams) {
     this.forecastService = params.forecastService
@@ -23,6 +24,7 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
     this.forecastHorizon = params.forecastHorizon
     this.backTestWindowOffset = params.backTestWindowOffset
     this.numberOfBacktestWindows = params.numberOfBacktestWindows
+    this.countryForHolidays = params.countryForHolidays
     this.getResourceCreationStatus = this.getResourceCreationStatus.bind(this)
   }
 
@@ -41,7 +43,7 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
   }
 
   private async createPredictor() {
-    const params = {
+    const params: ForecastService.CreatePredictorRequest = {
       FeaturizationConfig: {
         ForecastFrequency: this.forecastFrequency,
       },
@@ -56,6 +58,16 @@ export default class ForecastPredictor implements ForecastWorkflowStage {
       PredictorName: this.predictorName,
       PerformAutoML: true,
     }
+
+    if (this.countryForHolidays) {
+      params.InputDataConfig.SupplementaryFeatures = [
+        {
+          Name: "holiday",
+          Value: this.countryForHolidays,
+        },
+      ]
+    }
+
     const { PredictorArn } = await this.forecastService.createPredictor(params).promise()
     this.predictorArn = PredictorArn
   }

@@ -23,6 +23,7 @@ export interface ForecastTrainPredictorActionParams {
   forecastHorizon: number
   numberOfBacktestWindows?: number
   backTestWindowOffset?: number
+  countryForHolidays?: string
 }
 
 export interface ForecastGenerateActionParams {

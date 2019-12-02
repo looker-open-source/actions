@@ -200,7 +200,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   private async handleFailure(request: Hub.ActionRequest, err: Error) {
     winston.error(JSON.stringify(err, null, 2))
     await notifyJobStatus(request, {
-      action: request.actionId!,
+      action: "amazon_forecast_predictor",
       status: err.name,
       message: err.message,
     })
@@ -214,6 +214,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       forecastHorizon,
       numberOfBacktestWindows,
       backTestWindowOffset,
+      countryForHolidays,
     } = request.formParams
 
     const {
@@ -246,6 +247,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
 
     return {
       forecastFrequency,
+      countryForHolidays,
       accessKeyId,
       secretAccessKey,
       region,

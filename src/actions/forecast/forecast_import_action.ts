@@ -223,7 +223,7 @@ export class ForecastDataImportAction extends Hub.Action {
   private async handleFailure(request: Hub.ActionRequest, err: Error) {
     winston.error(err.message, err.stack)
     await notifyJobStatus(request, {
-      action: request.actionId!,
+      action: "amazon_forecast_data_import",
       status: err.name,
       message: err.message,
     })
