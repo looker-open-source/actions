@@ -139,7 +139,6 @@ export class ForecastExportAction extends Hub.Action {
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
-      await this.handleFailure(request, err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }

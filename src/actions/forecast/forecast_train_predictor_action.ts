@@ -163,7 +163,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
       // response acknowledges that predictor training has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
-      await this.handleFailure(request, err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }

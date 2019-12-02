@@ -184,7 +184,6 @@ export class ForecastDataImportAction extends Hub.Action {
       // response acknowledges that import has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
-      await this.handleFailure(request, err)
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
   }
@@ -222,7 +221,7 @@ export class ForecastDataImportAction extends Hub.Action {
   }
 
   private async handleFailure(request: Hub.ActionRequest, err: Error) {
-    winston.error(JSON.stringify(err, null, 2))
+    winston.error(err.message, err.stack)
     await notifyJobStatus(request, {
       action: request.actionId!,
       status: err.name,
