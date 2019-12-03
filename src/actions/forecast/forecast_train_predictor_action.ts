@@ -136,7 +136,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         testing (evaluation). Specify the value as the number of data points.
         The default is the value of the forecast horizon`,
       },
-      { // TODO: should I calculate this instead of asking for user input
+      {
         label: "Predictor Name",
         name: "predictorName",
         required: true,

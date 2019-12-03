@@ -56,7 +56,6 @@ interface JobStatusNotificationParams {
     message?: string
 }
 
-// TODO: include text about which action user should start next?
 export async function notifyJobStatus(request: Hub.ActionRequest, data: JobStatusNotificationParams) {
     const transporter = getMailTransporter(request)
     const jobNotCompleteWithinPollingWindow = data.status === "INCOMPLETE"
