@@ -61,7 +61,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
           await action.execute(request)
           expect(stubMailer.getCall(0).args[1]).to.deep.equal({
-            action: "amazon_forecast_export",
+            action: "Amazon Forecast: Export Forecast",
             status: "Error",
             message: `Missing ${param}`,
           })

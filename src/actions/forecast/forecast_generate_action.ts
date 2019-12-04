@@ -149,7 +149,7 @@ export class ForecastGenerateAction extends Hub.Action {
   private async handleFailure(request: Hub.ActionRequest, err: Error) {
     winston.error(JSON.stringify(err, null, 2))
     await notifyJobStatus(request, {
-      action: "amazon_forecast_generate",
+      action: "Amazon Forecast: Generate Forecast",
       status: err.name,
       message: err.message,
     })
