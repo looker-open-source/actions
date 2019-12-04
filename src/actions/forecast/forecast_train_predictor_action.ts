@@ -97,6 +97,13 @@ export class ForecastTrainPredictorAction extends Hub.Action {
 
     form.fields = [
       {
+        label: "Predictor Name",
+        name: "predictorName",
+        required: true,
+        type: "string",
+        description: "The predictor name must have 1 to 63 characters. Valid characters: a-z, A-Z, 0-9, and _",
+      },
+      {
         label: "Dataset group ARN",
         name: "datasetGroupArn",
         required: true,
@@ -137,13 +144,6 @@ export class ForecastTrainPredictorAction extends Hub.Action {
         The default is the value of the forecast horizon`,
       },
       {
-        label: "Predictor Name",
-        name: "predictorName",
-        required: true,
-        type: "string",
-        description: "The predictor name must have 1 to 63 characters. Valid characters: a-z, A-Z, 0-9, and _",
-      },
-      {
         label: "Country for holidays",
         name: "countryForHolidays",
         required: false,
@@ -178,14 +178,9 @@ export class ForecastTrainPredictorAction extends Hub.Action {
 
   private async startPredictorTraining(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
-    const {
-      accessKeyId,
-      secretAccessKey,
-      region,
-      predictorName,
-    } = actionParams
+    const { predictorName } = actionParams
     // create Forecast dataset resource & feed in S3 data
-    const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
+    const forecastService = this.forecastServiceFromRequest(request)
     const forecastPredictor = new ForecastPredictor({ forecastService, ...actionParams })
     await forecastPredictor.startResourceCreation()
     const { jobStatus } = await pollForCreateComplete(forecastPredictor.getResourceCreationStatus)

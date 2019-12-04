@@ -162,7 +162,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           })
       })
 
-      it("should return successfuly from execute", (done) => {
+      it("should return successfully from execute", (done) => {
         const request = createValidRequest()
         expect(action.execute(request))
         .to.be.fulfilled.then(() => done())
