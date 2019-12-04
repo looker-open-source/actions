@@ -30,6 +30,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     forecastingDomain: "CUSTOM",
     dataFrequency: "D",
     datasetType: "TARGET_TIME_SERIES",
+    bucketName: "my-bucket-name",
     datasetSchema: JSON.stringify({
       Attributes: [
         {
@@ -99,6 +100,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       testMissingParam("datasetType")
       testMissingParam("datasetSchema")
       testMissingParam("timestampFormat")
+      testMissingParam("bucketName")
     })
     describe("with valid parameters", () => {
       let forecastClientStub: sinon.SinonStub
@@ -242,6 +244,19 @@ describe(`${action.constructor.name} unit tests`, () => {
           })),
         }),
       }))
+
+      const s3ClientStub = sinon.stub(action as any, "s3ClientFromRequest")
+      .callsFake(() => ({
+        listBuckets: () => ({
+          promise: async () => new Promise<any>((resolve) => resolve({
+            Buckets: [
+              { Name: "bucket1" },
+              { Name: "bucket2" },
+            ],
+          })),
+        }),
+      }))
+
       // build params map
       const request = new Hub.ActionRequest()
       request.params = validParams
@@ -256,6 +271,17 @@ describe(`${action.constructor.name} unit tests`, () => {
             required: true,
             type: "string",
             description: "The dataset name must have 1 to 63 characters. Valid characters: a-z, A-Z, 0-9, and _",
+          },
+          {
+            label: "Data Import Bucket",
+            name: "bucketName",
+            required: true,
+            type: "select",
+            description: "Choose a bucket your Looker data will be imported to for Forecast to access",
+            options: [
+              { name: "bucket1", label: "bucket1" },
+              { name: "bucket2", label: "bucket2" },
+            ],
           },
           {
             label: "Dataset group",
@@ -359,6 +385,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       expect(form)
         .to.eventually.deep.equal(expected)
         .and.notify(forecastClientStub.restore)
+        .and.notify(s3ClientStub.restore)
         .and.notify(done)
     })
   })

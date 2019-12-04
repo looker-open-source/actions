@@ -1,6 +1,7 @@
 import * as Hub from "../../hub"
 
 import * as ForecastService from "aws-sdk/clients/forecastservice"
+import * as S3 from "aws-sdk/clients/s3"
 import * as winston from "winston"
 import { dataFrequencyOptions, datasetSchemaDefault, datasetTypeOptions, domainOptions } from "./forecast_form_options"
 import ForecastDataImport from "./forecast_import"
@@ -35,13 +36,6 @@ export class ForecastDataImportAction extends Hub.Action {
       required: true,
       sensitive: true,
       description: "Your AWS secret access key.",
-    },
-    {
-      name: "bucketName",
-      label: "Bucket Name",
-      required: true,
-      sensitive: false,
-      description: "Name of the bucket Amazon Forecast will read your Looker data from",
     },
     {
       name: "roleArn",
@@ -107,6 +101,7 @@ export class ForecastDataImportAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
+    const bucketOptions = await this.listBuckets(request)
     const datasetGroups = await this.listDatasetGroups(request)
     const datasetGroupOptions = datasetGroups.map((dg) => ({ name: dg.DatasetGroupArn!, label: dg.DatasetGroupName! }))
     datasetGroupOptions.unshift({ name: "", label: "New Group" })
@@ -118,6 +113,14 @@ export class ForecastDataImportAction extends Hub.Action {
         required: true,
         type: "string",
         description: "The dataset name must have 1 to 63 characters. Valid characters: a-z, A-Z, 0-9, and _",
+      },
+      {
+        label: "Data Import Bucket",
+        name: "bucketName",
+        required: true,
+        type: "select",
+        description: "Choose a bucket your Looker data will be imported to for Forecast to access",
+        options: bucketOptions.map(({ Name }) => ({ name: Name!, label: Name! })),
       },
       {
         label: "Dataset group",
@@ -188,6 +191,23 @@ export class ForecastDataImportAction extends Hub.Action {
     }
   }
 
+  private async listBuckets(request: Hub.ActionRequest) {
+    const s3 = this.s3ClientFromRequest(request)
+    const results = []
+    const { Buckets } = await s3.listBuckets().promise()
+    if (Buckets) {
+      results.push(...Buckets)
+    }
+    return results
+  }
+
+  private s3ClientFromRequest(request: Hub.ActionRequest) {
+    return new S3({
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
+    })
+  }
+
   private async listDatasetGroups(request: Hub.ActionRequest) {
     const forecastService = this.forecastServiceFromRequest(request)
     const { DatasetGroups } = await forecastService.listDatasetGroups().promise()
@@ -240,10 +260,10 @@ export class ForecastDataImportAction extends Hub.Action {
       timestampFormat,
       datasetSchema,
       datasetType,
+      bucketName,
     } = request.formParams
 
     const {
-      bucketName,
       accessKeyId,
       secretAccessKey,
       region,
