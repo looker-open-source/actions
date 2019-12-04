@@ -128,14 +128,9 @@ export class ForecastGenerateAction extends Hub.Action {
 
   private async startForecastGeneration(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
-    const {
-      accessKeyId,
-      secretAccessKey,
-      region,
-      forecastName,
-    } = actionParams
+    const { forecastName } = actionParams
 
-    const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
+    const forecastService = this.forecastServiceFromRequest(request)
     const forecastGenerate = new ForecastGenerate({
       forecastService,
       ...actionParams,
