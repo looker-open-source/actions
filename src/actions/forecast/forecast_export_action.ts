@@ -36,13 +36,6 @@ export class ForecastExportAction extends Hub.Action {
       description: "Your AWS secret access key.",
     },
     {
-      name: "bucketName",
-      label: "Bucket Name",
-      required: true,
-      sensitive: false,
-      description: "Name of the bucket Amazon Forecast will write prediction to",
-    },
-    {
       name: "roleArn",
       label: "Role ARN",
       required: true,
@@ -145,13 +138,7 @@ export class ForecastExportAction extends Hub.Action {
 
   private async startForecastExport(request: Hub.ActionRequest) {
     const actionParams = this.getRequiredActionParamsFromRequest(request)
-    const {
-      accessKeyId,
-      secretAccessKey,
-      region,
-    } = actionParams
-
-    const forecastService = new ForecastService({ accessKeyId, secretAccessKey, region })
+    const forecastService = this.forecastServiceFromRequest(request)
     const forecastExporter = new ForecastExporter({
       forecastService,
       ...actionParams,
@@ -168,10 +155,7 @@ export class ForecastExportAction extends Hub.Action {
   }
 
   private async listBuckets(request: Hub.ActionRequest) {
-    const s3 = new S3({
-      accessKeyId: request.params.accessKeyId,
-      secretAccessKey: request.params.secretAccessKey,
-    })
+    const s3 = this.s3ClientFromRequest(request)
     const results = []
     const { Buckets } = await s3.listBuckets().promise()
     if (Buckets) {
@@ -207,13 +191,20 @@ export class ForecastExportAction extends Hub.Action {
     })
   }
 
+  private s3ClientFromRequest(request: Hub.ActionRequest) {
+    return new S3({
+      accessKeyId: request.params.accessKeyId,
+      secretAccessKey: request.params.secretAccessKey,
+    })
+  }
+
   private getRequiredActionParamsFromRequest(request: Hub.ActionRequest): ForecastExportActionParams {
     const {
+      bucketName,
       forecastArn,
     } = request.formParams
 
     const {
-      bucketName,
       accessKeyId,
       secretAccessKey,
       region,
