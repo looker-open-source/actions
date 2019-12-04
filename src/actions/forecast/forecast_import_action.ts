@@ -161,7 +161,7 @@ export class ForecastDataImportAction extends Hub.Action {
         description: `To help Forecast understand the fields of your data, supply a schema.
         Specify schema attributes in the same order as the columns of your query result.
         The default shown is valid for the "Custom" domain option only.
-        Column headers need not match the schema. See Forecast documention for more details.`,
+        Column headers need not match the schema. See Forecast documentation for more details.`,
         default: JSON.stringify(datasetSchemaDefault, null, 2),
       },
       {

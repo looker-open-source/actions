@@ -81,6 +81,7 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
       const { DatasetGroupArn } = await this.forecastService.createDatasetGroup(params).promise()
       this.datasetGroupArn = DatasetGroupArn!
     }
+    // TODO: if datasetgroup already exists, then update it with new dataset
   }
 
   private async createDatasetImportJob() {

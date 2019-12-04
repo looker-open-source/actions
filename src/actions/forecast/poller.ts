@@ -18,6 +18,6 @@ export async function pollForCreateComplete(
   }
 
     // job not done, so sleep for POLL_INTERVAL_MS
-  await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
+  await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
   return pollForCreateComplete(getJobStatus, pollsRemaining - 1)
 }
