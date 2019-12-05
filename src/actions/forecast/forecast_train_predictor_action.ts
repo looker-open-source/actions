@@ -18,7 +18,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
-  // iconName = "" // TODO
+  iconName = "forecast/forecast_logo.png"
 
   params = [
     {

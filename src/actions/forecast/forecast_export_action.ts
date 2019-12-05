@@ -18,7 +18,7 @@ export class ForecastExportAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedActionTypes = [Hub.ActionType.Query]
-  // iconName = "" // TODO
+  iconName = "forecast/forecast_logo.png"
 
   params = [
     {
