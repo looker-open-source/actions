@@ -184,7 +184,7 @@ export class ForecastDataImportAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     try {
       this.startForecastImport(request)
-      .catch(async (err) => this.handleFailure(request, err))
+        .catch(async (err) => this.handleFailure(request, err))
       // response acknowledges that import has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {

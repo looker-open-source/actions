@@ -159,7 +159,7 @@ export class ForecastTrainPredictorAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     try {
       this.startPredictorTraining(request)
-      .catch(async (err) => this.handleFailure(request, err))
+        .catch(async (err) => this.handleFailure(request, err))
       // response acknowledges that predictor training has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {

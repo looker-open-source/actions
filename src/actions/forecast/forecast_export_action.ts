@@ -129,7 +129,7 @@ export class ForecastExportAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     try {
       this.startForecastExport(request)
-      .catch(async (err) => this.handleFailure(request, err))
+        .catch(async (err) => this.handleFailure(request, err))
       // response acknowledges that workflow has started, not that it's complete
       return new Hub.ActionResponse({ success: true })
     } catch (err) {
