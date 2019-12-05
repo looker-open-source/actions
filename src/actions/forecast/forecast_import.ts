@@ -39,7 +39,7 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
 
   async startResourceCreation() {
     await this.createDataset()
-    await this.createDatasetGroup()
+    await this.createOrUpdateDatasetGroup()
     await this.createDatasetImportJob()
   }
 
@@ -69,8 +69,16 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
     this.datasetArn = DatasetArn
   }
 
-  private async createDatasetGroup() {
-    if (!this.datasetGroupArn) {
+  private async createOrUpdateDatasetGroup() {
+    if (this.datasetGroupArn) {
+      const params = {
+        DatasetArns: [
+          this.datasetArn!,
+        ],
+        DatasetGroupArn: this.datasetGroupArn,
+      }
+      await this.forecastService.updateDatasetGroup(params).promise()
+    } else {
       const params = {
         DatasetGroupName: `${this.datasetName}_group`,
         Domain: this.forecastingDomain,
@@ -81,7 +89,6 @@ export default class ForecastDataImport implements ForecastWorkflowStage {
       const { DatasetGroupArn } = await this.forecastService.createDatasetGroup(params).promise()
       this.datasetGroupArn = DatasetGroupArn!
     }
-    // TODO: if datasetgroup already exists, then update it with new dataset
   }
 
   private async createDatasetImportJob() {

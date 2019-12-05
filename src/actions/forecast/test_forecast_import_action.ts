@@ -110,6 +110,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       let createDatasetGroupSpy: sinon.SinonSpy
       let createDatasetImportJobSpy: sinon.SinonSpy
       let describeDatasetImportJobSpy: sinon.SinonSpy
+      let updateDatasetGroupSpy: sinon.SinonSpy
 
       beforeEach(() => {
         createDatasetSpy = sinon.spy(() => ({
@@ -136,12 +137,17 @@ describe(`${action.constructor.name} unit tests`, () => {
           })),
         }))
 
+        updateDatasetGroupSpy = sinon.spy(() => ({
+          promise: async () => new Promise<any>((resolve) => resolve({})),
+        }))
+
         forecastClientStub = sinon.stub(action as any, "forecastServiceFromRequest")
         .callsFake(() => ({
           createDataset: createDatasetSpy,
           createDatasetGroup: createDatasetGroupSpy,
           createDatasetImportJob: createDatasetImportJobSpy,
           describeDatasetImportJob: describeDatasetImportJobSpy,
+          updateDatasetGroup: updateDatasetGroupSpy,
         }))
 
         s3ClientStub = sinon.stub(upload, "uploadToS3").returns(Promise.resolve())
@@ -180,12 +186,23 @@ describe(`${action.constructor.name} unit tests`, () => {
           })
       })
 
-      it("should create dataset group", (done) => {
+      it("should create dataset group if none is selected", (done) => {
         const request = createValidRequest()
         expect((action as any).startForecastImport(request))
           .to.be.fulfilled
           .then((_result) => {
             expect(createDatasetGroupSpy.callCount).to.equal(1)
+            done()
+          })
+      })
+
+      it("should use existing dataset group if one is selected", (done) => {
+        const request = createValidRequest()
+        request.formParams.datasetGroupArn = "existing_dsg_arn"
+        expect((action as any).startForecastImport(request))
+          .to.be.fulfilled
+          .then((_result) => {
+            expect(updateDatasetGroupSpy.callCount).to.equal(1)
             done()
           })
       })
