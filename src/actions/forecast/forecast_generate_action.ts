@@ -39,7 +39,8 @@ export class ForecastGenerateAction extends Hub.Action {
       label: "Region",
       required: true,
       sensitive: false,
-      description: "AWS Region where you run Forecast",
+      description: "Forecast Region e.g. us-east-1, us-west-1, ap-south-1 from " +
+        "http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region.",
     },
     {
       name: "user_email",
