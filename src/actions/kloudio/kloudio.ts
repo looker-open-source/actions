@@ -5,7 +5,7 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 
 const signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
-const API_URL = "https://ecuoyevlzf.execute-api.us-west-2.amazonaws.com/prod/dest/send"
+const API_URL = "https://looker.kloud.io"
 const s3Bool = true
 let data = {}
 
