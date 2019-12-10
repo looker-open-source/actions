@@ -9,13 +9,14 @@ interface Channel {
     label: string,
 }
 
-const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
+const _usableChannels = async (slack: WebClient, legacy: boolean): Promise<Channel[]> => {
     const options: any = {
         types: "public_channel,private_channel",
         exclude_archived: true,
         exclude_members: true,
         limit: API_LIMIT_SIZE,
     }
+    const channelList: any = legacy ? slack.channels.list : slack.conversations.list
     const pageLoaded = async (accumulatedChannels: any[], response: any): Promise<any[]> => {
         const mergedChannels = accumulatedChannels.concat(response.channels)
 
@@ -25,11 +26,11 @@ const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
             response.response_metadata.next_cursor !== "") {
             const pageOptions = { ...options }
             pageOptions.cursor = response.response_metadata.next_cursor
-            return pageLoaded(mergedChannels, await slack.conversations.list(pageOptions))
+            return pageLoaded(mergedChannels, await channelList(pageOptions))
         }
         return mergedChannels
     }
-    const paginatedChannels = await pageLoaded([], await slack.conversations.list(options))
+    const paginatedChannels = await pageLoaded([], await channelList(options))
     const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
     return channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
 }
@@ -58,15 +59,15 @@ const usableDMs = async (slack: WebClient): Promise<Channel[]> => {
     return users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
 }
 
-const usableChannels = async (slack: WebClient): Promise<Channel[]> => {
-    let channels = await _usableChannels(slack)
+const usableChannels = async (slack: WebClient, legacy: boolean): Promise<Channel[]> => {
+    let channels = await _usableChannels(slack, legacy)
     channels = channels.concat(await usableDMs(slack))
     channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
     return channels
 }
 
-export const getDisplayedFormFields = async (slack: WebClient): Promise<ActionFormField[]> => {
-    const channels = await usableChannels(slack)
+export const getDisplayedFormFields = async (slack: WebClient, legacy: boolean): Promise<ActionFormField[]> => {
+    const channels = await usableChannels(slack, legacy)
     return [
         {
             description: "Name of the Slack channel you would like to post to.",

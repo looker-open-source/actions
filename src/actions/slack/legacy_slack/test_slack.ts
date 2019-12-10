@@ -16,8 +16,8 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
   })
 
-  it("enables streaming", () => {
-    chai.expect(action.usesStreaming).equals(true)
+  it("streaming disabled to support legacy formats", () => {
+    chai.expect(action.usesStreaming).equals(false)
   })
 
   describe("form", () => {

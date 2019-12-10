@@ -87,10 +87,14 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "10.8.0"
+    "node": "10.8.0",
+    "yarn": ">=1.19.1"
   },
   "resolutions": {
-    "**/event-stream": "3.3.4"
+    "**/event-stream": "3.3.4",
+    "**/extend": "^3.0.2",
+    "**/qs": "^6.9.0",
+    "**/just-extend": "^4.0.2"
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",
