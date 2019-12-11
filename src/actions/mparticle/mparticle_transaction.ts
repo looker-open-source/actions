@@ -12,6 +12,7 @@ import {
   MP_API_URL,
   PROD_ENVIRONMENT,
   USER,
+  VALID_DEVICE_INFO_FIELDS,
 } from "./mparticle_constants"
 import { MparticleEventMaps, MparticleEventTags, MparticleUserMaps, MparticleUserTags } from "./mparticle_enums"
 import { mparticleErrorCodes } from "./mparticle_error_codes"
@@ -270,11 +271,11 @@ export class MparticleTransaction {
         mapping.userAttributes[field.name] = `looker_${field.name}`
       } else if (tag === MparticleEventTags.MpEventName) {
         mapping.eventName[field.name] = MparticleEventMaps.EventName
-      } else if (tag === MparticleEventTags.MpDeviceInfo) {
-        mapping.deviceInfo[field.name] = `looker_${field.name}`
+      } else if (tag === MparticleEventTags.MpDeviceInfo && VALID_DEVICE_INFO_FIELDS.includes(field.name)) {
+          mapping.deviceInfo[field.name] = field.name
       } else if (Object.keys(this.dataEventAttributes).indexOf(tag) !== -1) {
         mapping.dataEventAttributes[field.name] = this.dataEventAttributes[tag]
-      } else {
+      } else if (tag === MparticleEventTags.MpCustomAttribute) {
         mapping.customAttributes[field.name] = `looker_${field.name}`
       }
     }
