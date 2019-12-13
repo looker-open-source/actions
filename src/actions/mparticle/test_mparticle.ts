@@ -107,4 +107,8 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
     })
   })
+
+  // it("sets custom_event_type to 'other'")
+  // it("only includes whitelisted device_info fields")
+  // it("only captures custom attributes with the mp_custom_attribute tag")
 })

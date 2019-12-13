@@ -113,7 +113,6 @@ export class MparticleTransaction {
       const eventEntry = this.createEvent(row, mapping)
       body.push(eventEntry)
     })
-
     const options = this.postOptions(body)
     await httpRequest.post(options).promise().catch((e: any) => {
       this.errors.push(`${e.statusCode} - ${mparticleErrorCodes[e.statusCode]}`)
@@ -124,6 +123,7 @@ export class MparticleTransaction {
     const eventUserIdentities: any = {}
     const eventUserAttributes: any = {}
     const data: any = {}
+    const deviceInfo: any = {}
 
     Object.keys(mapping.userIdentities).forEach((attr: any) => {
       const key = mapping.userIdentities[attr]
@@ -136,9 +136,7 @@ export class MparticleTransaction {
       const val = row[attr].value
       eventUserAttributes[key] = val
     })
-
     if (this.eventType === EVENT) {
-      data.device_info = {}
       data.custom_attributes = {}
 
       if (Object.keys(mapping.eventName).length !== 0) {
@@ -154,7 +152,7 @@ export class MparticleTransaction {
         Object.keys(mapping.deviceInfo).forEach((attr: any) => {
           const key = mapping.deviceInfo[attr]
           const val = row[attr].value
-          data.device_info[key] = val
+          deviceInfo[key] = val
         })
       }
       if (mapping.dataEventAttributes) {
@@ -181,6 +179,7 @@ export class MparticleTransaction {
       events,
       user_attributes: eventUserAttributes,
       user_identities: eventUserIdentities,
+      device_info: deviceInfo,
       schema_version: 2,
       environment: this.environment,
     }
@@ -271,8 +270,12 @@ export class MparticleTransaction {
         mapping.userAttributes[field.name] = `looker_${field.name}`
       } else if (tag === MparticleEventTags.MpEventName) {
         mapping.eventName[field.name] = MparticleEventMaps.EventName
-      } else if (tag === MparticleEventTags.MpDeviceInfo && VALID_DEVICE_INFO_FIELDS.includes(field.name)) {
-          mapping.deviceInfo[field.name] = field.name
+      } else if (tag === MparticleEventTags.MpDeviceInfo) {
+        const { name } = field
+        const dimensionName = name.substring(name.indexOf(".") + 1, name.length)
+        if (VALID_DEVICE_INFO_FIELDS.includes(dimensionName)) {
+          mapping.deviceInfo[name] = dimensionName
+        }
       } else if (Object.keys(this.dataEventAttributes).indexOf(tag) !== -1) {
         mapping.dataEventAttributes[field.name] = this.dataEventAttributes[tag]
       } else if (tag === MparticleEventTags.MpCustomAttribute) {
