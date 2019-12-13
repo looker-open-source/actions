@@ -2,7 +2,7 @@ import * as b64 from "base64-url"
 import * as chai from "chai"
 import * as https from "request-promise-native"
 import * as sinon from "sinon"
-const streamifier: any = require("streamifier")
+import { PassThrough } from "stream"
 
 import * as Hub from "../../hub"
 
@@ -26,7 +26,16 @@ function expectGoogleDriveMatch(request: Hub.ActionRequest, optionsMatch: any) {
     }))
 
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(optionsMatch)
+    const gDrivePayload = fileUploadSpy.args[0][0]
+    const stream = gDrivePayload.media.body
+    let expectedPayload = ""
+    chai.expect(gDrivePayload.resource).to.deep.equal(optionsMatch.resource)
+    chai.expect(gDrivePayload.media.body).to.exist
+    stream
+      .on("data", (chunk: any) => expectedPayload += chunk)
+      .on("end", () => {
+        chai.expect(expectedPayload).to.equal("Hello")
+      })
     stubClient.restore()
   })
 }
@@ -65,7 +74,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectGoogleDriveMatch(request,
         {
           media: {
-            body: streamifier.createReadStream(Buffer.from("Hello")),
+            body: new PassThrough().end(Buffer.from("Hello")),
           },
           resource: {
             mimeType: "application/json",

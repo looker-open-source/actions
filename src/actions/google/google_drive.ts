@@ -1,8 +1,8 @@
 import * as https from "request-promise-native"
+import { PassThrough } from "stream"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const streamifier: any = require("streamifier")
 const { google } = require("googleapis")
 const ROOT_FOLDER_NAME = "My Drive"
 
@@ -61,7 +61,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         {
           resource: fileMetadata,
           media: {
-            body: streamifier.createReadStream(request.attachment.dataBuffer),
+            body: new PassThrough().end(request.attachment.dataBuffer),
           },
         },
       )
