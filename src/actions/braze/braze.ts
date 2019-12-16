@@ -157,7 +157,7 @@ export class BrazeAction extends Hub.Action {
       })
 
       if (rows.length > 0) {
-        this.sendChunk(endpoint, brazeApiKey, rows)
+        await this.sendChunk(endpoint, brazeApiKey, rows)
           .catch( (e) => {
             return new Hub.ActionResponse({success: false, message: e.message })
           })
@@ -201,7 +201,10 @@ export class BrazeAction extends Hub.Action {
       api_key: apiKey,
       attributes: chunk,
     }
-    return req.post({ uri: urlendpoint, headers: {"Content-Type": "application/json"}, body: reqbody, json: true})
+    await req.post({
+      uri: urlendpoint, headers: {"Content-Type": "application/json"},
+      body: reqbody, json: true})
+      .promise()
   }
 }
 
