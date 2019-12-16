@@ -27,7 +27,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
      browse your favorites or folders, and interact with Looker content without leaving Slack.`,
   }]
   minimumSupportedLookerVersion = "6.23.0"
-  usesStreaming = false
+  usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
     return await handleExecute(request, this.slackClientFromRequest(request))
