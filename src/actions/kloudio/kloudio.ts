@@ -39,7 +39,7 @@ export class KloudioAction extends Hub.Action {
       throw "Request payload is an invalid format."
     }
 
-    winston.info(typeof request.attachment.dataJSON)
+    winston.info(request.attachment.dataJSON)
 
     const { spreadsheetId, sheetId }  = await parseGsheet(request.formParams.url)
 
