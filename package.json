@@ -4,7 +4,7 @@
   "description": "",
   "main": "lib/index",
   "scripts": {
-    "start": "./node_modules/.bin/ts-node --async-stack-traces ./src/boot.ts",
+    "start": "./node_modules/.bin/ts-node --async-stack-traces -- ./src/boot.ts",
     "generate-api-key": "./node_modules/.bin/ts-node ./bin/generate_key.ts",
     "copy-api-types": "./node_modules/.bin/ts-node ./bin/copy_api_types.ts",
     "dev": "./node_modules/.bin/nodemon --exec ./node_modules/.bin/ts-node --async-stack-traces --no-cache --type-check -- ./src/boot.ts",
