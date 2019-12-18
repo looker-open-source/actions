@@ -50,8 +50,7 @@ export class KloudioAction extends Hub.Action {
     const dataRows = await parseData(request.attachment.dataJSON.data, names, finalLabels)
 
     let response
-    // const anonymousId = this.generateAnonymousId() + ".json"
-    const anonymousId = "Looker JSON Output" + ".json"
+    const anonymousId = this.generateAnonymousId() + ".json"
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
 
     if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
@@ -59,10 +58,7 @@ export class KloudioAction extends Hub.Action {
       return new Hub.ActionResponse(response)
     }
 
-    winston.info(typeof dataRows)
-    await uploadToS32(s3SignedUrl.signedURL, request.attachment.dataJSON)
-
-    // await uploadToS32(s3SignedUrl.signedURL, dataRows)
+    await uploadToS32(s3SignedUrl.signedURL, dataRows)
     data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
        s3Upload: s3Bool, data: anonymousId}
 
