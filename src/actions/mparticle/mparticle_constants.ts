@@ -3,6 +3,7 @@ export const EVENT_TYPE = "custom_event"
 export const DEFAULT_EVENT_NAME = "looker_custom_event"
 export const DEFAULT_CUSTOM_EVENT_TYPE = "other"
 export const DEV_ENVIRONMENT = "development"
+export const MAX_EVENTS_PER_BATCH = 100
 export const PROD_ENVIRONMENT = "production"
 export const USER = "user_data"
 export const EVENT = "event_data"
