@@ -62,8 +62,6 @@ export class KloudioAction extends Hub.Action {
     data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
        s3Upload: s3Bool, data: anonymousId, reportName: "Looker Report"}
 
-    winston.info("data payload is " + JSON.stringify(data))
-
     try {
         const newUri = API_URL.replace(/['"]+/g, "")
         const lambdaResponse = await https.post({
