@@ -194,6 +194,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           label: "Select folder to save file",
           name: "folder",
           options: [{ name: "fake_id", label: "fake_name" }],
+          default: "fake_id",
           required: true,
           type: "select",
         }, {
