@@ -102,6 +102,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             label: "Select folder to save file",
             name: "folder",
             options: folders,
+            default: folders[0].name,
             required: true,
             type: "select",
           }, {
