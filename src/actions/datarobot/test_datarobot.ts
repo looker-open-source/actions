@@ -1,5 +1,5 @@
 import * as chai from "chai"
-// import * as httpRequest from "request-promise-native"
+import * as httpRequest from "request-promise-native"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
@@ -11,7 +11,7 @@ const action = new DataRobotAction()
 describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
-    const stubHttpPost: sinon.SinonStub
+    let stubHttpPost: sinon.SinonStub
 
     afterEach(() => {
       stubHttpPost.restore()
