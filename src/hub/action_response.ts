@@ -1,3 +1,5 @@
+import {ActionState} from "./action_state"
+
 export interface ValidationError {
   field: string
   message: string
@@ -8,7 +10,8 @@ export class ActionResponse {
   message?: string
   refreshQuery = false
   success = true
-  validationErrors?: ValidationError[] = []
+  validationErrors: ValidationError[] = []
+  state?: ActionState
 
   constructor(
     fields?: {
@@ -24,7 +27,7 @@ export class ActionResponse {
 
   asJson(): any {
     const errs: any = {}
-    if (this.validationErrors) {
+    if (this.validationErrors.length > 0) {
       for (const error of this.validationErrors) {
         errs[error.field] = error.message
       }
@@ -35,6 +38,7 @@ export class ActionResponse {
         refresh_query: this.refreshQuery,
         success: this.success,
         validation_errors: errs,
+        state: this.state,
       },
     }
   }

@@ -1,151 +1,88 @@
 import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
+import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
 
-interface Channel {
-  id: string,
-  label: string,
+interface AuthTestResult {
+  ok: boolean,
+  team: string,
+  team_id: string,
 }
 
-export class SlackAttachmentAction extends Hub.Action {
+export class SlackAction extends Hub.DelegateOAuthAction {
 
-  name = "slack"
-  label = "Slack Attachment"
+  name = "slack_app"
+  label = "Slack (Beta)"
   iconName = "slack/slack.png"
-  description = "Write a data file to Slack."
+  description = "Explore and share Looker content in Slack."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
   params = [{
-    name: "slack_api_token",
-    label: "Slack API Token",
-    required: true,
-    description: `A Slack API token that includes the permissions "channels:read", \
-"users:read", and "files:write:user". You can follow the instructions to get a token at \
-https://github.com/looker/actions/blob/master/src/actions/slack/README.md`,
-    sensitive: true,
+    name: "install",
+    label: "Connect to Slack",
+    delegate_oauth_url: "/admin/integrations/slack/install",
+    required: false,
+    sensitive: false,
+    description: `View dashboards and looks,
+     browse your favorites or folders, and interact with Looker content without leaving Slack.`,
   }]
+  minimumSupportedLookerVersion = "6.23.0"
+  usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
-
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
-    }
-
-    if (!request.formParams.channel) {
-      throw "Missing channel."
-    }
-
-    const fileName = request.formParams.filename || request.suggestedFilename()
-
-    const options = {
-      file: request.attachment.dataBuffer,
-      filename: fileName,
-      channels: request.formParams.channel,
-      filetype: request.attachment.fileExtension,
-      initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
-    }
-
-    let response
-    try {
-      const slack = this.slackClientFromRequest(request)
-      await new Promise<void>((resolve, reject) => {
-        slack.files.upload(options, (err: any) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
-        })
-      })
-    } catch (e) {
-      response = { success: false, message: e.message }
-    }
-    return new Hub.ActionResponse(response)
+    return await handleExecute(request, this.slackClientFromRequest(request))
   }
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-
     try {
-      const channels = await this.usableChannels(request)
-
-      form.fields = [{
-        description: "Name of the Slack channel you would like to post to.",
-        label: "Share In",
-        name: "channel",
-        options: channels.map((channel) => ({ name: channel.id, label: channel.label })),
-        required: true,
-        type: "select",
-      }, {
-        label: "Comment",
-        type: "string",
-        name: "initial_comment",
-      }, {
-        label: "Filename",
-        name: "filename",
-        type: "string",
-      }]
-
+      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), false)
     } catch (e) {
-      form.error = this.prettySlackError(e)
+      const oauthUrl = request.params.state_url
+      if (oauthUrl) {
+        form.state = new Hub.ActionState()
+        form.fields.push({
+          name: "login",
+          type: "oauth_link",
+          label: "Log in",
+          description: "In order to send to a file, you will need to log in to your Slack account.",
+          oauth_url: oauthUrl,
+        })
+      } else {
+        form.error = "Illegal State: state_url is empty."
+      }
     }
-
     return form
   }
 
-  async usableChannels(request: Hub.ActionRequest) {
-    let channels = await this.usablePublicChannels(request)
-    channels = channels.concat(await this.usableDMs(request))
-    return channels
+  async authTest(request: Hub.ActionRequest) {
+    const slack = this.slackClientFromRequest(request)
+    return await slack.auth.test() as AuthTestResult
   }
 
-  async usablePublicChannels(request: Hub.ActionRequest) {
-    return new Promise<Channel[]>((resolve, reject) => {
-      const slack = this.slackClientFromRequest(request)
-      slack.channels.list({
-        exclude_archived: true,
-        exclude_members: true,
-      }, (err: any, response: any) => {
-        if (err || !response.ok) {
-          reject(err)
-        } else {
-          const channels = response.channels.filter((c: any) => c.is_member && !c.is_archived)
-          const reformatted: Channel[] = channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
-          resolve(reformatted)
-        }
-      })
-    })
-  }
-
-  async usableDMs(request: Hub.ActionRequest) {
-    return new Promise<Channel[]>((resolve, reject) => {
-      const slack = this.slackClientFromRequest(request)
-      slack.users.list({}, (err: any, response: any) => {
-        if (err || !response.ok) {
-          reject(err)
-        } else {
-          const users = response.members.filter((u: any) => {
-            return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
-          })
-          const reformatted: Channel[] = users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
-          resolve(reformatted)
-        }
-      })
-    })
-  }
-
-  private prettySlackError(e: any) {
-    if (e.message === "An API error occurred: invalid_auth") {
-      return "Your Slack authentication credentials are not valid."
-    } else {
-      return e
+  async oauthCheck(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
+    if (!request.params.state_json) {
+        form.error = "You must connect to a Slack workspace first."
+        return form
     }
+    try {
+      const resp = await this.authTest(request)
+
+      form.fields.push({
+        name: "Connected",
+        type: "message",
+        value: `Connected with ${resp.team} (${resp.team_id})`,
+      })
+    } catch (e) {
+      form.error = displayError[e.message] || e
+    }
+    return form
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
-    return new WebClient(request.params.slack_api_token!)
+      return new WebClient(request.params.state_json)
   }
-
 }
 
-Hub.addAction(new SlackAttachmentAction())
+Hub.addAction(new SlackAction())

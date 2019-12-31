@@ -2,201 +2,163 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
+import { SlackAction } from "./slack"
+import * as utils from "./utils"
 
-import { SlackAttachmentAction } from "./slack"
-
-const action = new SlackAttachmentAction()
-
-const stubFileName = "stubSuggestedFilename"
-
-function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: any) {
-
-  const fileUploadSpy = sinon.spy((filename: string, params: any, callback: (err: any, data: any) => void) => {
-    callback(null, `successfully sent ${filename} ${params}`)
-  })
-
-  const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-    .callsFake(() => ({
-      files: {
-        upload: fileUploadSpy,
-      },
-    }))
-
-  const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
-    .callsFake(() => stubFileName)
-
-  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(optionsMatch)
-    stubClient.restore()
-    stubSuggestedFilename.restore()
-  })
-}
+const action = new SlackAction()
 
 describe(`${action.constructor.name} unit tests`, () => {
-
-  describe("action", () => {
-
-    it("errors if there is no channel", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {}
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Missing channel.")
-    })
-
-    it("errors if the input has no attachment", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-      }
-
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Couldn't get data from attachment.")
-    })
-
-    it("sends to right body, channel and filename if specified", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-        filename: "mywackyfilename",
-        initial_comment: "mycomment",
-      }
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-      return expectSlackMatch(request, {
-        file: request.attachment.dataBuffer,
-        filename: request.formParams.filename,
-        channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment,
-      })
-    })
-
-    it("sends right body and channel", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-        initial_comment: "mycomment",
-      }
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-      return expectSlackMatch(request, {
-        file: request.attachment.dataBuffer,
-        filename: stubFileName,
-        channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment,
-      })
-    })
-
-    it("returns failure on slack files.upload error", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-        initial_comment: "mycomment",
-      }
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-
-      const fileUploadSpy = sinon.spy((_params: any, callback: (err: any) => void) => {
-        callback({
-          type: "CHANNEL_NOT_FOUND",
-          message: "Could not find channel mychannel",
-        })
-      })
-
-      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-        .callsFake(() => ({
-          files: {
-            upload: fileUploadSpy,
-          },
-        }))
-
-      return chai.expect(action.execute(request)).to.eventually.deep.equal({
-        success: false,
-        message: "Could not find channel mychannel",
-        refreshQuery: false,
-        validationErrors: [],
-      }).then(() => {
-        stubClient.restore()
-      })
-    })
-
-  })
 
   describe("form", () => {
 
     it("has form", () => {
       chai.expect(action.hasForm).equals(true)
     })
+  })
 
-    it("has form with correct channels", (done) => {
-      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-        .callsFake(() => ({
-          channels: {
-            list: (filters: any, callback: (err: any, response: any) => void) => {
-              callback(null, {
-                ok: true,
-                channels: [
-                  {id: "1", name: "A", is_member: true},
-                  {id: "2", name: "B", is_member: true},
-                ],
-                filters,
-              })
-            },
-          },
-          users: {
-            list: (filters: any, callback: (err: any, response: any) => void) => {
-              callback(null, {
-                ok: true,
-                members: [
-                  {id: "10", name: "Z"},
-                  {id: "20", name: "Y"},
-                ],
-                filters,
-              })
-            },
-          },
-        }))
+  describe("oauthCheck", () => {
+    it("returns error if the user hasn't authed yet - no state_json", () => {
       const request = new Hub.ActionRequest()
-      request.params = {
-        slack_api_token: "foo",
-      }
-      const form = action.validateAndFetchForm(request)
+      const form = action.oauthCheck(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        fields: [],
+        error: "You must connect to a Slack workspace first.",
+      })
+    })
+
+    it("returns error if the user hasn't authed yet - invalid auth", (done) => {
+      const request = new Hub.ActionRequest()
+      request.params = { state_json: "someToken" }
+      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
+          .callsFake(() => ({
+            auth: {
+              test: () => { throw Error("An API error occurred: invalid_auth") },
+            },
+          }))
+      const form = action.oauthCheck(request)
+
       chai.expect(form).to.eventually.deep.equal({
-        fields: [{
-          description: "Name of the Slack channel you would like to post to.",
-          label: "Share In",
-          name: "channel",
-          options: [
-            {name: "1", label: "#A"},
-            {name: "2", label: "#B"},
-            {name: "10", label: "@Z"},
-            {name: "20", label: "@Y"}],
-          required: true,
-          type: "select",
-        }, {
-          label: "Comment",
-          type: "string",
-          name: "initial_comment",
-        }, {
-          label: "Filename",
-          name: "filename",
-          type: "string",
-        }],
+        fields: [],
+        error: "Your Slack authentication credentials are not valid.",
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
+    it("returns user logged in info", (done) => {
+      const request = new Hub.ActionRequest()
+      request.params = { state_json: "someToken" }
+
+      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
+          .callsFake(() => ({
+            auth: {
+              test: () => ({
+                ok: true,
+                team: "Some Team",
+                team_id: "some_team_id",
+              }),
+            },
+          }))
+
+      const form = action.oauthCheck(request)
+
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          name: "Connected",
+          type: "message",
+          value: `Connected with Some Team (some_team_id)`,
+        }],
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
   })
 
+  describe("form", () => {
+    let getDisplayedFormFieldsStub: any
+
+    afterEach(() => {
+      getDisplayedFormFieldsStub && getDisplayedFormFieldsStub.restore()
+    })
+
+    it("returns fields correctly from getDisplayedFormFields", () => {
+      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").returns(
+          Promise.resolve([
+              {
+                label: "Super Label",
+                type: "string",
+                name: "boo",
+              },
+          ]),
+      )
+
+      const request = new Hub.ActionRequest()
+
+      const form = action.form(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          label: "Super Label",
+          type: "string",
+          name: "boo",
+        }],
+      })
+    })
+
+    it("returns error message when getDisplayedFormFields throws and state_url is empty", () => {
+      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").rejects()
+
+      const request = new Hub.ActionRequest()
+
+      const form = action.form(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        fields: [],
+        error: "Illegal State: state_url is empty.",
+      })
+    })
+
+    it("returns log in link when we can't fetch form and state_url is valid", () => {
+      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").rejects()
+
+      const request = new Hub.ActionRequest()
+
+      request.params.state_url = "/flooby"
+
+      const form = action.form(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        state: {},
+        fields: [{
+          name: "login",
+          type: "oauth_link",
+          label: "Log in",
+          description: "In order to send to a file, you will need to log in to your Slack account.",
+          oauth_url: "/flooby",
+        }],
+      })
+    })
+  })
+
+  describe("execute", () => {
+    let handleExecuteStub: any
+
+    afterEach(() => {
+      handleExecuteStub && handleExecuteStub.restore()
+    })
+
+    it("has streaming is not enabled", () => {
+      chai.expect(action.usesStreaming).equals(true)
+    })
+
+    it("returns fields correctly from getDisplayedFormFields", () => {
+      const response = new Hub.ActionResponse({success: true})
+      handleExecuteStub = sinon.stub(utils, "handleExecute").returns(
+          Promise.resolve(response),
+      )
+
+      const request = new Hub.ActionRequest()
+
+      const form = action.execute(request)
+
+      return chai.expect(form).to.eventually.deep.equal(response)
+    })
+  })
 })

@@ -9,6 +9,7 @@ export class AzureStorageAction extends Hub.Action {
   iconName = "azure/azure_storage.png"
   description = "Write data files to an Azure container."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  usesStreaming = true
   requiredFields = []
   params = [
     {
@@ -27,70 +28,70 @@ export class AzureStorageAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
 
-      if (!request.attachment || !request.attachment.dataBuffer) {
-        reject("Couldn't get data from attachment")
-        return
-      }
+    if (!request.formParams.container) {
+      throw "Need Azure container."
+    }
 
-      if (!request.formParams.container) {
-        reject("Need Azure container.")
-        return
-      }
+    const fileName = request.formParams.filename || request.suggestedFilename()
+    const container = request.formParams.container
 
-      const blobService = this.azureClientFromRequest(request)
-      const fileName = request.formParams.filename || request.suggestedFilename()
+    if (!fileName) {
+      return new Hub.ActionResponse({ success: false, message: "Cannot determine a filename." })
+    }
 
-      if (!fileName) {
-        reject("Cannot determine a filename.")
-        return
-      }
+    const blobService = this.azureClientFromRequest(request)
+    const writeStream = blobService.createWriteStreamToBlockBlob(container, fileName)
 
-      blobService.createBlockBlobFromText(
-        request.formParams.container,
-        fileName,
-        request.attachment.dataBuffer,
-        (e?: Error) => {
-          if (e) {
-            resolve(new Hub.ActionResponse({ success: false, message: e.message }))
-          } else {
-            resolve(new Hub.ActionResponse({ success: true }))
-          }
+    try {
+      await request.stream(async (readable) => {
+        return new Promise<any>((resolve, reject) => {
+          readable.pipe(writeStream)
+            .on("error", reject)
+            .on("finish", resolve)
         })
-    })
+      })
+      return new Hub.ActionResponse({ success: true })
+    } catch (e) {
+      return new Hub.ActionResponse({success: false, message: e.message})
+    }
   }
 
   async form(request: Hub.ActionRequest) {
-    const promise = new Promise<Hub.ActionForm>((resolve, reject) => {
-      // error in type definition for listContainersSegmented currentToken?
-      // https://github.com/Azure/azure-storage-node/issues/352
-      const blogService: any = this.azureClientFromRequest(request)
-      blogService.listContainersSegmented(null, (err: any, res: any) => {
+    // error in type definition for listContainersSegmented currentToken?
+    // https://github.com/Azure/azure-storage-node/issues/352
+    const form = new Hub.ActionForm()
+    const blobService: any = this.azureClientFromRequest(request)
+    return new Promise<Hub.ActionForm>((resolve, _reject) => {
+      blobService.listContainersSegmented(null, (err: any, res: any) => {
         if (err) {
-          reject(err)
-        } else {
-          const form = new Hub.ActionForm()
-          form.fields = [{
-            label: "Container",
-            name: "container",
-            required: true,
-            options: res.entries.map((c: any) => {
-                return {name: c.id, label: c.name}
-              }),
-            type: "select",
-            default: res.entries[0].id,
-          }, {
-            label: "Filename",
-            name: "filename",
-            type: "string",
-          }]
-
+          form.error = err
           resolve(form)
+        } else {
+          const entries: any[] = res.entries
+          if (entries.length > 0) {
+            form.fields = [{
+              label: "Container",
+              name: "container",
+              required: true,
+              options: entries.map((c: any) => {
+                return {name: c.name, label: c.name}
+              }),
+              type: "select",
+              default: entries[0].name,
+            }, {
+              label: "Filename",
+              name: "filename",
+              type: "string",
+            }]
+            resolve(form)
+          } else {
+            form.error = "Create a container in your Azure account."
+            resolve(form)
+          }
         }
       })
     })
-    return promise
   }
 
   private azureClientFromRequest(request: Hub.ActionRequest) {

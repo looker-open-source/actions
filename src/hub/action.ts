@@ -1,6 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
-import {ExecuteProcessQueue} from "../xpc/execute_process_queue"
+import {ProcessQueue} from "../xpc/process_queue"
 
 import * as winston from "winston"
 import {
@@ -21,6 +21,7 @@ export interface ActionParameter {
   label: string
   required: boolean
   sensitive: boolean
+  per_user?: boolean
   description?: string
 }
 
@@ -42,25 +43,31 @@ export interface RouteBuilder {
 
 export abstract class Action {
 
+  get hasForm() {
+    return !!this.form
+  }
+
   abstract name: string
   abstract label: string
   abstract description: string
   usesStreaming = false
   executeInOwnProcess = false
+  extendedAction = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
   minimumSupportedLookerVersion = "5.5.0"
 
   abstract supportedActionTypes: ActionType[]
-  supportedFormats?: ActionFormat[]
+  supportedFormats?: ((_request: ActionRequest) => ActionFormat[]) | ActionFormat[]
   supportedFormattings?: ActionFormatting[]
   supportedVisualizationFormattings?: ActionVisualizationFormatting[]
+  supportedDownloadSettings?: string[]
   requiredFields?: RequiredField[] = []
 
   abstract params: ActionParameter[]
 
-  asJson(router: RouteBuilder) {
+  asJson(router: RouteBuilder, request: ActionRequest) {
     return {
       description: this.description,
       form_url: this.form ? router.formUrl(this) : null,
@@ -69,7 +76,10 @@ export abstract class Action {
       params: this.params,
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
-      supported_formats: this.supportedFormats,
+      uses_oauth: false,
+      delegate_oauth: false,
+      supported_formats: (this.supportedFormats instanceof Function)
+        ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
       supported_visualization_formattings: this.supportedVisualizationFormattings,
       supported_download_settings: (
@@ -84,7 +94,7 @@ export abstract class Action {
     }
   }
 
-  async validateAndExecute(request: ActionRequest, queue?: ExecuteProcessQueue) {
+  async validateAndExecute(request: ActionRequest, queue?: ProcessQueue) {
     if (this.supportedActionTypes.indexOf(request.type) === -1) {
       const types = this.supportedActionTypes.map((at) => `"${at}"`).join(", ")
       if (request.type as any) {
@@ -138,8 +148,15 @@ export abstract class Action {
     return this.form!(request)
   }
 
-  get hasForm() {
-    return !!this.form
+  getImageDataUri() {
+    if (!this.iconName) {
+      return null
+    }
+    const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
+    if (fs.existsSync(iconPath)) {
+      return new datauri(iconPath).content
+    }
+    return null
   }
 
   private throwForMissingRequiredParameters(request: ActionRequest) {
@@ -153,17 +170,6 @@ export abstract class Action {
         }
       }
     }
-  }
-
-  private getImageDataUri() {
-    if (!this.iconName) {
-      return null
-    }
-    const iconPath = path.resolve(__dirname, "..", "actions", this.iconName)
-    if (fs.existsSync(iconPath)) {
-      return new datauri(iconPath).content
-    }
-    return null
   }
 
 }

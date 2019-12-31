@@ -2,6 +2,8 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
+import * as apiKey from "../../server/api_key"
+import Server from "../../server/server"
 import { SegmentAction } from "./segment"
 
 const action = new SegmentAction()
@@ -318,6 +320,36 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("form", () => {
     it("has no form", () => {
       chai.expect(action.hasForm).equals(false)
+    })
+  })
+
+  describe("asJSON", () => {
+    it("supported format is json_detail on lookerVersion 6.0 and below", (done) => {
+      const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+      chai.request(new Server().app)
+        .post("/actions/segment_event")
+        .set("Authorization", "Token token=\"foo\"")
+        .set("User-Agent", "LookerOutgoingWebhook/6.0.0")
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(200)
+          chai.expect(res.body).to.deep.include({supported_formats: ["json_detail"]})
+          stub.restore()
+          done()
+        })
+    })
+
+    it("supported format is json_detail_lite_stream on lookerVersion 6.2 and above", (done) => {
+      const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+      chai.request(new Server().app)
+        .post("/actions/segment_event")
+        .set("Authorization", "Token token=\"foo\"")
+        .set("User-Agent", "LookerOutgoingWebhook/6.2.0")
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(200)
+          chai.expect(res.body).to.deep.include({supported_formats: ["json_detail_lite_stream"]})
+          stub.restore()
+          done()
+        })
     })
   })
 

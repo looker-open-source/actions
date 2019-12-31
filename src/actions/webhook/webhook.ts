@@ -11,9 +11,9 @@ export abstract class WebhookAction extends Hub.Action {
   params = []
   supportedActionTypes = [Hub.ActionType.Query]
   usesStreaming = true
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
 
   async execute(request: Hub.ActionRequest) {
 
