@@ -11,10 +11,10 @@ const action = new DataRobotAction()
 describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
-    // const stubHttpPost: sinon.SinonStub
+    const stubHttpPost: sinon.SinonStub
 
     afterEach(() => {
-      // stubHttpPost.restore()
+      stubHttpPost.restore()
     })
 
     it("sends the right body with URL", async () => {
@@ -37,7 +37,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           promise: async () => new Promise<void>((resolve: any) => resolve()),
         }
       })
-      // stubHttpPost = sinon.stub(httpRequest, "post").callsFake(postSpy)
+      stubHttpPost = sinon.stub(httpRequest, "post").callsFake(postSpy)
 
       chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
         chai.expect(postSpy).to.have.been.called
@@ -53,9 +53,9 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("has form with projectName param", () => {
-      // const stubGet = sinon.stub(action, "validateDataRobotToken" as any).callsFake(async () => {
-      //   return new Promise<any>((resolve: any) => resolve())
-      // })
+      const stubGet = sinon.stub(action, "validateDataRobotToken" as any).callsFake(async () => {
+        return new Promise<any>((resolve: any) => resolve())
+      })
 
       const request = new Hub.ActionRequest()
       request.params.datarobot_api_token = "token"
@@ -73,8 +73,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         ],
       })
 
-      // stubGet.restore()
+      stubGet.restore()
     })
-
   })
 })
