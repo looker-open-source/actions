@@ -12,6 +12,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     mimeType = "application/vnd.google-apps.spreadsheet"
 }
 
-if (process.env.GOOGLE_SHEETS_CLIENT_ID && process.env.GOOGLE_SHEETS_CLIENT_SECRET) {
+if (process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET) {
   Hub.addAction(new GoogleSheetsAction())
 }
