@@ -5,6 +5,8 @@ import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
 
 interface AuthTestResult {
   ok: boolean,
+  user: string,
+  user_id: string,
   team: string,
   team_id: string,
 }
@@ -35,21 +37,47 @@ export class SlackAction extends Hub.DelegateOAuthAction {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    try {
-      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), false)
-    } catch (e) {
-      const oauthUrl = request.params.state_url
-      if (oauthUrl) {
-        form.state = new Hub.ActionState()
-        form.fields.push({
-          name: "login",
-          type: "oauth_link",
-          label: "Log in",
-          description: "In order to send to a file, you will need to log in to your Slack account.",
-          oauth_url: oauthUrl,
-        })
-      } else {
-        form.error = "Illegal State: state_url is empty."
+    const stateJson = request.params.state_json
+    if (request.lookerVersion === '7.1.0' && Array.isArray(stateJson)) {
+      const clients = stateJson.map((accessToken) => new WebClient(accessToken))
+      const authRequests = clients.map(
+          (client) => client.auth.test() as Promise<AuthTestResult>
+      )
+
+      const authResponse = await Promise.all(authRequests)
+
+      const foundClientIndex = request.formParams.workspace ?
+          authResponse.findIndex(r => r.team_id === request.formParams.workspace) :
+          0
+
+      form.fields = await getDisplayedFormFields(clients[foundClientIndex], false)
+      form.fields.unshift({
+        description: "Name of the Slack workspace you would like to share in.",
+        label: "Workspace",
+        name: "workspace",
+        options: authResponse.map((response) => ({ name: response.team_id, label: response.team })),
+        required: true,
+        default: request.formParams.workspace ? undefined : authResponse[0].team_id,
+        type: "select",
+      })
+
+    } else {
+      try {
+        form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), false)
+      } catch (e) {
+        const oauthUrl = request.params.state_url
+        if (oauthUrl) {
+          form.state = new Hub.ActionState()
+          form.fields.push({
+            name: "login",
+            type: "oauth_link",
+            label: "Log in",
+            description: "In order to send to a file, you will need to log in to your Slack account.",
+            oauth_url: oauthUrl,
+          })
+        } else {
+          form.error = "Illegal State: state_url is empty."
+        }
       }
     }
     return form
