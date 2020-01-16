@@ -1,6 +1,7 @@
 import * as Hub from "../../hub"
 
 import { WebClient } from "@slack/client"
+import * as winston from "winston"
 import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
 
 interface AuthTestResult {
@@ -38,7 +39,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     const stateJson = request.params.state_json
-    if (request.lookerVersion === '7.1.0' && Array.isArray(stateJson)) {
+    if (request.lookerVersion === '7.1.0' && Array.isArray(stateJson) && stateJson.length > 0) {
       const clients = stateJson.map((accessToken) => new WebClient(accessToken))
       const authRequests = clients.map(
           (client) => client.auth.test() as Promise<AuthTestResult>
@@ -49,7 +50,8 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       const foundClientIndex = request.formParams.workspace ?
           authResponse.findIndex(r => r.team_id === request.formParams.workspace) :
           0
-
+      winston.info(`clients.length ${clients.length}`)
+      winston.info(`clients[foundClientIndex] ${clients[foundClientIndex]}`)
       form.fields = await getDisplayedFormFields(clients[foundClientIndex], false)
       form.fields.unshift({
         description: "Name of the Slack workspace you would like to share in.",
@@ -58,7 +60,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
         options: authResponse.map((response) => ({ name: response.team_id, label: response.team })),
         required: true,
         default: request.formParams.workspace ? undefined : authResponse[0].team_id,
-        requests_form: true,
+        interactive: true,
         type: "select",
       })
 

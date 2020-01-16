@@ -20,7 +20,7 @@ interface ActionFormFieldBase {
   label?: string
   description?: string
   default?: string
-  requests_form?: boolean
+  interactive?: boolean
   required?: boolean
 }
 
