@@ -144,7 +144,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       handleExecuteStub && handleExecuteStub.restore()
     })
 
-    it("has streaming is not enabled", () => {
+    it("has streaming enabled", () => {
       chai.expect(action.usesStreaming).equals(true)
     })
 
