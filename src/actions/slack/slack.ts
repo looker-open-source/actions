@@ -58,6 +58,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
         options: authResponse.map((response) => ({ name: response.team_id, label: response.team })),
         required: true,
         default: request.formParams.workspace ? undefined : authResponse[0].team_id,
+        requests_form: true,
         type: "select",
       })
 
