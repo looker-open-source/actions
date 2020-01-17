@@ -144,8 +144,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       handleExecuteStub && handleExecuteStub.restore()
     })
 
-    it("has streaming is not enabled", () => {
-      chai.expect(action.usesStreaming).equals(false)
+    it("has streaming enabled", () => {
+      chai.expect(action.usesStreaming).equals(true)
     })
 
     it("returns fields correctly from getDisplayedFormFields", () => {

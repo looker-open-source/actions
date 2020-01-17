@@ -1,4 +1,4 @@
-import {FilesUploadArguments, WebClient} from "@slack/client"
+import {ChatPostMessageArguments, FilesUploadArguments, WebClient} from "@slack/client"
 import * as chai from "chai"
 import * as sinon from "sinon"
 
@@ -30,6 +30,22 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
 
     return chai.expect(handleExecute(request, slackClient)).to.be.fulfilled.then(() => {
         chai.expect(filesUploadSpy).to.have.been.calledWithMatch(optionsMatch)
+        stubClient.restore()
+        stubSuggestedFilename.restore()
+    })
+}
+
+function expectSlackChatMatch(request: Hub.ActionRequest, optionsMatch: ChatPostMessageArguments) {
+
+    const slackClient = new WebClient("someToken")
+
+    const stubClient = sinon.stub(slackClient.chat, "postMessage")
+
+    const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
+      .callsFake(() => stubFileName)
+
+    return chai.expect(handleExecute(request, slackClient)).to.be.fulfilled.then(() => {
+        chai.expect(stubClient).to.have.been.calledWithMatch(optionsMatch)
         stubClient.restore()
         stubSuggestedFilename.restore()
     })
@@ -178,6 +194,19 @@ describe(`slack/utils unit tests`, () => {
                 filename: stubFileName,
                 channels: request.formParams.channel,
                 initial_comment: request.formParams.initial_comment,
+            })
+        })
+
+        it("sends right body and channel if payload is empty", () => {
+            const request = new Hub.ActionRequest()
+            request.type = Hub.ActionType.Query
+            request.scheduledPlan = {}
+            request.attachment = {}
+            request.formParams.channel = "mychannel"
+            request.formParams.initial_comment = "mycomment"
+            return expectSlackChatMatch(request, {
+                channel: request.formParams.channel,
+                text: request.formParams.initial_comment,
             })
         })
 

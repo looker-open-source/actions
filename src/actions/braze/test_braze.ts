@@ -11,9 +11,22 @@ const sampleBrazeData = {
     measures: [],
     dimensions: [
       {name: "external_id", tags: ["braze_id"]},
+      {name: "field_1_attribute", tags: ["braze[field_1]", "user_field 1"]},
+      {name: "field_2_attribute", tags: ["braze[field_2]"]},
+      {name: "field_3_no_tag", tags: []},
     ],
   },
-  data: [{ external_id: {value: "abc123"}}, { external_id: {value: "xyz987"}}],
+  data: [{
+    external_id: {value: "abc123"},
+    field_1_attribute: {value: "abc123 field 1 value "},
+    field_2_attribute: {value: "abc123 field 2 value "},
+    field_3_no_tag: {value: "abc123 field 3 value "},
+  }, {
+    external_id: {value: "xyz987"},
+    field_1_attribute: {value: "xyz987 field 1 value "},
+    field_2_attribute: {value: "xyz987 field 2 value "},
+    field_3_no_tag: {value: "xyz987 field 3 value "},
+  }],
 }
 
 function expectBrazeMatch(request: Hub.ActionRequest) {
@@ -54,7 +67,6 @@ class BrazeActionTest extends BrazeAction {
 
 const action = new BrazeActionTest()
 action.executeInOwnProcess = false
-
 describe(`${action.constructor.name} unit tests`, () => {
   describe("action", () => {
     it("errors if there is no configuration for query", () => {
