@@ -1,4 +1,5 @@
 import {WebClient} from "@slack/client"
+import * as winston from "winston"
 import * as Hub from "../../hub"
 import {ActionFormField} from "../../hub"
 
@@ -97,14 +98,22 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
 
     let response = new Hub.ActionResponse({success: true})
     try {
-        await request.stream(async (readable) => {
-            await slack.files.upload({
-                file: readable,
-                filename: fileName,
-                channels: request.formParams.channel,
-                initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
+        if (!request.empty()) {
+            await request.stream(async (readable) => {
+                await slack.files.upload({
+                    file: readable,
+                    filename: fileName,
+                    channels: request.formParams.channel,
+                    initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
+                })
             })
-        })
+        } else {
+            winston.info("No data to upload. Sending message instead")
+            await slack.chat.postMessage({
+                channel: request.formParams.channel,
+                text: request.formParams.initial_comment ? request.formParams.initial_comment : "",
+            })
+        }
     } catch (e) {
         response = new Hub.ActionResponse({success: false, message: e.message})
     }
