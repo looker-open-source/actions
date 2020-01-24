@@ -38,6 +38,9 @@ export class Queue {
   finished: boolean
   promise: Promise<Task[]>
   resolve: any
+  reject: any
+  healthCheck: any
+  healthFails: number
 
   constructor() {
     this.channelSize = 10 // TODO make this configurable?
@@ -46,13 +49,25 @@ export class Queue {
     this.channels = []
     this.completed = []
     this.finished = false
+    this.healthFails = 0
 
     // create our promise which will get returned when the consumer calls queue.finish()
     // stash the resolver so we can use it later
     // is there a better way to do this?
-    this.promise = new Promise((resolve) => {
+    this.promise = new Promise((resolve, reject) => {
       this.resolve = resolve
+      this.reject = reject
     })
+  }
+
+  finishSuccess(completed: any) {
+    clearInterval(this.healthCheck)
+    this.resolve(completed)
+  }
+
+  finishError(msg: string) {
+    clearInterval(this.healthCheck)
+    this.reject(msg)
   }
 
   addTask(run: any) {
@@ -74,7 +89,7 @@ export class Queue {
       this.logState()
       // sort completed items by id so they're in the same order as we received them
       this.completed.sort((a: Task, b: Task) => a.id - b.id)
-      this.resolve(this.completed)
+      this.finishSuccess(this.completed)
       return
     }
 
@@ -125,8 +140,24 @@ export class Queue {
     this.checkQueue()
   }
 
+  checkQueueHealth() {
+    this.checkQueue()
+    return this.queue.length
+  }
+
   async finish() {
     this.finished = true
+
+    // Create a health check to make sure the jobs actually clear out
+    this.healthCheck = setInterval(() => {
+      const queueLength = this.checkQueueHealth()
+      // If there are values still in the queue, it should still be working
+      this.healthFails += queueLength > 0 ? 0 : 1
+      if (this.healthFails > 10) {
+        this.finishError("Marketo job did not complete. Possible hung queue")
+      }
+    }, 5)
+
     return this.promise
   }
 
