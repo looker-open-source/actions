@@ -14,6 +14,7 @@ import "../src/actions/index"
 
 import "./test_action_response"
 import "./test_actions"
+import "./test_json_detail_stream"
 import "./test_server"
 import "./test_smoke"
 
