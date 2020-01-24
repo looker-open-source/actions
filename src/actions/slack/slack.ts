@@ -39,7 +39,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     const stateJson = request.params.state_json
-    if (request.lookerVersion === '7.1.0' && Array.isArray(stateJson) && stateJson.length > 0) {
+    if (Array.isArray(stateJson) && stateJson.length > 0) {
       const clients = stateJson.map((accessToken) => new WebClient(accessToken))
       const authRequests = clients.map(
           (client) => client.auth.test() as Promise<AuthTestResult>
