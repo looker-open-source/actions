@@ -94,6 +94,7 @@ export class SegmentAction extends Hub.Action {
 
       await request.streamJsonDetail({
         onFields: (fields) => {
+          winston.info(JSON.stringify(fields))
           fieldset = Hub.allFields(fields)
           segmentFields = this.segmentFields(fieldset)
           this.unassignedSegmentFieldsCheck(segmentFields)
