@@ -1,6 +1,6 @@
 import {WebClient} from "@slack/client"
-import * as Hub from "../../hub"
 import * as semver from "semver"
+import * as Hub from "../../hub"
 
 const PLACEHOLDER_WORKSPACE = "any"
 
@@ -10,8 +10,8 @@ interface WorkspaceAwareStateJson {
 }
 
 export class SlackClientManager {
-    private selectedInstallId: string | undefined;
-    private clients: { [key: string]: WebClient };
+    private selectedInstallId: string | undefined
+    private clients: { [key: string]: WebClient }
 
     constructor(request: Hub.ActionRequest) {
         const stateJson = request.params.state_json
@@ -33,11 +33,9 @@ export class SlackClientManager {
         }
     }
 
-    hasAnyClients = (): boolean =>
-        this.clients && this.clients.constructor === Object && Object.entries(this.clients).length === 0
+    hasAnyClients = (): boolean => Object.entries(this.clients).length === 0
 
-    getClients = (): WebClient[] =>
-        this.clients && this.clients.constructor === Object ? Object.values(this.clients) : []
+    getClients = (): WebClient[] => Object.values(this.clients)
 
     hasSelectedClient = (): boolean => !!this.selectedInstallId
 

@@ -1,9 +1,9 @@
 import {WebClient} from "@slack/client"
 import * as semver from "semver"
+import * as winston from "winston"
 import * as Hub from "../../hub"
 import {SlackClientManager} from "./slack_client_manager"
 import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
-import * as winston from "winston";
 
 interface AuthTestResult {
   ok: boolean,
@@ -146,11 +146,11 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async authTest(clients: WebClient[]) {
     const result = await Promise.all(
         clients
-            .map((client) => client.auth.test() as Promise<AuthTestResult | Error>)
-            .map(p => p.catch(e => e))
+            .map(async (client) => client.auth.test() as Promise<AuthTestResult | Error>)
+            .map(async (p) => p.catch((e) => e)),
     )
 
-    return result.filter(r => !(r instanceof Error))
+    return result.filter((r) => !(r instanceof Error))
   }
 }
 
