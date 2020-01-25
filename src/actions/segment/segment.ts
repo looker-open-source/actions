@@ -183,6 +183,31 @@ export class SegmentAction extends Hub.Action {
     }
   }
 
+  protected flattenJson(jsonRow: any, segmentFields: SegmentFields, fieldName: string) {
+    const result: any = {}
+    const flattenFunction = (currentObject: any, prop: string) => {
+      let empty = true
+      if (Object(currentObject) !== currentObject) {
+        return
+      }
+      for (const key in currentObject) {
+        if (currentObject.hasOwnProperty(key)) {
+          empty = false
+          if (key === "value") {
+            result[prop] = currentObject[key]
+          } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
+            flattenFunction(currentObject[key], prop ? prop + "." + key : key)
+          }
+          if (empty && prop) {
+            result[prop] = {}
+          }
+        }
+      }
+    }
+    flattenFunction(jsonRow, fieldName)
+    return result
+  }
+
   protected prepareSegmentTraitsFromRow(
     row: Hub.JsonDetail.Row,
     fields: Hub.Field[],
@@ -190,16 +215,20 @@ export class SegmentAction extends Hub.Action {
     hiddenFields: string[],
     trackCall: boolean,
   ) {
-    const traits: {[key: string]: string} = {}
+    const traits: { [key: string]: string } = {}
     for (const field of fields) {
-      const value = row[field.name].value
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
         if (hiddenFields.indexOf(field.name) === -1) {
-          traits[field.name] = value
+          const values = this.flattenJson(row[field.name], segmentFields, field.name)
+          for (const key in values) {
+            if (values.hasOwnProperty(key)) {
+              traits[key] = values[key]
+            }
+          }
         }
       }
       if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
-        traits.email = value
+        traits.email = row[field.name].value
       }
     }
     const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
