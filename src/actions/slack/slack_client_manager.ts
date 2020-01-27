@@ -9,6 +9,8 @@ interface WorkspaceAwareStateJson {
     token: string
 }
 
+export const makeSlackClient = (token: string): WebClient => new WebClient(token)
+
 export class SlackClientManager {
     private selectedInstallId: string | undefined
     private clients: { [key: string]: WebClient }
@@ -23,17 +25,17 @@ export class SlackClientManager {
             this.clients = (JSON.parse(stateJson) as WorkspaceAwareStateJson[])
                 .reduce((accumulator, stateJsonItem) => {
                     if (stateJsonItem.token) {
-                        accumulator[stateJsonItem.install_id] = this.makeClient(stateJsonItem.token)
+                        accumulator[stateJsonItem.install_id] = makeSlackClient(stateJsonItem.token)
                     }
                     return accumulator
                 }, {} as { [key: string]: WebClient })
         } else {
             this.selectedInstallId = PLACEHOLDER_WORKSPACE
-            this.clients = {[PLACEHOLDER_WORKSPACE]: this.makeClient(stateJson)}
+            this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson)}
         }
     }
 
-    hasAnyClients = (): boolean => Object.entries(this.clients).length === 0
+    hasAnyClients = (): boolean => Object.entries(this.clients).length > 0
 
     getClients = (): WebClient[] => Object.values(this.clients)
 
@@ -42,6 +44,4 @@ export class SlackClientManager {
     getSelectedClient = (): WebClient | null => this.selectedInstallId ? this.clients[this.selectedInstallId] : null
 
     getClient = (installId: string): WebClient | null => this.clients[installId]
-
-    private makeClient = (token: string): WebClient => new WebClient(token)
 }

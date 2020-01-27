@@ -48,14 +48,11 @@ export class SlackAction extends Hub.DelegateOAuthAction {
 
   async form(request: Hub.ActionRequest) {
     const clientManager = new SlackClientManager(request)
-
     if (!clientManager.hasAnyClients()) {
       return this.loginForm(request)
     }
-
     const clients = clientManager.getClients()
     const form = new Hub.ActionForm()
-
     let defaultTeamId
 
     if (isSupportMultiWorkspaces(request) && clientManager.hasAnyClients()) {
@@ -77,7 +74,6 @@ export class SlackAction extends Hub.DelegateOAuthAction {
         winston.error("Failed to fetch workspace: " + e.message)
       }
     }
-
     let client
     if (clientManager.hasSelectedClient()) {
       client = clientManager.getSelectedClient()
@@ -120,7 +116,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
 
     const clientManager = new SlackClientManager(request)
     if (!clientManager.hasAnyClients()) {
-      form.error = "You must connect to a Slack workspace first."
+      form.error = AUTH_MESSAGE
       return form
     }
     try {
@@ -144,13 +140,17 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   }
 
   async authTest(clients: WebClient[]) {
-    const result = await Promise.all(
+    const resp = await Promise.all(
         clients
             .map(async (client) => client.auth.test() as Promise<AuthTestResult | Error>)
             .map(async (p) => p.catch((e) => e)),
     )
 
-    return result.filter((r) => !(r instanceof Error))
+    const result = resp.filter((r) => !(r instanceof Error))
+    if (resp.length > 0 && result.length === 0) {
+      throw resp[0]
+    }
+    return result
   }
 }
 

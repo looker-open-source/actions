@@ -2,16 +2,19 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
-import { SlackAction } from "./slack"
+import {SlackAction} from "./slack"
+import * as SlackClientManager from "./slack_client_manager"
 import * as utils from "./utils"
 
 const action = new SlackAction()
 
-describe(`${action.constructor.name} unit tests`, () => {
+const stubSlackClient = (fn: () => void) => sinon.stub(SlackClientManager, "makeSlackClient").callsFake(fn)
+
+describe(`${action.constructor.name} unxit tests`, () => {
 
   describe("form", () => {
 
-    it("has form", () => {
+    xit("has form", () => {
       chai.expect(action.hasForm).equals(true)
     })
   })
@@ -30,12 +33,15 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("returns error if the user hasn't authed yet - invalid auth", (done) => {
       const request = new Hub.ActionRequest()
       request.params = { state_json: "someToken" }
-      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-          .callsFake(() => ({
+
+      const stubClient = stubSlackClient(
+          () => ({
             auth: {
               test: () => { throw Error("An API error occurred: invalid_auth") },
             },
-          }))
+          }),
+      )
+
       const form = action.oauthCheck(request)
 
       chai.expect(form).to.eventually.deep.equal({
@@ -48,16 +54,17 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params = { state_json: "someToken" }
 
-      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-          .callsFake(() => ({
+      const stubClient = stubSlackClient(
+          () => ({
             auth: {
-              test: () => ({
+              test: async () => Promise.resolve({
                 ok: true,
                 team: "Some Team",
                 team_id: "some_team_id",
               }),
             },
-          }))
+          }),
+      )
 
       const form = action.oauthCheck(request)
 
@@ -90,6 +97,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       )
 
       const request = new Hub.ActionRequest()
+
+      request.params = { state_json: "someToken" }
 
       const form = action.form(request)
 
@@ -155,6 +164,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       )
 
       const request = new Hub.ActionRequest()
+
+      request.params = { state_json: "someToken" }
 
       const form = action.execute(request)
 
