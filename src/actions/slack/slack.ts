@@ -86,7 +86,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     }
 
     try {
-      form.fields = await getDisplayedFormFields(client, false)
+      form.fields = form.fields.concat(await getDisplayedFormFields(client, false))
     } catch (e) {
       return this.loginForm(request, form)
     }
@@ -123,7 +123,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       const authResponse = await this.authTest(clientManager.getClients())
 
       const valFn = (resp: AuthTestResult) => isSupportMultiWorkspaces(request) ?
-          `What is this ${resp.team} (${resp.team_id})` :
+          JSON.stringify({ installation_id: resp.team_id, installation_name: resp.team }) :
           `Connected with ${resp.team} (${resp.team_id})`
 
       authResponse.forEach((resp) => {
