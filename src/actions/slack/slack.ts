@@ -13,7 +13,7 @@ interface AuthTestResult {
 
 const AUTH_MESSAGE = "You must connect to a Slack workspace first."
 
-const isSupportMultiWorkspaces = (request: Hub.ActionRequest) =>
+export const isSupportMultiWorkspaces = (request: Hub.ActionRequest) =>
     request.lookerVersion && semver.gte(request.lookerVersion, "7.1.0")
 
 export class SlackAction extends Hub.DelegateOAuthAction {
@@ -58,7 +58,8 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     if (isSupportMultiWorkspaces(request) && clientManager.hasAnyClients()) {
       try {
         const authResponse = await this.authTest(clients)
-        defaultTeamId = request.formParams.workspace ? undefined : authResponse[0].team_id
+
+        defaultTeamId = request.formParams.workspace ? request.formParams.workspace : authResponse[0].team_id
 
         form.fields.push({
           description: "Name of the Slack workspace you would like to share in.",

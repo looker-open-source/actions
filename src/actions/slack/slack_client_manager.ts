@@ -9,6 +9,8 @@ interface WorkspaceAwareStateJson {
     token: string
 }
 
+export const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.1.0"
+
 export const makeSlackClient = (token: string): WebClient => new WebClient(token)
 
 export class SlackClientManager {
@@ -20,7 +22,7 @@ export class SlackClientManager {
 
         if (!stateJson) {
             this.clients = {}
-        } else if (request.lookerVersion && semver.gte(request.lookerVersion, "7.1.0")) {
+        } else if (request.lookerVersion && semver.gte(request.lookerVersion, MULTI_WORKSPACE_SUPPORTED_VERSION)) {
             this.selectedInstallId = request.formParams.workspace
             this.clients = (JSON.parse(stateJson) as WorkspaceAwareStateJson[])
                 .reduce((accumulator, stateJsonItem) => {
