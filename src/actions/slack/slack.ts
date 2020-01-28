@@ -1,8 +1,7 @@
 import {WebClient} from "@slack/client"
-import * as semver from "semver"
 import * as winston from "winston"
 import * as Hub from "../../hub"
-import {SlackClientManager} from "./slack_client_manager"
+import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
 import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
 
 interface AuthTestResult {
@@ -12,9 +11,6 @@ interface AuthTestResult {
 }
 
 const AUTH_MESSAGE = "You must connect to a Slack workspace first."
-
-export const isSupportMultiWorkspaces = (request: Hub.ActionRequest) =>
-    request.lookerVersion && semver.gte(request.lookerVersion, "7.1.0")
 
 export class SlackAction extends Hub.DelegateOAuthAction {
 

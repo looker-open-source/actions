@@ -2,9 +2,9 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
-import {isSupportMultiWorkspaces, SlackAction} from "./slack"
+import {SlackAction} from "./slack"
 import * as SlackClientManager from "./slack_client_manager"
-import {MULTI_WORKSPACE_SUPPORTED_VERSION} from "./slack_client_manager"
+import {isSupportMultiWorkspaces, MULTI_WORKSPACE_SUPPORTED_VERSION} from "./slack_client_manager"
 import * as utils from "./utils"
 
 const action = new SlackAction()

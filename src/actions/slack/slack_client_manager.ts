@@ -12,6 +12,9 @@ interface WorkspaceAwareStateJson {
 
 export const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.4.0"
 
+export const isSupportMultiWorkspaces = (request: Hub.ActionRequest) =>
+    request.lookerVersion && semver.gte(request.lookerVersion, MULTI_WORKSPACE_SUPPORTED_VERSION)
+
 export const makeSlackClient = (token: string): WebClient => new WebClient(token)
 
 export class SlackClientManager {
