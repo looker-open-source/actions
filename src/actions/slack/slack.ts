@@ -53,13 +53,18 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     }
     const clients = clientManager.getClients()
     const form = new Hub.ActionForm()
-    let defaultTeamId
+
+    let client = clientManager.getSelectedClient()
 
     if (isSupportMultiWorkspaces(request) && clientManager.hasAnyClients()) {
       try {
         const authResponse = await this.authTest(clients)
 
-        defaultTeamId = request.formParams.workspace ? request.formParams.workspace : authResponse[0].team_id
+        const defaultTeamId = request.formParams.workspace ? request.formParams.workspace : authResponse[0].team_id
+
+        if (!client && defaultTeamId) {
+          client = clientManager.getClient(defaultTeamId)
+        }
 
         form.fields.push({
           description: "Name of the Slack workspace you would like to share in.",
@@ -74,12 +79,6 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       } catch (e) {
         winston.error("Failed to fetch workspace: " + e.message)
       }
-    }
-    let client
-    if (clientManager.hasSelectedClient()) {
-      client = clientManager.getSelectedClient()
-    } else if (defaultTeamId) {
-      client = clientManager.getClient(defaultTeamId)
     }
 
     if (!client) {

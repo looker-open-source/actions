@@ -96,6 +96,40 @@ describe("SlackClientManager", () => {
             })
         })
 
+        describe("has fault tolerence for str state json", () => {
+            const request = new Hub.ActionRequest()
+            request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+            request.params.state_json = JSON.stringify("token1")
+
+            it("hasAnyClients works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.hasAnyClients()).to.equals(true)
+            })
+            it("getClients works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                const result = clientManager.getClients()
+                chai.expect(result).to.deep.equals(["stubbed"])
+            })
+            it("hasSelectedClient works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.hasSelectedClient()).to.eq(true)
+            })
+            it("getSelectedClient works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.getSelectedClient()).to.equals("stubbed")
+            })
+            it("getClient works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.getClient("WS1")).to.equals(undefined)
+                chai.expect(clientManager.getClient(PLACEHOLDER_WORKSPACE)).to.equals("stubbed")
+            })
+        })
+
         describe("one token - no selected ws", () => {
             const request = new Hub.ActionRequest()
             request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION

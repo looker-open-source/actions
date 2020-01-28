@@ -1,8 +1,9 @@
 import {WebClient} from "@slack/client"
 import * as semver from "semver"
+import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const PLACEHOLDER_WORKSPACE = "any"
+export const PLACEHOLDER_WORKSPACE = "any"
 
 interface WorkspaceAwareStateJson {
     install_id: string,
@@ -22,18 +23,30 @@ export class SlackClientManager {
 
         if (!stateJson) {
             this.clients = {}
-        } else if (request.lookerVersion && semver.gte(request.lookerVersion, MULTI_WORKSPACE_SUPPORTED_VERSION)) {
-            this.selectedInstallId = request.formParams.workspace
-            this.clients = (JSON.parse(stateJson) as WorkspaceAwareStateJson[])
-                .reduce((accumulator, stateJsonItem) => {
-                    if (stateJsonItem.token) {
-                        accumulator[stateJsonItem.install_id] = makeSlackClient(stateJsonItem.token)
-                    }
-                    return accumulator
-                }, {} as { [key: string]: WebClient })
         } else {
-            this.selectedInstallId = PLACEHOLDER_WORKSPACE
-            this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson)}
+            const supportMultiWs =
+                request.lookerVersion && semver.gte(request.lookerVersion, MULTI_WORKSPACE_SUPPORTED_VERSION)
+            let json = stateJson
+            if (supportMultiWs) {
+                try {
+                    json = JSON.parse(stateJson)
+                } catch (e) {
+                    winston.warn("Received malform JSON for supported multi tenant version. Proceeding as str.")
+                }
+            }
+            if (supportMultiWs && Array.isArray(json)) {
+                this.selectedInstallId = request.formParams.workspace
+                this.clients = (JSON.parse(stateJson) as WorkspaceAwareStateJson[])
+                    .reduce((accumulator, stateJsonItem) => {
+                        if (stateJsonItem.token) {
+                            accumulator[stateJsonItem.install_id] = makeSlackClient(stateJsonItem.token)
+                        }
+                        return accumulator
+                    }, {} as { [key: string]: WebClient })
+            } else {
+                this.selectedInstallId = PLACEHOLDER_WORKSPACE
+                this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson)}
+            }
         }
     }
 
@@ -43,7 +56,8 @@ export class SlackClientManager {
 
     hasSelectedClient = (): boolean => !!this.selectedInstallId
 
-    getSelectedClient = (): WebClient | null => this.selectedInstallId ? this.clients[this.selectedInstallId] : null
+    getSelectedClient = (): WebClient | undefined => this.selectedInstallId ?
+        this.clients[this.selectedInstallId] : undefined
 
-    getClient = (installId: string): WebClient | null => this.clients[installId]
+    getClient = (installId: string): WebClient | undefined => this.clients[installId]
 }
