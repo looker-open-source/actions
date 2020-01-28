@@ -10,7 +10,7 @@ interface WorkspaceAwareStateJson {
     token: string
 }
 
-export const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.1.0"
+export const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.4.0"
 
 export const makeSlackClient = (token: string): WebClient => new WebClient(token)
 
