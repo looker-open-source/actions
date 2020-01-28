@@ -390,7 +390,7 @@ describe(`${action.constructor.name} tests`, () => {
         const mockClient1 = { id: "I'm mockClient1", token: "some token 1"}
         const mockClient2 = { id: "I'm mockClient2", token: "some token 2"}
 
-        sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
+        const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
           switch (token) {
             case "some token 1":
               return mockClient1
@@ -426,7 +426,7 @@ describe(`${action.constructor.name} tests`, () => {
 
         const form = action.execute(request)
 
-        return chai.expect(form).to.eventually.deep.equal(response)
+        return chai.expect(form).to.eventually.deep.equal(response).and.notify(stubClient.restore)
       })
     })
   })
