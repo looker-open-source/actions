@@ -7,7 +7,7 @@ import {GoogleDriveAction} from "../google_drive"
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
     label = "Google Sheets"
-    iconName = "google/sheets/sheets.svg"
+    iconName = "google/drive/sheets/sheets.svg"
     description = "Create a new Google Sheet."
     supportedActionTypes = [Hub.ActionType.Query]
     supportedFormats = [Hub.ActionFormat.Csv]
@@ -27,13 +27,13 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         if (stateJson.tokens && stateJson.redirect) {
             const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
-            const filename = request.formParams.filename || request.suggestedFilename()
+            let filename = request.formParams.filename || request.suggestedFilename()
             if (!filename) {
                 resp.success = false
                 resp.message = "Error creating filename"
                 return resp
             } else if (!filename.match(/\.csv$/)) {
-                filename.concat(".csv")
+                filename = filename.concat(".csv")
             }
             try {
                 if (request.formParams.overwrite === "yes") {

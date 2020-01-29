@@ -9,6 +9,14 @@ import * as Hub from "../../../hub"
 import Drive = drive_v3.Drive
 
 export class GoogleDriveAction extends Hub.OAuthAction {
+
+  private static oauth2Client(redirectUri: string | undefined) {
+    return new google.auth.OAuth2(
+      process.env.GOOGLE_DRIVE_CLIENT_ID,
+      process.env.GOOGLE_DRIVE_CLIENT_SECRET,
+      redirectUri,
+    )
+  }
     name = "google_drive"
     label = "Google Drive"
     iconName = "google/drive/google_drive.svg"
@@ -114,7 +122,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
-    const oauth2Client = this.oauth2Client(redirectUri)
+    const oauth2Client = GoogleDriveAction.oauth2Client(redirectUri)
+    winston.info(redirectUri)
 
     // generate a url that asks permissions for Google Drive scope
     const scopes = [
@@ -177,13 +186,13 @@ export class GoogleDriveAction extends Hub.OAuthAction {
    }
 
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
-    const client = this.oauth2Client(redirect)
+    const client = GoogleDriveAction.oauth2Client(redirect)
     const {tokens} = await client.getToken(code)
     return tokens
   }
 
   protected async driveClientFromRequest(redirect: string, tokens: Credentials) {
-    const client = this.oauth2Client(redirect)
+    const client = GoogleDriveAction.oauth2Client(redirect)
     client.setCredentials(tokens)
     return google.drive({version: "v3", auth: client})
   }
@@ -208,14 +217,6 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
     })
     return form
-  }
-
-  private oauth2Client(redirectUri: string | undefined) {
-    return new google.auth.OAuth2(
-      process.env.GOOGLE_DRIVE_CLIENT_ID,
-      process.env.GOOGLE_DRIVE_CLIENT_SECRET,
-      redirectUri,
-    )
   }
 }
 
