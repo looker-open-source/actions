@@ -77,18 +77,15 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             q: `name = '${filename}' and '${parents}' in parents`,
             fields: "files",
         })
-        if (files.data.files && files.data.files.length === 0) {
+        if (files.data.files === undefined || files.data.files.length === 0) {
             return this.sendData(filename, request, drive)
-        }
-        const fileMetadata: drive_v3.Schema$File = {
-            name: filename,
-            mimeType: this.mimeType,
-            parents: request.formParams.folder ? [request.formParams.folder] : undefined,
         }
         return request.stream(async (readable) => {
             return drive.files.update({
-                requestBody: fileMetadata,
+                // @ts-ignore
+                fileId: files.data.files[0].id,
                 media: {
+                    mimeType: this.mimeType,
                     body: readable,
                 },
             })
