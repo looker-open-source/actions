@@ -6,6 +6,7 @@ import { drive_v3, google } from "googleapis"
 
 import * as winston from "winston"
 import * as Hub from "../../../hub"
+import Drive = drive_v3.Drive
 
 export class GoogleDriveAction extends Hub.OAuthAction {
     name = "google_drive"
@@ -34,21 +35,13 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
       const filename = request.formParams.filename || request.suggestedFilename()
-
-      const fileMetadata: drive_v3.Schema$File = {
-        name: filename,
-        mimeType: this.mimeType,
-        parents: request.formParams.folder ? [request.formParams.folder] : undefined,
+      if (!filename) {
+        resp.success = false
+        resp.message = "Error creating filename"
+        return resp
       }
       try {
-        await request.stream(async (readable) => {
-          return drive.files.create({
-            requestBody: fileMetadata,
-            media: {
-              body: readable,
-            },
-          })
-        })
+        await this.sendData(filename, request, drive)
         resp.success = true
       } catch (e) {
         resp.success = false
@@ -166,6 +159,22 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     }
     return false
   }
+
+   async sendData(filename: string, request: Hub.ActionRequest, drive: Drive) {
+     const fileMetadata: drive_v3.Schema$File = {
+       name: filename,
+       mimeType: this.mimeType,
+       parents: request.formParams.folder ? [request.formParams.folder] : undefined,
+     }
+     return request.stream(async (readable) => {
+       return drive.files.create({
+         requestBody: fileMetadata,
+         media: {
+           body: readable,
+         },
+       })
+     })
+   }
 
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
     const client = this.oauth2Client(redirect)
