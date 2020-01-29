@@ -95,7 +95,14 @@ export class AzureStorageAction extends Hub.Action {
   }
 
   private azureClientFromRequest(request: Hub.ActionRequest) {
-    return azure.createBlobService(request.params.account!, request.params.accessKey!)
+    try {
+      return azure.createBlobService(request.params.account!, request.params.accessKey!)
+    } catch (err) {
+      if (err && err.toString().includes("base64")) {
+        throw "The provided Account Key is not a valid base64 string"
+      }
+      throw "Error making Azure client. Storage Account and Access Key settings may be incorrect"
+    }
   }
 
 }

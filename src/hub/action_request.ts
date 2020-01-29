@@ -319,7 +319,7 @@ export class ActionRequest {
       let rows = 0
       this.stream(async (readable) => {
         oboe(readable)
-          .node("data.*", this.safeOboe(readable, reject, (row) => {
+          .node("!.data.*", this.safeOboe(readable, reject, (row) => {
             rows++
             callbacks.onRow(row)
           }))
