@@ -10,7 +10,7 @@ interface WorkspaceAwareStateJson {
     token: string
 }
 
-export const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.4.0"
+export const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.3.0"
 
 export const isSupportMultiWorkspaces = (request: Hub.ActionRequest) =>
     request.lookerVersion && semver.gte(request.lookerVersion, MULTI_WORKSPACE_SUPPORTED_VERSION)
