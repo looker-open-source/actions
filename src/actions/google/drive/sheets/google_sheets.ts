@@ -1,8 +1,15 @@
 import * as Hub from "../../../../hub"
 
-import {drive_v3} from "googleapis"
+import {Mutex} from "async-mutex"
+import {Credentials} from "google-auth-library"
+import {drive_v3, google, sheets_v4} from "googleapis"
+import * as split from "split2"
+import * as winston from "winston"
 import Drive = drive_v3.Drive
+import Sheet = sheets_v4.Sheets
 import {GoogleDriveAction} from "../google_drive"
+
+const MAX_REQUEST_BATCH = 500
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -11,6 +18,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     description = "Create a new Google Sheet."
     supportedActionTypes = [Hub.ActionType.Query]
     supportedFormats = [Hub.ActionFormat.Csv]
+    executeInOwnProcess = true
     mimeType = "application/vnd.google-apps.spreadsheet"
 
     async execute(request: Hub.ActionRequest) {
@@ -37,7 +45,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             }
             try {
                 if (request.formParams.overwrite === "yes") {
-                    await this.sendOverwriteData(filename, request, drive)
+                    const sheet = await this.sheetsClientFromRequest(stateJson.redirect, stateJson.tokens)
+                    await this.sendOverwriteData(filename, request, drive, sheet)
                     resp.success = true
                 } else {
                     await this.sendData(filename, request, drive)
@@ -71,28 +80,157 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         return form
     }
 
-    async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive) {
+    async oauthUrl(redirectUri: string, encryptedState: string) {
+        const oauth2Client = this.oauth2Client(redirectUri)
+
+        // generate a url that asks permissions for Google Drive scope
+        const scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+
+        const url = oauth2Client.generateAuthUrl({
+            access_type: "offline",
+            scope: scopes,
+            prompt: "consent",
+            state: encryptedState,
+        })
+        return url.toString()
+    }
+
+    async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
+        const mutex = new Mutex()
         const parents = request.formParams.folder ? [request.formParams.folder] : undefined
         const files = await drive.files.list({
-            q: `name = '${filename}' and '${parents}' in parents`,
+            q: `name = '${filename}' and '${parents}' in parents and trashed=false`,
             fields: "files",
         })
         if (files.data.files === undefined || files.data.files.length === 0) {
+            winston.info(`New file: ${filename}`)
             return this.sendData(filename, request, drive)
         }
+        if (files.data.files[0].id === undefined) {
+            throw "No spreadsheet ID"
+        }
+        const spreadsheetId = files.data.files[0].id as string
+
+        const sheets = await sheet.spreadsheets.get({spreadsheetId})
+        if (!sheets.data.sheets || sheets.data.sheets[0].properties === undefined) {
+            throw "Now sheet data available"
+        }
+        // The ignore is here because Typescript is not correctly inferring that I have done existence checks
+        // @ts-ignore
+        const sheetId = sheets.data.sheets[0].properties.sheetId as number
+        // @ts-ignore
+        let maxRows = sheets.data.sheets[0].properties.gridProperties.rowCount as number
+
+        const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
+        let rowCount = 0
+
         return request.stream(async (readable) => {
-            return drive.files.update({
+            const splitstream = split()
+            // This will not clear formulas or protected regions
+            await this.clearSheet(spreadsheetId, sheet)
+            splitstream.on("data", async (line: any) => {
+                if (rowCount > maxRows) {
+                    maxRows += 1000
+                    // @ts-ignore
+                    mutex.runExclusive(async () => {
+                        await sheet.spreadsheets.batchUpdate({
+                            spreadsheetId,
+                            requestBody: {
+                                requests: [{
+                                    updateSheetProperties: {
+                                        properties: {
+                                            sheetId,
+                                            gridProperties: {
+                                                rowCount: maxRows,
+                                            },
+                                        },
+                                        fields: "gridProperties(rowCount)",
+                                    },
+                                }],
+                            },
+                        }).catch((e: any) => {
+                            throw e
+                        })
+                    }).catch((e: any) => {
+                        throw e
+                    })
+                }
+                const rowIndex: number = rowCount++
                 // @ts-ignore
-                fileId: files.data.files[0].id,
-                media: {
-                    mimeType: this.mimeType,
-                    body: readable,
-                },
+                requestBody.requests.push({
+                    pasteData: {
+                        coordinate: {
+                            sheetId,
+                            columnIndex: 0,
+                            rowIndex,
+                        },
+                        data: line as string,
+                        delimiter: ",",
+                        type: "PASTE_NORMAL",
+                    },
+                })
+                // @ts-ignore
+                if (requestBody.requests.length > MAX_REQUEST_BATCH) {
+                    mutex.runExclusive(async () => {
+                        // @ts-ignore
+                        if (requestBody.requests.length < MAX_REQUEST_BATCH) {
+                            return
+                        }
+                        const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                        Object.assign(requestCopy, requestBody)
+                        requestBody.requests = []
+                        await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
+                            winston.info(e)
+                            throw e
+                        })
+                    }).catch((e: any) => {
+                        throw e
+                    })
+                }
+            }).on("finish", () => {
+                // @ts-ignore
+                if (requestBody.requests.length > 0) {
+                    mutex.runExclusive(() => {
+                        this.flush(requestBody, sheet, spreadsheetId).then(() => {
+                            winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
+                            return true
+                        }).catch((e: any) => {
+                            throw e
+                        })
+                    }).catch((e: any) => {
+                        throw e
+                    })
+                }
+            }).on("error", (e: any) => {
+                throw e
             })
+            return readable.pipe(splitstream)
         })
+    }
+
+    async clearSheet(spreadsheetId: string, sheet: Sheet) {
+        return sheet.spreadsheets.values.clear({
+            spreadsheetId,
+            range: "A:XX",
+        }).catch()
+    }
+
+    protected async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+        return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
+            winston.info(e)
+        })
+    }
+
+    protected async sheetsClientFromRequest(redirect: string, tokens: Credentials) {
+        const client = this.oauth2Client(redirect)
+        client.setCredentials(tokens)
+        return google.sheets({version: "v4", auth: client})
     }
 }
 
-if (process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET) {
+if (process.env.GOOGLE_SHEET_CLIENT_ID && process.env.GOOGLE_SHEET_CLIENT_SECRET) {
   Hub.addAction(new GoogleSheetsAction())
 }
