@@ -225,7 +225,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
       return new Hub.ActionResponse({ success: true })
 
     } catch (err) {
-      return new Hub.ActionResponse({ success: false, message: err.message })
+      return new Hub.ActionResponse({ success: false, message: JSON.stringify(err) })
     }
   }
 
