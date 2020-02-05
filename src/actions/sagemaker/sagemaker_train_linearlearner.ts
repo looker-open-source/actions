@@ -376,8 +376,11 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
       Bucket: bucket,
     }
     const response = await s3.getBucketLocation(params).promise()
-
-    return response.LocationConstraint
+    if (response.LocationConstraint) {
+      return response.LocationConstraint
+    } else {
+      return "us-east-1"
+    }
   }
 
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
