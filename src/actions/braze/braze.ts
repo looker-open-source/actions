@@ -11,7 +11,7 @@ enum BrazeConfig {
   BRAZE_ATTRIBUTE_REGEX = "(?<=braze\\[)(.*)(?=\\])",
   EXPORT_DEFAULT_VALUE = "LOOKER_EXPORT",
   MAX_EXPORT = 100000,
-  DEFAULT_DOMAIN = ".braze.com",
+  DEFAULT_DOMAIN_REGEX = "^https?\:\/\/(.*)\\.braze\\.(com|eu)$",
 }
 
 interface BrazeApiRow {
@@ -75,9 +75,8 @@ export class BrazeAction extends Hub.Action {
       throw "Missing config settings."
     }
 
-    if (!(request.params.braze_api_endpoint )
-      || (request.params.braze_api_endpoint.toLowerCase().indexOf(BrazeConfig.DEFAULT_DOMAIN.toLowerCase() ) < 0 )) {
-      throw "Missing or Bad Endpoint."
+    if (!(request.params.braze_api_endpoint )) {
+      throw "Missing Endpoint."
     }
 
     // Generate endpoint
@@ -85,7 +84,12 @@ export class BrazeAction extends Hub.Action {
       .replace("http://", "https://").replace(/\/$/, "") + BrazeConfig.EXPORT_PATH
 
     if (!endpoint.startsWith("http") ) {
-      throw "Incorrect domain for endpoint."
+      throw "Missing Protocol for endpoint."
+    }
+
+    const bzDomainRegex = new RegExp(BrazeConfig.DEFAULT_DOMAIN_REGEX, "gi")
+    if (!(request.params.braze_api_endpoint.toLowerCase().match(bzDomainRegex))) {
+      throw "Bad Endpoint."
     }
 
     if (!request.params.braze_api_key) {

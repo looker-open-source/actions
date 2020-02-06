@@ -76,6 +76,29 @@ describe(`${action.constructor.name} unit tests`, () => {
         .be.rejectedWith("Missing config settings.")
     })
 
+    it("errors if there is no endpoint", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        braze_api_key: "AAACCCKKKATTT",
+      }
+
+      return chai.expect(action.execute(request)).to.eventually
+        .be.rejectedWith("Missing Endpoint.")
+    })
+
+    it("errors if the protocal is missing from the endpoint", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        braze_api_key: "AAACCCKKKATTT",
+        braze_api_endpoint: "rest.notbraze.com",
+      }
+
+      return chai.expect(action.execute(request)).to.eventually
+        .be.rejectedWith( "Missing Protocol for endpoint.")
+    })
+
     it("errors if is a not a Braze endpoint", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
@@ -85,19 +108,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
 
       return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Missing or Bad Endpoint.")
-    })
-
-    it("errors if is a not a valid endpoint", () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.params = {
-        braze_api_key: "AAACCCKKKATTT",
-        braze_api_endpoint: "rest.braze.com",
-      }
-
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith( "Incorrect domain for endpoint.")
+        .be.rejectedWith("Bad Endpoint.")
     })
 
     it("errors if missing API key", () => {
@@ -117,6 +128,23 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         braze_api_key: "AAACCCKKKATTT",
         braze_api_endpoint: "https://rest.braze.com",
+      }
+      request.formParams = {
+        braze_key: "external_id",
+        braze_segment: "looker_export",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify(sampleBrazeData)),
+      }
+      return expectBrazeMatch(request)
+    })
+
+    it("success with sample data and EU endpoint", async () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        braze_api_key: "AAACCCKKKATTT",
+        braze_api_endpoint: "https://rest.braze.eu",
       }
       request.formParams = {
         braze_key: "external_id",
