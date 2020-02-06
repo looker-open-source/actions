@@ -1,8 +1,8 @@
-import * as Hub from "../../hub"
-
+import * as normalizeUrl from "normalize-url"
 import * as httpRequest from "request-promise-native"
+import * as url from "url"
 
-const DR_API_URL = "https://app.datarobot.com/api/v2"
+import * as Hub from "../../hub"
 
 export class DataRobotAction extends Hub.Action {
 
@@ -19,17 +19,26 @@ export class DataRobotAction extends Hub.Action {
   params = [
     {
       name: "datarobot_api_token",
-      label: "DataRobot API Token",
-      description: "API Token from https://app.datarobot.com/account/me",
+      label: "Authentication User Attribute",
+      description: `Select the customer user attribute that holds the DataRobot API Token.`,
       required: true,
       sensitive: true,
+    },
+    {
+      name: "datarobot_url",
+      label: "DataRobot URL",
+      description: `Enter your DataRobot application URL. Example: https://app.datarobot.com.`,
+      required: false,
+      sensitive: false,
     },
   ]
   minimumSupportedLookerVersion = "5.24.0"
 
+  private dataRobotUrl: string | null = null
+
   async execute(request: Hub.ActionRequest) {
     const options = {
-      url: `${DR_API_URL}/projects/`,
+      url: `${this.getDataRobotApiUrl()}/projects/`,
       headers: {
         Authorization: `Token ${request.params.datarobot_api_token}`,
       },
@@ -57,6 +66,17 @@ export class DataRobotAction extends Hub.Action {
       return form
     }
 
+    if (request.params.datarobot_url) {
+      try {
+        const normalizedDataRobotUrl = normalizeUrl(request.params.datarobot_url)
+        await httpRequest.get(normalizedDataRobotUrl).promise()
+        this.dataRobotUrl = normalizedDataRobotUrl
+      } catch {
+        form.error = "URL for on-premise instance is not valid."
+        return form
+      }
+    }
+
     try {
       await this.validateDataRobotToken(request.params.datarobot_api_token)
 
@@ -75,10 +95,20 @@ export class DataRobotAction extends Hub.Action {
     return form
   }
 
+  private getDataRobotApiUrl() {
+    if (this.dataRobotUrl) {
+      return url.resolve(this.dataRobotUrl, "/api/v2")
+    }
+
+    return "https://app.datarobot.com/api/v2"
+  }
+
   private async validateDataRobotToken(token: string) {
     try {
+      // We don't have a specific endpoint to validate user-token,
+      // so trying to get a list of projects instead
       await httpRequest.get({
-        url: `${DR_API_URL}/projects/`,
+        url: `${this.getDataRobotApiUrl()}/projects/`,
         headers: {
           Authorization: `Token ${token}`,
         },
