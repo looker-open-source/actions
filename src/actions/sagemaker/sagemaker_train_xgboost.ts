@@ -7,7 +7,7 @@ import { PassThrough } from "stream"
 import * as winston from "winston"
 import { xgboostHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
-import { logRejection } from "./utils"
+import { DEFAULT_REGION, logRejection } from "./utils"
 
 const striplines = require("striplines")
 
@@ -371,7 +371,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
     if (response.LocationConstraint) {
       return response.LocationConstraint
     } else {
-      return "us-east-1"
+      return DEFAULT_REGION
     }
   }
 
