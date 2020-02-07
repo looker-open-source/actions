@@ -70,7 +70,7 @@ export class ActionRequest {
     const userAgent = request.header("user-agent")
     if (userAgent) {
       const version = userAgent.split("LookerOutgoingWebhook/")[1]
-      actionRequest.lookerVersion = semver.valid(version)
+      actionRequest.lookerVersion = semver.valid(version, true)
     }
     return actionRequest
   }
