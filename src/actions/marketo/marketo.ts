@@ -6,7 +6,7 @@ export class MarketoAction extends Hub.Action {
   name = "marketo"
   label = "Marketo"
   iconName = "marketo/marketo.svg"
-  description = "Update leads and add to Marketo campaign."
+  description = "Update Marketo leads and their campaign/list membership."
   params = [
     {
       description: "Identity server host URL",
@@ -54,17 +54,43 @@ export class MarketoAction extends Hub.Action {
   async form() {
     const form = new Hub.ActionForm()
     form.fields = [{
-      label: "Campaign ID",
-      name: "campaignId",
-      required: true,
-      type: "string",
-    }, {
       label: "Lead Lookup Field",
       name: "lookupField",
       type: "string",
-      description: "Marketo field to use for lookup.",
+      description: "Marketo field to use when looking up leads to update",
       default: "email",
       required: true,
+    }, {
+      label: "Additional Action",
+      name: "subaction",
+      type: "select",
+      options: [
+        {
+          name: "addCampaign",
+          label: "Update lead and add to below Campaign ID",
+        }, {
+          name: "addList",
+          label: "Update lead and add to below List ID",
+        }, {
+          name: "removeList",
+          label: "Update lead and remove from below List ID",
+        },
+        {
+          name: "none",
+          label: "None - Update lead only",
+        },
+      ],
+      description: "Additional action to take",
+      default: "addCampaign",
+      required: true,
+    }, {
+      label: "Campaign/List ID for Additional Action",
+      name: "campaignId",
+      // Named campaignId for backwards compatibility with older action, even though it may be
+      // either a campaignId or a listId
+      type: "string",
+      description: "Either a Campaign ID or a List ID, depending on above selection",
+      required: false,
     }]
     return form
   }

@@ -70,7 +70,7 @@ export class ActionRequest {
     const userAgent = request.header("user-agent")
     if (userAgent) {
       const version = userAgent.split("LookerOutgoingWebhook/")[1]
-      actionRequest.lookerVersion = semver.valid(version)
+      actionRequest.lookerVersion = semver.valid(version, true)
     }
     return actionRequest
   }
@@ -148,6 +148,12 @@ export class ActionRequest {
   instanceId?: string
   webhookId?: string
   lookerVersion: string | null = null
+
+  empty(): boolean {
+    const url = !!this.scheduledPlan && !this.scheduledPlan.downloadUrl
+    const buffer = !!this.attachment && !this.attachment.dataBuffer
+    return url && buffer
+  }
 
   /** `stream` creates and manages a stream of the request data
    *
@@ -234,6 +240,7 @@ export class ActionRequest {
           stream.end(this.attachment.dataBuffer)
           resolve()
         } else {
+          stream.end()
           reject(
             "startStream was called on an ActionRequest that does not have" +
             "a streaming download url or an attachment. Ensure usesStreaming is set properly on the action.")
@@ -312,7 +319,7 @@ export class ActionRequest {
       let rows = 0
       this.stream(async (readable) => {
         oboe(readable)
-          .node("data.*", this.safeOboe(readable, reject, (row) => {
+          .node("!.data.*", this.safeOboe(readable, reject, (row) => {
             rows++
             callbacks.onRow(row)
           }))

@@ -2,229 +2,432 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
+import {SlackAction} from "./slack"
+import * as SlackClientManager from "./slack_client_manager"
+import {isSupportMultiWorkspaces, MULTI_WORKSPACE_SUPPORTED_VERSION} from "./slack_client_manager"
+import * as utils from "./utils"
 
-import { SlackAttachmentAction } from "./slack"
+const action = new SlackAction()
 
-const action = new SlackAttachmentAction()
+const stubSlackClient = (fn: () => void) => sinon.stub(SlackClientManager, "makeSlackClient").callsFake(fn)
 
-const stubFileName = "stubSuggestedFilename"
+describe(`${action.constructor.name} tests`, () => {
 
-function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: any) {
+  describe("isSupportMultiWorkspaces", () => {
+    const request = new Hub.ActionRequest()
+    request.lookerVersion = "6.24.0"
+    chai.expect(isSupportMultiWorkspaces(request)).to.eq(false)
 
-  const fileUploadSpy = sinon.spy((filename: string, params: any, callback: (err: any, data: any) => void) => {
-    callback(null, `successfully sent ${filename} ${params}`)
-  })
-
-  const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-    .callsFake(() => ({
-      files: {
-        upload: fileUploadSpy,
-      },
-    }))
-
-  const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
-    .callsFake(() => stubFileName)
-
-  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(fileUploadSpy).to.have.been.calledWithMatch(optionsMatch)
-    stubClient.restore()
-    stubSuggestedFilename.restore()
-  })
-}
-
-describe(`${action.constructor.name} unit tests`, () => {
-
-  describe("action", () => {
-
-    it("errors if there is no channel", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {}
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Missing channel.")
-    })
-
-    it("errors if the input has no attachment", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-      }
-
-      return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Couldn't get data from attachment.")
-    })
-
-    it("sends to right body, channel and filename if specified", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-        filename: "mywackyfilename",
-        initial_comment: "mycomment",
-      }
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-      return expectSlackMatch(request, {
-        file: request.attachment.dataBuffer,
-        filename: request.formParams.filename,
-        channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment,
-      })
-    })
-
-    it("sends right body and channel", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-        initial_comment: "mycomment",
-      }
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-      return expectSlackMatch(request, {
-        file: request.attachment.dataBuffer,
-        filename: stubFileName,
-        channels: request.formParams.channel,
-        filetype: request.attachment.fileExtension,
-        initial_comment: request.formParams.initial_comment,
-      })
-    })
-
-    it("returns failure on slack files.upload error", () => {
-      const request = new Hub.ActionRequest()
-      request.formParams = {
-        channel: "mychannel",
-        initial_comment: "mycomment",
-      }
-      request.attachment = {
-        dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-        fileExtension: "csv",
-      }
-
-      const fileUploadSpy = sinon.spy((_params: any, callback: (err: any) => void) => {
-        callback({
-          type: "CHANNEL_NOT_FOUND",
-          message: "Could not find channel mychannel",
-        })
-      })
-
-      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-        .callsFake(() => ({
-          files: {
-            upload: fileUploadSpy,
-          },
-        }))
-
-      return chai.expect(action.execute(request)).to.eventually.deep.equal({
-        success: false,
-        message: "Could not find channel mychannel",
-        refreshQuery: false,
-        validationErrors: [],
-      }).then(() => {
-        stubClient.restore()
-      })
-    })
-
+    request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+    chai.expect(isSupportMultiWorkspaces(request)).to.eq(true)
   })
 
   describe("form", () => {
-
     it("has form", () => {
       chai.expect(action.hasForm).equals(true)
     })
+  })
 
-    it("has form with correct channels", (done) => {
-      const stubClient = sinon.stub(action as any, "slackClientFromRequest")
-        .callsFake(() => ({
-          channels: {
-            list: (filters: any) => {
-              if (filters.cursor) {
-                return {
-                  ok: true,
-                  channels: [
-                    {id: "3", name: "C", is_member: true},
-                    {id: "4", name: "D", is_member: true},
-                  ],
-                }
-              } else {
-                return {
-                  ok: true,
-                  channels: [
-                    {id: "1", name: "A", is_member: true},
-                    {id: "2", name: "B", is_member: true},
-                  ],
-                  response_metadata: {
-                    next_cursor: "cursor",
-                  },
-                }
-              }
-            },
-          },
-          users: {
-            list: (filters: any) => {
-              if (filters.cursor) {
-                return {
-                  ok: true,
-                  members: [
-                    {id: "30", name: "W"},
-                    {id: "40", name: "X"},
-                  ],
-                }
-              } else {
-                return {
-                  ok: true,
-                    members: [
-                      {id: "10", name: "Z"},
-                      {id: "20", name: "Y"},
-                    ],
-                  response_metadata: {
-                    next_cursor: "cursor",
-                  },
-                }
-              }
-            },
-          },
-        }))
+  describe("oauthCheck", () => {
+    it("returns error if the user hasn't authed yet - no state_json", () => {
       const request = new Hub.ActionRequest()
-      request.params = {
-        slack_api_token: "foo",
-      }
-      const form = action.validateAndFetchForm(request)
+      const form = action.oauthCheck(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        fields: [],
+        error: "You must connect to a Slack workspace first.",
+      })
+    })
+
+    it("returns error if the user hasn't authed yet - invalid auth", (done) => {
+      const request = new Hub.ActionRequest()
+      request.params = { state_json: "someToken" }
+
+      const stubClient = stubSlackClient(
+          () => ({
+            auth: {
+              test: () => { throw Error("An API error occurred: invalid_auth") },
+            },
+          }),
+      )
+
+      const form = action.oauthCheck(request)
+
       chai.expect(form).to.eventually.deep.equal({
-        fields: [{
-          description: "Name of the Slack channel you would like to post to.",
-          label: "Share In",
-          name: "channel",
-          options: [
-            {name: "1", label: "#A"},
-            {name: "2", label: "#B"},
-            {name: "3", label: "#C"},
-            {name: "4", label: "#D"},
-            {name: "30", label: "@W"},
-            {name: "40", label: "@X"},
-            {name: "20", label: "@Y"},
-            {name: "10", label: "@Z"}],
-          required: true,
-          type: "select",
-        }, {
-          label: "Comment",
-          type: "string",
-          name: "initial_comment",
-        }, {
-          label: "Filename",
-          name: "filename",
-          type: "string",
-        }],
+        fields: [],
+        error: "Your Slack authentication credentials are not valid.",
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
+    it("returns user logged in info", (done) => {
+      const request = new Hub.ActionRequest()
+      request.params = { state_json: "someToken" }
+
+      const stubClient = stubSlackClient(
+          () => ({
+            auth: {
+              test: async () => Promise.resolve({
+                ok: true,
+                team: "Some Team",
+                team_id: "some_team_id",
+              }),
+            },
+          }),
+      )
+
+      const form = action.oauthCheck(request)
+
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          name: "Connected",
+          type: "message",
+          value: `Connected with Some Team (some_team_id)`,
+        }],
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
   })
 
+  describe("form", () => {
+    let getDisplayedFormFieldsStub: any
+
+    afterEach(() => {
+      getDisplayedFormFieldsStub && getDisplayedFormFieldsStub.restore()
+    })
+
+    it("returns fields correctly from getDisplayedFormFields", () => {
+      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").returns(
+          Promise.resolve([
+              {
+                label: "Super Label",
+                type: "string",
+                name: "boo",
+              },
+          ]),
+      )
+
+      const request = new Hub.ActionRequest()
+
+      request.params = { state_json: "someToken" }
+
+      const form = action.form(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          label: "Super Label",
+          type: "string",
+          name: "boo",
+        }],
+      })
+    })
+
+    it("returns error message when getDisplayedFormFields throws and state_url is empty", () => {
+      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").rejects()
+
+      const request = new Hub.ActionRequest()
+
+      const form = action.form(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        fields: [],
+        error: "Illegal State: state_url is empty.",
+      })
+    })
+
+    it("returns log in link when we can't fetch form and state_url is valid", () => {
+      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").rejects()
+
+      const request = new Hub.ActionRequest()
+
+      request.params.state_url = "/flooby"
+
+      const form = action.form(request)
+
+      return chai.expect(form).to.eventually.deep.equal({
+        state: {},
+        fields: [{
+          name: "login",
+          type: "oauth_link",
+          label: "Log in",
+          description: "In order to send to a file, you will need to log in to your Slack account.",
+          oauth_url: "/flooby",
+        }],
+      })
+    })
+
+    describe("multiple workspaces", () => {
+       it("doesn't have any connected workspace", () => {
+        const request = new Hub.ActionRequest()
+        request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+        request.params = { state_json: JSON.stringify([]) }
+        request.params.state_url = "/flooby"
+
+        const form = action.form(request)
+
+        return chai.expect(form).to.eventually.deep.equal({
+              state: {},
+              fields: [{
+                name: "login",
+                type: "oauth_link",
+                label: "Log in",
+                description: "In order to send to a file, you will need to log in to your Slack account.",
+                oauth_url: "/flooby",
+              }],
+          })
+      })
+
+       it("default to the first workspace if there is no selected workspace, and fetch form", () => {
+        const defaultWsId = "ws1"
+
+        const request = new Hub.ActionRequest()
+        request.params.state_url = "/flooby"
+        request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+        request.params = {
+          state_json: JSON.stringify([{ install_id: defaultWsId, token: "someToken1"}]),
+        }
+
+        const stubClient = stubSlackClient(
+            () => ({
+              auth: {
+                test: () => ({
+                  ok: true,
+                  team: "Some Team",
+                  team_id: defaultWsId,
+                }),
+              },
+            }),
+        )
+
+        getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").returns(
+            Promise.resolve([
+              {
+                label: "Super Label",
+                type: "string",
+                name: "boo",
+              },
+            ]),
+        )
+
+        const form = action.form(request)
+
+        return chai.expect(form).to.eventually.deep.equal({
+          fields: [
+            {
+              default: defaultWsId,
+              description: "Name of the Slack workspace you would like to share in.",
+              interactive: true,
+              label: "Workspace",
+              name: "workspace",
+              options: [
+                {
+                  label: "Some Team",
+                  name: defaultWsId,
+                },
+              ],
+              required: true,
+              type: "select",
+            },
+            {
+              label: "Super Label",
+              type: "string",
+              name: "boo",
+            },
+          ],
+        }).and.notify(stubClient.restore)
+      })
+
+       it("select the correct workspace and fetch form", () => {
+        const selectedWorkspace = "ws2"
+
+        const request = new Hub.ActionRequest()
+        request.params.state_url = "/flooby"
+        request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+        request.params = {
+          state_json: JSON.stringify(
+              [
+                { install_id: "ws1", token: "someToken1"},
+                { install_id: "ws2", token: "someToken2"},
+              ],
+          ),
+        }
+        request.formParams.workspace = selectedWorkspace
+
+        const mockClient2 = {
+          auth: {
+            test: () => ({ ok: true, team: "WS2", team_id: selectedWorkspace}),
+          },
+        }
+
+        const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
+          switch (token) {
+            case "someToken1":
+              return {
+                auth: {
+                  test: () => ({ ok: true, team: "WS1", team_id: "ws1"}),
+                },
+              }
+            case "someToken2":
+              return mockClient2
+          }
+        })
+
+        getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").callsFake((client) => {
+          chai.expect(client).to.equals(mockClient2)
+          return [
+            {
+              label: "Super Label",
+              type: "string",
+              name: "boo",
+            },
+          ]
+        })
+
+        const form = action.form(request)
+
+        return chai.expect(form).to.eventually.deep.equal({
+          fields: [
+            {
+              default: selectedWorkspace ,
+              description: "Name of the Slack workspace you would like to share in.",
+              interactive: true,
+              label: "Workspace",
+              name: "workspace",
+              options: [
+                {
+                  label: "WS1",
+                  name: "ws1",
+                },
+                {
+                  label: "WS2",
+                  name: selectedWorkspace,
+                },
+              ],
+              required: true,
+              type: "select",
+            },
+            {
+              label: "Super Label",
+              type: "string",
+              name: "boo",
+            },
+          ],
+        }).and.notify(stubClient.restore)
+      })
+    })
+  })
+
+  describe("execute", () => {
+    let handleExecuteStub: any
+
+    afterEach(() => {
+      handleExecuteStub && handleExecuteStub.restore()
+    })
+
+    it("has streaming enabled", () => {
+      chai.expect(action.usesStreaming).equals(true)
+    })
+
+    it("returns error response if no client was selected", () => {
+      const request = new Hub.ActionRequest()
+
+      const form = action.execute(request)
+
+      return chai.expect(form).to.eventually.deep.equal(
+          new Hub.ActionResponse({success: false, message: "You must connect to a Slack workspace first."}),
+      )
+    })
+
+    it("returns fields correctly from getDisplayedFormFields", () => {
+      const response = new Hub.ActionResponse({success: true})
+      handleExecuteStub = sinon.stub(utils, "handleExecute").returns(
+          Promise.resolve(response),
+      )
+
+      const request = new Hub.ActionRequest()
+
+      request.params = { state_json: "someToken" }
+
+      const form = action.execute(request)
+
+      return chai.expect(form).to.eventually.deep.equal(response)
+    })
+
+    describe("multiple workspaces", () => {
+       it("has a selected workspace", () => {
+        const response = new Hub.ActionResponse({success: true})
+
+        handleExecuteStub = sinon.stub(utils, "handleExecute").returns(
+            Promise.resolve(response),
+        )
+
+        const request = new Hub.ActionRequest()
+
+        request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+
+        request.params = { state_json: JSON.stringify([{ install_id: "ws1", token: "someToken"}]) }
+        request.formParams = { workspace: "ws1" }
+
+        const form = action.execute(request)
+
+        return chai.expect(form).to.eventually.deep.equal(response)
+      })
+
+       it("doesn't have a selected workspace", () => {
+        const request = new Hub.ActionRequest()
+        request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+        request.params = { state_json: JSON.stringify([{ install_id: "ws1", token: "someToken"}]) }
+
+        const form = action.execute(request)
+
+        return chai.expect(form).to.eventually.deep.equal(new Hub.ActionResponse(
+            {success: false, message: "You must connect to a Slack workspace first."},
+            ),
+        )
+      })
+
+       it("uses the selected workspace if multiple ws is given", () => {
+        const response = new Hub.ActionResponse({success: true})
+
+        const mockClient1 = { id: "I'm mockClient1", token: "some token 1"}
+        const mockClient2 = { id: "I'm mockClient2", token: "some token 2"}
+
+        const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
+          switch (token) {
+            case "some token 1":
+              return mockClient1
+            case "some token 2":
+              return mockClient2
+          }
+        })
+
+        const request = new Hub.ActionRequest()
+
+        request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+
+        request.params = {
+          state_json: JSON.stringify(
+              [
+                { install_id: "ws1", token: "some token 1"},
+                { install_id: "ws2", token: "some token 2"},
+              ],
+          ),
+        }
+
+        request.formParams = { workspace: "ws2" }
+
+        handleExecuteStub = sinon.stub(utils, "handleExecute").callsFake((r, client) => {
+          // pass in the whole request
+          chai.expect(r).to.equals(request)
+
+          // pass in the correct client
+          chai.expect(client).to.equals(mockClient2)
+
+          return response
+        })
+
+        const form = action.execute(request)
+
+        return chai.expect(form).to.eventually.deep.equal(response).and.notify(stubClient.restore)
+      })
+    })
+  })
 })

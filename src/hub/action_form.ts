@@ -20,11 +20,17 @@ interface ActionFormFieldBase {
   label?: string
   description?: string
   default?: string
+  interactive?: boolean
   required?: boolean
 }
 
 interface ActionFormFieldString extends ActionFormFieldBase {
   type?: "string" | "textarea"
+}
+
+interface ActionFormFieldMessage extends ActionFormFieldBase {
+  type?: "message"
+  value: string
 }
 
 interface ActionFormFieldSelect extends ActionFormFieldBase {
@@ -38,3 +44,4 @@ interface ActionFormFieldOAuth extends ActionFormFieldBase {
 }
 
 export type ActionFormField = ActionFormFieldString | ActionFormFieldSelect | ActionFormFieldOAuth
+    | ActionFormFieldMessage
