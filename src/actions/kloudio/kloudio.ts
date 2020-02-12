@@ -50,6 +50,8 @@ export class KloudioAction extends Hub.Action {
     const names = request.attachment.dataJSON.fields.dimensions.map((labelId: { name: any; }) => labelId.name)
     const dataRows = await parseData(request.attachment.dataJSON.data, names, finalLabels)
 
+    winston.info("data parsing done")
+
     let response
     const anonymousId = this.generateAnonymousId() + ".json"
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
@@ -60,10 +62,12 @@ export class KloudioAction extends Hub.Action {
       return new Hub.ActionResponse(response)
     }
 
+    winston.info("Signed URL generated")
     await uploadToS32(s3SignedUrl.signedURL, dataRows)
     data = {destination: "looker", apiKey: request.formParams.apiKey, spreadsheetId , sheetId,
        s3Upload: s3Bool, data: anonymousId, reportName: "Looker Report"}
 
+    winston.info("S3 upload successful")
     try {
         const newUri = API_URL.replace(/['"]+/g, "")
         const lambdaResponse = await https.post({
@@ -77,6 +81,7 @@ export class KloudioAction extends Hub.Action {
            winston.error(_err.toString())
           })
 
+        winston.info("Lambda post method done")
         if (!lambdaResponse.success || lambdaResponse.success === false) {
           winston.info("lambda url resp is not sucess " + lambdaResponse)
           response = { success: false, message: lambdaResponse.message }
