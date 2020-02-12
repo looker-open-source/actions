@@ -60,30 +60,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         .be.rejectedWith("Invalid url")
     })
 
-    it("errors if the input has incorrect Gsheet URL", () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.formParams = {
-        url: "https://docs.google.com/spreadsheets/d/1DE_4lllK3-7q/edit#gid=0",
-        apiKey: "e1f9a461d80e0c6d7921a599ec6a98308625bf7bfd2340e599954ee1a767d6c8",
-      }
-
-      request.attachment = {dataJSON: {
-        fields: {
-          dimensions: [
-            {name: "some.field", label: "some field"},
-          ],
-        },
-        data: [{"some.field": {value: "value"}}],
-      }}
-
-      return chai.expect(action.execute(request))
-        .to.be.fulfilled
-        .then((result) => {
-          chai.expect(result.success, "result.success").to.be.false
-          chai.expect(result.message, "result.message").to.equal("Error generating signed url")
-        })
-    })
   })
 
   describe("form", () => {
