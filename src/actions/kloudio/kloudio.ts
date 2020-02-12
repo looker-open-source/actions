@@ -4,9 +4,9 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const signedUrl = "https://api-test.kloud.io/v1/tools/signed-url-put-object?key="
-const API_URL =   "https://czd7a5synj.execute-api.us-west-2.amazonaws.com/test/dest/send"
-// const API_URL = "https://ecuoyevlzf.execute-api.us-west-2.amazonaws.com/prod/dest/send"
+const signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
+// const API_URL =   "https://czd7a5synj.execute-api.us-west-2.amazonaws.com/test/dest/send"
+const API_URL = "https://ecuoyevlzf.execute-api.us-west-2.amazonaws.com/prod/dest/send"
 const s3Bool = true
 let data = {}
 
@@ -40,7 +40,7 @@ export class KloudioAction extends Hub.Action {
       throw "Request payload is an invalid format."
     }
 
-    winston.info(typeof request.attachment.dataJSON)
+    winston.debug(typeof request.attachment.dataJSON)
 
     const { spreadsheetId, sheetId }  = await parseGsheet(request.formParams.url)
 
@@ -55,7 +55,8 @@ export class KloudioAction extends Hub.Action {
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
 
     if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
-      response = { success: false, message: "Invalid Kloudio API key" }
+      const resp = JSON.parse(s3SignedUrl.message)
+      response = { success: false, message: resp.error }
       return new Hub.ActionResponse(response)
     }
 
@@ -72,7 +73,7 @@ export class KloudioAction extends Hub.Action {
         body: data,
          }).catch((_err) => {
            const error = JSON.parse(_err)
-           winston.info("parsing error code" + error.emailCode)
+           winston.error("parsing error code" + error.emailCode)
            winston.error(_err.toString())
           })
 
@@ -83,7 +84,7 @@ export class KloudioAction extends Hub.Action {
           response = { success: true, message: lambdaResponse.message }
         }
     } catch (e) {
-      winston.info("Inside catch statement" + e)
+      winston.error("Inside catch statement" + e)
       response = { success: false, message: e.message }
     }
     return new Hub.ActionResponse(response)
