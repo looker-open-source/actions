@@ -68,7 +68,7 @@ export class KloudioAction extends Hub.Action {
        s3Upload: s3Bool, data: anonymousId, reportName: "Looker Report"}
 
     winston.info("S3 upload successful")
-    winston.info(data.toString())
+    winston.info(JSON.stringify(data))
     try {
         const newUri = API_URL.replace(/['"]+/g, "")
         const lambdaResponse = await https.post({
