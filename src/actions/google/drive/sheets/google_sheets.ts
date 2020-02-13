@@ -66,7 +66,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
     async form(request: Hub.ActionRequest) {
         const form = await super.form(request)
-        if (form.fields[0].type !== "oauth_link") {
+        if (form.fields[0].type !== "oauth_link_google") {
             form.fields.push({
                 description: "Should this action attempt to overwrite an existing file",
                 label: "Overwrite Existing Files",

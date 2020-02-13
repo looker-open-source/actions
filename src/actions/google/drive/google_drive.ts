@@ -210,7 +210,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     form.state = new Hub.ActionState()
     form.fields.push({
       name: "login",
-      type: "oauth_link",
+      type: "oauth_link_google",
       label: "Log in",
       description: "In order to send to Google Drive, you will need to log in" +
         " once to your Google account.",
