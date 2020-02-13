@@ -86,7 +86,6 @@
     "typescript": "^3.0.1",
     "uuid": "^3.1.0",
     "winston": "^2.3.1",
-    "yarn": "^1.19.0",
     "object-sizeof": "^1.5.2"
   },
   "typings": "lib/index",
