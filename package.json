@@ -85,8 +85,7 @@
     "twilio": "^3.8.0",
     "typescript": "^3.0.1",
     "uuid": "^3.1.0",
-    "winston": "^2.3.1",
-    "object-sizeof": "^1.5.2"
+    "winston": "^2.3.1"
   },
   "typings": "lib/index",
   "engines": {
