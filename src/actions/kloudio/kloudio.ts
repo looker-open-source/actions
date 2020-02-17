@@ -13,8 +13,8 @@ export class KloudioAction extends Hub.Action {
 
   name = "kloudio"
   label = "Kloudio"
-  iconName = "kloudio/kloudio.svg"
-  description = "Add records to a Google Spreadsheet."
+  iconName = "kloudio/kloudio.png"
+  description = "Add data to a Google sheets."
   params = []
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetail]
