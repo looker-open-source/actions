@@ -4,7 +4,7 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-// const signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
+const signedUrl: any = process.env.KLOUDIO_SIGNED_URL
 const API_URL: any = process.env.KLOUDIO_API_URL
 const s3Bool = true
 let data = {}
@@ -51,7 +51,6 @@ export class KloudioAction extends Hub.Action {
 
     let response
     const anonymousId = this.generateAnonymousId() + ".json"
-    const signedUrl = process.env.KLOUDIO_signedUrl1
     const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
 
     if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
