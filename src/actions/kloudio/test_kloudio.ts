@@ -1,5 +1,5 @@
 import * as chai from "chai"
-import * as sinon from "sinon"
+
 import * as Hub from "../../hub"
 
 import { KloudioAction } from "./kloudio"
@@ -9,16 +9,6 @@ const action = new KloudioAction()
 describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
-
-    const sandbox = sinon.createSandbox()
-    beforeEach(() => {
-      sandbox.stub(process.env, "KLOUDIO_SIGNED_URL")
-      .value("https://api-test.kloud.io/v1/tools/signed-url-put-object?key=")
-    })
-
-    afterEach(() => {
-      sandbox.restore()
-    })
 
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
