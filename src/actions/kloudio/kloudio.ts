@@ -4,7 +4,7 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const signedUrl: any = process.env.KLOUDIO_SIGNED_URL
+const signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
 const API_URL: any = process.env.KLOUDIO_API_URL
 const s3Bool = true
 let data = {}
@@ -13,7 +13,7 @@ export class KloudioAction extends Hub.Action {
 
   name = "kloudio"
   label = "Kloudio"
-  iconName = "kloudio/kloudio.png"
+  iconName = "kloudio/kloudio.svg"
   description = "Add data to a Google sheets."
   params = []
   supportedActionTypes = [Hub.ActionType.Query]
