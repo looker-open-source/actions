@@ -16,7 +16,7 @@ export class SlackAttachmentAction extends Hub.Action {
     label: "Slack API Token",
     required: true,
     description: `A Slack API token that includes the permissions "channels:read", \
-"users:read", and "files:write:user". You can follow the instructions to get a token at \
+"users:read", "groups:read", and "files:write:user". Follow the instructions to get a token at \
 https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/README.md`,
     sensitive: true,
   }]
@@ -30,7 +30,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
     const form = new Hub.ActionForm()
 
     try {
-      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), true)
+      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request))
     } catch (e) {
       form.error = displayError[e.message] || e
     }
