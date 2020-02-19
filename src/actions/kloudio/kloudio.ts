@@ -159,7 +159,7 @@ async function uploadToS32(url: any, s3Data1: any) {
     headers: {"Content-Type": "application/json"},
     json: true,
     body: s3Data1,
-     }).catch((_err) => { winston.error(_err.toString()) })
+     }).catch((err) => { winston.error(err.toString()) })
 
   return response
 }
