@@ -62,6 +62,7 @@
     "do-wrapper": "^3.11.1",
     "dotenv": "^5.0.1",
     "dropbox": "^2.5.13",
+    "dropbox-stream": "^3.1.1",
     "express": "^4.16.2",
     "express-winston": "^2.4.0",
     "hipchatter": "^1.0.0",

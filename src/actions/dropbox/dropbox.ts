@@ -3,6 +3,7 @@ import * as https from "request-promise-native"
 import {URL} from "url"
 
 import Dropbox = require("dropbox")
+const db = require("dropbox-stream");
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
@@ -12,7 +13,7 @@ export class DropboxAction extends Hub.OAuthAction {
     iconName = "dropbox/dropbox.png"
     description = "Send data directly to a Dropbox folder."
     supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
-    usesStreaming = false
+    usesStreaming = true
     minimumSupportedLookerVersion = "6.8.0"
     requiredFields = []
     params = []
@@ -27,25 +28,33 @@ export class DropboxAction extends Hub.OAuthAction {
       const stateJson = JSON.parse(request.params.state_json)
       if (stateJson.code && stateJson.redirect) {
         accessToken = await this.getAccessTokenFromCode(stateJson)
+      } else if (stateJson.access_token) {
+        accessToken = stateJson.access_token
       }
     }
-    const drop = this.dropboxClientFromRequest(request, accessToken)
-
     const resp = new Hub.ActionResponse()
     resp.success = true
-    if (request.attachment && request.attachment.dataBuffer) {
-      const fileBuf = request.attachment.dataBuffer
-      const path = (directory === "__root") ? `/${filename}.${ext}` : `/${directory}/${filename}.${ext}`
-      await drop.filesUpload({path: `${path}`, contents: fileBuf}).catch((err: any) => {
-        winston.error(`Upload unsuccessful: ${JSON.stringify(err)}`)
-        resp.success = false
-        resp.state = new Hub.ActionState()
-        resp.state.data = "reset"
-      })
-    } else {
-      resp.success = false
-      resp.message = "No data sent from Looker to be sent to Dropbox."
-    }
+    const path = (directory === "__root") ? `/${filename}.${ext}` : `/${directory}/${filename}.${ext}`
+    await request.stream(async (readable) => {
+      return new Promise<void>((resolve, reject) => {
+        const up = db.createDropboxUploadStream({
+          token: accessToken,
+          path,
+          autorename: false,
+          chunkSize: 1000 * 1024,
+          mode: "add",
+        }).on("error", (err: any) => {
+          winston.error(JSON.stringify(err))
+          resp.success = false
+          resp.state = new Hub.ActionState()
+          resp.state.data = "reset"
+          reject()
+        }).on("metadata", (meta: any) => winston.info(JSON.stringify(meta)))
+        readable.pipe(up).on("finish", () => {
+          resolve()
+        })
+      }).catch()
+    }).catch()
     return resp
   }
 
