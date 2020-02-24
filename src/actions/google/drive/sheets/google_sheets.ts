@@ -128,97 +128,103 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         let rowCount = 0
 
         return request.stream(async (readable) => {
-            const splitstream = split()
-            // This will not clear formulas or protected regions
-            await this.clearSheet(spreadsheetId, sheet)
-            splitstream.on("data", async (line: any) => {
-                if (rowCount > maxRows) {
-                    maxRows += 1000
-                    // @ts-ignore
-                    mutex.runExclusive(async () => {
-                        await sheet.spreadsheets.batchUpdate({
-                            spreadsheetId,
-                            requestBody: {
-                                requests: [{
-                                    updateSheetProperties: {
-                                        properties: {
-                                            sheetId,
-                                            gridProperties: {
-                                                rowCount: maxRows,
-                                            },
-                                        },
-                                        fields: "gridProperties(rowCount)",
-                                    },
-                                }],
-                            },
-                        }).catch((e: any) => {
-                            throw e
-                        })
-                    }).catch((e: any) => {
-                        throw e
-                    })
-                }
-                const rowIndex: number = rowCount++
-                // @ts-ignore
-                requestBody.requests.push({
-                    pasteData: {
-                        coordinate: {
-                            sheetId,
-                            columnIndex: 0,
-                            rowIndex,
-                        },
-                        data: line as string,
-                        delimiter: ",",
-                        type: "PASTE_NORMAL",
-                    },
-                })
-                // @ts-ignore
-                if (requestBody.requests.length > MAX_REQUEST_BATCH) {
-                    mutex.runExclusive(async () => {
+            return new Promise<void>(async (resolve, reject) => {
+                const splitstream = split()
+                // This will not clear formulas or protected regions
+                await this.clearSheet(spreadsheetId, sheet)
+                splitstream.on("data", async (line: any) => {
+                    if (rowCount > maxRows) {
+                        maxRows += 1000
                         // @ts-ignore
-                        if (requestBody.requests.length < MAX_REQUEST_BATCH) {
-                            return
-                        }
-                        const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
-                        Object.assign(requestCopy, requestBody)
-                        requestBody.requests = []
-                        await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
-                            winston.info(e)
-                            throw e
-                        })
-                    }).catch((e: any) => {
-                        throw e
-                    })
-                }
-            }).on("finish", () => {
-                // @ts-ignore
-                if (requestBody.requests.length > 0) {
-                    mutex.runExclusive(() => {
-                        this.flush(requestBody, sheet, spreadsheetId).then(() => {
-                            winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
-                            return true
+                        mutex.runExclusive(async () => {
+                            await sheet.spreadsheets.batchUpdate({
+                                spreadsheetId,
+                                requestBody: {
+                                    requests: [{
+                                        updateSheetProperties: {
+                                            properties: {
+                                                sheetId,
+                                                gridProperties: {
+                                                    rowCount: maxRows,
+                                                },
+                                            },
+                                            fields: "gridProperties(rowCount)",
+                                        },
+                                    }],
+                                },
+                            }).catch((e: any) => {
+                                reject(e)
+                            })
                         }).catch((e: any) => {
-                            throw e
+                            reject(e)
                         })
-                    }).catch((e: any) => {
-                        throw e
+                    }
+                    const rowIndex: number = rowCount++
+                    // @ts-ignore
+                    requestBody.requests.push({
+                        pasteData: {
+                            coordinate: {
+                                sheetId,
+                                columnIndex: 0,
+                                rowIndex,
+                            },
+                            data: line as string,
+                            delimiter: ",",
+                            type: "PASTE_NORMAL",
+                        },
                     })
-                }
-            }).on("error", (e: any) => {
-                throw e
+                    // @ts-ignore
+                    if (requestBody.requests.length > MAX_REQUEST_BATCH) {
+                        mutex.runExclusive(async () => {
+                            // @ts-ignore
+                            if (requestBody.requests.length < MAX_REQUEST_BATCH) {
+                                return
+                            }
+                            const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                            Object.assign(requestCopy, requestBody)
+                            requestBody.requests = []
+                            await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
+                                winston.error(e)
+                                reject(e)
+                            })
+                        }).catch((e: any) => {
+                            reject(e)
+                        })
+                    }
+                }).on("finish", async () => {
+                    // @ts-ignore
+                    if (requestBody.requests.length > 0) {
+                        await mutex.runExclusive(async () => {
+                            await this.flush(requestBody, sheet, spreadsheetId).then(() => {
+                                winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
+                                resolve()
+                            }).catch((e: any) => {
+                                reject(e)
+                            })
+                        }).catch((e: any) => {
+                            reject(e)
+                        })
+                    }
+                }).on("error", (e: any) => {
+                    winston.error(e)
+                    reject(e)
+                })
+                readable.pipe(splitstream)
             })
-            return readable.pipe(splitstream)
-        })
+            })
     }
 
     async clearSheet(spreadsheetId: string, sheet: Sheet) {
         return sheet.spreadsheets.values.clear({
             spreadsheetId,
             range: "A:XX",
-        }).catch()
+        }).catch((err) => {
+            winston.error(err)
+            throw err
+        })
     }
 
-    protected async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
             winston.info(e)
         })

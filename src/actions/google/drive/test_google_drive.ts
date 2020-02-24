@@ -126,7 +126,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
-          type: "oauth_link",
+          type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
             " once to your Google account.",
           label: "Log in",
@@ -154,7 +154,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
-          type: "oauth_link",
+          type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
           " once to your Google account.",
           label: "Log in",
