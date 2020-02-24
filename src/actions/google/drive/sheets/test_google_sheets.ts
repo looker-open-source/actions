@@ -6,9 +6,9 @@ import concatStream = require("concat-stream")
 
 import * as Hub from "../../../../hub"
 
+import * as winston from "winston"
 import { ActionCrypto } from "../../../../hub"
 import { GoogleSheetsAction } from "./google_sheets"
-import * as winston from "winston"
 
 const action = new GoogleSheetsAction()
 action.executeInOwnProcess = false
