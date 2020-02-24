@@ -169,6 +169,118 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
 
       })
+
+      it("uses senddata if overwrite is false", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [],
+                },
+              }),
+            },
+          })
+        const stubSheetClient = sinon.stub(action as any, "sheetsClientFromRequest")
+          .resolves({
+            spreadsheets: {
+              get: async () => Promise.resolve({
+                data: {
+                  sheets: [
+                    {
+                      properties: {
+                        sheetId: 1,
+                        gridProperties: {
+                          rowCount: 5,
+                        },
+                      },
+                    },
+                  ],
+                },
+              }),
+              values: {
+                clear: async () => Promise.resolve(),
+              },
+            },
+          })
+        const csvFile = "a,b,c\n1,2,3"
+        const overwriteSpy = sinon.spy()
+        const overwriteStub = sinon.stub(action as any, "sendOverwriteData").callsFake(overwriteSpy)
+        const sendSpy = sinon.spy()
+        const sendStub = sinon.stub(action as any, "sendData").callsFake(sendSpy)
+
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "false", filename: "random_sheet", folder: "folder"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        chai.expect(action.validateAndExecute(request)).to.eventually.be.fulfilled.then( () => {
+          chai.expect(sendSpy).to.have.been.calledOnce
+          chai.expect(overwriteStub).to.not.have.been.called
+          stubDriveClient.restore()
+          stubSheetClient.restore()
+          sendStub.restore()
+          overwriteStub.restore()
+          done()
+        })
+      })
+
+      it("uses sheets overwrite code if overwrite is true but the file does not exist", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [],
+                },
+              }),
+            },
+          })
+        const stubSheetClient = sinon.stub(action as any, "sheetsClientFromRequest")
+          .resolves({
+            spreadsheets: {
+              get: async () => Promise.resolve({
+                data: {
+                  sheets: [
+                    {
+                      properties: {
+                        sheetId: 1,
+                        gridProperties: {
+                          rowCount: 5,
+                        },
+                      },
+                    },
+                  ],
+                },
+              }),
+              values: {
+                clear: async () => Promise.resolve(),
+              },
+            },
+          })
+        const csvFile = "a,b,c\n1,2,3"
+        const sendSpy = sinon.spy()
+        const sendStub = sinon.stub(action as any, "sendData").callsFake(sendSpy)
+
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "yes", filename: "random_sheet", folder: "folder"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        chai.expect(action.validateAndExecute(request)).to.eventually.be.fulfilled.then( () => {
+          chai.expect(sendSpy).to.have.been.calledOnce
+          stubDriveClient.restore()
+          stubSheetClient.restore()
+          sendStub.restore()
+          done()
+        })
+      })
     })
 
     describe("form", () => {
