@@ -132,7 +132,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 const splitstream = split()
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet)
-                splitstream.on("data", async (line: any) => {
+                splitstream.on("data", (line: any) => {
                     if (rowCount > maxRows) {
                         maxRows += 1000
                         // @ts-ignore
