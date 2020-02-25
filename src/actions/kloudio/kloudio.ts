@@ -4,8 +4,9 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
-const API_URL: any = process.env.KLOUDIO_API_URL
+// const signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
+// const signedUrl: any = process.env.KLOUDIO_SIGNED_URLI
+// const API_URL: any = process.env.KLOUDIO_API_URL
 const s3Bool = true
 let data = {}
 
@@ -20,6 +21,11 @@ export class KloudioAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+
+  // signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
+  signedUrl: any = process.env.KLOUDIO_SIGNED_URL
+  API_URL: any = process.env.KLOUDIO_API_URL
+  // s3Bool = true
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
@@ -51,7 +57,7 @@ export class KloudioAction extends Hub.Action {
 
     let response
     const anonymousId = this.generateAnonymousId() + ".json"
-    const s3SignedUrl = await getS3Url(anonymousId, signedUrl, request.formParams.apiKey)
+    const s3SignedUrl = await getS3Url(anonymousId, this.signedUrl, request.formParams.apiKey)
 
     if (!s3SignedUrl.signedURL || s3SignedUrl.success === false) {
       const resp = JSON.parse(s3SignedUrl.message)
@@ -64,7 +70,7 @@ export class KloudioAction extends Hub.Action {
        s3Upload: s3Bool, data: anonymousId, reportName: "Looker Report"}
 
     try {
-        const newUri = API_URL.replace(/['"]+/g, "")
+        const newUri = this.API_URL.replace(/['"]+/g, "")
         const lambdaResponse = await https.post({
         url: newUri,
         headers: {"Content-Type": "application/json"},

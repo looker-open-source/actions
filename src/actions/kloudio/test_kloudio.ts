@@ -1,6 +1,7 @@
 import * as chai from "chai"
-
 import * as Hub from "../../hub"
+
+process.env.KLOUDIO_SIGNED_URL = "https://api-test.kloud.io/v1/tools/signed-url-put-object?key="
 
 import { KloudioAction } from "./kloudio"
 
