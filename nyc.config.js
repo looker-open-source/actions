@@ -10,6 +10,7 @@ module.exports = {
   ],
   "exclude": [
     ...nyc.exclude,
-    '**/test_*.ts'
+    '**/test_*.ts',
+    'src/crypto/local_crypto_testing.ts'
   ]
 }
