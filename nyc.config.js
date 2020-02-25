@@ -2,7 +2,7 @@ const { nyc } = require('@istanbuljs/schema').defaults;
 
 module.exports = {
   "extends": "@istanbuljs/nyc-config-typescript",
-  "sourceMap": false,
+  "sourceMap": true,
   "cache": false,
   "all": true,
   "include": [
