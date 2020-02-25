@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo ./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts

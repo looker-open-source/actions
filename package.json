@@ -12,7 +12,8 @@
     "debug-trace": "./node_modules/.bin/nodemon --exec node --inspect --trace-sync-io -r ./node_modules/ts-node/register -- ./src/boot.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
     "test": "yarn test-ts && ./node_modules/.bin/tsc --noEmit && yarn lint",
-    "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
+    "test-ts": "$(bin/test-ts)",
+    "test-coverage": "nyc --reporter=html --reporter=text $(bin/test-ts) && echo \"View test coverage at file://$(pwd)/coverage/index.html\"",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-fix": "./node_modules/.bin/tslint --fix -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
     "lint-dependencies": "./node_modules/.bin/depcheck . --ignores '@types/*,depcheck,tslint-language-service' --ignore-dirs 'lib'",
@@ -104,6 +105,7 @@
     "**/request": "https://github.com/request/request/archive/392db7d127536ff296fb06492db9430790a32d6c.tar.gz"
   },
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "^7.1.0",
     "@types/chai-http": "^3.0.3",
@@ -118,6 +120,7 @@
     "concat-stream": "^1.6.2",
     "depcheck": "^0.6.8",
     "mocha": "^4.0.1",
+    "nyc": "^15.0.0",
     "sinon": "^5.0.10",
     "sinon-chai": "^3.1.0",
     "sinon-express-mock": "^2.2.1",
