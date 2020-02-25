@@ -132,11 +132,11 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 const splitstream = split()
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet)
-                splitstream.on("data", (line: any) => {
+                splitstream.on("data", async (line: any) => {
                     if (rowCount > maxRows) {
                         maxRows += 1000
                         // @ts-ignore
-                        mutex.runExclusive(async () => {
+                        await mutex.runExclusive(async () => {
                             await sheet.spreadsheets.batchUpdate({
                                 spreadsheetId,
                                 requestBody: {
@@ -175,7 +175,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     })
                     // @ts-ignore
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
-                        mutex.runExclusive(async () => {
+                        await mutex.runExclusive(async () => {
                             // @ts-ignore
                             if (requestBody.requests.length < MAX_REQUEST_BATCH) {
                                 return
