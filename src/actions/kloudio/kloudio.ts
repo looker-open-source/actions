@@ -4,9 +4,6 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-// const signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
-// const signedUrl: any = process.env.KLOUDIO_SIGNED_URLI
-// const API_URL: any = process.env.KLOUDIO_API_URL
 const s3Bool = true
 let data = {}
 
@@ -22,10 +19,8 @@ export class KloudioAction extends Hub.Action {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
-  // signedUrl = "https://api.kloud.io/v1/tools/signed-url-put-object?key="
   signedUrl: any = process.env.KLOUDIO_SIGNED_URL
   API_URL: any = process.env.KLOUDIO_API_URL
-  // s3Bool = true
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
