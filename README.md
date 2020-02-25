@@ -41,3 +41,9 @@ Head over to [the issue tracker](https://github.com/looker/actions/issues) to re
 Most users should use our official action hub cloud service running on (https://actions.looker.com/). By default, that's what Looker will use to provide actions. The action hub works whether your Looker instance is hosted by us or on-premise. If you'd like to deploy a copy of the same actions within your own infrastructure, you can do so by deploying this repository yourself, and adding it to Looker as a new hub.
 
 [Deployment instructions &rarr;](docs/deploying.md)
+
+## Testing
+
+`yarn test` runs all tests
+
+`yarn test-coverage` runs all tests and generates a test coverage report at the end
