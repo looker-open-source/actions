@@ -136,7 +136,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     if (rowCount > maxRows) {
                         maxRows += 1000
                         // @ts-ignore
-                        mutex.runExclusive(async () => {
+                        await mutex.runExclusive(async () => {
                             await sheet.spreadsheets.batchUpdate({
                                 spreadsheetId,
                                 requestBody: {
@@ -175,7 +175,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     })
                     // @ts-ignore
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
-                        mutex.runExclusive(async () => {
+                        await mutex.runExclusive(async () => {
                             // @ts-ignore
                             if (requestBody.requests.length < MAX_REQUEST_BATCH) {
                                 return
