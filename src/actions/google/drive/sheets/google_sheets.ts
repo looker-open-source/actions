@@ -1,9 +1,9 @@
 import * as Hub from "../../../../hub"
 
 import {Mutex} from "async-mutex"
+import * as parse from "csv-parse"
 import {Credentials} from "google-auth-library"
 import {drive_v3, google, sheets_v4} from "googleapis"
-import * as split from "split2"
 import * as winston from "winston"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
@@ -129,10 +129,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         return request.stream(async (readable) => {
             return new Promise<void>(async (resolve, reject) => {
-                const splitstream = split()
+                const csvparser = parse()
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet)
-                splitstream.on("data", async (line: any) => {
+                csvparser.on("data", async (line: any) => {
                     if (rowCount > maxRows) {
                         maxRows += 1000
                         // @ts-ignore
@@ -168,7 +168,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 columnIndex: 0,
                                 rowIndex,
                             },
-                            data: line as string,
+                            data: line.join(",") as string,
                             delimiter: ",",
                             type: "PASTE_NORMAL",
                         },
@@ -191,7 +191,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             reject(e)
                         })
                     }
-                }).on("finish", async () => {
+                }).on("end", async () => {
                     // @ts-ignore
                     if (requestBody.requests.length > 0) {
                         await mutex.runExclusive(async () => {
@@ -209,7 +209,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     winston.error(e)
                     reject(e)
                 })
-                readable.pipe(splitstream)
+                readable.pipe(csvparser)
             })
             })
     }

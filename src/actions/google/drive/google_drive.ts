@@ -62,12 +62,12 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
-
           const options: any = {
             fields: "files(id,name,parents),nextPageToken",
             orderBy: "recency desc",
             pageSize: 1000,
-            q: "mimeType='application/vnd.google-apps.folder'",
+            q: `mimeType='application/vnd.google-apps.folder'`,
+            trashed: false,
             spaces: "drive",
           }
 
