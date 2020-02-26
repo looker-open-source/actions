@@ -75,7 +75,6 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             accumulatedFiles: drive_v3.Schema$File[],
             response: GaxiosResponse<drive_v3.Schema$FileList>): Promise<drive_v3.Schema$File[]> {
             const mergedFiles = accumulatedFiles.concat(response.data.files!)
-            winston.info("Paging")
 
             // When a `nextPageToken` exists, recursively call this function to get the next page.
             if (response.data.nextPageToken) {
