@@ -133,7 +133,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet)
                 csvparser.on("data", async (line: any) => {
-                    winston.info(JSON.stringify(line))
                     if (rowCount > maxRows) {
                         maxRows += 1000
                         // @ts-ignore
