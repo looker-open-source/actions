@@ -108,7 +108,6 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             return mergedFiles
           }
           const paginatedFiles = await pagedFileList([], await drive.files.list(options))
-          winston.info(JSON.stringify(paginatedFiles))
           const folders = paginatedFiles.filter((folder) => (
             !(folder.id === undefined) && !(folder.name === undefined)))
             .map((folder) => ({name: folder.id!, label: folder.name!}))
