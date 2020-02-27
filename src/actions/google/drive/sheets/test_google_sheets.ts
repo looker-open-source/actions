@@ -299,6 +299,18 @@ describe(`${action.constructor.name} unit tests`, () => {
                 },
               }),
             },
+            drives: {
+              list: async () => Promise.resolve({
+                data: {
+                  drives: [
+                    {
+                      id: "fake_drive",
+                      name: "fake_drive_label",
+                    },
+                  ],
+                },
+              }),
+            },
           })
         const request = new Hub.ActionRequest()
         request.params = {
@@ -308,11 +320,20 @@ describe(`${action.constructor.name} unit tests`, () => {
         const form = action.validateAndFetchForm(request)
         chai.expect(form).to.eventually.deep.equal({
           fields: [{
+            description: "Google Drive where your file will be saved",
+            label: "Select Drive to save file",
+            name: "drive",
+            options: [{name: "mydrive", label: "My Drive"}, {name: "fake_drive", label: "fake_drive_label"}],
+            default: "mydrive",
+            interactive: true,
+            required: true,
+            type: "select",
+          }, {
             description: "Google Drive folder where your file will be saved",
             label: "Select folder to save file",
             name: "folder",
-            options: [{ name: "fake_id", label: "fake_name" }],
-            default: "fake_id",
+            options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
+            default: "root",
             required: true,
             type: "select",
           }, {

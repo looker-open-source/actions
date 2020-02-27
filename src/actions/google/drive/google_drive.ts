@@ -1,6 +1,6 @@
 import * as https from "request-promise-native"
 
-import { GaxiosResponse } from "gaxios"
+import {GaxiosResponse} from "gaxios"
 import { Credentials } from "google-auth-library"
 import { drive_v3, google } from "googleapis"
 
@@ -62,6 +62,21 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
+
+          const form = new Hub.ActionForm()
+          const driveSelections = await this.getDrives(drive)
+          form.fields.push({
+            description: "Google Drive where your file will be saved",
+            label: "Select Drive to save file",
+            name: "drive",
+            options: driveSelections,
+            default: driveSelections[0].name,
+            interactive: true,
+            required: true,
+            type: "select",
+          })
+
+          // drive.files.list() options
           const options: any = {
             fields: "files(id,name,parents),nextPageToken",
             orderBy: "recency desc",
@@ -69,6 +84,14 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             q: `mimeType='application/vnd.google-apps.folder'`,
             trashed: false,
             spaces: "drive",
+          }
+          if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
+            options.driveId = request.formParams.drive
+            options.includeItemsFromAllDrives = true
+            options.supportsAllDrives = true
+            options.corpora = "drive"
+          } else {
+            options.corpora = "user"
           }
 
           async function pagedFileList(
@@ -85,12 +108,13 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             return mergedFiles
           }
           const paginatedFiles = await pagedFileList([], await drive.files.list(options))
+          winston.info(JSON.stringify(paginatedFiles))
           const folders = paginatedFiles.filter((folder) => (
             !(folder.id === undefined) && !(folder.name === undefined)))
             .map((folder) => ({name: folder.id!, label: folder.name!}))
+          folders.unshift({name: "root", label: "Drive Root"})
 
-          const form = new Hub.ActionForm()
-          form.fields = [{
+          form.fields.push({
             description: "Google Drive folder where your file will be saved",
             label: "Select folder to save file",
             name: "folder",
@@ -98,17 +122,20 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             default: folders[0].name,
             required: true,
             type: "select",
-          }, {
+          })
+          form.fields.push({
             label: "Enter a name",
             name: "filename",
             type: "string",
             required: true,
-          }]
+          })
           form.state = new Hub.ActionState()
           form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
           return form
         }
-      } catch { winston.warn("Log in fail") }
+      } catch (e) {
+        winston.warn("Log in fail")
+      }
     }
     return this.loginForm(request)
   }
@@ -183,6 +210,19 @@ export class GoogleDriveAction extends Hub.OAuthAction {
          },
        })
      })
+   }
+
+   async getDrives(drive: Drive) {
+     const driveList = [{name: "mydrive", label: "My Drive"}]
+     const drives: GaxiosResponse<drive_v3.Schema$DriveList> = await drive.drives.list({
+       pageSize: 50,
+     })
+     if (drives.data.drives) {
+       drives.data.drives.forEach((d) => {
+         driveList.push({name: d.id!, label: d.name!})
+       })
+     }
+     return driveList
    }
 
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
