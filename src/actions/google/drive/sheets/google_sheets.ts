@@ -101,10 +101,22 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
         const mutex = new Mutex()
         const parents = request.formParams.folder ? [request.formParams.folder] : undefined
-        const files = await drive.files.list({
+
+        const options: any = {
             q: `name = '${filename}' and '${parents}' in parents and trashed=false`,
             fields: "files",
-        })
+        }
+
+        if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
+            options.driveId = request.formParams.drive
+            options.includeItemsFromAllDrives = true
+            options.supportsAllDrives = true
+            options.corpora = "drive"
+        } else {
+            options.corpora = "user"
+        }
+
+        const files = await drive.files.list(options)
         if (files.data.files === undefined || files.data.files.length === 0) {
             winston.info(`New file: ${filename}`)
             return this.sendData(filename, request, drive)

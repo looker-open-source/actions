@@ -201,12 +201,23 @@ export class GoogleDriveAction extends Hub.OAuthAction {
        mimeType: this.mimeType,
        parents: request.formParams.folder ? [request.formParams.folder] : undefined,
      }
+
      return request.stream(async (readable) => {
-       return drive.files.create({
+       const driveParams: drive_v3.Params$Resource$Files$Create = {
          requestBody: fileMetadata,
          media: {
            body: readable,
          },
+       }
+
+       if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
+         driveParams.requestBody!.driveId! = request.formParams.drive
+         driveParams.supportsAllDrives = true
+       }
+
+       return drive.files.create(driveParams).catch((e) => {
+         winston.error(JSON.stringify(e.errors))
+         throw e
        })
      })
    }
