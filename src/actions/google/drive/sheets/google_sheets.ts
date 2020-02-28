@@ -172,7 +172,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         })
                     }
                     const rowIndex: number = rowCount++
-                    winston.info(`Line information: ${JSON.stringify(line)}`)
                     // @ts-ignore
                     requestBody.requests.push({
                         pasteData: {
