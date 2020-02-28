@@ -172,6 +172,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         })
                     }
                     const rowIndex: number = rowCount++
+                    winston.info(`Line information: ${JSON.stringify(line)}`)
                     // @ts-ignore
                     requestBody.requests.push({
                         pasteData: {
@@ -180,7 +181,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 columnIndex: 0,
                                 rowIndex,
                             },
-                            data: line.join(",") as string,
+                            data: line.map((v: any) => `"${v}"` ).join(",") as string,
                             delimiter: ",",
                             type: "PASTE_NORMAL",
                         },
