@@ -180,7 +180,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 columnIndex: 0,
                                 rowIndex,
                             },
-                            data: line.join(",") as string,
+                            data: line.map((v: any) => `"${v}"` ).join(",") as string,
                             delimiter: ",",
                             type: "PASTE_NORMAL",
                         },
