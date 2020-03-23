@@ -141,9 +141,9 @@ export class GoogleSheetsDashboardAction extends GoogleDriveAction {
       spreadsheetId = files.data.files[0].id
     }
 
-    const sheetResponse = await sheet.spreadsheets.get({spreadsheetId})
+    let sheetResponse = await sheet.spreadsheets.get({spreadsheetId})
 
-    const sheets = sheetResponse.data.sheets
+    let sheets = sheetResponse.data.sheets
     winston.info(JSON.stringify(sheets))
     if (sheets === undefined) {
       throw "What the heckers"
@@ -154,6 +154,41 @@ export class GoogleSheetsDashboardAction extends GoogleDriveAction {
     }
     const zip = new AdmZip(request.attachment.dataBuffer)
     const entries = zip.getEntries()
+    const promiseAddSheetArray: Promise<void>[] = []
+    entries.forEach(async (entry) => {
+      const promise = new Promise<void>(async (res, rej) => {
+        const parsedName = entry.name.substring(0, (entry.name.length - 4))
+        winston.info(parsedName)
+        // @ts-ignore
+        const found = sheets.find((s) => {
+          if (s.properties === undefined) {
+            rej()
+          }
+          // @ts-ignore
+          return s.properties.title === parsedName
+        })
+
+        if (!found) {
+          await this.addSheet(spreadsheetId, parsedName, sheet)
+        } else if (found.properties && found.properties.sheetId !== undefined) {
+          await this.clearSheet(spreadsheetId, found.properties.sheetId, sheet)
+        }
+        res()
+      })
+      promiseAddSheetArray.push(promise)
+    })
+    await Promise.all(promiseAddSheetArray).catch((e) => {
+      winston.error(JSON.stringify(e))
+    })
+
+    // Fetch the sheets again
+    sheetResponse = await sheet.spreadsheets.get({spreadsheetId})
+    sheets = sheetResponse.data.sheets
+    winston.info(JSON.stringify(sheets))
+    if (sheets === undefined) {
+      throw "What the heckers"
+    }
+
     const promiseArray: Promise<void>[] = []
     // @ts-ignore
     entries.forEach(async (entry) => {
@@ -161,7 +196,8 @@ export class GoogleSheetsDashboardAction extends GoogleDriveAction {
       const promise = new Promise<void>(async (res, rej) => {
         const parsedName = entry.name.substring(0, (entry.name.length - 4))
         winston.info(parsedName)
-        let found = sheets.find((s) => {
+        // @ts-ignore
+        const found = sheets.find((s) => {
           if (s.properties === undefined) {
             return false
           }
@@ -169,17 +205,7 @@ export class GoogleSheetsDashboardAction extends GoogleDriveAction {
         })
 
         if (!found) {
-          const addSheetResponse = await this.addSheet(spreadsheetId, parsedName, sheet)
-          winston.info(`Sheet: ${JSON.stringify(addSheetResponse.data.updatedSpreadsheet)}`)
-          if (addSheetResponse.data.updatedSpreadsheet) {
-            found = addSheetResponse.data.updatedSpreadsheet
-          } else {
-            rej("No sheet created")
-          }
-        }
-
-        if (found && found.properties && found.properties.sheetId !== undefined) {
-          await this.clearSheet(spreadsheetId, found.properties.sheetId, sheet)
+          rej(`No available sheet for sheet: ${parsedName}`)
         }
 
         // @ts-ignore
@@ -325,18 +351,16 @@ export class GoogleSheetsDashboardAction extends GoogleDriveAction {
       winston.error(err)
       throw err
     })
-    const sheetResponse = await sheet.spreadsheets.get({spreadsheetId})
-    if (sheetResponse.data.sheets) {
-      return sheetResponse.data.sheets.find((s) => {
-        // todo refecth le data
-      })
-    }
   }
 
   async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
-    return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
-      winston.info(e)
-    })
+    if (buffer.requests && buffer.requests.length === 0) {
+      winston.info("No data to send")
+    } else {
+      return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
+        winston.info(e)
+      })
+    }
   }
 
   oauth2Client(redirectUri: string | undefined) {
