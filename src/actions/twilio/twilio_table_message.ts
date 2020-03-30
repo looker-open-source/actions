@@ -42,7 +42,7 @@ export class TwilioCustomMessageAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
 
     if (!(request.attachment && request.attachment.dataJSON)) {
-      throw "Couldn't get data from attachment."
+      throw "No data from attachment."
     }
 
     const qr = request.attachment.dataJSON
