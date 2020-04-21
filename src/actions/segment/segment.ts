@@ -192,14 +192,18 @@ export class SegmentAction extends Hub.Action {
   ) {
     const traits: {[key: string]: string} = {}
     for (const field of fields) {
-      const value = row[field.name].value
-      if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
-        if (hiddenFields.indexOf(field.name) === -1) {
-          traits[field.name] = value
+      if (row[field.name] !== undefined) {
+        const value = row[field.name].value
+        if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
+          if (hiddenFields.indexOf(field.name) === -1) {
+            traits[field.name] = value
+          }
         }
-      }
-      if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
-        traits.email = value
+        if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
+          traits.email = value
+        }
+      } else {
+        winston.info("[Segment] Row contained an undefined value")
       }
     }
     const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
