@@ -1,4 +1,4 @@
-FROM node:10.8.0
+FROM node:12.13.0
 RUN npm install -g -s --no-progress yarn@1.9.4
 
 RUN mkdir -p /code

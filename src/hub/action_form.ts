@@ -20,6 +20,7 @@ interface ActionFormFieldBase {
   label?: string
   description?: string
   default?: string
+  interactive?: boolean
   required?: boolean
 }
 
@@ -38,7 +39,7 @@ interface ActionFormFieldSelect extends ActionFormFieldBase {
 }
 
 interface ActionFormFieldOAuth extends ActionFormFieldBase {
-  type: "oauth_link"
+  type: "oauth_link" | "oauth_link_google"
   oauth_url: string
 }
 
