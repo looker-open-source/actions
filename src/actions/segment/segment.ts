@@ -184,28 +184,29 @@ export class SegmentAction extends Hub.Action {
   }
 
   protected flattenJson(jsonRow: any, segmentFields: SegmentFields, fieldName: string) {
-    const result: any = {}
-    const flattenFunction = (currentObject: any, prop: string) => {
-      let empty = true
-      if (Object(currentObject) !== currentObject) {
-        return
-      }
-      for (const key in currentObject) {
-        if (currentObject.hasOwnProperty(key)) {
-          empty = false
-          if (key === "value") {
-            result[prop] = currentObject[key]
-          } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
-            flattenFunction(currentObject[key], prop ? prop + "." + key : key)
-          }
-          if (empty && prop) {
-            result[prop] = {}
+    const pivotValues: any = {}
+    pivotValues[fieldName] = []
+    const flattenFunction = (currentObject: any, name: string) => {
+      const returnVal: any = {}
+      if (Object(currentObject) === currentObject) {
+        for (const key in currentObject) {
+          if (currentObject.hasOwnProperty(key)) {
+            if (key === "value") {
+              returnVal[name] = currentObject[key]
+              return returnVal
+            } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
+              const res = flattenFunction(currentObject[key], key)
+              if (res !== {}) {
+                pivotValues[fieldName].push(res)
+              }
+            }
           }
         }
       }
+      return returnVal
     }
     flattenFunction(jsonRow, fieldName)
-    return result
+    return pivotValues
   }
 
   protected prepareSegmentTraitsFromRow(
@@ -219,7 +220,14 @@ export class SegmentAction extends Hub.Action {
     for (const field of fields) {
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
         if (hiddenFields.indexOf(field.name) === -1) {
-          const values = this.flattenJson(row[field.name], segmentFields, field.name)
+          let values: any = {}
+          // ts-ignore
+          if (row[field.name] && row[field.name].value) {
+            values[field.name] = row[field.name].value
+          } else {
+            values = this.flattenJson(row[field.name], segmentFields, field.name)
+          }
+          winston.info(`Values: ${JSON.stringify(values)}`)
           for (const key in values) {
             if (values.hasOwnProperty(key)) {
               traits[key] = values[key]

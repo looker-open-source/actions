@@ -90,7 +90,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectSegmentMatch(request, {
         userId: "funvalue",
         anonymousId: null,
-        traits: {"users.count.f": 1, "users.count.z": 3},
+        traits: { "users.count": [{ f: 1 }, { z: 3 }] },
       })
     })
 
