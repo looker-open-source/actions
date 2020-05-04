@@ -183,10 +183,12 @@ export class SegmentAction extends Hub.Action {
     }
   }
 
-  protected flattenJson(jsonRow: any, segmentFields: SegmentFields, fieldName: string) {
+  // Removes JsonDetail Cell metadata and only sends relevant nested data to Segment
+  // See JsonDetail.ts to see structure of a JsonDetail Row
+  protected filterJson(jsonRow: any, segmentFields: SegmentFields, fieldName: string) {
     const pivotValues: any = {}
     pivotValues[fieldName] = []
-    const flattenFunction = (currentObject: any, name: string) => {
+    const filterFunction = (currentObject: any, name: string) => {
       const returnVal: any = {}
       if (Object(currentObject) === currentObject) {
         for (const key in currentObject) {
@@ -195,7 +197,7 @@ export class SegmentAction extends Hub.Action {
               returnVal[name] = currentObject[key]
               return returnVal
             } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
-              const res = flattenFunction(currentObject[key], key)
+              const res = filterFunction(currentObject[key], key)
               if (res !== {}) {
                 pivotValues[fieldName].push(res)
               }
@@ -205,7 +207,7 @@ export class SegmentAction extends Hub.Action {
       }
       return returnVal
     }
-    flattenFunction(jsonRow, fieldName)
+    filterFunction(jsonRow, fieldName)
     return pivotValues
   }
 
@@ -228,7 +230,7 @@ export class SegmentAction extends Hub.Action {
           if (row[field.name].value) {
             values[field.name] = row[field.name].value
           } else {
-            values = this.flattenJson(row[field.name], segmentFields, field.name)
+            values = this.filterJson(row[field.name], segmentFields, field.name)
           }
           for (const key in values) {
             if (values.hasOwnProperty(key)) {
