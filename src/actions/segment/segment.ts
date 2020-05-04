@@ -183,6 +183,34 @@ export class SegmentAction extends Hub.Action {
     }
   }
 
+  // Removes JsonDetail Cell metadata and only sends relevant nested data to Segment
+  // See JsonDetail.ts to see structure of a JsonDetail Row
+  protected filterJson(jsonRow: any, segmentFields: SegmentFields, fieldName: string) {
+    const pivotValues: any = {}
+    pivotValues[fieldName] = []
+    const filterFunction = (currentObject: any, name: string) => {
+      const returnVal: any = {}
+      if (Object(currentObject) === currentObject) {
+        for (const key in currentObject) {
+          if (currentObject.hasOwnProperty(key)) {
+            if (key === "value") {
+              returnVal[name] = currentObject[key]
+              return returnVal
+            } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
+              const res = filterFunction(currentObject[key], key)
+              if (res !== {}) {
+                pivotValues[fieldName].push(res)
+              }
+            }
+          }
+        }
+      }
+      return returnVal
+    }
+    filterFunction(jsonRow, fieldName)
+    return pivotValues
+  }
+
   protected prepareSegmentTraitsFromRow(
     row: Hub.JsonDetail.Row,
     fields: Hub.Field[],
@@ -190,16 +218,29 @@ export class SegmentAction extends Hub.Action {
     hiddenFields: string[],
     trackCall: boolean,
   ) {
-    const traits: {[key: string]: string} = {}
+    const traits: { [key: string]: string } = {}
     for (const field of fields) {
-      const value = row[field.name].value
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
         if (hiddenFields.indexOf(field.name) === -1) {
-          traits[field.name] = value
+          let values: any = {}
+          if (!row.hasOwnProperty(field.name)) {
+            winston.error("Field name does not exist for Segment action")
+            throw new SegmentActionError(`Field id ${field.name} does not exist for JsonDetail.Row`)
+          }
+          if (row[field.name].value) {
+            values[field.name] = row[field.name].value
+          } else {
+            values = this.filterJson(row[field.name], segmentFields, field.name)
+          }
+          for (const key in values) {
+            if (values.hasOwnProperty(key)) {
+              traits[key] = values[key]
+            }
+          }
         }
       }
       if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
-        traits.email = value
+        traits.email = row[field.name].value
       }
     }
     const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
