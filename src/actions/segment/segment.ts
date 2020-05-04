@@ -221,13 +221,15 @@ export class SegmentAction extends Hub.Action {
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
         if (hiddenFields.indexOf(field.name) === -1) {
           let values: any = {}
-          // ts-ignore
-          if (row[field.name] && row[field.name].value) {
+          if (!row.hasOwnProperty(field.name)) {
+            winston.error("Field name does not exist for Segment action")
+            throw new SegmentActionError(`Field id ${field.name} does not exist for JsonDetail.Row`)
+          }
+          if (row[field.name].value) {
             values[field.name] = row[field.name].value
           } else {
             values = this.flattenJson(row[field.name], segmentFields, field.name)
           }
-          winston.info(`Values: ${JSON.stringify(values)}`)
           for (const key in values) {
             if (values.hasOwnProperty(key)) {
               traits[key] = values[key]
