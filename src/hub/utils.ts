@@ -9,3 +9,12 @@ export function truncateString(s: string, limit: number, split = "\n") {
   }
   return s
 }
+
+export function formatToFileExtension(format: string) {
+  const JSON_LIKE = ['json', 'json_label', 'inline_json', 'json_detail']
+  if (JSON_LIKE.includes(format)) {
+    return 'json'
+  } else {
+    return format
+  }
+}

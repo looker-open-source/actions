@@ -5,7 +5,7 @@ import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
-import { truncateString } from "./utils"
+import { formatToFileExtension, truncateString } from "./utils"
 
 import {
   DataWebhookPayload,
@@ -354,6 +354,14 @@ export class ActionRequest {
         return sanitizeFilename(`${this.scheduledPlan.title}.${this.attachment.fileExtension}`)
       } else {
         return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
+      }
+    } else {
+      if (this.params.format) {
+        if (this.scheduledPlan && this.scheduledPlan.title) {
+          return sanitizeFilename(`${this.scheduledPlan.title}.${formatToFileExtension(this.params.format)}`)
+        } else {
+          return sanitizeFilename(`looker_file_${Date.now()}.${formatToFileExtension(this.params.format)}`)
+        }
       }
     }
   }
