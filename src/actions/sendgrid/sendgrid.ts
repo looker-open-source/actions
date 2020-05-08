@@ -29,7 +29,7 @@ export class SendGridAction extends Hub.Action {
     if (!request.formParams.to) {
       throw "Needs a valid email address."
     }
-    const filename = request.formParams.filename || request.suggestedFilename() as string
+    const filename = request.formParams.filename || request.suggestedFilename()
     const plan = request.scheduledPlan
     const subject = request.formParams.subject || (plan && plan.title ? plan.title : "Looker")
     const from = request.formParams.from ? request.formParams.from : "Looker <noreply@lookermail.com>"
