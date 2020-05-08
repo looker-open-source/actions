@@ -356,11 +356,11 @@ export class ActionRequest {
         return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
       }
     } else {
-      if (this.params.format) {
+      if (this.formParams.format) {
         if (this.scheduledPlan && this.scheduledPlan.title) {
-          return sanitizeFilename(`${this.scheduledPlan.title}.${formatToFileExtension(this.params.format)}`)
+          return sanitizeFilename(`${this.scheduledPlan.title}.${formatToFileExtension(this.formParams.format)}`)
         } else {
-          return sanitizeFilename(`looker_file_${Date.now()}.${formatToFileExtension(this.params.format)}`)
+          return sanitizeFilename(`looker_file_${Date.now()}.${formatToFileExtension(this.formParams.format)}`)
         }
       }
     }
