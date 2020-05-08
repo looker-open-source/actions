@@ -355,15 +355,15 @@ export class ActionRequest {
       } else {
         return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
       }
-    } else {
-      if (this.formParams.format) {
-        if (this.scheduledPlan && this.scheduledPlan.title) {
-          return sanitizeFilename(`${this.scheduledPlan.title}.${formatToFileExtension(this.formParams.format)}`)
-        } else {
-          return sanitizeFilename(`looker_file_${Date.now()}.${formatToFileExtension(this.formParams.format)}`)
-        }
+    } else if (this.formParams.format) {
+      if (this.scheduledPlan && this.scheduledPlan.title) {
+        return sanitizeFilename(`${this.scheduledPlan.title}.${formatToFileExtension(this.formParams.format)}`)
+      } else {
+        return sanitizeFilename(`looker_file_${Date.now()}.${formatToFileExtension(this.formParams.format)}`)
       }
     }
+    winston.warn("Couldn't infer file extension from action request, using default filename scheme")
+    return sanitizeFilename(`looker_file_${Date.now()}`)
   }
 
   /** creates a truncated message with a max number of lines and max number of characters with Title, Url,
