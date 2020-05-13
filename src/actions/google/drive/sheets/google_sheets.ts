@@ -203,19 +203,19 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         })
                     }
                 }).on("end", async () => {
-                    // @ts-ignore
-                    if (requestBody.requests.length > 0) {
-                        await mutex.runExclusive(async () => {
+                    await mutex.runExclusive(async () => {
+                        // @ts-ignore
+                        if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                             await this.flush(requestBody, sheet, spreadsheetId).then(() => {
                                 winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
                                 resolve()
                             }).catch((e: any) => {
                                 reject(e)
                             })
-                        }).catch((e: any) => {
-                            reject(e)
-                        })
-                    }
+                        }
+                    }).catch((e: any) => {
+                        reject(e)
+                    })
                 }).on("error", (e: any) => {
                     winston.error(e)
                     reject(e)
