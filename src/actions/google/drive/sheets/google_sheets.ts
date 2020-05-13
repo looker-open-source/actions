@@ -205,7 +205,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 }).on("end", async () => {
                     await mutex.runExclusive(async () => {
                         // @ts-ignore
-                        if (requestBody.requests.length > MAX_REQUEST_BATCH) {
+                        if (requestBody.requests.length > 0) {
                             await this.flush(requestBody, sheet, spreadsheetId).then(() => {
                                 winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
                                 resolve()
