@@ -1,4 +1,4 @@
-export const MP_API_URL = "https://s2s.mparticle.com/v2/bulkevents/"
+export const MP_API_URL = "https://inbound.mparticle.com/s2s/v2/bulkevents"
 export const EVENT_TYPE = "custom_event"
 export const DEFAULT_EVENT_NAME = "looker_custom_event"
 export const DEFAULT_CUSTOM_EVENT_TYPE = "other"
