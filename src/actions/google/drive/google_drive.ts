@@ -81,8 +81,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             fields: "files(id,name,parents),nextPageToken",
             orderBy: "recency desc",
             pageSize: 1000,
-            q: `mimeType='application/vnd.google-apps.folder'`,
-            trashed: false,
+            q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
             spaces: "drive",
           }
           if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
