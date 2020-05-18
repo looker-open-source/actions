@@ -138,6 +138,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
+        let finished = false
 
         return request.stream(async (readable) => {
             return new Promise<void>(async (resolve, reject) => {
@@ -203,6 +204,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         })
                     }
                 }).on("end", async () => {
+                    finished = true
                     await mutex.runExclusive(async () => {
                         // @ts-ignore
                         if (requestBody.requests.length > 0) {
@@ -219,6 +221,11 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 }).on("error", (e: any) => {
                     winston.error(e)
                     reject(e)
+                }).on("close", () => {
+                    if (!finished) {
+                        winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`)
+                        reject(`"end" event not called before finishing stream`)
+                    }
                 })
                 readable.pipe(csvparser)
             })
