@@ -121,6 +121,7 @@ export abstract class Action {
         throw "An action marked for being executed on a separate process needs a ExecuteProcessQueue."
       }
       request.actionId = this.name
+      winston.info(`Execute Action Enqueued. Queue length: ${queue.queue.size}`, {webhookId: request.webhookId})
       return new Promise<ActionResponse>((resolve, reject) => {
         queue.run(JSON.stringify(request)).then((response: string) => {
           const actionResponse = new ActionResponse()

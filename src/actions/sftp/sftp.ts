@@ -32,7 +32,7 @@ export class SFTPAction extends Hub.Action {
         throw "Needs a valid SFTP address."
       }
       const data = request.attachment.dataBuffer
-      const fileName = request.formParams.filename || request.suggestedFilename() as string
+      const fileName = request.formParams.filename || request.suggestedFilename()
       const remotePath = Path.join(parsedUrl.pathname, fileName)
 
       client.put(data, remotePath)

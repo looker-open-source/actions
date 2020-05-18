@@ -138,6 +138,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
+        let finished = false
 
         return request.stream(async (readable) => {
             return new Promise<void>(async (resolve, reject) => {
@@ -189,37 +190,42 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                         await mutex.runExclusive(async () => {
                             // @ts-ignore
-                            if (requestBody.requests.length < MAX_REQUEST_BATCH) {
-                                return
+                            if (requestBody.requests.length > MAX_REQUEST_BATCH) {
+                                const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                                Object.assign(requestCopy, requestBody)
+                                requestBody.requests = []
+                                await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
+                                    winston.error(e)
+                                    reject(e)
+                                })
                             }
-                            const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
-                            Object.assign(requestCopy, requestBody)
-                            requestBody.requests = []
-                            await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
-                                winston.error(e)
-                                reject(e)
-                            })
                         }).catch((e: any) => {
                             reject(e)
                         })
                     }
                 }).on("end", async () => {
-                    // @ts-ignore
-                    if (requestBody.requests.length > 0) {
-                        await mutex.runExclusive(async () => {
+                    finished = true
+                    await mutex.runExclusive(async () => {
+                        // @ts-ignore
+                        if (requestBody.requests.length > 0) {
                             await this.flush(requestBody, sheet, spreadsheetId).then(() => {
                                 winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
                                 resolve()
                             }).catch((e: any) => {
                                 reject(e)
                             })
-                        }).catch((e: any) => {
-                            reject(e)
-                        })
-                    }
+                        }
+                    }).catch((e: any) => {
+                        reject(e)
+                    })
                 }).on("error", (e: any) => {
                     winston.error(e)
                     reject(e)
+                }).on("close", () => {
+                    if (!finished) {
+                        winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`)
+                        reject(`"end" event not called before finishing stream`)
+                    }
                 })
                 readable.pipe(csvparser)
             })

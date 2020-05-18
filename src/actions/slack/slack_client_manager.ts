@@ -38,14 +38,25 @@ export class SlackClientManager {
                 }
             }
             if (supportMultiWs && Array.isArray(json)) {
-                this.selectedInstallId = request.formParams.workspace
                 this.clients = (JSON.parse(stateJson) as WorkspaceAwareStateJson[])
                     .reduce((accumulator, stateJsonItem) => {
+                        const ws = stateJsonItem.install_id
                         if (stateJsonItem.token) {
-                            accumulator[stateJsonItem.install_id] = makeSlackClient(stateJsonItem.token)
+                            accumulator[ws] = makeSlackClient(stateJsonItem.token)
                         }
                         return accumulator
                     }, {} as { [key: string]: WebClient })
+
+                if (request.formParams.workspace) {
+                    this.selectedInstallId = request.formParams.workspace
+                } else {
+                    /**
+                     * To fallback to the first client if there isn't any selected.
+                     * This is to allow existing schedules to work without the user has to
+                     * go back to the scheduler modal to select the workspace.
+                     */
+                    this.selectedInstallId = Object.keys(this.clients)[0]
+                }
             } else {
                 this.selectedInstallId = PLACEHOLDER_WORKSPACE
                 this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson)}
