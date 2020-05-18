@@ -46,4 +46,28 @@ describe("ActionRequest", () => {
     chai.expect(result.lookerVersion).to.equal(semver.valid("7.3.4561"))
   })
 
+  it("ActionRequest.suggestedFilename parses formParams if there's no attachment", () => {
+    const formats = ["csv", "xlsx", "html", "txt", "json", "json_label", "inline_json", "json_detail"]
+    const expectedExtensions = [".csv", ".xlsx", ".html", ".txt", ".json", ".json", ".json", ".json"]
+
+    formats.map((format, i) => {
+      const req = mockReq({
+        headers: {
+          "user-agent": "LookerOutgoingWebhook/7.3.0",
+          "x-looker-webhook-id": "123",
+          "x-looker-instance": "instanceId1",
+        },
+        body: {
+          form_params: {format},
+          scheduled_plan: {title: "Orders by County"},
+        },
+      })
+
+      // @ts-ignore
+      req.header = (name: string): string | string[] | undefined => req.headers[name]
+
+      const result = ActionRequest.fromRequest(req)
+      chai.expect(result.suggestedFilename()).to.equal(`Orders by County${expectedExtensions[i]}`)
+    })
+  })
 })

@@ -190,35 +190,34 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                         await mutex.runExclusive(async () => {
                             // @ts-ignore
-                            if (requestBody.requests.length < MAX_REQUEST_BATCH) {
-                                return
+                            if (requestBody.requests.length > MAX_REQUEST_BATCH) {
+                                const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                                Object.assign(requestCopy, requestBody)
+                                requestBody.requests = []
+                                await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
+                                    winston.error(e)
+                                    reject(e)
+                                })
                             }
-                            const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
-                            Object.assign(requestCopy, requestBody)
-                            requestBody.requests = []
-                            await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
-                                winston.error(e)
-                                reject(e)
-                            })
                         }).catch((e: any) => {
                             reject(e)
                         })
                     }
                 }).on("end", async () => {
                     finished = true
-                    // @ts-ignore
-                    if (requestBody.requests.length > 0) {
-                        await mutex.runExclusive(async () => {
+                    await mutex.runExclusive(async () => {
+                        // @ts-ignore
+                        if (requestBody.requests.length > 0) {
                             await this.flush(requestBody, sheet, spreadsheetId).then(() => {
                                 winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
                                 resolve()
                             }).catch((e: any) => {
                                 reject(e)
                             })
-                        }).catch((e: any) => {
-                            reject(e)
-                        })
-                    }
+                        }
+                    }).catch((e: any) => {
+                        reject(e)
+                    })
                 }).on("error", (e: any) => {
                     winston.error(e)
                     reject(e)
