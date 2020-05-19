@@ -146,6 +146,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet)
                 csvparser.on("data", async (line: any) => {
+                    const rowIndex: number = rowCount++
                     if (rowCount > maxRows) {
                         maxRows += 1000
                         // @ts-ignore
@@ -172,7 +173,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             reject(e)
                         })
                     }
-                    const rowIndex: number = rowCount++
                     // @ts-ignore
                     requestBody.requests.push({
                         pasteData: {
@@ -208,13 +208,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     await mutex.runExclusive(async () => {
                         // @ts-ignore
                         if (requestBody.requests.length > 0) {
-                            await this.flush(requestBody, sheet, spreadsheetId).then(() => {
-                                winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
-                                resolve()
-                            }).catch((e: any) => {
+                            await this.flush(requestBody, sheet, spreadsheetId).catch((e: any) => {
                                 reject(e)
                             })
                         }
+                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
+                        resolve()
                     }).catch((e: any) => {
                         reject(e)
                     })
