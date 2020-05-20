@@ -6,7 +6,6 @@ import concatStream = require("concat-stream")
 
 import * as Hub from "../../../../hub"
 
-import * as winston from "winston"
 import { ActionCrypto } from "../../../../hub"
 import { GoogleSheetsAction } from "./google_sheets"
 
@@ -124,7 +123,6 @@ describe(`${action.constructor.name} unit tests`, () => {
               },
             ],
           })
-          winston.info("returning from stub")
           return Promise.resolve({})
         })
         const stubFlush = sinon.stub(action as any, "flush").callsFake(flushSpy)
@@ -162,6 +160,72 @@ describe(`${action.constructor.name} unit tests`, () => {
         }
         chai.expect(action.validateAndExecute(request)).to.eventually.be.fulfilled.then( () => {
           chai.expect(flushSpy).to.have.been.calledOnce
+          stubDriveClient.restore()
+          stubSheetClient.restore()
+          stubFlush.restore()
+          done()
+        })
+
+      })
+
+      it("uses will correctly sanitize values for csv uploads", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [
+                    {
+                      id: "fake_id",
+                      name: "random_sheet",
+                    },
+                  ],
+                },
+              }),
+            },
+          })
+        const flushSpy = sinon.spy(async (buffer: any, _sheet: any, _spreadsheetId: number) => {
+          chai.expect(buffer.requests[0].pasteData.data).to.eq("\"a\",\"b\",\"lol\"\"\",\"c\"")
+          return Promise.resolve({})
+        })
+        const stubFlush = sinon.stub(action as any, "flush").callsFake(flushSpy)
+        const stubSheetClient = sinon.stub(action as any, "sheetsClientFromRequest")
+          .resolves({
+            spreadsheets: {
+              get: async () => Promise.resolve({
+                data: {
+                  sheets: [
+                    {
+                      properties: {
+                        sheetId: 1,
+                        gridProperties: {
+                          rowCount: 5,
+                        },
+                      },
+                    },
+                  ],
+                },
+              }),
+              values: {
+                clear: async () => Promise.resolve(),
+              },
+            },
+          })
+        const csvFile = "\"a\",\"b\",\"lol\"\"\",\"c\"\n1,2,3,4"
+
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "yes", filename: "random_sheet", folder: "folder"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        const requestResult = action.validateAndExecute(request)
+        chai.expect(requestResult).to.eventually.have.property("success", true)
+          .then( () => {
+          chai.expect(flushSpy).to.have.been.calledOnce
+          chai.expect(flushSpy).to.not.have.thrown
           stubDriveClient.restore()
           stubSheetClient.restore()
           stubFlush.restore()
