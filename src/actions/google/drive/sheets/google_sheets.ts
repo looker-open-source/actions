@@ -173,9 +173,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             reject(e)
                         })
                     }
-                    const lineData = line.map((v: any) => {
-                        v = (v as string).replace(/\"/g, "\"\"")
-                        return `"${v}"`
+                    // Sanitize line data and properly encapsulate string formatting for CSV lines
+                    const lineData = line.map((record: string) => {
+                        record = record.replace(/\"/g, "\"\"")
+                        return `"${record}"`
                     }).join(",") as string
                     // @ts-ignore
                     requestBody.requests.push({
