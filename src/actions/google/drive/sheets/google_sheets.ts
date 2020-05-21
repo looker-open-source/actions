@@ -181,7 +181,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     // having to resize again
                                     const requestLen = requestCopy.requests ? requestCopy.requests.length : 0
                                     winston.info(`Expanding max rows: ${maxRows} to ` +
-                                      `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`)
+                                      `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                                     maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
                                     // @ts-ignore
                                     await sheet.spreadsheets.batchUpdate({
