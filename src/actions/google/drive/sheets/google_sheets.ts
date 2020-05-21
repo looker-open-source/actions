@@ -169,37 +169,40 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     // @ts-ignore
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                         await mutex.runExclusive(async () => {
-                            if (rowCount > maxRows) {
-                                // Make sure we grow at least by the difference between rowCount and maxRows.
-                                // Add MAX_ROW_BUFFER_INCREASE in addition to give headroom for more requests before
-                                // having to resize again
-                                maxRows += (rowCount - maxRows) + MAX_ROW_BUFFER_INCREASE
-                                // @ts-ignore
-                                await sheet.spreadsheets.batchUpdate({
-                                    spreadsheetId,
-                                    requestBody: {
-                                        requests: [{
-                                            updateSheetProperties: {
-                                                properties: {
-                                                    sheetId,
-                                                    gridProperties: {
-                                                        rowCount: maxRows,
-                                                    },
-                                                },
-                                                fields: "gridProperties(rowCount)",
-                                            },
-                                        }],
-                                    },
-                                }).catch((e: any) => {
-                                    reject(e)
-                                })
-                            }
                             // @ts-ignore
                             if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                                 const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
                                 // Make sure to do a deep copy of the request
                                 Object.assign(requestCopy, requestBody)
                                 requestBody.requests = []
+                                if (rowCount >= maxRows) {
+                                    // Make sure we grow at least by requestlength.
+                                    // Add MAX_ROW_BUFFER_INCREASE in addition to give headroom for more requests before
+                                    // having to resize again
+                                    const requestLen = requestCopy.requests ? requestCopy.requests.length : 0
+                                    winston.info(`Expanding max rows: ${maxRows} to ` +
+                                      `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`)
+                                    maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
+                                    // @ts-ignore
+                                    await sheet.spreadsheets.batchUpdate({
+                                        spreadsheetId,
+                                        requestBody: {
+                                            requests: [{
+                                                updateSheetProperties: {
+                                                    properties: {
+                                                        sheetId,
+                                                        gridProperties: {
+                                                            rowCount: maxRows,
+                                                        },
+                                                    },
+                                                    fields: "gridProperties(rowCount)",
+                                                },
+                                            }],
+                                        },
+                                    }).catch((e: any) => {
+                                        reject(e)
+                                    })
+                                }
                                 await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
                                     winston.error(e)
                                     reject(e)
