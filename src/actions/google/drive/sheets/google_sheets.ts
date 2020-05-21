@@ -169,7 +169,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     // @ts-ignore
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                         await mutex.runExclusive(async () => {
-                            if (rowCount > maxRows) {
+                            if (rowCount >= maxRows) {
                                 // Make sure we grow at least by the difference between rowCount and maxRows.
                                 // Add MAX_ROW_BUFFER_INCREASE in addition to give headroom for more requests before
                                 // having to resize again
