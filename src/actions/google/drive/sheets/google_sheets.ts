@@ -10,6 +10,7 @@ import Sheet = sheets_v4.Sheets
 import {GoogleDriveAction} from "../google_drive"
 
 const MAX_REQUEST_BATCH = 500
+const MAX_ROW_BUFFER_INCREASE = 2000
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -147,32 +148,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 await this.clearSheet(spreadsheetId, sheet)
                 csvparser.on("data", async (line: any) => {
                     const rowIndex: number = rowCount++
-                    if (rowCount > maxRows) {
-                        maxRows += 1000
-                        // @ts-ignore
-                        await mutex.runExclusive(async () => {
-                            await sheet.spreadsheets.batchUpdate({
-                                spreadsheetId,
-                                requestBody: {
-                                    requests: [{
-                                        updateSheetProperties: {
-                                            properties: {
-                                                sheetId,
-                                                gridProperties: {
-                                                    rowCount: maxRows,
-                                                },
-                                            },
-                                            fields: "gridProperties(rowCount)",
-                                        },
-                                    }],
-                                },
-                            }).catch((e: any) => {
-                                reject(e)
-                            })
-                        }).catch((e: any) => {
-                            reject(e)
-                        })
-                    }
                     // Sanitize line data and properly encapsulate string formatting for CSV lines
                     const lineData = line.map((record: string) => {
                         record = record.replace(/\"/g, "\"\"")
@@ -194,9 +169,35 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     // @ts-ignore
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                         await mutex.runExclusive(async () => {
+                            if (rowCount > maxRows) {
+                                // Make sure we grow at least by the difference between rowCount and maxRows.
+                                // Add MAX_ROW_BUFFER_INCREASE in addition to give headroom for more requests before
+                                // having to resize again
+                                maxRows += (rowCount - maxRows) + MAX_ROW_BUFFER_INCREASE
+                                // @ts-ignore
+                                await sheet.spreadsheets.batchUpdate({
+                                    spreadsheetId,
+                                    requestBody: {
+                                        requests: [{
+                                            updateSheetProperties: {
+                                                properties: {
+                                                    sheetId,
+                                                    gridProperties: {
+                                                        rowCount: maxRows,
+                                                    },
+                                                },
+                                                fields: "gridProperties(rowCount)",
+                                            },
+                                        }],
+                                    },
+                                }).catch((e: any) => {
+                                    reject(e)
+                                })
+                            }
                             // @ts-ignore
                             if (requestBody.requests.length > MAX_REQUEST_BATCH) {
                                 const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                                // Make sure to do a deep copy of the request
                                 Object.assign(requestCopy, requestBody)
                                 requestBody.requests = []
                                 await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
