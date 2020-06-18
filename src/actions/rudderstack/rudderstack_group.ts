@@ -7,7 +7,6 @@ export class RudderGroupAction extends RudderAction {
 
   name = "rudder_group"
   label = "Rudder Group"
-  iconName = "rudder/rudder.png"
   description = "Add traits and / or users to your Rudder groups."
   requiredFields = [{ tag: this.tag , any_tag: this.allowedTags}]
   minimumSupportedLookerVersion = "5.5.0"

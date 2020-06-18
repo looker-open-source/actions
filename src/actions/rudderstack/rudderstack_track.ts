@@ -5,7 +5,6 @@ export class RudderTrackAction extends RudderAction {
 
   name = "rudder_track"
   label = "Rudder Track"
-  iconName = "rudder/rudder.png"
   description = "Add traits via track to your Rudder users."
   minimumSupportedLookerVersion = "5.5.0"
 

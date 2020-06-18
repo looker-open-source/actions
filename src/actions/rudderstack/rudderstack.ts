@@ -1,12 +1,12 @@
 import * as util from "util"
 import * as uuid from "uuid"
-import * as winston from "winston"
-
 import * as semver from "semver"
 import * as Hub from "../../hub"
+import * as winston from "winston"
 import {RudderActionError} from "./rudderstack_error"
+const rudder: any = require("@rudderstack/rudder-sdk-node")
 
-const rudder: any = require("analytics-node")
+
 
 interface RudderFields {
   idFieldNames: string[],
@@ -36,7 +36,7 @@ export class RudderAction extends Hub.Action {
 
   name = "rudder_event"
   label = "Rudder Identify"
-  iconName = "rudder/rudder.png"
+  iconName = "rudderstack/rudderstack.png"
   description = "Add traits via identify to your Rudder users."
   params = [
     {
@@ -47,11 +47,11 @@ export class RudderAction extends Hub.Action {
       sensitive: true,
     },
     {
-      description: "A write key for Rudder.",
-      label: "Rudder Data Plane URL",
-      name: "rudder_data_plane_url",
+      description: "Rudder Server URL",
+      label: "Rudder Server URL",
+      name: "rudder_server_url",
       required: true,
-      sensitive: true,
+      sensitive: false,
     }
   ]
   minimumSupportedLookerVersion = "4.20.0"
@@ -98,11 +98,14 @@ export class RudderAction extends Hub.Action {
     const event = request.formParams.event
 
     try {
-
+      let totalRows = 0;
+      let totalRequestsCompleted = 0;
       await request.streamJsonDetail({
         onFields: (fields) => {
           fieldset = Hub.allFields(fields)
           rudderFields = this.rudderFields(fieldset)
+          winston.info(`[Rudder] fieldset :  ${JSON.stringify(fieldset)}`)
+          winston.info(`[Rudder] RudderFields : ${JSON.stringify(rudderFields)}`)
           this.unassignedRudderFieldsCheck(rudderFields)
         },
         onRanAt: (iso8601string) => {
@@ -111,6 +114,8 @@ export class RudderAction extends Hub.Action {
           }
         },
         onRow: (row) => {
+          totalRows = totalRows +1;
+          winston.info(`[Rudder] row : ${JSON.stringify(row)}`)
           this.unassignedRudderFieldsCheck(rudderFields)
           const payload = {
             ...this.prepareRudderTraitsFromRow(
@@ -124,7 +129,11 @@ export class RudderAction extends Hub.Action {
             delete payload.event
           }
           try {
-            rudderClient[rudderCall](payload)
+            winston.info("===calling analytics api===")
+            rudderClient[rudderCall](payload, () => {
+              totalRequestsCompleted = totalRequestsCompleted + 1
+              winston.info(`[Rudder] totalRequestsCompletedOnEvents :  ${totalRequestsCompleted}`)
+            })
           } catch (e) {
             errors.push(e)
           }
@@ -132,15 +141,41 @@ export class RudderAction extends Hub.Action {
       })
 
       await new Promise<void>(async (resolve, reject) => {
+          winston.info("[Rudder] calling explicit flush")
           rudderClient.flush( (err: any) => {
             if (err) {
+              winston.error(`[Rudder] error while flush : ${err}`)
               reject(err)
             } else {
+              winston.info("[Rudder] resolve while flush")
               resolve()
             }
           })
       })
+
+      winston.info(`[Rudder] totalrows : ${totalRows}`);
+      winston.info(`[Rudder] totalRequestsCompletedAfterRowsCompleted : ${totalRequestsCompleted}`)
+
+      let checkCount = 0
+      await new Promise<void>(async (resolve, reject) => {
+        setInterval(() => {
+          try{
+            if(totalRows == totalRequestsCompleted) {
+              resolve()
+            }
+            if(checkCount == 20) {
+              reject(new Error("sending to server took too long..aborting after 20 secs"))
+            }
+            checkCount = checkCount +1
+          } catch(e) {
+            reject(e)
+          }
+          
+        }, 1000);
+      })
+      
     } catch (e) {
+      winston.error(`[Rudder] error in Rudder action execution : ${e}`)
       errors.push(e)
     }
 
@@ -148,10 +183,12 @@ export class RudderAction extends Hub.Action {
       let msg = errors.map((e) => e.message ? e.message : e).join(", ")
       if (msg.length === 0) {
         msg = "An unknown error occurred while processing the Rudder action."
-        winston.warn(`Can't format Rudder errors: ${util.inspect(errors)}`)
+        winston.warn(`[Rudder] Can't format Rudder errors: ${util.inspect(errors)}`)
       }
+      winston.error(`[Rudder] total errors : ${msg}`);
       return new Hub.ActionResponse({success: false, message: msg})
     } else {
+      winston.info("[Rudder] no errors in Rudder action execution");
       return new Hub.ActionResponse({success: true})
     }
   }
@@ -231,7 +268,7 @@ export class RudderAction extends Hub.Action {
         if (hiddenFields.indexOf(field.name) === -1) {
           let values: any = {}
           if (!row.hasOwnProperty(field.name)) {
-            winston.error("Field name does not exist for Rudder action")
+            winston.error("[Rudder] Field name does not exist for Rudder action")
             throw new RudderActionError(`Field id ${field.name} does not exist for JsonDetail.Row`)
           }
           if (row[field.name].value) {
@@ -271,7 +308,7 @@ export class RudderAction extends Hub.Action {
   }
 
   protected rudderClientFromRequest(request: Hub.ActionRequest) {
-    return new rudder(request.params.rudder_write_key)
+    return new rudder(request.params.rudder_write_key,  request.params.rudder_server_url)
   }
 
   protected generateAnonymousId() {
