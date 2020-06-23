@@ -35,12 +35,14 @@ function expectGoogleCloudStorageMatch(request: Hub.ActionRequest,
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
-
+  const stubDate = sinon.stub(Date, "now")
+    .callsFake(() => "1234")
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
     chai.expect(bucketSpy).to.have.been.calledWithMatch(bucketMatch)
     chai.expect(fileSpy).to.have.been.calledWithMatch(fileMatch)
     stubClient.restore()
     stubSuggestedFilename.restore()
+    stubDate.restore()
   })
 }
 
@@ -99,7 +101,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         Buffer.from("1,2,3,4", "utf8"))
     })
 
-    it("sends to right filename if specified", () => {
+    it("sends to right filename if specified and overwrite yes", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Dashboard
       request.params = {
@@ -110,11 +112,33 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {
         bucket: "mybucket",
         filename: "mywackyfilename",
+        overwrite: "yes",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectGoogleCloudStorageMatch(request,
         "mybucket",
         "mywackyfilename",
+        Buffer.from("1,2,3,4", "utf8"))
+    })
+
+    it("sends to right filename if specified and overwrite no", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "mywackyfilename",
+        overwrite: "no",
+      }
+
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "mywackyfilename_1234",
         Buffer.from("1,2,3,4", "utf8"))
     })
 
@@ -158,6 +182,13 @@ describe(`${action.constructor.name} unit tests`, () => {
           label: "Filename",
           name: "filename",
           type: "string",
+        }, {
+          label: "Overwrite",
+          name: "overwrite",
+          options: [{label: "Yes", name: "yes"}, {label: "No", name: "no"}],
+          default: "yes",
+          description: "If Overwrite is enabled, will use the title or filename and overwrite existing data." +
+            " If disabled, a date time will be appended to the name to make the file unique.",
         }],
       }).and.notify(stubClient.restore).and.notify(done)
     })

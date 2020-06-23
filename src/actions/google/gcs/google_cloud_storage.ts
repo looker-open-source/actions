@@ -39,7 +39,12 @@ export class GoogleCloudStorageAction extends Hub.Action {
       throw "Need Google Cloud Storage bucket."
     }
 
-    const filename = request.formParams.filename || request.suggestedFilename()
+    let filename = request.formParams.filename || request.suggestedFilename()
+
+    // If the overwrite formParam exists and it is "no" - ensure a timestamp is appended
+    if (request.formParams.overwrite && request.formParams.overwrite === "no") {
+      filename += `_${Date.now()}`
+    }
 
     if (!filename) {
       throw new Error("Couldn't determine filename.")
@@ -102,6 +107,13 @@ export class GoogleCloudStorageAction extends Hub.Action {
       label: "Filename",
       name: "filename",
       type: "string",
+    }, {
+      label: "Overwrite",
+      name: "overwrite",
+      options: [{label: "Yes", name: "yes"}, {label: "No", name: "no"}],
+      default: "yes",
+      description: "If Overwrite is enabled, will use the title or filename and overwrite existing data." +
+        " If disabled, a date time will be appended to the name to make the file unique.",
     }]
 
     return form
