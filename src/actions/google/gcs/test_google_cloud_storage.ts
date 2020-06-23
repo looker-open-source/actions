@@ -186,7 +186,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           label: "Overwrite",
           name: "overwrite",
           options: [{label: "Yes", name: "yes"}, {label: "No", name: "no"}],
-          default: "ignore",
+          default: "yes",
           description: "If Overwrite is enabled, will use the title or filename and overwrite existing data." +
             " If disabled, a date time will be appended to the name to make the file unique.",
         }],
