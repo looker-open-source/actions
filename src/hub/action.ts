@@ -53,6 +53,7 @@ export abstract class Action {
   usesStreaming = false
   executeInOwnProcess = false
   extendedAction = false
+  apiAction = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
@@ -69,6 +70,7 @@ export abstract class Action {
 
   asJson(router: RouteBuilder, request: ActionRequest) {
     return {
+      api_action: this.apiAction,
       description: this.description,
       form_url: this.form ? router.formUrl(this) : null,
       label: this.label,
