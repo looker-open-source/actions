@@ -154,9 +154,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {
         dataBuffer: Buffer.from(JSON.stringify({
-          fields: { dimensions: [{ name: "coolfield", tags: ["segment_group_id"] }, { name: 'zerofield' }] },
+          fields: { dimensions: [{ name: "coolfield", tags: ["segment_group_id"] }, { name: "zerofield" }] },
           data: [{ coolfield: { value: "funvalue" }, zerofield: { value: 0 } }],
-        }))
+        })),
       }
 
       return expectSegmentMatch(request, {
