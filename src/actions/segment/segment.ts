@@ -227,7 +227,7 @@ export class SegmentAction extends Hub.Action {
             winston.error("Field name does not exist for Segment action")
             throw new SegmentActionError(`Field id ${field.name} does not exist for JsonDetail.Row`)
           }
-          if (row[field.name].value) {
+          if (row[field.name].value || row[field.name].value === 0) {
             values[field.name] = row[field.name].value
           } else {
             values = this.filterJson(row[field.name], segmentFields, field.name)
