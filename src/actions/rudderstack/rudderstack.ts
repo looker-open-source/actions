@@ -40,15 +40,15 @@ export class RudderAction extends Hub.Action {
   description = "Add traits via identify to your Rudder users."
   params = [
     {
-      description: "A write key for Rudder.",
+      description: "Looker source write key for Rudder.",
       label: "Rudder Write Key",
       name: "rudder_write_key",
       required: true,
       sensitive: true,
     },
     {
-      description: "Rudder Server URL",
-      label: "Rudder Server URL",
+      description: "Give your Rudder server URL",
+      label: "Rudder Data Plane URL",
       name: "rudder_server_url",
       required: true,
       sensitive: false,
@@ -287,7 +287,12 @@ export class RudderAction extends Hub.Action {
         traits.email = row[field.name].value
       }
     }
-    const userId: string | null = rudderFields.idField ? row[rudderFields.idField.name].value : null
+    let userId: string | null = rudderFields.idField ? row[rudderFields.idField.name].value : null
+    if (rudderFields.userIdField) {
+      userId = row[rudderFields.userIdField.name].value
+    } else {
+      userId = null
+    }
     let anonymousId: string | null
     if (rudderFields.anonymousIdField) {
       anonymousId = row[rudderFields.anonymousIdField.name].value
