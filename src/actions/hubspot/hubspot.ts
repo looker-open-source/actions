@@ -6,8 +6,6 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 import { HubspotActionError } from "./hubspot_error"
 
-// import { HubspotActionError } from "./hubspot_error";
-
 export enum HubspotTags {
   ContactId = "hubspot_contact_id",
   CompanyId = "hubspot_company_id",
