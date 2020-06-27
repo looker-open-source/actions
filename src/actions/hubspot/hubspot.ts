@@ -5,6 +5,7 @@ import * as util from "util"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import { HubspotActionError } from "./hubspot_error"
+import { RequiredField } from "../../hub"
 
 export enum HubspotTags {
   ContactId = "hubspot_contact_id",
@@ -35,6 +36,8 @@ export class HubspotAction extends Hub.Action {
   description: string
   call: HubspotCalls
   tag: HubspotTags
+  requiredFields: RequiredField[]
+
   iconName = "hubspot/hubspot.png"
   params = [
     {
