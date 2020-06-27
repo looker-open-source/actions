@@ -36,7 +36,7 @@ export class HubspotAction extends Hub.Action {
   call: HubspotCalls
   tag: HubspotTags
 
-  allowedTags = [HubspotTags.ContactId, HubspotTags.CompanyId]
+  allowedTags = [this.tag]
   iconName = "hubspot/hubspot.png"
   params = [
     {
