@@ -187,7 +187,7 @@ export class HubspotAction extends Hub.Action {
         },
       })
 
-      console.log("The Batch Update is: ", batchUpdateObjects)
+      winston.info(`${batchUpdateObjects.length} total objects to update`)
 
       let hubspotBatchUpdateRequest
       switch (this.call) {
@@ -206,15 +206,18 @@ export class HubspotAction extends Hub.Action {
         let startIndex = 0
         while (startIndex < batchUpdateObjects.length) {
           let endIndex =
-            Math.min(startIndex + 99, batchUpdateObjects.length - 1) + 1
-          console.log(
-            "Performing update iteration from: ",
-            startIndex,
-            endIndex,
+            Math.min(startIndex + 9, batchUpdateObjects.length - 1) + 1
+          winston.info(
+            `Performing update iteration, range ${startIndex}, ${endIndex}`,
           )
           let batchIterationObjects = batchUpdateObjects.slice(
             startIndex,
             endIndex + 1,
+          )
+          winston.info(
+            `   - ID Range: ${batchIterationObjects[0].id} -> ${
+              batchIterationObjects[batchIterationObjects.length].id
+            }`,
           )
           try {
             await hubspotBatchUpdateRequest({
@@ -223,7 +226,7 @@ export class HubspotAction extends Hub.Action {
           } catch (e) {
             errors.push(e)
           }
-          startIndex = endIndex + 1
+          startIndex = endIndex - 1
           await delay(500)
         }
       } else {
