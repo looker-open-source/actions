@@ -216,7 +216,7 @@ export class HubspotAction extends Hub.Action {
           )
           winston.info(
             `   - ID Range: ${batchIterationObjects[0].id} -> ${
-              batchIterationObjects[batchIterationObjects.length].id
+              batchIterationObjects[batchIterationObjects.length - 1].id
             }`,
           )
           try {
