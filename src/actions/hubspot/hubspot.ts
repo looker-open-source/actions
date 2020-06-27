@@ -152,7 +152,9 @@ export class HubspotAction extends Hub.Action {
     try {
       await request.streamJsonDetail({
         onFields: (fields) => {
+          console.log("Raw Fields is: ", fields)
           fieldset = Hub.allFields(fields)
+          console.log("Received fieldset: ", fieldset)
           hubspotIdFieldName = this.getHubspotIdFieldName(fieldset)
           if (!hubspotIdFieldName) {
             const error = `Dimension with the ${this.tag} tag is required`
@@ -186,6 +188,8 @@ export class HubspotAction extends Hub.Action {
           }
         },
       })
+
+      console.log("The Batch Update is: ", batchUpdateObjects)
 
       let hubspotBatchUpdateRequest:
         | Promise<BatchUpdatePromiseResponse>
