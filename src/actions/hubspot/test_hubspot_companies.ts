@@ -1,7 +1,7 @@
 import * as chai from "chai"
 import * as Hub from "../../hub"
-import { expectHubspotMatch } from "./test_hubspot"
 import { HubspotCompaniesAction } from "./hubspot_companies"
+import { expectHubspotMatch } from "./test_hubspot"
 
 const action = new HubspotCompaniesAction()
 action.executeInOwnProcess = false
@@ -32,7 +32,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               property_one: { value: "property_one_value_2" },
             },
           ],
-        })
+        }),
       ),
     }
     return expectHubspotMatch(action, request, {
@@ -71,7 +71,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               property_one: { value: "property_one_value_2" },
             },
           ],
-        })
+        }),
       ),
     }
 

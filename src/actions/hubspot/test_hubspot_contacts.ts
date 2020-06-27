@@ -1,7 +1,7 @@
 import * as chai from "chai"
 import * as Hub from "../../hub"
-import { expectHubspotMatch } from "./test_hubspot"
 import { HubspotContactsAction } from "./hubspot_contacts"
+import { expectHubspotMatch } from "./test_hubspot"
 
 const action = new HubspotContactsAction()
 action.executeInOwnProcess = false
@@ -32,7 +32,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               property_one: { value: "property_one_value_2" },
             },
           ],
-        })
+        }),
       ),
     }
     return expectHubspotMatch(action, request, {
@@ -71,7 +71,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               property_one: { value: "property_one_value_2" },
             },
           ],
-        })
+        }),
       ),
     }
 
@@ -114,7 +114,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               hidden_property: { value: "do_not_send" },
             },
           ],
-        })
+        }),
       ),
     }
     request.scheduledPlan = {

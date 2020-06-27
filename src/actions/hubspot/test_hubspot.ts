@@ -7,9 +7,9 @@ import { HubspotAction, HubspotCalls } from "./hubspot"
 export const expectHubspotMatch = (
   action: HubspotAction,
   request: Hub.ActionRequest,
-  match: any
+  match: any,
 ) => {
-  const BatchUpdateCallSpy = sinon.spy()
+  const batchUpdateCallSpy = sinon.spy()
   let product: "contacts" | "companies" | "unknown" = "unknown"
   switch (action.call) {
     case HubspotCalls.Company:
@@ -33,7 +33,7 @@ export const expectHubspotMatch = (
     .callsFake(() => {
       return {
         crm: {
-          [product]: { batchApi: { update: BatchUpdateCallSpy } },
+          [product]: { batchApi: { update: batchUpdateCallSpy } },
         },
       }
     })
@@ -42,7 +42,7 @@ export const expectHubspotMatch = (
   return chai
     .expect(action.validateAndExecute(request))
     .to.be.fulfilled.then(() => {
-      chai.expect(BatchUpdateCallSpy).to.have.been.calledWithExactly(match)
+      chai.expect(batchUpdateCallSpy).to.have.been.calledWithExactly(match)
       stubClient.restore()
     })
 }

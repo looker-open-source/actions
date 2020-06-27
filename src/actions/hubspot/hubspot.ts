@@ -1,10 +1,10 @@
+import * as hubspot from "@hubspot/api-client"
+import { IncomingMessage } from "http"
+import * as semver from "semver"
 import * as util from "util"
 import * as winston from "winston"
-import * as hubspot from "@hubspot/api-client"
-import * as semver from "semver"
 import * as Hub from "../../hub"
 import { HubspotActionError } from "./hubspot_error"
-import { IncomingMessage } from "http"
 
 // import { HubspotActionError } from "./hubspot_error";
 
@@ -26,9 +26,12 @@ interface DefaultHubspotConstructorProps {
   tag: HubspotTags
 }
 
-interface DefaultHubspotAction extends DefaultHubspotConstructorProps {}
+interface BatchUpdatePromiseResponse {
+  response: IncomingMessage
+  body: hubspot.contactsModels.BatchResponseSimplePublicObject
+}
 
-export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
+export class HubspotAction extends Hub.Action {
   name: string
   label: string
   description: string
@@ -54,13 +57,6 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
   ]
   requiredFields = [{ any_tag: this.allowedTags }]
   executeInOwnProcess = true
-  supportedFormats = (request: Hub.ActionRequest) => {
-    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
-      return [Hub.ActionFormat.JsonDetailLiteStream]
-    } else {
-      return [Hub.ActionFormat.JsonDetail]
-    }
-  }
 
   constructor({
     name,
@@ -76,13 +72,20 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
     this.call = call
     this.tag = tag
   }
-
-  protected hubspotClientFromRequest(request: Hub.ActionRequest) {
-    return new hubspot.Client({ apiKey: request.params.hubspot_api_key })
+  supportedFormats = (request: Hub.ActionRequest) => {
+    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
+      return [Hub.ActionFormat.JsonDetailLiteStream]
+    } else {
+      return [Hub.ActionFormat.JsonDetail]
+    }
   }
 
   async execute(request: Hub.ActionRequest) {
     return this.executeHubspot(request)
+  }
+
+  protected hubspotClientFromRequest(request: Hub.ActionRequest) {
+    return new hubspot.Client({ apiKey: request.params.hubspot_api_key })
   }
 
   protected taggedFields(fields: Hub.Field[], tags: string[]) {
@@ -90,7 +93,7 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
       (f) =>
         f.tags &&
         f.tags.length > 0 &&
-        f.tags.some((t: string) => tags.indexOf(t) !== -1)
+        f.tags.some((t: string) => tags.indexOf(t) !== -1),
     )
   }
 
@@ -116,10 +119,12 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
    */
   protected getHubspotIdFromRow(
     fieldset: Hub.Field[],
-    row: Hub.JsonDetail.Row
+    row: Hub.JsonDetail.Row,
   ): string | undefined {
     const hubspotIdFieldName = this.getHubspotIdFieldName(fieldset)
-    if (!hubspotIdFieldName) return undefined
+    if (!hubspotIdFieldName) {
+      return undefined
+    }
     for (const field of fieldset) {
       if (field.name === hubspotIdFieldName) {
         return row[hubspotIdFieldName].value
@@ -128,7 +133,7 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
   }
 
   protected async executeHubspot(request: Hub.ActionRequest) {
-    const hubspotClient = await this.hubspotClientFromRequest(request)
+    const hubspotClient = this.hubspotClientFromRequest(request)
 
     let hiddenFields: string[] = []
     if (
@@ -141,7 +146,7 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
     }
 
     let hubspotIdFieldName: string | undefined
-    let batchUpdateObjects: hubspot.contactsModels.SimplePublicObjectBatchInput[] = []
+    const batchUpdateObjects: hubspot.contactsModels.SimplePublicObjectBatchInput[] = []
     let fieldset: Hub.Field[] = []
     const errors: Error[] = []
 
@@ -160,7 +165,7 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
           const hubspotId = this.getHubspotIdFromRow(fieldset, row)
           if (hubspotId) {
             const entries = Object.entries(row)
-            let properties: { [key: string]: string } = {}
+            const properties: { [key: string]: string } = {}
             entries.forEach(([fieldName, fieldSet]) => {
               if (
                 fieldName !== hubspotIdFieldName &&
@@ -184,29 +189,28 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
       })
 
       let hubspotBatchUpdateRequest:
-        | Promise<{
-            response: IncomingMessage
-            body: hubspot.contactsModels.BatchResponseSimplePublicObject
-          }>
+        | Promise<BatchUpdatePromiseResponse>
         | undefined
       switch (this.call) {
         case HubspotCalls.Contact:
           hubspotBatchUpdateRequest = hubspotClient.crm.contacts.batchApi.update(
             {
               inputs: batchUpdateObjects,
-            }
+            },
           )
           break
         case HubspotCalls.Company:
           hubspotBatchUpdateRequest = hubspotClient.crm.companies.batchApi.update(
             {
               inputs: batchUpdateObjects,
-            }
+            },
           )
         default:
           break
       }
-      await hubspotBatchUpdateRequest
+      if (hubspotBatchUpdateRequest) {
+        await hubspotBatchUpdateRequest
+      }
     } catch (e) {
       errors.push(e)
     }
