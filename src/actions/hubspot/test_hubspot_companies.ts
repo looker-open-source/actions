@@ -6,7 +6,7 @@ import { HubspotCompaniesAction } from "./hubspot_companies"
 const action = new HubspotCompaniesAction()
 action.executeInOwnProcess = false
 
-describe(`Hubspot Companies unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
   it("works with hubspot_company_id", () => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query

@@ -6,7 +6,7 @@ import { HubspotContactsAction } from "./hubspot_contacts"
 const action = new HubspotContactsAction()
 action.executeInOwnProcess = false
 
-describe(`Hubspot Contact unit tests`, () => {
+describe(`${action.constructor.name} unit tests`, () => {
   it("works with hubspot_contact_id", () => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
