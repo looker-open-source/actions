@@ -28,6 +28,9 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+const HUBSPOT_BATCH_UPDATE_LIMIT = 100
+const HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS = 500
+
 export class HubspotAction extends Hub.Action {
   name: string
   label: string
@@ -201,34 +204,53 @@ export class HubspotAction extends Hub.Action {
           break
       }
       if (hubspotBatchUpdateRequest) {
-        // Batching is restricted to 100 items at a time, and only 10 requests per second
+        // Batching is restricted to HUBSPOT_BATCH_UPDATE_LMIT items at a time, and only 10 requests per second
         // Loop through batches and await 500ms between requests
-        let startIndex = 0
-        while (startIndex < batchUpdateObjects.length) {
-          let endIndex =
-            Math.min(startIndex + 9, batchUpdateObjects.length - 1) + 1
-          winston.info(
-            `Performing update iteration, range ${startIndex}, ${endIndex}`,
+        for (
+          var i = 0;
+          i < batchUpdateObjects.length;
+          i += HUBSPOT_BATCH_UPDATE_LIMIT
+        ) {
+          const updateIteration = batchUpdateObjects.slice(
+            i,
+            i + HUBSPOT_BATCH_UPDATE_LIMIT,
           )
-          let batchIterationObjects = batchUpdateObjects.slice(
-            startIndex,
-            endIndex + 1,
-          )
-          winston.info(
-            `   - ID Range: ${batchIterationObjects[0].id} -> ${
-              batchIterationObjects[batchIterationObjects.length - 1].id
-            }`,
-          )
+
           try {
             await hubspotBatchUpdateRequest({
-              inputs: batchIterationObjects,
+              inputs: updateIteration,
             })
           } catch (e) {
             errors.push(e)
           }
-          startIndex = endIndex - 1
-          await delay(500)
+
+          winston.info(
+            "Iteration: ",
+            updateIteration.map((o) => o.id).join(", "),
+          )
+
+          if (i < batchUpdateObjects.length - 1) {
+            await delay(HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS)
+          }
         }
+
+        // while (startIndex < batchUpdateObjects.length) {
+        //   let endIndex =
+        //     Math.min(startIndex + 99, batchUpdateObjects.length - 1) + 1
+        //   winston.info(
+        //     `Performing update iteration, range ${startIndex}, ${endIndex}`,
+        //   )
+        //   let batchIterationObjects = batchUpdateObjects.slice(
+        //     startIndex,
+        //     endIndex + 1,
+        //   )
+        //   winston.info(
+        //     `   - ID Range: ${batchIterationObjects[0].id} -> ${
+        //       batchIterationObjects[batchIterationObjects.length - 1].id
+        //     }`,
+        //   )
+
+        // }
       } else {
         const error = `Unable to determine a batch update request method for ${this.call}`
         winston.error(error)
