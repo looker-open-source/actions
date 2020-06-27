@@ -2,8 +2,6 @@ import * as Hub from "../../hub"
 import { HubspotAction, HubspotCalls, HubspotTags } from "./hubspot"
 
 export class HubspotContactsAction extends HubspotAction {
-  requiredFields = [{ tag: HubspotTags.ContactId, any_tag: this.allowedTags }]
-
   constructor() {
     super({
       name: "hubspot_contacts",

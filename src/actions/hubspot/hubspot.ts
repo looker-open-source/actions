@@ -1,9 +1,9 @@
 import * as hubspot from "@hubspot/api-client"
-import { IncomingMessage } from "http"
 import * as semver from "semver"
 import * as util from "util"
 import * as winston from "winston"
 import * as Hub from "../../hub"
+import { RequiredField } from "../../hub"
 import { HubspotActionError } from "./hubspot_error"
 
 export enum HubspotTags {
@@ -24,10 +24,14 @@ interface DefaultHubspotConstructorProps {
   tag: HubspotTags
 }
 
-interface BatchUpdatePromiseResponse {
-  response: IncomingMessage
-  body: hubspot.contactsModels.BatchResponseSimplePublicObject
+async function delay(ms: number) {
+  // tslint continually complains about this function, not sure why
+  // tslint:disable-next-line
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+const HUBSPOT_BATCH_UPDATE_LIMIT = 100
+const HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS = 500
 
 export class HubspotAction extends Hub.Action {
   name: string
@@ -35,8 +39,8 @@ export class HubspotAction extends Hub.Action {
   description: string
   call: HubspotCalls
   tag: HubspotTags
+  requiredFields: RequiredField[]
 
-  allowedTags = [HubspotTags.ContactId, HubspotTags.CompanyId]
   iconName = "hubspot/hubspot.png"
   params = [
     {
@@ -53,7 +57,6 @@ export class HubspotAction extends Hub.Action {
   supportedVisualizationFormattings = [
     Hub.ActionVisualizationFormatting.Noapply,
   ]
-  requiredFields = [{ any_tag: this.allowedTags }]
   executeInOwnProcess = true
 
   constructor({
@@ -69,6 +72,7 @@ export class HubspotAction extends Hub.Action {
     this.description = description
     this.call = call
     this.tag = tag
+    this.requiredFields = [{ any_tag: [tag] }]
   }
   supportedFormats = (request: Hub.ActionRequest) => {
     if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
@@ -186,28 +190,44 @@ export class HubspotAction extends Hub.Action {
         },
       })
 
-      let hubspotBatchUpdateRequest:
-        | Promise<BatchUpdatePromiseResponse>
-        | undefined
+      winston.info(`${batchUpdateObjects.length} total objects to update`)
+
+      let hubspotBatchUpdateRequest
       switch (this.call) {
         case HubspotCalls.Contact:
-          hubspotBatchUpdateRequest = hubspotClient.crm.contacts.batchApi.update(
-            {
-              inputs: batchUpdateObjects,
-            },
-          )
+          hubspotBatchUpdateRequest = hubspotClient.crm.contacts.batchApi.update
           break
         case HubspotCalls.Company:
-          hubspotBatchUpdateRequest = hubspotClient.crm.companies.batchApi.update(
-            {
-              inputs: batchUpdateObjects,
-            },
-          )
+          hubspotBatchUpdateRequest =
+            hubspotClient.crm.companies.batchApi.update
         default:
           break
       }
       if (hubspotBatchUpdateRequest) {
-        await hubspotBatchUpdateRequest
+        // Batching is restricted to HUBSPOT_BATCH_UPDATE_LMIT items at a time, and only 10 requests per second
+        // Loop through batches and await HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS between requests
+        for (
+          let i = 0;
+          i < batchUpdateObjects.length;
+          i += HUBSPOT_BATCH_UPDATE_LIMIT
+        ) {
+          const updateIteration = batchUpdateObjects.slice(
+            i,
+            i + HUBSPOT_BATCH_UPDATE_LIMIT,
+          )
+
+          try {
+            await hubspotBatchUpdateRequest({
+              inputs: updateIteration,
+            })
+          } catch (e) {
+            errors.push(e)
+          }
+
+          if (i < batchUpdateObjects.length - 1) {
+            await delay(HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS)
+          }
+        }
       } else {
         const error = `Unable to determine a batch update request method for ${this.call}`
         winston.error(error)
