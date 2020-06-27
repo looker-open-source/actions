@@ -1,5 +1,4 @@
 import * as hubspot from "@hubspot/api-client"
-import { IncomingMessage } from "http"
 import * as semver from "semver"
 import * as util from "util"
 import * as winston from "winston"
@@ -25,9 +24,8 @@ interface DefaultHubspotConstructorProps {
   tag: HubspotTags
 }
 
-interface BatchUpdatePromiseResponse {
-  response: IncomingMessage
-  body: hubspot.contactsModels.BatchResponseSimplePublicObject
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export class HubspotAction extends Hub.Action {
@@ -191,29 +189,43 @@ export class HubspotAction extends Hub.Action {
 
       console.log("The Batch Update is: ", batchUpdateObjects)
 
-      let hubspotBatchUpdateRequest:
-        | Promise<BatchUpdatePromiseResponse>
-        | undefined
+      let hubspotBatchUpdateRequest
       switch (this.call) {
         case HubspotCalls.Contact:
-          hubspotBatchUpdateRequest = hubspotClient.crm.contacts.batchApi.update(
-            {
-              inputs: batchUpdateObjects,
-            },
-          )
+          hubspotBatchUpdateRequest = hubspotClient.crm.contacts.batchApi.update
           break
         case HubspotCalls.Company:
-          hubspotBatchUpdateRequest = hubspotClient.crm.companies.batchApi.update(
-            {
-              inputs: batchUpdateObjects,
-            },
-          )
+          hubspotBatchUpdateRequest =
+            hubspotClient.crm.companies.batchApi.update
         default:
           break
       }
       if (hubspotBatchUpdateRequest) {
-        const response = await hubspotBatchUpdateRequest
-        console.log("I received hubspot response: ", response.body)
+        // Batching is restricted to 100 items at a time, and only 10 requests per second
+        // Loop through batches and await 500ms between requests
+        let startIndex = 0
+        while (startIndex < batchUpdateObjects.length) {
+          let endIndex =
+            Math.min(startIndex + 99, batchUpdateObjects.length - 1) + 1
+          console.log(
+            "Performing update iteration from: ",
+            startIndex,
+            endIndex,
+          )
+          let batchIterationObjects = batchUpdateObjects.slice(
+            startIndex,
+            endIndex + 1,
+          )
+          try {
+            await hubspotBatchUpdateRequest({
+              inputs: batchIterationObjects,
+            })
+          } catch (e) {
+            errors.push(e)
+          }
+          startIndex = endIndex + 1
+          await delay(500)
+        }
       } else {
         const error = `Unable to determine a batch update request method for ${this.call}`
         winston.error(error)
