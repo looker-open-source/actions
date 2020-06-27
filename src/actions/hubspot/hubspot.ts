@@ -210,6 +210,10 @@ export class HubspotAction extends Hub.Action {
       }
       if (hubspotBatchUpdateRequest) {
         await hubspotBatchUpdateRequest
+      } else {
+        const error = `Unable to determine a batch update request method for ${this.call}`
+        winston.error(error)
+        throw new HubspotActionError(error)
       }
     } catch (e) {
       errors.push(e)
