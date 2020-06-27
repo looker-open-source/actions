@@ -213,7 +213,7 @@ export class HubspotAction extends Hub.Action {
       }
       if (hubspotBatchUpdateRequest) {
         const response = await hubspotBatchUpdateRequest
-        console.log("I received hubspot response: ", response)
+        console.log("I received hubspot response: ", response.body)
       } else {
         const error = `Unable to determine a batch update request method for ${this.call}`
         winston.error(error)
