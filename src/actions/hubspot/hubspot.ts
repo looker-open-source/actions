@@ -3,8 +3,8 @@ import * as semver from "semver"
 import * as util from "util"
 import * as winston from "winston"
 import * as Hub from "../../hub"
-import { HubspotActionError } from "./hubspot_error"
 import { RequiredField } from "../../hub"
+import { HubspotActionError } from "./hubspot_error"
 
 export enum HubspotTags {
   ContactId = "hubspot_contact_id",
@@ -24,8 +24,10 @@ interface DefaultHubspotConstructorProps {
   tag: HubspotTags
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+async function delay<T>(ms: number): Promise<T> {
+  // tslint continually complains about this function, not sure why
+  // tslint:disable-next-line
+  return new Promise((resolve: TimerHandler) => setTimeout(resolve, ms))
 }
 
 const HUBSPOT_BATCH_UPDATE_LIMIT = 100
@@ -203,9 +205,9 @@ export class HubspotAction extends Hub.Action {
       }
       if (hubspotBatchUpdateRequest) {
         // Batching is restricted to HUBSPOT_BATCH_UPDATE_LMIT items at a time, and only 10 requests per second
-        // Loop through batches and await 500ms between requests
+        // Loop through batches and await HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS between requests
         for (
-          var i = 0;
+          let i = 0;
           i < batchUpdateObjects.length;
           i += HUBSPOT_BATCH_UPDATE_LIMIT
         ) {
