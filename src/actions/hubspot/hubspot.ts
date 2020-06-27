@@ -35,8 +35,6 @@ export class HubspotAction extends Hub.Action {
   description: string
   call: HubspotCalls
   tag: HubspotTags
-
-  allowedTags = [this.tag]
   iconName = "hubspot/hubspot.png"
   params = [
     {
@@ -53,7 +51,6 @@ export class HubspotAction extends Hub.Action {
   supportedVisualizationFormattings = [
     Hub.ActionVisualizationFormatting.Noapply,
   ]
-  requiredFields = [{ any_tag: this.allowedTags }]
   executeInOwnProcess = true
 
   constructor({
@@ -69,6 +66,7 @@ export class HubspotAction extends Hub.Action {
     this.description = description
     this.call = call
     this.tag = tag
+    this.requiredFields = [{ any_tag: [tag] }]
   }
   supportedFormats = (request: Hub.ActionRequest) => {
     if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
