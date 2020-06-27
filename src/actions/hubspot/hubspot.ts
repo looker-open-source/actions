@@ -24,10 +24,10 @@ interface DefaultHubspotConstructorProps {
   tag: HubspotTags
 }
 
-async function delay<T>(ms: number): Promise<T> {
+async function delay(ms: number) {
   // tslint continually complains about this function, not sure why
   // tslint:disable-next-line
-  return new Promise((resolve: TimerHandler) => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 const HUBSPOT_BATCH_UPDATE_LIMIT = 100
