@@ -2,8 +2,6 @@ import * as chai from "chai"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
-// import * as apiKey from "../../server/api_key";
-// import Server from "../../server/server";
 import { HubspotAction, HubspotCalls } from "./hubspot"
 
 export const expectHubspotMatch = (
