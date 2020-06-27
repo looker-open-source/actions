@@ -6,22 +6,6 @@ import { HubspotContactsAction } from "./hubspot_contacts"
 const action = new HubspotContactsAction()
 action.executeInOwnProcess = false
 
-const PayloadTemplate = {
-  fields: {
-    dimensions: [{ name: "contact_id" }, { name: "property_one" }],
-  },
-  data: [
-    {
-      contact_id: { value: "0123456" },
-      property_one: { value: "property_one_value_1" },
-    },
-    {
-      contact_id: { value: "9876543" },
-      property_one: { value: "property_one_value_2" },
-    },
-  ],
-}
-
 describe(`Hubspot Contact unit tests`, () => {
   it("works with hubspot_contact_id", () => {
     const request = new Hub.ActionRequest()
@@ -33,7 +17,10 @@ describe(`Hubspot Contact unit tests`, () => {
       dataBuffer: Buffer.from(
         JSON.stringify({
           fields: {
-            dimensions: [{ name: "contact_id" }, { name: "property_one" }],
+            dimensions: [
+              { name: "contact_id", tags: ["hubspot_contact_id"] },
+              { name: "property_one" },
+            ],
           },
           data: [
             {
@@ -62,14 +49,30 @@ describe(`Hubspot Contact unit tests`, () => {
     })
   })
 
-  it("should fail without a hubspot_contact_id and return proper error message", (done) => {
+  it("should fail without a hubspot_contact_id and", (done) => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
     request.params = {
       hubspot_api_key: "hubspot_key",
     }
     request.attachment = {
-      dataBuffer: Buffer.from(JSON.stringify(PayloadTemplate)),
+      dataBuffer: Buffer.from(
+        JSON.stringify({
+          fields: {
+            dimensions: [{ name: "contact_id" }, { name: "property_one" }],
+          },
+          data: [
+            {
+              contact_id: { value: "0123456" },
+              property_one: { value: "property_one_value_1" },
+            },
+            {
+              contact_id: { value: "9876543" },
+              property_one: { value: "property_one_value_2" },
+            },
+          ],
+        })
+      ),
     }
 
     chai
@@ -83,55 +86,55 @@ describe(`Hubspot Contact unit tests`, () => {
       .and.notify(done)
   })
 
-  // it("doesn't send hidden fields", () => {
-  //   const request = new Hub.ActionRequest()
-  //   request.type = Hub.ActionType.Query
-  //   request.params = {
-  //     segment_write_key: "hubspot_key",
-  //   }
-  //   request.attachment = {
-  //     dataBuffer: Buffer.from(
-  //       JSON.stringify({
-  //         fields: {
-  //           dimensions: [
-  //             { name: "contact_id" },
-  //             { name: "property_one" },
-  //             { name: "hidden_property" },
-  //           ],
-  //         },
-  //         data: [
-  //           {
-  //             contact_id: { value: "0123456" },
-  //             property_one: { value: "property_one_value_1" },
-  //             hidden_property: { value: "do_not_send" },
-  //           },
-  //           {
-  //             contact_id: { value: "9876543" },
-  //             property_one: { value: "property_one_value_2" },
-  //             hidden_property: { value: "do_not_send" },
-  //           },
-  //         ],
-  //       })
-  //     ),
-  //   }
-  //   request.scheduledPlan = {
-  //     query: {
-  //       vis_config: {
-  //         hidden_fields: ["hidden_roperty"],
-  //       },
-  //     },
-  //   } as any
-  //   return expectHubspotMatch(action, request, {
-  //     inputs: [
-  //       {
-  //         id: "0123456",
-  //         properties: { property_one: "property_one_value_1" },
-  //       },
-  //       {
-  //         id: "9876543",
-  //         properties: { property_one: "property_one_value_2" },
-  //       },
-  //     ],
-  //   })
-  // })
+  it("doesn't send hidden fields", () => {
+    const request = new Hub.ActionRequest()
+    request.type = Hub.ActionType.Query
+    request.params = {
+      hubspot_api_key: "hubspot_key",
+    }
+    request.attachment = {
+      dataBuffer: Buffer.from(
+        JSON.stringify({
+          fields: {
+            dimensions: [
+              { name: "contact_id", tags: ["hubspot_contact_id"] },
+              { name: "property_one" },
+              { name: "hidden_property" },
+            ],
+          },
+          data: [
+            {
+              contact_id: { value: "0123456" },
+              property_one: { value: "property_one_value_1" },
+              hidden_property: { value: "do_not_send" },
+            },
+            {
+              contact_id: { value: "9876543" },
+              property_one: { value: "property_one_value_2" },
+              hidden_property: { value: "do_not_send" },
+            },
+          ],
+        })
+      ),
+    }
+    request.scheduledPlan = {
+      query: {
+        vis_config: {
+          hidden_fields: ["hidden_property"],
+        },
+      },
+    } as any
+    return expectHubspotMatch(action, request, {
+      inputs: [
+        {
+          id: "0123456",
+          properties: { property_one: "property_one_value_1" },
+        },
+        {
+          id: "9876543",
+          properties: { property_one: "property_one_value_2" },
+        },
+      ],
+    })
+  })
 })

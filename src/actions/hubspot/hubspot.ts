@@ -83,7 +83,7 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
   }
 
   async execute(request: Hub.ActionRequest) {
-    return this.executeHubspot(request, this.call)
+    return this.executeHubspot(request)
   }
 
   protected taggedFields(fields: Hub.Field[], tags: string[]) {
@@ -128,12 +128,8 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
     }
   }
 
-  protected async executeHubspot(
-    request: Hub.ActionRequest,
-    hubspotCall: HubspotCalls
-  ) {
+  protected async executeHubspot(request: Hub.ActionRequest) {
     const hubspotClient = await this.hubspotClientFromRequest(request)
-    console.log("I am executing the hubspot call: ", hubspotCall)
 
     let hiddenFields: string[] = []
     if (
@@ -144,8 +140,6 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
     ) {
       hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
     }
-
-    console.log("Hide fields: ", hiddenFields)
 
     let hubspotIdFieldName: string | undefined
     let batchUpdateObjects: hubspot.contactsModels.SimplePublicObjectBatchInput[] = []
@@ -166,7 +160,6 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
         onRow: (row: Hub.JsonDetail.Row) => {
           const hubspotId = this.getHubspotIdFromRow(fieldset, row)
           if (hubspotId) {
-            console.log(`${hubspotId}: Row`, row)
             const entries = Object.entries(row)
             let properties: { [key: string]: string } = {}
             entries.forEach(([fieldName, fieldSet]) => {
