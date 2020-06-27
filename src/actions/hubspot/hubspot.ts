@@ -153,9 +153,7 @@ export class HubspotAction extends Hub.Action {
     try {
       await request.streamJsonDetail({
         onFields: (fields) => {
-          console.log("Raw Fields is: ", fields)
           fieldset = Hub.allFields(fields)
-          console.log("Received fieldset: ", fieldset)
           hubspotIdFieldName = this.getHubspotIdFieldName(fieldset)
           if (!hubspotIdFieldName) {
             const error = `Dimension with the ${this.tag} tag is required`
@@ -224,33 +222,10 @@ export class HubspotAction extends Hub.Action {
             errors.push(e)
           }
 
-          winston.info(
-            "Iteration: ",
-            updateIteration.map((o) => o.id).join(", "),
-          )
-
           if (i < batchUpdateObjects.length - 1) {
             await delay(HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS)
           }
         }
-
-        // while (startIndex < batchUpdateObjects.length) {
-        //   let endIndex =
-        //     Math.min(startIndex + 99, batchUpdateObjects.length - 1) + 1
-        //   winston.info(
-        //     `Performing update iteration, range ${startIndex}, ${endIndex}`,
-        //   )
-        //   let batchIterationObjects = batchUpdateObjects.slice(
-        //     startIndex,
-        //     endIndex + 1,
-        //   )
-        //   winston.info(
-        //     `   - ID Range: ${batchIterationObjects[0].id} -> ${
-        //       batchIterationObjects[batchIterationObjects.length - 1].id
-        //     }`,
-        //   )
-
-        // }
       } else {
         const error = `Unable to determine a batch update request method for ${this.call}`
         winston.error(error)
