@@ -46,7 +46,6 @@ export class HubspotAction extends Hub.Action implements DefaultHubspotAction {
       sensitive: true,
     },
   ]
-  minimumSupportedLookerVersion = "4.20.0"
   supportedActionTypes = [Hub.ActionType.Query]
   usesStreaming = true
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
