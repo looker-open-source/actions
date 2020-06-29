@@ -117,7 +117,9 @@ export class SegmentAction extends Hub.Action {
             delete payload.event
           }
           try {
-            segmentClient[segmentCall](payload)
+            winston.info(`payload: ${JSON.stringify(payload)}`)
+            const answer = segmentClient[segmentCall](payload)
+            winston.info(`answer: ${JSON.stringify(answer)}`)
           } catch (e) {
             errors.push(e)
           }
