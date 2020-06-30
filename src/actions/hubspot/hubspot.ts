@@ -30,7 +30,7 @@ async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-const HUBSPOT_BATCH_UPDATE_LIMIT = 100
+const HUBSPOT_BATCH_UPDATE_DEFAULT_LIMIT = 10
 const HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS = 500
 
 export class HubspotAction extends Hub.Action {
@@ -49,6 +49,14 @@ export class HubspotAction extends Hub.Action {
       name: "hubspot_api_key",
       required: true,
       sensitive: true,
+    },
+    {
+      description:
+        "The number of objects to batch update per call (defaulted to 10)",
+      label: "Batch Update Size",
+      name: "hubspot_batch_update_size",
+      required: false,
+      sensitive: false,
     },
   ]
   supportedActionTypes = [Hub.ActionType.Query]
@@ -204,17 +212,15 @@ export class HubspotAction extends Hub.Action {
           break
       }
       if (hubspotBatchUpdateRequest) {
+        let limit = HUBSPOT_BATCH_UPDATE_DEFAULT_LIMIT
+        if (request.params.hubspot_batch_update_size) {
+          limit = +request.params.hubspot_batch_update_size
+        }
+
         // Batching is restricted to HUBSPOT_BATCH_UPDATE_LMIT items at a time, and only 10 requests per second
         // Loop through batches and await HUBSPOT_BATCH_UPDATE_ITERATION_DELAY_MS between requests
-        for (
-          let i = 0;
-          i < batchUpdateObjects.length;
-          i += HUBSPOT_BATCH_UPDATE_LIMIT
-        ) {
-          const updateIteration = batchUpdateObjects.slice(
-            i,
-            i + HUBSPOT_BATCH_UPDATE_LIMIT,
-          )
+        for (let i = 0; i < batchUpdateObjects.length; i += limit) {
+          const updateIteration = batchUpdateObjects.slice(i, i + limit)
 
           try {
             await hubspotBatchUpdateRequest({
