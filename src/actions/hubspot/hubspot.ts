@@ -167,7 +167,7 @@ export class HubspotAction extends Hub.Action {
           hubspotIdFieldName = this.getHubspotIdFieldName(fieldset)
           if (!hubspotIdFieldName) {
             const error = `Dimension with the ${this.tag} tag is required`
-            winston.error(error)
+            winston.error(error, request.webhookId)
             throw new HubspotActionError(error)
           }
         },
@@ -236,7 +236,7 @@ export class HubspotAction extends Hub.Action {
         }
       } else {
         const error = `Unable to determine a batch update request method for ${this.call}`
-        winston.error(error)
+        winston.error(error, request.webhookId)
         throw new HubspotActionError(error)
       }
     } catch (e) {
