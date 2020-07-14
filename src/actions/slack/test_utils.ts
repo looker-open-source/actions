@@ -57,25 +57,6 @@ describe(`slack/utils unit tests`, () => {
         it("returns correct channels", (done) => {
             const slackClient = new WebClient("token")
             sinon.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
-                {
-                    ok: true,
-                    channels: [
-                        {id: "3", name: "C", is_member: true},
-                        {id: "4", name: "D", is_member: true},
-                    ],
-                } :
-                {
-                    ok: true,
-                    channels: [
-                        {id: "1", name: "A", is_member: true},
-                        {id: "2", name: "B", is_member: true},
-                    ],
-                    response_metadata: {
-                        next_cursor: "cursor",
-                    },
-                },
-            )
-            sinon.stub(slackClient.channels, "list").callsFake((filters: any) => filters.cursor ?
               {
                   ok: true,
                   channels: [
@@ -112,7 +93,7 @@ describe(`slack/utils unit tests`, () => {
                         next_cursor: "cursor",
                     },
                 })
-            const result = getDisplayedFormFields(slackClient, true)
+            const result = getDisplayedFormFields(slackClient)
             chai.expect(result).to.eventually.deep.equal([
                 {
                     description: "Name of the Slack channel you would like to post to.",
