@@ -28,7 +28,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.type = Hub.ActionType.Query
       request.params = {
-        rudder_write_key: "mykey",
+        rudder_write_key: "mykey", rudder_server_url: "http://localhost:8080",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
           fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},

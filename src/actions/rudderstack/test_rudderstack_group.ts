@@ -46,7 +46,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        rudder_write_key: "mykey",
+        rudder_write_key: "mykey", rudder_server_url: "http://localhost:8080",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [{ name: "coolfield", tags: ["rudder_group_id"]}]},
@@ -63,7 +63,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        rudder_write_key: "mykey",
+        rudder_write_key: "mykey", rudder_server_url: "http://localhost:8080",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [{ name: "coolfield", tags: ["rudder_group_id"]}, {name: "coolid", tags: ["user_id"]}]},
@@ -80,7 +80,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        rudder_write_key: "mykey",
+        rudder_write_key: "mykey", rudder_server_url: "http://localhost:8080",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [
@@ -113,7 +113,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        rudder_write_key: "mykey",
+        rudder_write_key: "mykey", rudder_server_url: "http://localhost:8080",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [
@@ -133,7 +133,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        rudder_write_key: "mykey",
+        rudder_write_key: "mykey", rudder_server_url: "http://localhost:8080",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [{ name: "coolfield", tags: ["rudder_group_id"]}, {name: "coolid", tags: ["user_id"]}]},
