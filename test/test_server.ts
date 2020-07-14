@@ -47,7 +47,7 @@ describe("the action hub", () => {
       .set("User-Agent", "LookerOutgoingWebhook/5.0.0")
       .end((_err, res) => {
         chai.expect(res).to.have.status(200)
-        chai.expect(res.body.integrations.length).to.equal(1)
+        chai.expect(res.body.integrations.length).to.equal(2)
         stub.restore()
         done()
       })
