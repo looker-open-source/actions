@@ -112,7 +112,7 @@ describe(`slack/utils unit tests`, () => {
                         next_cursor: "cursor",
                     },
                 })
-            const result = getDisplayedFormFields(slackClient, true)
+            const result = getDisplayedFormFields(slackClient)
             chai.expect(result).to.eventually.deep.equal([
                 {
                     description: "Name of the Slack channel you would like to post to.",

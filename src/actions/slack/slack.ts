@@ -82,7 +82,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     }
 
     try {
-      form.fields = form.fields.concat(await getDisplayedFormFields(client, false))
+      form.fields = form.fields.concat(await getDisplayedFormFields(client))
     } catch (e) {
       return this.loginForm(request, form)
     }
