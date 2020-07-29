@@ -6,7 +6,7 @@ import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
 import { formatToFileExtension, truncateString } from "./utils"
 
-let sanitizeFilename = require("sanitize-filename")
+const sanitizeFilename = require("sanitize-filename")
 
 import {
   DataWebhookPayload,
