@@ -1,11 +1,12 @@
 import * as express from "express"
 import * as oboe from "oboe"
 import * as httpRequest from "request"
-import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
 import { formatToFileExtension, truncateString } from "./utils"
+
+let sanitizeFilename = require("sanitize-filename")
 
 import {
   DataWebhookPayload,
