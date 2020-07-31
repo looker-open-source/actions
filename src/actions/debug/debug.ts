@@ -27,25 +27,55 @@ export class DebugAction extends Hub.Action {
     form.fields = [{
       label: "Select Me Interactive",
       name: "test_select",
-      options: [{label: "Jill", name: "jill"}, {label: "Jack", name: "jack"}],
+      options: [
+        {label: "Jill", name: "jill"},
+        {label: "Jack", name: "jack"},
+        {label: "Jack & Jill", name: "jack_jill"},
+      ],
       type: "select",
       interactive: true,
     }]
+    const testSelect = request.formParams.test_select
 
-    if (request.formParams.test_select === "jill") {
+    if (testSelect === "jill") {
       form.fields.push({
         label: "Jill Selected!",
         name: "jill",
         type: "string",
         default: "something changed!",
       })
-    } else if (request.formParams.test_select === "jack") {
+    } else if (testSelect === "jack") {
       form.fields.push({
         label: "Jack Selected!",
         name: "jack",
         type: "oauth_link",
         oauth_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       })
+    } else if (testSelect === "jack_jill") {
+      form.fields.push({
+        label: "Went up the hill",
+        name: "jack_jill_action",
+        options: [{label: "to fetch a pail of water", name: "water"}, {label: "for no reason", name: "none"}],
+        type: "select",
+        interactive: false,
+      })
+
+      // const jackJillAction = request.formParams.jack_jill_action
+      // if (jackJillAction === "water") {
+      //   form.fields.push({
+      //     label: "Comment",
+      //     name: "comment",
+      //     type: "string",
+      //     description: "Jack & Jill went up the hill to fetch a pail of water!",
+      //   })
+      // } else if (jackJillAction === "none") {
+      //   form.fields.push({
+      //     label: "Comment",
+      //     name: "comment",
+      //     type: "string",
+      //     description: "Jack & Jill went up the hill for no reason!",
+      //   })
+      // }
     }
     return form
   }
