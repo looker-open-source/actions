@@ -85,8 +85,8 @@ interface ActionDefinition {
   icon_data_uri?: string
   /** A list of descriptions of required fields that this action is compatible with. If there are multiple entries in this list, the action requires more than one field. */
   required_fields?: RequiredField[]
-  /** A boolean that determines whether or not the action will be sent a one time use download url to faciliate unlimited streaming of data */
-  supported_download_settings: boolean
+  /** A list of streaming options the integration supports. Valid values are: "push", "url". */
+  supported_download_settings: string[]
   /** A boolean that determines whether action is an oauth action or not. This will change whether or not the action will be sent a one time use link to be able to set state for a specific user for this action */
   uses_oauth: boolean
 }
