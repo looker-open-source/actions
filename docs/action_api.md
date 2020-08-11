@@ -6,7 +6,6 @@ The Action API is a simple webhook-like API to accept actions from Looker. Your 
 
 Be sure to review the [official Action Hub docs](https://docs.looker.com/sharing-and-publishing/action-hub) before diving in to the details here.
 
-
 ## Endpoints
 
 To implement the Action API, your server must expose a few endpoints for Looker to call:
