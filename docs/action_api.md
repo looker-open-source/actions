@@ -22,7 +22,7 @@ To implement the Action API, your server must expose a few endpoints for Looker 
 
 - (optional) [Action Form Endpoint](#action-form-endpoint)
 
-  If the action's definition specifies a form, Looker will ask this endpoint for a form template that will be displayed to the end user to configure the action (e.g. when using the action as a destination in the Schedule dialog). Since Looker will query this endpoint every time the form is displayed, it's possible to dynamically populate the form based on whatever information you like. For example, for a chat application the form might have a dropdown that dynamically list all the chat channels available at that moment. Or for an action that uses OAuth with the Google Analytics API, the form could dynamically list the web properties to which the current user has access.
+  If the action's definition specifies a form, Looker asks this endpoint for a form template to display to the user to configure the action (e.g. when using the action as a destination in the Schedule dialog). Since Looker will query this endpoint every time the form is displayed, it's possible to dynamically populate the form with custom user input fields. For example, for a chat application the form might have a drop-down that dynamically lists all the chat channels available at that moment. Or for an action that uses OAuth with the Google Analytics API, the form could dynamically list the web properties to which the current user has access.
 
 Each of these endpoints can optionally require [authentication](#authentication) from Looker via an auth token in the request headers.
 
