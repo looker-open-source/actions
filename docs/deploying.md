@@ -4,7 +4,7 @@ Because Looker will only accept an action hub with a valid HTTPS certificate, it
 
 * Create an account with Heroku if you don't already have one
 * Run `heroku login` and provide your Heroku credentials
-* `cd` into the `actions` directory and run:
+* `cd` into the project folder and run:
    * `heroku create`
    * `git push heroku master`
    * `heroku config:set ACTION_HUB_BASE_URL="https://my-heroku-action-server-1234.herokuapp.com"`
