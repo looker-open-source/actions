@@ -8,7 +8,7 @@ By implementing the Action API your server becomes an "Action Hub" that can be c
 
 ## Endpoints
 
-In order to implement the Action API your server will need to expose a few endpoints for Looker to call:
+To implement the Action API, your server must expose a few endpoints for Looker to call:
 
 - [Actions List Endpoint](#actions-list-endpoint)
 
