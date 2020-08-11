@@ -9,21 +9,21 @@ Be sure to review the [official Action Hub docs](https://docs.looker.com/sharing
 
 ## Endpoints
 
-In order to implement the Action API your server will need to expose a few endpoints for Looker to call:
+To implement the Action API, your server must expose a few endpoints for Looker to call:
 
 - [Actions List Endpoint](#actions-list-endpoint)
 
   This endpoint lists all the actions your hub exposes. Each listed action contains metadata instructing Looker how to execute your action. It indicates what data payload formats are supported, what information (if any) to collect from the Looker administrator (such as API keys), and if the action also has an end-user facing Action Form.
 
-  The URL of this endpoint is entered into the Looker admin panel (as the "Action Hub URL") and is how admins connect to your action hub.
+  The URL of this endpoint is entered into the Looker admin panel (as the **Action Hub URL**) and is how admins connect Looker to your action hub.
 
 - [Action Execute Endpoint](#action-execute-endpoint)
 
-  This is the endpoint to which Looker will send the data payload, form information, and other metadata in order to execute a given action. This is the main implementation of your action. This endpoint works the same way as a Looker webhook endpoint.
+  This is the endpoint to which Looker sends the data payload, form information, and other metadata to execute a given action. This is the main implementation of your action. This endpoint works the same way as a Looker webhook endpoint.
 
 - (optional) [Action Form Endpoint](#action-form-endpoint)
 
-  If the action's definition specifies a form, Looker will ask this endpoint for a form template that will be displayed to the end user to configure the action (e.g. when using the action as a destination in the Schedule dialog). Since Looker will query this endpoint every time the form is displayed, it's possible to dynamically populate the form based on whatever information you like. For example, for a chat application the form might have a dropdown that dynamically list all the chat channels available at that moment. Or for an action that uses OAuth with the Google Analytics API, the form could dynamically list the web properties to which the current user has access.
+  If the action's definition specifies a form, Looker asks this endpoint for a form template to display to the user to configure the action (e.g. when using the action as a destination in the Schedule dialog). Since Looker will query this endpoint every time the form is displayed, it's possible to dynamically populate the form with custom user input fields. For example, for a chat application the form might have a drop-down that dynamically lists all the chat channels available at that moment. Or for an action that uses OAuth with the Google Analytics API, the form could dynamically list the web properties to which the current user has access.
 
 Each of these endpoints can optionally require [authentication](#authentication) from Looker via an auth token in the request headers.
 
@@ -242,7 +242,7 @@ interface FormSelectOption {
 
 ### Action User State
 
-The action hub API is designed to keep each action independent from previous actions. For certain actions, however - especially OAuth enabled actions - state may be required per user. If there is state for a user and action then Looker will send the state as part of a `form` or `execute` request. If there is no state then the field is unused. If you wish to set state that can be accomplished by providing a `state` property in an `execute` or `form` response. A refresh time may also be specified in seconds, which causes Looker to re-query the `form` endpoint for that user after the refresh time has elapsed (with a current maximum of once every 10 minutes). This can be used to keep authentication credentials up-to-date or to simply store some state for the user & action combo within the Looker server.
+The action hub API is designed to keep each action independent from other actions. For certain actions, however - especially OAuth-enabled actions - state may be required per user. If there is state for a user and action, Looker sends the state as part of a `form` or `execute` request. If there is no state, the field is unused. If you wish to set state, you can provide a `state` property in an `execute` or `form` response. A refresh time may also be specified in seconds, which causes Looker to re-query the `form` endpoint for that user after the refresh time has elapsed (with a current maximum of once every 10 minutes). This can be used to keep authentication credentials up-to-date or to simply store some state for the user-and-action combination within the Looker server.
 
 Here is the definition of the `state` field: 
 ```ts
