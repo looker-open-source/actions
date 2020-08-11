@@ -62,7 +62,7 @@ If all goes well you will see a message saying the Action Hub is listening. You 
     yarn add my-action-dependency
 
 1. Add an icon to `src/actions/my_actions_group/my_action.svg`
-1. Add the action `to src/actions/index.ts`
+1. Add the action to `src/actions/index.ts`
 
     `import "./my_actions_group/my_action.ts"`
 
