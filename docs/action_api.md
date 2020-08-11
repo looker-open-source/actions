@@ -239,7 +239,7 @@ interface FormSelectOption {
 
 ### Action User State
 
-The action hub API is designed to keep each action independent from previous actions. For certain actions, however - especially OAuth enabled actions - state may be required per user. If there is state for a user and action then Looker will send the state as part of a `form` or `execute` request. If there is no state then the field is unused. If you wish to set state that can be accomplished by providing a `state` property in an `execute` or `form` response. A refresh time may also be specified in seconds, which causes Looker to re-query the `form` endpoint for that user after the refresh time has elapsed (with a current maximum of once every 10 minutes). This can be used to keep authentication credentials up-to-date or to simply store some state for the user & action combo within the Looker server.
+The action hub API is designed to keep each action independent from other actions. For certain actions, however - especially OAuth-enabled actions - state may be required per user. If there is state for a user and action, Looker sends the state as part of a `form` or `execute` request. If there is no state, the field is unused. If you wish to set state, you can provide a `state` property in an `execute` or `form` response. A refresh time may also be specified in seconds, which causes Looker to re-query the `form` endpoint for that user after the refresh time has elapsed (with a current maximum of once every 10 minutes). This can be used to keep authentication credentials up-to-date or to simply store some state for the user-and-action combination within the Looker server.
 
 Here is the definition of the `state` field: 
 ```ts
