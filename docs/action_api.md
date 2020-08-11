@@ -18,7 +18,7 @@ To implement the Action API, your server must expose a few endpoints for Looker 
 
 - [Action Execute Endpoint](#action-execute-endpoint)
 
-  This is the endpoint to which Looker will send the data payload, form information, and other metadata in order to execute a given action. This is the main implementation of your action. This endpoint works the same way as a Looker webhook endpoint.
+  This is the endpoint to which Looker sends the data payload, form information, and other metadata to execute a given action. This is the main implementation of your action. This endpoint works the same way as a Looker webhook endpoint.
 
 - (optional) [Action Form Endpoint](#action-form-endpoint)
 
