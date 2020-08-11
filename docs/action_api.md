@@ -1,10 +1,11 @@
 # Looker Action API
 
-To build an action directly into an existing web service in any language, you can have your server implement our Action API directly.
+To build an action directly into an existing web service in any language, you can have your server implement our Action API directly. Your server then becomes an "Action Hub" that can be connected to one or more Looker instances. An Action Hub can expose one or more actions.
 
 The Action API is a simple webhook-like API to accept actions from Looker. Your server will provide a few endpoints that Looker can call to list and execute actions.
 
-By implementing the Action API your server becomes an "Action Hub" that can be connected to one or more Looker instances. An Action Hub can expose one or more actions.
+Be sure to review the [official Action Hub docs](https://docs.looker.com/sharing-and-publishing/action-hub) before diving in to the details here.
+
 
 ## Endpoints
 
@@ -100,9 +101,11 @@ interface Param {
   label: string
   /** Short description of the parameter. */
   description?: string
+  /** If present, the value of this param will come from the value of the user attribute with the given name. If the param is also required, then the user must have a valid value for the attribute in order to see the action as a destination option. */
+  user_attribute_name: string | null
   /** Whether the parameter is required to be set to use the action. (default: false) */
   required?: boolean
-  /** Whether the parameter contains sensitive data like API credentials. (default: true) */
+  /** Whether the parameter contains sensitive data like API credentials. If so, it will be encrypted and never shown in the Looker UI. (default: true) */
   sensitive?: boolean
 }
 

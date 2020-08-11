@@ -19,7 +19,7 @@ To get started contributing a service you'll need to install:
 
 - [Yarn](https://yarnpkg.com/en/)
 
-When you've got those installed on your machine, run `yarn install` to install all the dependencies.
+Be sure to review the [official Action Hub docs](https://docs.looker.com/sharing-and-publishing/action-hub) before diving in to the details here.
 
 ## Overview
 
