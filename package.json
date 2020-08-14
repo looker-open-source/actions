@@ -84,7 +84,6 @@
     "semver": "^5.7.1",
     "ssh2-sftp-client": "^2.5.2",
     "striplines": "^1.0.2",
-    "striplines": "^1.0.2",
     "ts-node": "^6.2.0",
     "tslint-language-service": "^0.9.9",
     "twilio": "^3.48.2",
