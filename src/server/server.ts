@@ -176,7 +176,8 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       if (isOauthAction(action)) {
         try {
-          await (action as OAuthAction).oauthFetchInfo(req.query, this.oauthRedirectUrl(action))
+          await (action as OAuthAction).oauthFetchInfo(req.query as {[key: string]: string},
+              this.oauthRedirectUrl(action))
           res.statusCode = 200
           res.send(`<html><script>window.close()</script>><body>You may now close this tab.</body></html>`)
         } catch (e) {
