@@ -34,6 +34,7 @@ export class DebugAction extends Hub.Action {
       ],
       type: "select",
       interactive: true,
+      required: true,
     }]
     const testSelect = request.formParams.test_select
 
@@ -43,6 +44,7 @@ export class DebugAction extends Hub.Action {
         name: "jill",
         type: "string",
         default: "something changed!",
+        required: true,
       })
     } else if (testSelect === "jack") {
       form.fields.push({
