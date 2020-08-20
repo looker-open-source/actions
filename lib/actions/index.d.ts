@@ -14,7 +14,7 @@ import "./google/gcs/google_cloud_storage";
 import "./jira/jira";
 import "./kloudio/kloudio";
 import "./marketo/marketo";
-import "./mparticle/mparticle.ts";
+import "./mparticle/mparticle";
 import "./queueaction/queue_action_for_testing";
 import "./sagemaker/sagemaker";
 import "./segment/segment";
