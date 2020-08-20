@@ -7,6 +7,6 @@
     "src/xpc/**/**.ts",
     "src/crypto/**/**.ts",
     "src/actions/index.ts",
-    "src/actions/**/*.ts"
+    "src/actions/**/!(test)*.ts"
   ]
 }
