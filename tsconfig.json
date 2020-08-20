@@ -5,6 +5,7 @@
       "noEmitOnError": true,
       "noUnusedLocals": true,
       "noUnusedParameters": true,
+      "allowJs": true,
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,
