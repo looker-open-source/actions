@@ -14,6 +14,7 @@ export class DebugAction extends Hub.Action {
   label = "Debug"
   description = "Sends data to a sample website and optionally sleeps."
   supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Dashboard, Hub.ActionType.Query]
+  supportedFormats = []
   params = []
   executeInOwnProcess = false
 
