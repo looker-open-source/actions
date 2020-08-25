@@ -4,6 +4,7 @@ import {Mutex} from "async-mutex"
 import * as parse from "csv-parse"
 import {Credentials} from "google-auth-library"
 import {drive_v3, google, sheets_v4} from "googleapis"
+import {GaxiosPromise} from "googleapis-common"
 import * as winston from "winston"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
@@ -99,7 +100,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         return url.toString()
     }
 
-    async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
+    async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet)
+        : Promise<void> {
         const mutex = new Mutex()
         const parents = request.formParams.folder ? [request.formParams.folder] : undefined
 
@@ -240,7 +242,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             })
     }
 
-    async clearSheet(spreadsheetId: string, sheet: Sheet) {
+    async clearSheet(spreadsheetId: string, sheet: Sheet): GaxiosPromise<sheets_v4.Schema$ClearValuesResponse> {
         return sheet.spreadsheets.values.clear({
             spreadsheetId,
             range: "A:XX",
@@ -250,9 +252,11 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         })
     }
 
-    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string)
+        : GaxiosPromise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
             winston.info(e)
+            throw e
         })
     }
 
