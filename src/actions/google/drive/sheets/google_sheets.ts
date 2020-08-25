@@ -100,8 +100,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         return url.toString()
     }
 
-    async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet)
-        : Promise<void> {
+    async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
         const mutex = new Mutex()
         const parents = request.formParams.folder ? [request.formParams.folder] : undefined
 

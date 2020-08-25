@@ -214,7 +214,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
          driveParams.supportsAllDrives = true
        }
 
-       drive.files.create(driveParams).catch((e) => {
+       return drive.files.create(driveParams).catch((e) => {
          winston.debug(JSON.stringify(e.errors))
          throw e
        })
