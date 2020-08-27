@@ -151,8 +151,8 @@ export class ActionRequest {
   lookerVersion: string | null = null
 
   empty(): boolean {
-    const url = !!this.scheduledPlan && !this.scheduledPlan.downloadUrl
-    const buffer = !!this.attachment && !this.attachment.dataBuffer
+    const url = !this.scheduledPlan || !this.scheduledPlan.downloadUrl
+    const buffer = !this.attachment || !this.attachment.dataBuffer
     return url && buffer
   }
 
