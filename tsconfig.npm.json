@@ -6,8 +6,8 @@
     "src/server/**/*.ts",
     "src/xpc/**/**.ts",
     "src/crypto/**/**.ts",
-    "src/actions/index.ts",
-    "src/actions/**/!(test)**.ts"
+    "src/actions/**/!(test)**.ts",
+    "src/actions/index.ts"
   ],
   "files": [
     "src/actions/sagemaker/strip_columns.js"
