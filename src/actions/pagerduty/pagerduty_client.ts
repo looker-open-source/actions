@@ -1,11 +1,17 @@
 import { Service } from './service'
-import got from 'got'
+import got, { Got } from 'got'
+import { PagerDutyCreateIncident } from './pagerduty_create_incident'
+import { PagerDutyIncident } from './pagerduty_incident'
+import * as Hub from "../../hub"
+import { promises } from 'fs'
 
 export class PagerDutyClient {
 
     constructor(private apiKey: string) { }
 
-    private client = got.extend({
+    private PagerDutyEventApi = 'https://events.pagerduty.com/v2'
+
+    private restApiClient = got.extend({
         prefixUrl: 'https://api.pagerduty.com',
         headers: {
             'Authorization': `Token token=${this.apiKey}`,
@@ -14,24 +20,36 @@ export class PagerDutyClient {
     })
 
     async services(): Promise<Service[]> {
-        console.log("ENTRY SERVICES")
-        const res = await this.client.get('services').json<{services: Service[]}>()
-        console.log("AFTER AWAIT SERVICES")
+        const res = await this.restApiClient.get('services').json<{ services: Service[] }>()
         return res.services
     }
 
-    private isServices(json: any): json is { services: Service[] } {
-        if (json == null) {
-            return false
-        }
+    async createIncidents(incidents: PagerDutyCreateIncident[]): Promise<Hub.ActionResponse> {
+        const serviceKeys = Array.from(new Set(incidents.map(i => i.routing_key)))
+        console.info(`Creating ${incidents.length} incidents on PagerDuty services ${serviceKeys.join(", ")} `)
 
-        if (!Array.isArray(json['services'])) {
-            return false
-        }
-
-        return json['services'].reduce(
-            (p: Boolean, c: any) => p && c['name'] != null && c['id'] != null,
-            true
+        const promises = incidents.map(i =>
+            got.post(`${this.PagerDutyEventApi}/enqueue`, {
+                json: i
+            }).json()
         )
+
+        return Promise.all(promises)
+            .then(r => {
+                const message = `Pushed ${incidents.length} incidents (might be deduped) to PagerDuty`
+                console.log(message)
+                return new Hub.ActionResponse({ success: true, message: message })
+            })
+            .catch(r => {
+                const message = `Failed to create PD incident ${r}`
+                console.error(message)
+                return new Hub.ActionResponse({ success: false, message: message })
+            })
     }
+
+    async getIncidents(): Promise<PagerDutyIncident[]> {
+        return Promise.reject("Not implemented")
+    }
+
+
 }
