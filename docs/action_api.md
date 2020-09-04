@@ -1,6 +1,6 @@
 # Looker Action API
 
-To build an action directly into an existing web service in any language, you can have your server implement our Action API directly. Your server then becomes an "Action Hub" that can be connected to one or more Looker instances. An Action Hub can expose one or more actions.
+To build an action directly into an existing web service in any language, you can have your server implement the Action API directly. Your server then becomes an "Action Hub" that can be connected to one or more Looker instances. An Action Hub can expose one or more actions.
 
 The Action API is a simple webhook-like API to accept actions from Looker. Your server will provide a few endpoints that Looker can call to list and execute actions.
 
@@ -22,9 +22,9 @@ To implement the Action API, your server must expose a few endpoints for Looker 
 
 - (optional) [Action Form Endpoint](#action-form-endpoint)
 
-  If the action's definition specifies a form, Looker asks this endpoint for a form template to display to the user to configure the action (e.g. when using the action as a destination in the Schedule dialog). Since Looker will query this endpoint every time the form is displayed, it's possible to dynamically populate the form with custom user input fields. For example, for a chat application the form might have a drop-down that dynamically lists all the chat channels available at that moment. Or for an action that uses OAuth with the Google Analytics API, the form could dynamically list the web properties to which the current user has access.
+  If the action's definition specifies a form, Looker asks this endpoint for a form template to display to the user to configure the action (e.g. when using the action as a destination in the Schedule dialog). Since Looker will query this endpoint every time the form is displayed, it's possible to dynamically populate the form with custom user input fields. For example, for a chat application the form might have a drop-down that dynamically lists all the chat channels available at that moment. Or for an action that uses OAuth with the Google Analytics API, the form could dynamically list the web properties to which the current user has access. Form fields can also specify the "interactive" option in order to re-query the form endpoint upon changes by the end user. This allows implementation of faceted select options or branching logic.
 
-Each of these endpoints can optionally require [authentication](#authentication) from Looker via an auth token in the request headers.
+These endpoints can optionally require [authentication](#authentication) via a token sent in the request headers, in order to verify that the requests originate from an authorized Looker instance. Individual actions can also implement OAuth in order to securely authenticate end users to 3rd party services.
 
 ### Actions List Endpoint
 
@@ -122,7 +122,7 @@ interface RequiredField {
 
 When the user initiates an action (either manually or by scheduling it), Looker will typically run the relevant query and then POST the data to the execute endpoint.
 
-The payload sent to this endpoint is always JSON and it's always sent using [chunked transfer encoding](https://en.wikipedia.org/wiki/Chunked_transfer_encoding) to facilitate streaming data from the analytic database.
+The payload sent to this endpoint is always JSON and is always sent using [chunked transfer encoding](https://en.wikipedia.org/wiki/Chunked_transfer_encoding) to facilitate streaming data from the analytical database.
 
 If the `supported_download_settings` is set to "url" then the payload will instead contain a one-time use download url instead of including the data in the payload. 
 
@@ -173,9 +173,9 @@ interface ExecutePayloadAttachment {
 
 ### Action Form Endpoint
 
-When the user initiates an action, if `form_url` was defined in the action definition, Looker will request the form endpoint by sending a POST request with an empty body. For scheduled actions, the form information will be collected from the user at the time the schedule is set up. Otherwise, it's collected immediately before executing the action.
+When the user initiates an action, if `form_url` was defined in the action definition, Looker will request the form endpoint by sending a POST request with an empty body. For scheduled actions, the form information will be collected from the user at the time the schedule is set up. Otherwise, it is collected immediately before executing the action.
 
-The endpoint should return the structure of a form that Looker will display to the user. When the action executes, the user's responses will appear in the `form_params` part of the payload. Form parameters are always strings. Your action implementation can parse those strings into numbers or whatever else you like.
+The endpoint should return the structure of a form that Looker will display to the user. When the action executes, the user's inputs will appear in the `form_params` part of the payload. Form parameters are always strings. Your action implementation can parse those strings into numbers or whatever else you like.
 
 The form body can be a JSON array of form fields:
 
@@ -225,6 +225,8 @@ interface ActionFormField {
   type?: string
   /** Default value of the field. */
   default?: string
+  /** If true, Looker will re-query the form endpoint upon changes to this field by the end user. The current values of all fields will be sent with the request. This allows the action to dynamically alter the form contents based on user interaction, e.g. for faceted select box options. **/
+  interactive?: boolean
   /** Whether or not the field is required. This is a user-interface hint. A user interface displaying this form should not submit it without a value for this field. The action server must also perform this validation. */
   required?: boolean
   /** If the form type is 'select', a list of options to be selected from. */
@@ -239,9 +241,20 @@ interface FormSelectOption {
 }
 ```
 
+For OAuth-enabled actions, there is a special form response for when the user is not yet authenticated to the external system. This prompts Looker to display a login button instead:
+
+```ts
+interface ActionFormFieldOAuth extends ActionFormField {
+  type: "oauth_link"
+  oauth_url: string
+}
+```
+
+Your service will need to expose additional endpoints that implement the OAuth flow. Refer to the Action Hub source code for examples.
+
 ### Action User State
 
-The action hub API is designed to keep each action independent from other actions. For certain actions, however - especially OAuth-enabled actions - state may be required per user. If there is state for a user and action, Looker sends the state as part of a `form` or `execute` request. If there is no state, the field is unused. If you wish to set state, you can provide a `state` property in an `execute` or `form` response. A refresh time may also be specified in seconds, which causes Looker to re-query the `form` endpoint for that user after the refresh time has elapsed (with a current maximum of once every 10 minutes). This can be used to keep authentication credentials up-to-date or to simply store some state for the user-and-action combination within the Looker server.
+The action API is designed to keep each action independent from other actions. For certain actions - especially OAuth-enabled actions - state may be required per user. If there is state for a user and action, Looker sends the state as part of a `form` or `execute` request. If there is no state, the field is unused. If you wish to set state, you can provide a `state` property in an `execute` or `form` response. A refresh time may also be specified in seconds, which causes Looker to re-query the `form` endpoint for that user after the refresh time has elapsed (with a current maximum of once every 10 minutes). This can be used to keep authentication credentials up-to-date or to simply store some state for the user+action combination within the Looker server.
 
 Here is the definition of the `state` field: 
 ```ts
@@ -255,7 +268,7 @@ class ActionState {
 
 ## Authentication
 
-When the user enters the Action Hub URL into Looker, they can also optionally provide an authentication token. When Looker sends a request to any of the endpoints it will pass the authentication token back to your server. You can use this to refuse access to unauthorized requests, or provide different behavior to different tokens.
+When an administrator adds the Action Hub URL to Looker, they can also optionally provide an authentication token. When Looker sends a request to any of the endpoints it will also include this token in the header. You can use this to refuse access to unauthorized requests, or provide different behavior to different tokens.
 
 The token is provided as a standard HTTP `Authorization` header with a `token` like so:
 
@@ -263,4 +276,4 @@ The token is provided as a standard HTTP `Authorization` header with a `token` l
 Authorization: Token token="abcdefg123456789"
 ```
 
-Each individual action can also specify additional options or credentials as part of its `params`. This is useful if you need different authorization tokens for each action.
+Each individual action can also specify additional options or credentials as part of its `params`. This is useful if you need different secrets or global configurations for each action.
