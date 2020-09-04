@@ -100,7 +100,6 @@
     "yarn": ">=1.19.1"
   },
   "resolutions": {
-    "fsevents": "1.2.9",
     "**/event-stream": "3.3.4",
     "**/extend": "^3.0.2",
     "**/qs": "^6.9.0",
