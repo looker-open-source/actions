@@ -8,7 +8,7 @@ If you're not familiar with [TypeScript](https://www.typescriptlang.org/) it is 
 
 The project is written with the most current JavaScript style and features (currently [ES2015](https://en.wikipedia.org/wiki/ECMAScript#History)) to help improve code clarity and expressiveness.
 
-### Requirements
+## Requirements
 
 To get started contributing a service you'll need to install:
 
