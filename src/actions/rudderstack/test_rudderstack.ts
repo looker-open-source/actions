@@ -34,7 +34,6 @@ function expectRudderMatch(request: Hub.ActionRequest, match: any) {
     timestamp: now,
   }
   const merged = { ...baseMatch, ...match }
-  // console.log("MERGED: TEST: ", JSON.stringify(merged))
   return chai
     .expect(action.validateAndExecute(request))
     .to.be.fulfilled.then(() => {

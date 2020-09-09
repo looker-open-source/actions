@@ -128,7 +128,6 @@ export class RudderAction extends Hub.Action {
           }
           try {
             winston.info("===calling analytics api===")
-            // console.log("PAYLOAD: RUDDERSTACK: ", JSON.stringify(payload))
             rudderClient[rudderCall](payload, /*, () => {
               totalRequestsCompleted = totalRequestsCompleted + 1
               winston.info(`[Rudder] totalRequestsCompletedOnEvents :  ${totalRequestsCompleted}`)
@@ -154,25 +153,6 @@ export class RudderAction extends Hub.Action {
 
       winston.info(`[Rudder] totalrows : ${totalRows}`)
       winston.info(`[Rudder] totalRequestsCompletedAfterRowsCompleted : ${totalRequestsCompleted}`)
-
-      // let checkCount = 0
-      // await new Promise<void>(async (resolve, reject) => {
-      //   setInterval(() => {
-      //     try{
-      //       if(totalRows == totalRequestsCompleted) {
-      //         resolve()
-      //       }
-      //       if(checkCount == 20) {
-      //         reject(new Error("sending to server took too long..aborting after 20 secs"))
-      //       }
-      //       checkCount = checkCount +1
-      //     } catch(e) {
-      //       reject(e)
-      //     }
-      //
-      //   }, 1000)
-      // })
-
     } catch (e) {
       winston.error(`[Rudder] error in Rudder action execution : ${e}`)
       errors.push(e)
@@ -307,8 +287,6 @@ export class RudderAction extends Hub.Action {
       anonymousId,
       groupId,
     }
-    // console.log(JSON.stringify(traits))
-    // console.log(JSON.stringify(rudderRow))
     rudderRow[dimensionName] = traits
     return rudderRow
   }
