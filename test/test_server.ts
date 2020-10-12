@@ -39,7 +39,7 @@ describe("the action hub", () => {
       })
   })
 
-  it("for looker versions before 5.5 it returns only segment", (done) => {
+  it("for looker versions before 5.5 it returns segment and rudderstack", (done) => {
     const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
     chai.request(new Server().app)
       .post("/")

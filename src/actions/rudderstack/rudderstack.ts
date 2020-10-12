@@ -102,8 +102,8 @@ export class RudderAction extends Hub.Action {
         onFields: (fields) => {
           fieldset = Hub.allFields(fields)
           rudderFields = this.rudderFields(fieldset)
-          winston.info(`[Rudder] fieldset :  ${JSON.stringify(fieldset)}`)
-          winston.info(`[Rudder] RudderFields : ${JSON.stringify(rudderFields)}`)
+          winston.debug(`[Rudder] fieldset :  ${JSON.stringify(fieldset)}`)
+          winston.debug(`[Rudder] RudderFields : ${JSON.stringify(rudderFields)}`)
           this.unassignedRudderFieldsCheck(rudderFields)
         },
         onRanAt: (iso8601string) => {
@@ -113,7 +113,7 @@ export class RudderAction extends Hub.Action {
         },
         onRow: (row) => {
           totalRows = totalRows + 1
-          winston.info(`[Rudder] row : ${JSON.stringify(row)}`)
+          winston.debug(`[Rudder] row : ${JSON.stringify(row)}`)
           this.unassignedRudderFieldsCheck(rudderFields)
           const payload = {
             ...this.prepareRudderTraitsFromRow(
@@ -127,10 +127,10 @@ export class RudderAction extends Hub.Action {
             delete payload.event
           }
           try {
-            winston.info("===calling analytics api===")
+            winston.debug("===calling analytics api===")
             rudderClient[rudderCall](payload, /*, () => {
               totalRequestsCompleted = totalRequestsCompleted + 1
-              winston.info(`[Rudder] totalRequestsCompletedOnEvents :  ${totalRequestsCompleted}`)
+              winston.debug(`[Rudder] totalRequestsCompletedOnEvents :  ${totalRequestsCompleted}`)
             }*/)
           } catch (e) {
             errors.push(e)
@@ -139,20 +139,20 @@ export class RudderAction extends Hub.Action {
       })
 
       await new Promise<void>(async (resolve, reject) => {
-          winston.info("[Rudder] calling explicit flush")
+          winston.debug("[Rudder] calling explicit flush")
           rudderClient.flush( (err: any) => {
             if (err) {
               winston.error(`[Rudder] error while flush : ${err}`)
               reject(err)
             } else {
-              winston.info("[Rudder] resolve while flush")
+              winston.debug("[Rudder] resolve while flush")
               resolve()
             }
           })
       })
 
-      winston.info(`[Rudder] totalrows : ${totalRows}`)
-      winston.info(`[Rudder] totalRequestsCompletedAfterRowsCompleted : ${totalRequestsCompleted}`)
+      winston.debug(`[Rudder] totalrows : ${totalRows}`)
+      winston.debug(`[Rudder] totalRequestsCompletedAfterRowsCompleted : ${totalRequestsCompleted}`)
     } catch (e) {
       winston.error(`[Rudder] error in Rudder action execution : ${e}`)
       errors.push(e)
@@ -167,7 +167,7 @@ export class RudderAction extends Hub.Action {
       winston.error(`[Rudder] total errors : ${msg}`)
       return new Hub.ActionResponse({success: false, message: msg})
     } else {
-      winston.info("[Rudder] no errors in Rudder action execution")
+      winston.debug("[Rudder] no errors in Rudder action execution")
       return new Hub.ActionResponse({success: true})
     }
   }
