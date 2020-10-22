@@ -371,7 +371,13 @@ export class ActionRequest {
    */
   completeFilename() {
     if (this.attachment && this.formParams.filename) {
-      return `${this.formParams.filename.trim().replace(/\s/g, "_")}.${this.attachment.fileExtension}`
+      if (this.formParams.filename.endsWith(this.attachment.fileExtension!)) {
+        return this.formParams.filename.trim().replace(/\s/g, "_")
+      } else if (this.formParams.filename.indexOf(".") !== -1) {
+        return this.suggestedFilename()
+      } else {
+        return `${this.formParams.filename.trim().replace(/\s/g, "_")}.${this.attachment.fileExtension}`
+      }
     }
     return this.formParams.filename
   }
