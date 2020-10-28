@@ -11,7 +11,7 @@ const file_name_regex = /^[\w,\s-]+\.[A-Za-z]{3}$/;
 export class GoogleAutomlTable extends Hub.Action {
 
     name = "google_automl_table"
-    label = "Google Cloud AutomML Table"
+    label = "Google Cloud AutoML Table"
     iconName = "google/automl/google_automl.png"
     description = "Import your data into a Google AutoMl Table"
     supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]

@@ -18,5 +18,5 @@ Considerations:
 - The minimum number of rows is 1000.  If building this action into a user workflow, would recommend changing the Looker default row limit to 1000
 - The Bucket and the Google AutoML Dataset must be compatible:
   - The Bucket and the Google AutoML region should be the same (us-central-1), you will not be able to connect a Google Cloud Bucket with an AutoML Dataset in different locations or region type.
-- Make sure the service account you use for the AutoML action also has read/write permissions over Google Cloud Storage.
+- Make sure the service account you use for the AutoML action also has read/write permissions over both Google Cloud Storage and AutoML.
 - The import of the data is done in a asynchronous way, so whatever error is thrown by Google Cloud won't be reflected in the action result but rather in the Google import result.
