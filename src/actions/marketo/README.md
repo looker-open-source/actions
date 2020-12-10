@@ -1,5 +1,7 @@
 # Marketo
 
+> As of December 2020, this integration is being deprecated.
+
 This action takes a query result and uses it to update a set of leads in Marketo, and to edit the leads' memberships in campaigns and lists. 
 
 ## SETUP
