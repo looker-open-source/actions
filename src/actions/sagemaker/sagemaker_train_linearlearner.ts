@@ -16,7 +16,7 @@ export class SageMakerTrainLinearLearnerAction extends Hub.Action {
   name = "amazon_sagemaker_train_linearlearner"
   label = "Amazon SageMaker Train: Linear Learner"
   iconName = "sagemaker/sagemaker_train.png"
-  description = "Start a traingin job on Amazon SageMaker, using the Linear Learner algorithm."
+  description = "Start a training job on Amazon SageMaker, using the Linear Learner algorithm."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
