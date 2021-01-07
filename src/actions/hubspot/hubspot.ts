@@ -181,7 +181,7 @@ export class HubspotAction extends Hub.Action {
                 fieldName !== hubspotIdFieldName &&
                 hiddenFields.indexOf(fieldName) === -1
               ) {
-                const safeFieldName = fieldName.replace(".", "_")
+                const safeFieldName = fieldName.replace(/\./g, "_")
                 properties[safeFieldName] = fieldSet.value
               }
             })
