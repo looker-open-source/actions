@@ -13,7 +13,7 @@ export class GoogleAutomlTable extends Hub.Action {
     name = "google_automl_table"
     label = "Google Cloud AutoML Table"
     iconName = "google/automl/google_automl.png"
-    description = "Import your data into a Google AutoMl Table"
+    description = "Import your data into a Google Cloud AutoMl Table"
     supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
     usesStreaming = true
     requiredFields = []
