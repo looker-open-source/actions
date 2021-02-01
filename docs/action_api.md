@@ -81,7 +81,7 @@ interface ActionDefinition {
   required_fields?: RequiredField[]
   /** (required) A list of action types the action supports. Valid values are: "cell", "query", "dashboard". */
   supported_action_types: string[]
-  /** A list of data formats the action supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "json_detail_lite_stream", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png". */
+  /** A list of data formats the action supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "json_detail_lite_stream", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png", "csv_zip". */
   supported_formats?: string[]
   /** A list of formatting options the action supports. Valid values are: "formatted", "unformatted". */
   supported_formattings?: string[]
