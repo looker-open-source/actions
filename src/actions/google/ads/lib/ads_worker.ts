@@ -1,6 +1,5 @@
 import * as gaxios from "gaxios"
 import { Credentials } from "google-auth-library"
-import * as rp from "request-promise-native"
 import * as Hub from "../../../../hub"
 import { MissingAuthError } from "../../common/missing_auth_error"
 import { MissingRequiredParamsError } from "../../common/missing_required_params_error"
@@ -16,6 +15,18 @@ interface AdsUserState {
 }
 
 export class GoogleAdsActionWorker {
+
+  static async fromHub(hubRequest: Hub.ActionRequest, action: GoogleAdsCustomerMatch) {
+    const req = new GoogleAdsActionWorker(hubRequest, action)
+    await req.checkTokens()
+    return req
+  }
+
+  webhookId?: string
+  clientCid: string
+  userState: AdsUserState
+  formParams: any
+  offlineUserDataJobResourceName?: string
 
   get accessToken() {
     return this.userState.tokens.access_token
@@ -36,17 +47,6 @@ export class GoogleAdsActionWorker {
   get doHashing() {
     return this.formParams.doHashing === "yes"
   }
-
-  static async fromHub(hubRequest: Hub.ActionRequest, action: GoogleAdsCustomerMatch) {
-    const req = new GoogleAdsActionWorker(hubRequest, action)
-    await req.checkTokens()
-    return req
-  }
-  webhookId?: string
-  clientCid: string
-  userState: AdsUserState
-  formParams: any
-  offlineUserDataJobResourceName?: string
 
   constructor(readonly hubRequest: Hub.ActionRequest, readonly actionInstance: GoogleAdsCustomerMatch) {
     const cid = hubRequest.params.clientCid
@@ -296,20 +296,6 @@ export class GoogleAdsActionWorker {
       default: "yes",
       required: true,
     }
-  }
-
-  apiCall2(method: string, path: string, body?: any) {
-    return rp({
-      method,
-      json: true,
-      uri: `https://googleads.googleapis.com/v5/${path}`,
-      headers:  {
-        "developer-token": this.actionInstance.developerToken,
-        "login-customer-id": this.actionInstance.managerCid,
-        "Authorization": `Bearer ${this.accessToken}`,
-      },
-      body,
-    })
   }
 
   async apiCall(method: "GET" | "POST", url: string, data?: any) {
