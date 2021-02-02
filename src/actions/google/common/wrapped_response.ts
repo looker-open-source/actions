@@ -4,16 +4,15 @@ import { MissingAuthError } from "./missing_auth_error"
 type HubTypes = Hub.ActionResponse | Hub.ActionForm
 
 export class WrappedResponse<T extends HubTypes> {
-
-  set form(form: T) {
-    this._hubResp = form
-  }
   errorPrefix = ""
-
   private _hubResp: T
 
   constructor(klass: new () => T) {
     this._hubResp = new klass()
+  }
+
+  set form(form: T) {
+    this._hubResp = form
   }
 
   returnError(err: Error) {
