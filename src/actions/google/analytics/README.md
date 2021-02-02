@@ -22,20 +22,22 @@ Note: any formatting applied by the “value_format” or “html” LookML para
 
 To make a one-time upload of this data to Google Analytics, go to the Looker gear menu and select Send. For “Where should this data go” select the “Google Analytics Data Import” option.
 
-The first time you use the action you will see a “Log In” button. Select this to grant Looker permission to use Google Analytics on your behalf.
+The first time you use the action you will see a “Log In” button. Press this button to begin the OAuth login flow which will grant Looker permission to use Google Analytics on your behalf.
 
-Once you return to Looker and click the “Verify Credentials” button (or re-open the dialog), you will be presented with two configuration options:
+Once you return to Looker and click the “Verify Credentials” button (or re-open the dialog), you will be presented with three configuration options:
 
-![](docs/sample-send-form.png)
+![](docs/form.png)
 
-The first item is a list of all Data Sets in all the properties to which your user has access. Select the one that you want to use.
+The first item is a list of all Data Sets in all the properties to which your user has access. Select the one that you want to use. If the list is empty, make sure your Google Analytics account has active Data Sets, and that your user has access to use them.
 
-Then paste in the schema for that Data Set. Looker will use this string as the header row for the csv data, just as shown in the implementation guide. You can retrieve the schema by viewing the Data Set within GA and pressing the “Get Schema” button. [A limitation with the GA API prevents Looker from automatically retrieving the schema. In the future this step may not be necessary.]
+For the "Data Set Schema" input box, paste in the schema for the chosen Data Set. Looker will use this string as the header row for the csv data, just as shown in the implementation guide. You can retrieve the schema by viewing the Data Set within GA and pressing the “Get Schema” button. [A limitation with the GA API prevents Looker from automatically retrieving the schema. In the future this step may not be necessary.]
 
-**Note:** Be sure to expand the “Advanced Options” and decide whether you want to send just the “Results in Table” or “All Results”. The Action will stream the data from Looker (and typically analytics database as well) so you can send more rows than the 5000 to which the web UI is limited. However, Data Set uploads cannot exceed 1 GB in size.
+Finally, choose whether you would like Looker to automatically clean up any previously uploaded files in this data set. Use this option if each of your uploads always includes the full data set available, meaning that the old files are redundant and out-of-date.
+
+**Note:** Be sure to expand the “Advanced Options” and decide whether you want to send just the “Results in Table” or “All Results”. The Looker web UI is limited to showing only 5000 results in the table. However, this action is able to stream data from Looker (and typically your analytics database in turn as well) so you can efficiently send more than 5000 rows if needed. However, GA Data Set uploads cannot exceed 1 GB in file size.
 
 ![](docs/get-schema.png)
 
-Once you press Send the dialog will close and the process will kick off. When the process is complete you will see a new upload in the “Manage Uploads” section of the Data Set. [Note: due to a limitation the file name will appear as “Unknown filename”. In the future you will be able to specify a filename or have one automatically generated.]
+Once you press Send the dialog will close and the process will kick off. When the process is complete you will see a new upload in the “Manage Uploads” section for the Data Set within GA. Note: due to an API limitation the file name will appear as “Unknown filename”.
 
-If you would like to upload this report on a recurring basis, simply save the report as a look and use the “Schedule” menu. The “Google Analytics Data Import” destination will appear there as well.
+If you would like to upload this report on a recurring basis, simply save the report as a Look and use the “Schedule” menu. “Google Analytics Data Import” will appear as a destination for schedules as well.
