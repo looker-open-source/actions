@@ -4,6 +4,7 @@ import * as gaxios from "gaxios"
 import { google } from "googleapis"
 import * as sinon from "sinon"
 import * as Hub from "../../../hub"
+import { GoogleOAuthHelper } from "../common/oauth_helper"
 import { GoogleAdsCustomerMatch } from "./customer_match"
 
 /* I originally adopted the chai.should() format because of the explanation below, written at that time,
@@ -44,6 +45,82 @@ describe(`${action.constructor.name} class`, () => {
 
   afterEach(() => {
     sinon.restore() // root object is a default sandbox
+  })
+
+  describe("action properties", () => {
+    it("hasForm", () => {
+      action.hasForm.should.be.true
+    })
+
+    it("name", () => {
+      action.name.should.equal("google_ads_customer_match")
+    })
+
+    it("label", () => {
+      action.label.should.equal("Google Ads Customer Match")
+    })
+
+    it("iconName", () => {
+      action.iconName.should.equal("google/ads/google_ads_icon.svg")
+    })
+
+    it("description", () => {
+      action.description.should.equal("Upload data to Google Ads Customer Match.")
+    })
+
+    it("supportedActionTypes", () => {
+      action.supportedActionTypes.should.deep.equal(["query"])
+    })
+
+    it("supportedFormats", () => {
+      action.supportedFormats.should.deep.equal(["json_label"])
+    })
+
+    it("supportedFormattings", () => {
+      action.supportedFormattings.should.deep.equal(["unformatted"])
+    })
+
+    it("supportedVisualizationFormattings", () => {
+      action.supportedVisualizationFormattings.should.deep.equal(["noapply"])
+    })
+
+    it("supportedDownloadSettings", () => {
+      action.supportedDownloadSettings.should.deep.equal(["url"])
+    })
+
+    it("usesStreaming", () => {
+      action.usesStreaming.should.be.true
+    })
+
+    it("requiredFields", () => {
+      action.requiredFields.should.be.empty
+    })
+
+    it("params", () => {
+      const params = [{name: "clientCid", label: "Client Account ID (CID)", required: true, sensitive: false}]
+      action.params.should.deep.equal(params)
+    })
+
+    it("redirectURI", () => {
+      const url = `${process.env.ACTION_HUB_BASE_URL}/actions/google_ads_customer_match/oauth_redirect`
+      action.redirectUri.should.equal(url)
+    })
+
+    it("oauthClientId", () => {
+      action.oauthClientId.should.equal(testOAuthClientId)
+    })
+
+    it("oauthClientSecret", () => {
+      action.oauthClientSecret.should.equal(testOAuthClientSecret)
+    })
+
+    it("oauthScopes", () => {
+      action.oauthScopes.should.deep.equal(["https://www.googleapis.com/auth/adwords"])
+    })
+
+    it("oauthHelper", () => {
+      action.oauthHelper.should.be.an.instanceOf(GoogleOAuthHelper)
+    })
   })
 
   describe("oauth interface", () => {

@@ -5,6 +5,7 @@ import * as gaxios from "gaxios"
 import { analytics_v3, google } from "googleapis"
 import * as sinon from "sinon"
 import * as Hub from "../../../hub"
+import { GoogleOAuthHelper } from "../common/oauth_helper"
 import { GoogleAnalyticsDataImportAction } from "./data_import"
 
 /* I originally adopted the chai.should() format because of the explanation below, written at that time,
@@ -24,7 +25,10 @@ import { GoogleAnalyticsDataImportAction } from "./data_import"
  */
 chai.should()
 
-const action = new GoogleAnalyticsDataImportAction("test_oauth_client_id", "test_oauth_client_secret")
+const teastOAuthClientId = "test_oauth_client_id"
+const teastOAuthClientSecret = "test_oauth_client_secret"
+
+const action = new GoogleAnalyticsDataImportAction(teastOAuthClientId, teastOAuthClientSecret)
 
 describe(`${action.constructor.name} class`, () => {
 
@@ -70,8 +74,77 @@ describe(`${action.constructor.name} class`, () => {
   })
 
   describe("action properties", () => {
-    it("hasForm is true", () => {
+    it("hasForm", () => {
       action.hasForm.should.be.true
+    })
+
+    it("name", () => {
+      action.name.should.equal("google_analytics_data_import")
+    })
+
+    it("label", () => {
+      action.label.should.equal("Google Analytics Data Import")
+    })
+
+    it("iconName", () => {
+      action.iconName.should.equal("google/analytics/google_analytics_icon.svg")
+    })
+
+    it("description", () => {
+      action.description.should.equal("Upload data to a custom Data Set in Google Analytics.")
+    })
+
+    it("supportedActionTypes", () => {
+      action.supportedActionTypes.should.deep.equal(["query"])
+    })
+
+    it("supportedFormats", () => {
+      action.supportedFormats.should.deep.equal(["csv"])
+    })
+
+    it("supportedFormattings", () => {
+      action.supportedFormattings.should.deep.equal(["unformatted"])
+    })
+
+    it("supportedVisualizationFormattings", () => {
+      action.supportedVisualizationFormattings.should.deep.equal(["noapply"])
+    })
+
+    it("supportedDownloadSettings", () => {
+      action.supportedDownloadSettings.should.deep.equal(["url"])
+    })
+
+    it("usesStreaming", () => {
+      action.usesStreaming.should.be.true
+    })
+
+    it("requiredFields", () => {
+      action.requiredFields.should.be.empty
+    })
+
+    it("params", () => {
+      action.params.should.be.empty
+    })
+
+    it("redirectURI", () => {
+      const url = `${process.env.ACTION_HUB_BASE_URL}/actions/google_analytics_data_import/oauth_redirect`
+      action.redirectUri.should.equal(url)
+    })
+
+    it("oauthClientId", () => {
+      action.oauthClientId.should.equal(teastOAuthClientId)
+    })
+
+    it("oauthClientSecret", () => {
+      action.oauthClientSecret.should.equal(teastOAuthClientSecret)
+    })
+
+    it("oauthScopes", () => {
+      action.oauthScopes.should.deep.equal(["https://www.googleapis.com/auth/analytics.edit"])
+    })
+
+    it("oauthHelper", () => {
+      action.oauthHelper.should.be.an.instanceOf(GoogleOAuthHelper)
     })
   })
 
