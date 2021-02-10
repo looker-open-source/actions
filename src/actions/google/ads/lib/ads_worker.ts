@@ -188,7 +188,11 @@ export class GoogleAdsActionWorker {
 
   async getJob() {
     const method = "GET"
-    const path = `${this.offlineUserDataJobResourceName}`
+    const path = this.offlineUserDataJobResourceName
+
+    if (path === undefined) {
+      throw new MissingRequiredParamsError("Job resource name is not present.")
+    }
 
     return this.apiCall(method, path)
   }

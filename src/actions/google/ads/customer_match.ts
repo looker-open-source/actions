@@ -80,7 +80,7 @@ export class GoogleAdsCustomerMatch
     const wrappedResp = new WrappedResponse(Hub.ActionResponse)
 
     try {
-      // The AdsRequest constructor will do a bunch of validation for us
+      // The worker constructor will do a bunch of validation for us
       const adsWorker = await GoogleAdsActionWorker.fromHub(hubReq, this)
 
       // 1) Create a new list if requested. If not, make sure the given name exists.
