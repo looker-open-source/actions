@@ -734,6 +734,31 @@ describe(`${action.constructor.name} class`, () => {
         postStub.should.be.calledOnce
         postStub.getCall(0).args[0].should.deep.equal(expectedPostArgs)
       })
+
+      it("throws an exception if the POST to Looker fails", async () => {
+        const stateUrl = "https://a-looker-instance.looker.test/action_hub_state/asdfasdfasdfasdf"
+        const encryptedPayload = b64.encode(JSON.stringify({stateUrl})) // based on how we stubbed ActionCrypto.encrypt
+
+        const redirectUri = `https://action-hub.looker.test/actions/${action.name}/oauth_redirect`
+        const oauthCode = "stringLikeAnOAuthCodeThatWouldBeSentByGoogle"
+        const stubTokens = {
+          access_token: "anAccessTokenWooh",
+          refresh_token: "theRefreshTokenYeah",
+        }
+
+        const getTokenStub = sinon.fake.resolves({tokens: stubTokens})
+        sinon.stub(google.auth, "OAuth2").returns({getToken: getTokenStub})
+
+        const testException = new TestException("<error message from POST to Looker>")
+
+        sinon.stub(gaxios, "request").throws(testException)
+
+        const run = async () => {
+          return action.oauthFetchInfo({code: oauthCode, state: encryptedPayload}, redirectUri)
+        }
+
+        return run().should.eventually.be.rejectedWith(testException)
+      })
     })
 
     /* This part of the Action API appears to be deprecated - omitting tests

@@ -117,7 +117,8 @@ export class GoogleOAuthHelper {
           data: userState,
         })
       } catch (err) {
-        this.actionInstance.log("error", err.toString())
+        this.actionInstance.log("error", "Error sending user state to Looker:", err.toString())
+        throw err
       }
     }
 }
