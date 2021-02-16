@@ -250,6 +250,24 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         })
     }
 
+    async clearSheet2(sheet: Sheet, sheetId: number, spreadsheetId: string) {
+        sheet.spreadsheets.batchUpdate({
+            spreadsheetId,
+            requestBody: {
+                requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: sheetId
+                        },
+                        fields: "userEnteredValue"
+                      }
+                    }
+                  ]
+            }
+        })
+    }
+
     async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
             winston.info(e)
