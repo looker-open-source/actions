@@ -145,7 +145,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             return new Promise<void>(async (resolve, reject) => {
                 const csvparser = parse({rtrim: true, ltrim: true})
                 // This will not clear formulas or protected regions
-                await this.clearSheet(spreadsheetId, sheet)
+                await this.clearSheet(spreadsheetId, sheet, sheetId)
                 csvparser.on("data", async (line: any) => {
                     const rowIndex: number = rowCount++
                     // Sanitize line data and properly encapsulate string formatting for CSV lines
@@ -240,17 +240,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             })
     }
 
-    async clearSheet(spreadsheetId: string, sheet: Sheet) {
-        return sheet.spreadsheets.values.clear({
-            spreadsheetId,
-            range: "A:XX",
-        }).catch((err) => {
-            winston.error(err)
-            throw err
-        })
-    }
-
-    async clearSheet2(sheet: Sheet, sheetId: number, spreadsheetId: string) {
+    async clearSheet(spreadsheetId: string, sheet: Sheet, sheetId: number) {
         sheet.spreadsheets.batchUpdate({
             spreadsheetId,
             requestBody: {
