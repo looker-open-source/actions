@@ -143,9 +143,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: 1,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "a,b,c\n1,2,3"
@@ -206,9 +218,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: 1,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "\"a\",\"b\",\"lol\"\"\",\"c\"\n1,2,3,4"
@@ -262,9 +286,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: 1,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "a,b,c\n1,2,3"
@@ -320,9 +356,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: 1,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "a,b,c\n1,2,3"

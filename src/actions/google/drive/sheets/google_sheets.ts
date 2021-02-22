@@ -241,20 +241,20 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async clearSheet(spreadsheetId: string, sheet: Sheet, sheetId: number) {
-        sheet.spreadsheets.batchUpdate({
+        return sheet.spreadsheets.batchUpdate({
             spreadsheetId,
             requestBody: {
                 requests: [
                     {
                       updateCells: {
                         range: {
-                          sheetId: sheetId
+                          sheetId,
                         },
-                        fields: "userEnteredValue"
-                      }
-                    }
-                  ]
-            }
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
         })
     }
 
