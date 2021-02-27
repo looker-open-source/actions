@@ -56,8 +56,8 @@ export class GoogleAdsActionWorker {
       throw new MissingRequiredParamsError("Client Account ID not provided; check the action configuration page.")
     }
 
-    if (!state || !state.tokens || !state.tokens.access_token || !state.tokens.refresh_token) {
-      throw new MissingAuthError("OAuth access and/or refresh token not present")
+    if (!state || !state.tokens || !state.tokens.access_token || !state.tokens.refresh_token || !state.redirect) {
+      throw new MissingAuthError("User state was missing or did not contain oauth tokens & redirect")
     }
 
     this.clientCid = cid
