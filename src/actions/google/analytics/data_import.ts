@@ -110,10 +110,21 @@ export class GoogleAnalyticsDataImportAction
       wrappedResp.form = await gaWorker.makeForm()
       this.log("info", "Form generation complete")
       return wrappedResp.returnSuccess()
+      // Use this code if you need to force a state reset and redo oauth login
+      // wrappedResp.form = await this.oauthHelper.makeLoginForm(hubReq)
+      // wrappedResp.resetState()
+      // return wrappedResp.returnSuccess()
     } catch (err) {
       if (err instanceof MissingAuthError) {
         this.log("info", "Caught MissingAuthError; returning login form.")
         return await this.oauthHelper.makeLoginForm(hubReq)
+      } else if (err.code !== undefined && err.code === "401") {
+        this.log("error", "Caught a 401 error from the API; resetting user state.")
+        const resp = await this.oauthHelper.makeLoginForm(hubReq)
+        resp.fields[0].label =
+          "Received an authentication error from the API, so your GA credentials have been discarded."
+          + " Please reauthenticate to GA and try again."
+        return resp
       } else {
         this.log("error", err.stack)
         wrappedResp.errorPrefix = "Form generation failed: "
