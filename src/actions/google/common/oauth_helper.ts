@@ -8,7 +8,7 @@ export interface UseGoogleOAuthHelper {
     oauthClientId: string,
     oauthClientSecret: string,
     oauthScopes: string[],
-    log(level: string, ...messages: (string | undefined)[]): void
+    log(level: string, ...rest: any[]): void
 }
 
 export class GoogleOAuthHelper {
@@ -26,11 +26,11 @@ export class GoogleOAuthHelper {
     }
 
     async makeLoginForm(request: Hub.ActionRequest) {
-      // Step 0 in the outh flow - generate an AH url that user can visit to kick things off
-      // The payload is arbitrary state data Google will receive and send back to us with the redirect
-      // We'll use the Looker url it contains to persist the tokens for this user once the flow is complete
+      // Step 0 in the outh flow - generate an *ActionHub* url that user can visit to kick things off
+      // The payload is arbitrary state data Google will receive and send back to us with the redirect.
+      // In this case it contains the Looker state-update url we will use to persist the tokens when flow is complete.
       // We need to start tracking the url now because Looker makes one-time-use-only endpoints for updating user state
-      // and this is where we receive it
+      // and this form request is where we receive it.
       const payloadString = JSON.stringify({ stateUrl: request.params.state_url })
 
       //  Payload is encrypted to keep things private and prevent tampering
@@ -43,10 +43,12 @@ export class GoogleOAuthHelper {
         throw e
       }
 
-      // Step 1 in the oauth flow - user clicks the button in the form and visits the url generated here.
+      // Step 1 in the oauth flow - user clicks the button in the form and visits the AH url generated here.
       // That response will be auto handled by the AH server as a redirect to the result of oauthUrl function below.
       const startAuthUrl =
         `${process.env.ACTION_HUB_BASE_URL}/actions/${this.actionInstance.name}/oauth?state=${encryptedPayload}`
+
+      this.actionInstance.log("debug", "login form has startAuthUrl=", startAuthUrl)
 
       const form = new Hub.ActionForm()
       form.state = new Hub.ActionState()
@@ -56,8 +58,8 @@ export class GoogleOAuthHelper {
         name: "login",
         type: "oauth_link_google",
         label: "Log in",
-        description: "In order to send to this destination, you will need to log in" +
-          " once to your Google account.",
+        description: "In order to send to this destination, you will need to log in"
+          + " once to your Google account.",
         oauth_url: startAuthUrl,
       })
       return form
@@ -72,7 +74,7 @@ export class GoogleOAuthHelper {
 
       const oauthClient = this.makeOAuthClient(redirectUri)
 
-      this.actionInstance.log("info", "beginning oauth flow with redirect url:", redirectUri)
+      this.actionInstance.log("debug", "beginning oauth flow with redirect url:", redirectUri)
 
       const url = oauthClient.generateAuthUrl({
         access_type: "offline",
@@ -81,7 +83,9 @@ export class GoogleOAuthHelper {
         state: encryptedPayload,
       })
 
-      return url.toString()
+      this.actionInstance.log("debug", "generated auth url:", url)
+
+      return url
     }
 
     async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string) {
@@ -117,8 +121,13 @@ export class GoogleOAuthHelper {
           data: userState,
         })
       } catch (err) {
-        this.actionInstance.log("error", "Error sending user state to Looker:", err.toString())
-        throw err
+        // We have seen weird behavior where Looker correctly updates the state, but returns a nonsense status code
+        if (err instanceof gaxios.GaxiosError && err.response !== undefined && err.response.status < 100) {
+          this.actionInstance.log("debug", "Ignoring state update response with response code <100")
+        } else {
+          this.actionInstance.log("error", "Error sending user state to Looker:", err.toString())
+          throw err
+        }
       }
     }
 }
