@@ -176,9 +176,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       let request: Hub.ActionRequest
       let fakeMarketoClient: any
       let leadIds: any[]
-      let leadCreateOrUpdateSpy:      sinon.SinonStub
-      let campaignRequestSpy:         sinon.SinonStub
-      let listAddLeadsToListSpy:      sinon.SinonStub
+      let leadCreateOrUpdateSpy: sinon.SinonStub
+      let campaignRequestSpy: sinon.SinonStub
+      let listAddLeadsToListSpy: sinon.SinonStub
       let listRemoveLeadsFromListSpy: sinon.SinonStub
       before(() => {
         request = new Hub.ActionRequest()
@@ -359,4 +359,3 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
   })
 })
-
