@@ -1,5 +1,5 @@
 import * as b64 from "base64-url"
-import * as chai from "chai"
+import { expect } from "chai"
 import * as gaxios from "gaxios"
 import { google } from "googleapis"
 import * as sinon from "sinon"
@@ -7,27 +7,11 @@ import * as Hub from "../../../hub"
 import { GoogleOAuthHelper } from "../common/oauth_helper"
 import { GoogleAdsCustomerMatch } from "./customer_match"
 
-/* I originally adopted the chai.should() format because of the explanation below, written at that time,
- * based on what was described in the chai-as-promised docs. However, it later became clear that mocha has other
- * features to handle this, and making the test cases themselves `async` is far preferable for simplicity and clarity.
- * So now I am continuing to use .should (without chai-as-promised at all) instead of changing all the assertions back.
- *
- * Old explanation which is still worth documenting:
- *
- * We need the `should` form of Chai to be able to use this pattern:
- *   chai.expect(promise).to.eventually.be.fullfilled.then(<more expectations>).should.notify(done)
- * Which allows us to make additional expectations after the original promise is resolved,
- * while properly passing the inner failures out to the test framework,
- * instead of them being masked by the outer promise.
- * See example under "Working with Non-Promise–Friendly Test Runners" here:
- *   https://www.chaijs.com/plugins/chai-as-promised/
- */
-chai.should()
-
 const testOAuthClientId = "test_oauth_client_id"
 const testOAuthClientSecret = "test_oauth_client_secret"
 const testAdsDeveloperToken = "test_ads_developer_token"
 const testManagerCid = "test_manager_cid"
+const testClientCid = "test_client_cid"
 
 const action = new GoogleAdsCustomerMatch(
   testManagerCid,
@@ -37,101 +21,127 @@ const action = new GoogleAdsCustomerMatch(
 )
 
 describe(`${action.constructor.name} class`, () => {
+  // Use a sandbox to avoid interaction with other test files
+  const adsSinonSandbox = sinon.createSandbox()
 
   beforeEach(() => {
-    sinon.stub(Hub.ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
-    sinon.stub(Hub.ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+    adsSinonSandbox.stub(Hub.ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
+    adsSinonSandbox.stub(Hub.ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
   })
 
   afterEach(() => {
-    sinon.restore() // root object is a default sandbox
+    adsSinonSandbox.reset()
+    adsSinonSandbox.restore()
   })
 
   describe("action properties", () => {
     it("hasForm", () => {
-      action.hasForm.should.be.true
+      expect(action.hasForm).to.be.true
     })
 
     it("name", () => {
-      action.name.should.equal("google_ads_customer_match")
+      expect(action.name).to.equal("google_ads_customer_match")
     })
 
     it("label", () => {
-      action.label.should.equal("Google Ads Customer Match")
+      expect(action.label).to.equal("Google Ads Customer Match")
     })
 
     it("iconName", () => {
-      action.iconName.should.equal("google/ads/google_ads_icon.svg")
+      expect(action.iconName).to.equal("google/ads/google_ads_icon.svg")
     })
 
     it("description", () => {
-      action.description.should.equal("Upload data to Google Ads Customer Match.")
+      expect(action.description).to.equal("Upload data to Google Ads Customer Match.")
     })
 
     it("supportedActionTypes", () => {
-      action.supportedActionTypes.should.deep.equal(["query"])
+      expect(action.supportedActionTypes).to.deep.equal(["query"])
     })
 
     it("supportedFormats", () => {
-      action.supportedFormats.should.deep.equal(["json_label"])
+      expect(action.supportedFormats).to.deep.equal(["json_label"])
     })
 
     it("supportedFormattings", () => {
-      action.supportedFormattings.should.deep.equal(["unformatted"])
+      expect(action.supportedFormattings).to.deep.equal(["unformatted"])
     })
 
     it("supportedVisualizationFormattings", () => {
-      action.supportedVisualizationFormattings.should.deep.equal(["noapply"])
+      expect(action.supportedVisualizationFormattings).to.deep.equal(["noapply"])
     })
 
     it("supportedDownloadSettings", () => {
-      action.supportedDownloadSettings.should.deep.equal(["url"])
+      expect(action.supportedDownloadSettings).to.deep.equal(["url"])
     })
 
     it("usesStreaming", () => {
-      action.usesStreaming.should.be.true
+      expect(action.usesStreaming).to.be.true
     })
 
     it("requiredFields", () => {
-      action.requiredFields.should.be.empty
+      expect(action.requiredFields).to.be.empty
     })
 
     it("params", () => {
       const params = [{name: "clientCid", label: "Client Account ID (CID)", required: true, sensitive: false}]
-      action.params.should.deep.equal(params)
+      expect(action.params).to.deep.equal(params)
     })
 
     it("redirectURI", () => {
       const url = `${process.env.ACTION_HUB_BASE_URL}/actions/google_ads_customer_match/oauth_redirect`
-      action.redirectUri.should.equal(url)
+      expect(action.redirectUri).to.equal(url)
     })
 
     it("oauthClientId", () => {
-      action.oauthClientId.should.equal(testOAuthClientId)
+      expect(action.oauthClientId).to.equal(testOAuthClientId)
     })
 
     it("oauthClientSecret", () => {
-      action.oauthClientSecret.should.equal(testOAuthClientSecret)
+      expect(action.oauthClientSecret).to.equal(testOAuthClientSecret)
     })
 
     it("oauthScopes", () => {
-      action.oauthScopes.should.deep.equal(["https://www.googleapis.com/auth/adwords"])
+      expect(action.oauthScopes).to.deep.equal(["https://www.googleapis.com/auth/adwords"])
     })
 
     it("oauthHelper", () => {
-      action.oauthHelper.should.be.an.instanceOf(GoogleOAuthHelper)
+      expect(action.oauthHelper).to.be.an.instanceOf(GoogleOAuthHelper)
+    })
+  })
+
+  describe("execute endpoint", () => {
+    describe("oauth token checks", () => {
+
+      const tests = [
+        {name: "no user state"},
+        {name: "no tokens", state: {redirect: "redirect is present"}},
+        {name: "no redirect", state: {tokens: {access_token: "access", refresh_token: "refresh"}}},
+      ]
+
+      for (const test of tests) {
+        it(`returns an error response if there is ${test.name}`, async () => {
+          const request = makeBaseRequest()
+          if (!test.state) {
+            delete request.params.state_json
+          } else {
+            request.params.state_json = JSON.stringify(test.state)
+          }
+
+          const expectedResponse = makeErrorResponse({
+            message: "MissingAuthError: User state was missing or did not contain oauth tokens & redirect",
+          })
+
+          const actualResponse = await action.validateAndExecute(request)
+          expect(actualResponse).to.deep.equal(expectedResponse)
+        })
+      }
     })
   })
 
   describe("oauth interface", () => {
     describe("oauthUrl", () => {
       it("generates the correct Google login URL", async () => {
-
-        const urlPromise = action.oauthUrl(
-          "https://action-hub.looker.test/actions/google_ads_customer_match/oauth_redirect",
-          "not-actually-encrypted-payload-used-for-test",
-        )
-
         const expectedUrl =
           "https://accounts.google.com/o/oauth2/v2/auth" +
           "?access_type=offline" +
@@ -140,13 +150,27 @@ describe(`${action.constructor.name} class`, () => {
           "&state=not-actually-encrypted-payload-used-for-test" +
           "&response_type=code" +
           "&client_id=test_oauth_client_id" +
-          "&redirect_uri=https%3A%2F%2Faction-hub.looker.test%2Factions%2Fgoogle_ads_customer_match%2Foauth_redirect"
+          `&redirect_uri=https%3A%2F%2Faction-hub.looker.test%2Factions%2F${action.name}%2Foauth_redirect`
 
-        return urlPromise.should.eventually.equal(expectedUrl)
+
+        const actualUrl = await action.oauthUrl(
+          `https://action-hub.looker.test/actions/${action.name}/oauth_redirect`,
+          "not-actually-encrypted-payload-used-for-test",
+        )
+
+        expect(actualUrl).to.equal(expectedUrl)
       })
     })
 
     describe("oauthFetchInfo", () => {
+      let oauthClientStub: sinon.SinonStub
+      let gaxiosStub: sinon.SinonStub
+
+      beforeEach(() => {
+        oauthClientStub = adsSinonSandbox.stub(google.auth, "OAuth2")
+        gaxiosStub = adsSinonSandbox.stub(gaxios, "request")
+      })
+
       it("correctly handles redirect from authorization server", async () => {
         const stateUrl = "https://a-looker-instance.looker.test/action_hub_state/asdfasdfasdfasdf"
         const encryptedPayload = b64.encode(JSON.stringify({stateUrl})) // based on how we stubbed ActionCrypto.encrypt
@@ -159,9 +183,10 @@ describe(`${action.constructor.name} class`, () => {
         }
 
         const getTokenStub = sinon.fake.resolves({tokens: stubTokens})
-        const oauthClientStub = sinon.stub(google.auth, "OAuth2").returns({getToken: getTokenStub})
 
-        const postStub = sinon.stub(gaxios, "request").resolves("<action doesn't do anything with this post response>")
+        oauthClientStub.returns({getToken: getTokenStub})
+        gaxiosStub.resolves("<action doesn't do anything with this post response>")
+
         const expectedPostArgs = {
           method: "POST",
           url: stateUrl,
@@ -170,19 +195,21 @@ describe(`${action.constructor.name} class`, () => {
 
         await action.oauthFetchInfo({code: oauthCode, state: encryptedPayload}, redirectUri)
 
-        oauthClientStub.should.be.calledOnce
-        oauthClientStub.getCall(0).args.should.deep.equal([
+        expect(oauthClientStub).to.be.calledOnce
+        expect(oauthClientStub.getCall(0).args).to.deep.equal([
           "test_oauth_client_id",
           "test_oauth_client_secret",
           redirectUri,
         ])
 
-        getTokenStub.should.be.calledOnce
-        getTokenStub.getCall(0).args[0].should.equal(oauthCode)
+        expect(getTokenStub).to.be.calledOnce
+        expect(getTokenStub.getCall(0).args[0]).to.equal(oauthCode)
 
-        postStub.should.be.calledOnce
-        postStub.getCall(0).args[0].should.deep.equal(expectedPostArgs)
+        expect(gaxiosStub).to.be.calledOnce
+        expect(gaxiosStub.getCall(0).args[0]).to.deep.equal(expectedPostArgs)
       })
+
+      // TODO: test for Looker's whacky HTTP response codes
     })
 
     /* This part of the Action API appears to be deprecated - omitting tests
@@ -197,3 +224,68 @@ describe(`${action.constructor.name} class`, () => {
     */
   })
 })
+
+function makeBaseRequest(optsArg?: any) {
+  const defaultOpts = {
+    createNewList: false,
+    doHashing: true,
+  }
+  const opts = Object.assign(defaultOpts, optsArg)
+  const baseReq = new Hub.ActionRequest()
+  baseReq.type = Hub.ActionType.Query
+
+  if (opts.createNewList) {
+    baseReq.formParams = {
+      userListResourceName: "Create new list...",
+      newListName: "New List Name from test suite",
+      newListDescription: "New List Description from test suite",
+    }
+  } else {
+    baseReq.formParams = {
+      userListResourceName: "existingListNameForTest",
+    }
+  }
+
+  baseReq.formParams.doHashing = opts.doHashing ? "yes" : "no"
+
+  const lookerData = [
+    {"User Email": "aaa@example.com"},
+    {"User Email": "bbb@example.com"},
+    {"User Email": "ccc@example.com"},
+  ]
+  const attachmentData = Buffer.from(JSON.stringify(lookerData))
+
+  baseReq.attachment = {dataBuffer: attachmentData, fileExtension: "json_label"}
+
+  baseReq.params = {
+    clientCid: testClientCid,
+    state_url: "https://action-hub.looker.test/action_hub_state/asdfasdfasdfasdf",
+    state_json: JSON.stringify({
+      tokens: {access_token: "accesstoken", refresh_token: "refreshtoken"},
+      redirect: "redirecturl",
+    }),
+  }
+
+  return baseReq
+}
+
+function makeErrorResponse(optsArg?: {withReset?: boolean, message?: string}) {
+  const defaultOpts = {
+    withReset: true,
+  }
+  const opts = Object.assign(defaultOpts, optsArg)
+
+  const resp = new Hub.ActionResponse()
+  resp.success = false
+
+  if (opts.withReset) {
+    resp.state = new Hub.ActionState()
+    resp.state.data = "reset"
+  }
+
+  if (opts.message) {
+    resp.message = opts.message
+  }
+
+  return resp
+}
