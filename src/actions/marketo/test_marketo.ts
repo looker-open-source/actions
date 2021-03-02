@@ -1,8 +1,6 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
-
 import * as Hub from "../../hub"
-
 import * as apiKey from "../../server/api_key"
 import Server from "../../server/server"
 import { MarketoAction } from "./marketo"
@@ -12,6 +10,9 @@ const action = new MarketoAction()
 action.executeInOwnProcess = false
 
 describe(`${action.constructor.name} unit tests`, () => {
+  // Use a sandbox to avoid interaction with other test files
+  const marketoSandbox = sinon.createSandbox()
+
   describe("action", () => {
     const sampleData = {
       fields: {
@@ -77,8 +78,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
         }
-        return chai.expect(action.validateAndExecute(request)).to.eventually
-          .be.rejected
+        return chai.expect(action.validateAndExecute(request)).to.eventually.be.rejected
       })
 
       it("errors if subaction is 'none' and there is a campaignId", () => {
@@ -96,8 +96,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
         }
-        return chai.expect(action.validateAndExecute(request)).to.eventually
-          .be.rejected
+        return chai.expect(action.validateAndExecute(request)).to.eventually.be.rejected
       })
 
       it("errors if subaction is not 'none' and there is no campaignId", () => {
@@ -115,8 +114,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
         }
-        return chai.expect(action.validateAndExecute(request)).to.eventually
-          .be.rejected
+        return chai.expect(action.validateAndExecute(request)).to.eventually.be.rejected
       })
 
       it("errors if subaction is not recognized", () => {
@@ -134,8 +132,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
         }
-        return chai.expect(action.validateAndExecute(request)).to.eventually
-          .be.rejected
+        return chai.expect(action.validateAndExecute(request)).to.eventually.be.rejected
       })
 
       it("errors if there is no lookupField", () => {
@@ -152,8 +149,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
         }
-        return chai.expect(action.validateAndExecute(request)).to.eventually
-          .be.rejectedWith("Missing Lookup Field.")
+        return chai.expect(action.validateAndExecute(request)).to.eventually.be.rejectedWith("Missing Lookup Field.")
       })
 
       it("errors if lookupField is not present in query", () => {
@@ -177,48 +173,56 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     describe("sends", () => {
-      const sampleTypeParamsAttachment = {
-        type: Hub.ActionType.Query,
-        params: {
+      let request: Hub.ActionRequest
+      let fakeMarketoClient: any
+      let leadIds: any[]
+      let leadCreateOrUpdateSpy:      sinon.SinonStub
+      let campaignRequestSpy:         sinon.SinonStub
+      let listAddLeadsToListSpy:      sinon.SinonStub
+      let listRemoveLeadsFromListSpy: sinon.SinonStub
+      before(() => {
+        request = new Hub.ActionRequest()
+        request.type = Hub.ActionType.Query
+        request.params = {
           url: "myurl",
           clientID: "myclientID",
           clientSecret: "myclientSecret",
-        },
-        attachment: {
+        }
+        request.attachment = {
           dataBuffer: Buffer.from(JSON.stringify(sampleData)),
-        },
-      }
+        }
 
-      const request = new Hub.ActionRequest()
-      Object.assign(request, sampleTypeParamsAttachment)
+        leadIds = [{id: 1}, {id: 2}, {id: 3}]
 
-      const leadIds = [{id: 1}, {id: 2}, {id: 3}]
+        leadCreateOrUpdateSpy      = marketoSandbox.stub().resolves({success: true, result: leadIds})
+        campaignRequestSpy         = marketoSandbox.stub().resolves({success: true, result: leadIds})
+        listAddLeadsToListSpy      = marketoSandbox.stub().resolves({success: true, result: leadIds})
+        listRemoveLeadsFromListSpy = marketoSandbox.stub().resolves({success: true})
 
-      const leadCreateOrUpdateSpy      = sinon.fake.resolves({success: true, result: leadIds})
-      const campaignRequestSpy         = sinon.fake.resolves({success: true, result: leadIds})
-      const listAddLeadsToListSpy      = sinon.fake.resolves({success: true, result: leadIds})
-      const listRemoveLeadsFromListSpy = sinon.fake.resolves({success: true})
+        fakeMarketoClient = {
+          lead: {
+            createOrUpdate: leadCreateOrUpdateSpy,
+          },
+          campaign: {
+            request: campaignRequestSpy,
+          },
+          list: {
+            addLeadsToList: listAddLeadsToListSpy,
+            removeLeadsFromList: listRemoveLeadsFromListSpy,
+          },
+        }
 
-      const fakeMarketoClient = {
-        lead: {
-          createOrUpdate: leadCreateOrUpdateSpy,
-        },
-        campaign: {
-          request: campaignRequestSpy,
-        },
-        list: {
-          addLeadsToList: listAddLeadsToListSpy,
-          removeLeadsFromList: listRemoveLeadsFromListSpy,
-        },
-      }
-
-      sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").returns(fakeMarketoClient)
+        marketoSandbox.stub(MarketoTransaction.prototype, "marketoClientFromRequest").returns(fakeMarketoClient)
+      })
 
       afterEach(() => {
-        leadCreateOrUpdateSpy.resetHistory()
-        campaignRequestSpy.resetHistory()
-        listAddLeadsToListSpy.resetHistory()
-        listRemoveLeadsFromListSpy.resetHistory()
+        // Clear call history but retain behaviors
+        marketoSandbox.resetHistory()
+      })
+
+      after(() => {
+        // Restore existing methods that had been overridden
+        sinon.restore()
       })
 
       it("sends all the data to Marketo for the legacy request format", async () => {
