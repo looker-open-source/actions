@@ -152,7 +152,6 @@ describe(`${action.constructor.name} class`, () => {
           "&client_id=test_oauth_client_id" +
           `&redirect_uri=https%3A%2F%2Faction-hub.looker.test%2Factions%2F${action.name}%2Foauth_redirect`
 
-
         const actualUrl = await action.oauthUrl(
           `https://action-hub.looker.test/actions/${action.name}/oauth_redirect`,
           "not-actually-encrypted-payload-used-for-test",
