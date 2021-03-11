@@ -71,22 +71,17 @@ export class GoogleAdsActionWorker {
   }
 
   async checkTokens() {
-    if ( this.userState.tokens.expiry_date === null
-      || this.userState.tokens.expiry_date === undefined
-      || this.userState.tokens.expiry_date < Date.now() ) {
+    if ( this.userState.tokens.expiry_date == null || this.userState.tokens.expiry_date < Date.now() ) {
       this.log("debug", "Tokens appear expired; attempting refresh.")
 
-      const oauthClient = this.actionInstance.makeOAuthClient()
-      oauthClient.setCredentials(this.userState.tokens)
+      const data = await this.actionInstance.oauthHelper.refreshAccessToken(this.userState.tokens)
 
-      const getTokenResp = await oauthClient.getAccessToken()
-
-      if (!getTokenResp.res || !getTokenResp.res.data) {
+      if (!data || !data.access_token || !data.expiry_date) {
         throw new MissingAuthError("Could not refresh tokens")
       }
 
-      this.userState.tokens.access_token = getTokenResp.res.data.access_token
-      this.userState.tokens.expiry_date  = getTokenResp.res.data.expiry_date
+      this.userState.tokens.access_token = data.access_token
+      this.userState.tokens.expiry_date  = data.expiry_date
       this.log("debug", "Set new tokens")
     }
   }

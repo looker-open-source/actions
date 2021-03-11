@@ -113,6 +113,10 @@ export class GoogleAdsCustomerMatch
       const adsWorker = await GoogleAdsActionWorker.fromHub(hubReq, this)
       wrappedResp.form = await adsWorker.makeForm()
       return wrappedResp.returnSuccess(adsWorker.userState)
+      // Use this code if you need to force a state reset and redo oauth login
+      // wrappedResp.form = await this.oauthHelper.makeLoginForm(hubReq)
+      // wrappedResp.resetState()
+      // return wrappedResp.returnSuccess()
     } catch (err) {
       if (err instanceof MissingAuthError) {
         this.log("info", "Caught MissingAuthError; returning login form.")

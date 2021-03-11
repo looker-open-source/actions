@@ -1,4 +1,5 @@
 import * as gaxios from "gaxios"
+import * as googleAuth from "google-auth-library"
 import { google } from "googleapis"
 import * as Hub from "../../../hub"
 
@@ -8,6 +9,7 @@ export interface UseGoogleOAuthHelper {
     oauthClientId: string,
     oauthClientSecret: string,
     oauthScopes: string[],
+    makeOAuthClient(): googleAuth.OAuth2Client,
     log(level: string, ...rest: any[]): void
 }
 
@@ -129,5 +131,20 @@ export class GoogleOAuthHelper {
           throw err
         }
       }
+    }
+
+    /******** Helper for ad hoc token refresh ********/
+
+    async refreshAccessToken(currentTokens: googleAuth.Credentials) {
+      const oauthClient = this.actionInstance.makeOAuthClient()
+      oauthClient.setCredentials(currentTokens)
+
+      const getTokenResp = await oauthClient.getAccessToken()
+
+      if (getTokenResp.res == null || getTokenResp.res.data == null) {
+        return undefined
+      }
+
+      return getTokenResp.res.data
     }
 }
