@@ -94,7 +94,8 @@ export class GoogleAnalyticsActionWorker {
       downloadStream
         .pipe(csvStream)
         .on("error", (err) => {
-          this.log("error", "[stream] csv transform stream error:", err.stack)
+          this.log("error", "[stream] csv transform stream error:", err.toString())
+          this.log("error", "[stream] csv transform stream error JSON:", JSON.stringify(err))
         })
         .on("finish", () => {
           this.log("info", "[stream] csv transform stream finished")

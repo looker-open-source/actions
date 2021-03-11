@@ -96,7 +96,8 @@ export class GoogleAnalyticsDataImportAction
       this.log("info", "Execution completed successfully.")
       return wrappedResp.returnSuccess()
     } catch (err) {
-      this.log("error", err.stack)
+      this.log("error", "Execution error:", err.toString())
+      this.log("error", "Exeuction errror JSON:", JSON.stringify(err))
       wrappedResp.errorPrefix = `Error during ${currentStep.toLowerCase()}: `
       return wrappedResp.returnError(err)
     }
@@ -115,20 +116,17 @@ export class GoogleAnalyticsDataImportAction
       // wrappedResp.resetState()
       // return wrappedResp.returnSuccess()
     } catch (err) {
+      const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
       if (err instanceof MissingAuthError) {
         this.log("info", "Caught MissingAuthError; returning login form.")
-        return await this.oauthHelper.makeLoginForm(hubReq)
-      } else if (err.code !== undefined && err.code === "401") {
-        this.log("error", "Caught a 401 error from the API; resetting user state.")
-        const resp = await this.oauthHelper.makeLoginForm(hubReq)
-        resp.fields[0].label =
-          "Received an authentication error from the API, so your GA credentials have been discarded."
-          + " Please reauthenticate to GA and try again."
-        return resp
+        return loginForm
       } else {
-        this.log("error", err.stack)
-        wrappedResp.errorPrefix = "Form generation failed: "
-        return wrappedResp.returnError(err)
+        this.log("error", "Form error:", err.toString())
+        this.log("error", "Form error JSON:", JSON.stringify(err))
+        loginForm.fields[0].label =
+          `Received an error (code ${err.code}) from the API, so your credentials have been discarded.`
+          + " Please reauthenticate and try again."
+        return loginForm
       }
     }
   }

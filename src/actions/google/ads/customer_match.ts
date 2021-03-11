@@ -102,7 +102,8 @@ export class GoogleAdsCustomerMatch
       return wrappedResp.returnSuccess(adsWorker.userState)
 
     } catch (err) {
-      this.log("error", err.stack)
+      this.log("error", "Execution error:", err.toString())
+      this.log("error", "Execution error JSON:", JSON.stringify(err))
       return wrappedResp.returnError(err)
     }
   }
@@ -118,13 +119,17 @@ export class GoogleAdsCustomerMatch
       // wrappedResp.resetState()
       // return wrappedResp.returnSuccess()
     } catch (err) {
+      const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
       if (err instanceof MissingAuthError) {
         this.log("info", "Caught MissingAuthError; returning login form.")
-        const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
         return loginForm
       } else {
-        this.log("error", err.stack)
-        return wrappedResp.returnError(err)
+        this.log("error", "Form error:", err.toString())
+        this.log("error", "Form error JSON:", JSON.stringify(err))
+        loginForm.fields[0].label =
+          `Received an error (code ${err.code}) from the API, so your credentials have been discarded.`
+          + " Please reauthenticate and try again."
+        return loginForm
       }
     }
   }

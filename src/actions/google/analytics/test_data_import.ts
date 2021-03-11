@@ -140,7 +140,7 @@ describe(`${action.constructor.name} class`, () => {
 
       for (const test of tests) {
         it(`returns an error response if there is ${test.name}`, async () => {
-          const request = makeBaseRequest()
+          const request = makeBaseExecuteRequest()
           if (!test.state) {
             delete request.params.state_json
           } else {
@@ -161,7 +161,7 @@ describe(`${action.constructor.name} class`, () => {
 
     describe("required param checks", () => {
       it("returns an error if dataSourceCompositeId is not present", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         delete request.formParams.dataSourceCompositeId
 
@@ -176,7 +176,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("returns an error if dataSourceSchema is not present", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         delete request.formParams.dataSourceSchema
 
@@ -193,7 +193,7 @@ describe(`${action.constructor.name} class`, () => {
 
     describe("ga client setup", () => {
       it("returns an error response if the api client setup fails", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         const testException = new TestException("error in ga client setup")
         gaClientStub.throws(testException)
@@ -210,7 +210,7 @@ describe(`${action.constructor.name} class`, () => {
     describe("upload file step", () => {
 
       it("returns an error response if the API client throws an exception", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         const testException = new TestException("error in file upload")
         uploadDataStub.throws(testException)
@@ -224,7 +224,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("makes the correct API call with correctly transformed data", async () => {
-        const request = makeBaseRequest({deleteOtherFiles: "no"})
+        const request = makeBaseExecuteRequest({deleteOtherFiles: "no"})
 
         const expectedCsv = Buffer.from("new_header_1,new_header_2\ndata_1,data_2")
 
@@ -259,7 +259,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("returns an error response if the api throws an exception", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         const testException = new TestException("message from uploadData test stub")
         uploadDataStub.throws(testException)
@@ -277,7 +277,7 @@ describe(`${action.constructor.name} class`, () => {
 
     describe("update lastUsedFormParams in user state", () => {
       it("does not occur if the upload step failed", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         const testException = new TestException("message from uploadData test stub")
         uploadDataStub.throws(testException)
@@ -293,7 +293,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("updates the values to the form params used on this run", async () => {
-        const request = makeBaseRequest({deleteOtherFiles: "nope"})
+        const request = makeBaseExecuteRequest({deleteOtherFiles: "nope"})
 
         uploadDataStub.resolves({data: {id: "fakeNewIdFromTest"}})
 
@@ -313,7 +313,7 @@ describe(`${action.constructor.name} class`, () => {
 
     describe("delete other files step", () => {
       it("does not occur if the deleteOtherFiles param is not present", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         delete request.formParams.deleteOtherFiles
 
@@ -326,7 +326,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("does not occur if the deleteOtherFiles param is not 'yes'", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         request.formParams.deleteOtherFiles = "no"
 
@@ -339,7 +339,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("does not occur if the upload failed", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         uploadDataStub.throws(new TestException("message from uploadData test stub"))
 
@@ -350,7 +350,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("deletes all files except the one that was just created", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         uploadDataStub.resolves({data: {id: "fakeNewIdFromTest"}})
 
@@ -376,7 +376,7 @@ describe(`${action.constructor.name} class`, () => {
       })
 
       it("returns an error response if it fails", async () => {
-        const request = makeBaseRequest()
+        const request = makeBaseExecuteRequest()
 
         uploadDataStub.resolves({data: {id: "fakeNewIdFromTest"}})
 
@@ -486,6 +486,23 @@ describe(`${action.constructor.name} class`, () => {
           expect(actualForm).to.deep.equal(expectedForm)
         })
       }
+    })
+
+    it("returns a customized login form and resets the user state if there is an error from the API", async () => {
+      const request = makeBaseFormRequest()
+
+      const testException = new TestException("fake error from GA client", "401")
+
+      gaClientStub.throws(testException)
+
+      const expectedForm = makeLoginForm(request.params.state_url!)
+      expectedForm.fields[0].label =
+        `Received an error (code ${testException.code}) from the API, so your credentials have been discarded.`
+        + " Please reauthenticate and try again."
+
+      const actualForm = await action.validateAndFetchForm(request)
+
+      expect(actualForm).to.deep.equal(expectedForm)
     })
 
     it("returns a form with default values set to lastUsedFormParams, if provided", async () => {
@@ -772,14 +789,32 @@ describe(`${action.constructor.name} class`, () => {
 /******** Helpers ********/
 
 class TestException extends Error {
-  constructor(message?: string) {
+  code?: string
+
+  constructor(message?: string, code?: string) {
     super(message)
+    this.code = code
+    this.name = "TestException"
     // See https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html#support-for-newtarget
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
-function makeBaseRequest(optsArg?: any) {
+function makeBaseFormRequest() {
+  const baseReq = new Hub.ActionRequest()
+
+  baseReq.params = {
+    state_url: "https://action-hub.looker.test/action_hub_state/asdfasdfasdfasdf",
+    state_json: JSON.stringify({
+      tokens: {access_token: "accesstoken", refresh_token: "refreshtoken"},
+      redirect: "redirecturl",
+    }),
+  }
+
+  return baseReq
+}
+
+function makeBaseExecuteRequest(optsArg?: any) {
   const defaultOpts = {
     deleteOtherFiles: "yes",
   }
