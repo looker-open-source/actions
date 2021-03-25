@@ -20,16 +20,19 @@ describe(`${action.constructor.name} unit tests`, () => {
             dimensions: [
               { name: "contact_id", tags: ["hubspot_company_id"] },
               { name: "property_one" },
+              { name: "property.two" },
             ],
           },
           data: [
             {
-              contact_id: { value: "0123456" },
-              property_one: { value: "property_one_value_1" },
+              "contact_id": { value: "0123456" },
+              "property_one": { value: "property_one_value_1" },
+              "property.two": { value: "property_two_value_1" },
             },
             {
-              contact_id: { value: "9876543" },
-              property_one: { value: "property_one_value_2" },
+              "contact_id": { value: "9876543" },
+              "property_one": { value: "property_one_value_2" },
+              "property.two": { value: "property_two_value_2" },
             },
           ],
         }),
@@ -39,11 +42,17 @@ describe(`${action.constructor.name} unit tests`, () => {
       inputs: [
         {
           id: "0123456",
-          properties: { property_one: "property_one_value_1" },
+          properties: {
+            property_one: "property_one_value_1",
+            property_two: "property_two_value_1",
+          },
         },
         {
           id: "9876543",
-          properties: { property_one: "property_one_value_2" },
+          properties: {
+            property_one: "property_one_value_2",
+            property_two: "property_two_value_2",
+          },
         },
       ],
     })

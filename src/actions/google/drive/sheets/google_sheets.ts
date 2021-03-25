@@ -9,8 +9,8 @@ import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 import {GoogleDriveAction} from "../google_drive"
 
-const MAX_REQUEST_BATCH = 500
-const MAX_ROW_BUFFER_INCREASE = 2000
+const MAX_REQUEST_BATCH = 1024
+const MAX_ROW_BUFFER_INCREASE = 4000
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -143,9 +143,9 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         return request.stream(async (readable) => {
             return new Promise<void>(async (resolve, reject) => {
-                const csvparser = parse()
+                const csvparser = parse({rtrim: true, ltrim: true})
                 // This will not clear formulas or protected regions
-                await this.clearSheet(spreadsheetId, sheet)
+                await this.clearSheet(spreadsheetId, sheet, sheetId)
                 csvparser.on("data", async (line: any) => {
                     const rowIndex: number = rowCount++
                     // Sanitize line data and properly encapsulate string formatting for CSV lines
@@ -240,13 +240,21 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             })
     }
 
-    async clearSheet(spreadsheetId: string, sheet: Sheet) {
-        return sheet.spreadsheets.values.clear({
+    async clearSheet(spreadsheetId: string, sheet: Sheet, sheetId: number) {
+        return sheet.spreadsheets.batchUpdate({
             spreadsheetId,
-            range: "A:XX",
-        }).catch((err) => {
-            winston.error(err)
-            throw err
+            requestBody: {
+                requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
         })
     }
 

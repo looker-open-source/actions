@@ -54,7 +54,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }))}
       return expectSegmentMatch(request, {
         groupId: "funvalue",
-        anonymousId: "stubanon",
+        anonymousId: null,
         userId: null,
       })
     })
@@ -142,7 +142,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectSegmentMatch(request, {
         groupId: "funvalue",
         userId: null,
-        anonymousId: "stubanon",
+        anonymousId: null,
       })
     })
 
@@ -161,7 +161,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       return expectSegmentMatch(request, {
         groupId: "funvalue",
-        anonymousId: "stubanon",
+        anonymousId: null,
         userId: null,
         traits: {
           zerofield: 0,

@@ -14,6 +14,7 @@ action.executeInOwnProcess = false
 
 const stubFileName = "stubSuggestedFilename"
 const stubFolder = "stubSuggestedFolder"
+const stubSheetId = 1
 
 function expectGoogleSheetsMatch(request: Hub.ActionRequest, paramsMatch: any) {
 
@@ -101,7 +102,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               {
                 pasteData: {
                   coordinate: {
-                    sheetId: 1,
+                    sheetId: stubSheetId,
                     columnIndex: 0,
                     rowIndex: 0,
                   },
@@ -112,7 +113,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               }, {
                 pasteData: {
                   coordinate: {
-                    sheetId: 1,
+                    sheetId: stubSheetId,
                     columnIndex: 0,
                     rowIndex: 1,
                   },
@@ -134,7 +135,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                   sheets: [
                     {
                       properties: {
-                        sheetId: 1,
+                        sheetId: stubSheetId,
                         gridProperties: {
                           rowCount: 5,
                         },
@@ -143,9 +144,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: stubSheetId,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "a,b,c\n1,2,3"
@@ -197,7 +210,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                   sheets: [
                     {
                       properties: {
-                        sheetId: 1,
+                        sheetId: stubSheetId,
                         gridProperties: {
                           rowCount: 5,
                         },
@@ -206,9 +219,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: stubSheetId,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "\"a\",\"b\",\"lol\"\"\",\"c\"\n1,2,3,4"
@@ -253,7 +278,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                   sheets: [
                     {
                       properties: {
-                        sheetId: 1,
+                        sheetId: stubSheetId,
                         gridProperties: {
                           rowCount: 5,
                         },
@@ -262,9 +287,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: stubSheetId,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "a,b,c\n1,2,3"
@@ -311,7 +348,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                   sheets: [
                     {
                       properties: {
-                        sheetId: 1,
+                        sheetId: stubSheetId,
                         gridProperties: {
                           rowCount: 5,
                         },
@@ -320,9 +357,21 @@ describe(`${action.constructor.name} unit tests`, () => {
                   ],
                 },
               }),
-              values: {
-                clear: async () => Promise.resolve(),
-              },
+              batchUpdate: async () => Promise.resolve({
+                spreadsheetId: "1",
+                requestBody: {
+                  requests: [
+                    {
+                      updateCells: {
+                        range: {
+                          sheetId: stubSheetId,
+                        },
+                        fields: "userEnteredValue",
+                      },
+                    },
+                  ],
+            },
+              }),
             },
           })
         const csvFile = "a,b,c\n1,2,3"
