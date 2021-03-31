@@ -345,6 +345,230 @@ describe(`${action.constructor.name} unit tests`, () => {
           done()
         })
       })
+
+      it("retries if a 429 code is recieved", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [
+                    {
+                      id: "fake_id",
+                      name: "random_sheet",
+                    },
+                  ],
+                },
+              }),
+            },
+          })
+
+        const stubSheetClient = sinon.stub(action as any, "sheetsClientFromRequest")
+          .resolves({
+            spreadsheets: {
+              get: async () => Promise.resolve({
+                data: {
+                  sheets: [
+                    {
+                      properties: {
+                        sheetId: 1,
+                        gridProperties: {
+                          rowCount: 5,
+                        },
+                      },
+                    },
+                  ],
+                },
+              }),
+              values: {
+                clear: async () => Promise.resolve(),
+              },
+              batchUpdate: async () => Promise.reject({code: 429}),
+            },
+          })
+        const csvFile = "a,b,c\n1,2,3"
+        process.env.GOOGLE_SHEET_RETRY = "true"
+        const retrySpy = sinon.spy()
+        const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "yes", filename: "random_sheet", folder: "folder"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        chai.expect(action.validateAndExecute(request)).to.eventually.be.fulfilled.then( () => {
+          chai.expect(retryStub).to.have.callCount(1)
+          stubDriveClient.restore()
+          stubSheetClient.restore()
+          retryStub.restore()
+          done()
+        })
+
+      })
+
+      it("does not retry if a non 429 code is recieved", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [
+                    {
+                      id: "fake_id",
+                      name: "random_sheet",
+                    },
+                  ],
+                },
+              }),
+            },
+          })
+
+        const stubSheetClient = sinon.stub(action as any, "sheetsClientFromRequest")
+          .resolves({
+            spreadsheets: {
+              get: async () => Promise.resolve({
+                data: {
+                  sheets: [
+                    {
+                      properties: {
+                        sheetId: 1,
+                        gridProperties: {
+                          rowCount: 5,
+                        },
+                      },
+                    },
+                  ],
+                },
+              }),
+              values: {
+                clear: async () => Promise.resolve(),
+              },
+              batchUpdate: async () => Promise.reject({code: 500}),
+            },
+          })
+        const csvFile = "a,b,c\n1,2,3"
+        process.env.GOOGLE_SHEET_RETRY = "true"
+        const retrySpy = sinon.spy()
+        const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "yes", filename: "random_sheet", folder: "folder"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        chai.expect(action.validateAndExecute(request)).to.eventually.be.fulfilled.then( () => {
+          chai.expect(retryStub).to.have.callCount(0)
+          stubDriveClient.restore()
+          stubSheetClient.restore()
+          retryStub.restore()
+          done()
+        })
+      })
+
+      it("does not retry if the retry env variable is not set", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [
+                    {
+                      id: "fake_id",
+                      name: "random_sheet",
+                    },
+                  ],
+                },
+              }),
+            },
+          })
+
+        const stubSheetClient = sinon.stub(action as any, "sheetsClientFromRequest")
+          .resolves({
+            spreadsheets: {
+              get: async () => Promise.resolve({
+                data: {
+                  sheets: [
+                    {
+                      properties: {
+                        sheetId: 1,
+                        gridProperties: {
+                          rowCount: 5,
+                        },
+                      },
+                    },
+                  ],
+                },
+              }),
+              values: {
+                clear: async () => Promise.resolve(),
+              },
+              batchUpdate: async () => Promise.reject({code: 429}),
+            },
+          })
+        const csvFile = "a,b,c\n1,2,3"
+        process.env.GOOGLE_SHEET_RETRY = ""
+        const retrySpy = sinon.spy()
+        const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "yes", filename: "random_sheet", folder: "folder"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        chai.expect(action.validateAndExecute(request)).to.eventually.be.fulfilled.then( () => {
+          chai.expect(retryStub).to.have.callCount(0)
+          stubDriveClient.restore()
+          stubSheetClient.restore()
+          retryStub.restore()
+          done()
+        })
+      })
+    })
+
+    describe("flush", () => {
+      it("will not retry if the max retry count has been reached", (done) => {
+        const retrySpy = sinon.spy()
+        const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
+        process.env.GOOGLE_SHEET_RETRY = "true"
+        const sheet = {
+          spreadsheets: {
+            batchUpdate: async () => Promise.reject({code: 429}),
+          },
+        }
+        // @ts-ignore
+        chai.expect(action.flush({}, sheet , "0", 6)).to.eventually.be.fulfilled.then( () => {
+          chai.expect(retryStub).to.have.callCount(0)
+          retryStub.restore()
+          done()
+        })
+      })
+
+      it("will retry if the max retry count has not been reached", (done) => {
+        const retrySpy = sinon.spy(() => {
+          return {
+            catch: () => Math.random(),
+          }
+        })
+        const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
+        process.env.GOOGLE_SHEET_RETRY = "true"
+        const sheet = {
+          spreadsheets: {
+            batchUpdate: async () => Promise.reject({code: 429}),
+          },
+        }
+        // @ts-ignore
+        chai.expect(action.flush({}, sheet , "0", 4)).to.eventually.be.fulfilled.then( () => {
+          chai.expect(retryStub).to.have.callCount(1)
+          retryStub.restore()
+          done()
+        })
+      })
     })
 
     describe("form", () => {

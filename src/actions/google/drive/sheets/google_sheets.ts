@@ -9,8 +9,9 @@ import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 import {GoogleDriveAction} from "../google_drive"
 
-const MAX_REQUEST_BATCH = 1024
+const MAX_REQUEST_BATCH = 4096
 const MAX_ROW_BUFFER_INCREASE = 4000
+const MAX_RETRY_COUNT = 5
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -203,7 +204,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                         reject(e)
                                     })
                                 }
-                                await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
+                                await this.flush(requestCopy, sheet, spreadsheetId, 0).catch((e: any) => {
                                     winston.error(e)
                                     reject(e)
                                 })
@@ -217,7 +218,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     await mutex.runExclusive(async () => {
                         // @ts-ignore
                         if (requestBody.requests.length > 0) {
-                            await this.flush(requestBody, sheet, spreadsheetId).catch((e: any) => {
+                            await this.flush(requestBody, sheet, spreadsheetId, 0).catch((e: any) => {
                                 reject(e)
                             })
                         }
@@ -250,9 +251,19 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         })
     }
 
-    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+    async flush(
+        buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,
+        sheet: Sheet,
+        spreadsheetId: string,
+        retryCount: number) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
             winston.info(e)
+            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && retryCount <= MAX_RETRY_COUNT) {
+                return this.flushRetry(buffer, sheet, spreadsheetId, retryCount + 1).catch((error: any) => {
+                    winston.info(`Retry number ${retryCount + 1} failed`)
+                    winston.info(error)
+                })
+            }
         })
     }
 
@@ -260,6 +271,18 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const client = this.oauth2Client(redirect)
         client.setCredentials(tokens)
         return google.sheets({version: "v4", auth: client})
+    }
+
+    protected async flushRetry(
+        buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,
+        sheet: Sheet,
+        spreadsheetId: string,
+        retryCount: number) {
+        setTimeout(() => {
+            this.flush(buffer, sheet, spreadsheetId, retryCount).catch((e: any) => {
+                winston.info(e)
+            })
+        }, 3000 ** retryCount)
     }
 }
 
