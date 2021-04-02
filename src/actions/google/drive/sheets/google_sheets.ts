@@ -259,12 +259,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
             winston.info(e)
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && retryCount <= MAX_RETRY_COUNT) {
-                try {
-                    return this.flushRetry(buffer, sheet, spreadsheetId, retryCount + 1)
-                } catch (e) {
-                    winston.info(`Retry number ${retryCount + 1} failed`)
-                    winston.info(e)
-                }
+                winston.info(`Queueing retry number ${retryCount + 1}`)
+                return this.flushRetry(buffer, sheet, spreadsheetId, retryCount + 1)
             }
         })
     }
