@@ -143,7 +143,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         return request.stream(async (readable) => {
             return new Promise<void>(async (resolve, reject) => {
-                const csvparser = parse({rtrim: true, ltrim: true})
+                const csvparser = parse({rtrim: true, ltrim: true, bom: true})
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet, sheetId)
                 csvparser.on("data", async (line: any) => {
