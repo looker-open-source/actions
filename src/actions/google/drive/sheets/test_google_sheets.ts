@@ -348,7 +348,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     describe("flush", () => {
-      it("will not retry if the max retry count has been reached", (done) => {
+      it("will retry if a 429 code is received", (done) => {
         const retrySpy = sinon.spy()
         const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
         process.env.GOOGLE_SHEET_RETRY = "true"
@@ -358,24 +358,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0", 6)).to.eventually.be.fulfilled.then( () => {
-          chai.expect(retryStub).to.have.callCount(0)
-          retryStub.restore()
-          done()
-        })
-      })
-
-      it("will retry if the max retry count has not been reached", (done) => {
-        const retrySpy = sinon.spy()
-        const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
-        process.env.GOOGLE_SHEET_RETRY = "true"
-        const sheet = {
-          spreadsheets: {
-            batchUpdate: async () => Promise.reject({code: 429}),
-          },
-        }
-        // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0", 4)).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
           chai.expect(retryStub).to.have.callCount(1)
           retryStub.restore()
           done()
@@ -392,7 +375,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0", 1)).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
           done()
@@ -409,9 +392,57 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0", 1)).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
+          done()
+        })
+      })
+    })
+
+    describe("flushRetry", () => {
+      it("will retry until the MAX_RETRY_LIMIT is reached", (done) => {
+        const delayStub = sinon.stub(action as any, "delay")
+
+        const spreadSheetsStub = {
+          batchUpdate: async () => Promise.resolve(),
+        }
+        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 429})
+
+        const sheet = {
+          spreadsheets: spreadSheetsStub,
+        }
+        // @ts-ignore
+        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+          chai.expect(batchUpdateStub).to.have.callCount(5)
+          chai.expect(delayStub).to.have.been.calledWith(3000)
+          chai.expect(delayStub).to.have.been.calledWith(9000)
+          chai.expect(delayStub).to.have.been.calledWith(27000)
+          chai.expect(delayStub).to.have.been.calledWith(81000)
+          chai.expect(delayStub).to.have.been.calledWith(243000)
+          batchUpdateStub.restore()
+          delayStub.restore()
+          done()
+        })
+      })
+
+      it("will only retry if a 429 code is recieved", (done) => {
+        const delayStub = sinon.stub(action as any, "delay")
+
+        const spreadSheetsStub = {
+          batchUpdate: async () => Promise.resolve(),
+        }
+        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 500})
+
+        const sheet = {
+          spreadsheets: spreadSheetsStub,
+        }
+        // @ts-ignore
+        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+          chai.expect(batchUpdateStub).to.have.callCount(1)
+          chai.expect(delayStub).to.have.been.calledWith(3000)
+          batchUpdateStub.restore()
+          delayStub.restore()
           done()
         })
       })
