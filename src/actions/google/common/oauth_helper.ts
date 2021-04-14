@@ -2,6 +2,7 @@ import * as gaxios from "gaxios"
 import * as googleAuth from "google-auth-library"
 import { google } from "googleapis"
 import * as Hub from "../../../hub"
+import { Logger } from "./logger"
 
 // Double dispatch type pattern at work here
 // If the action implements this interface then it can use this helper
@@ -9,15 +10,14 @@ export interface UseGoogleOAuthHelper {
     oauthClientId: string,
     oauthClientSecret: string,
     oauthScopes: string[],
-    makeOAuthClient(): googleAuth.OAuth2Client,
-    log(level: string, ...rest: any[]): void
+    makeOAuthClient(): googleAuth.OAuth2Client
 }
 
 export class GoogleOAuthHelper {
 
     /******** Contsructor & public helpers ********/
 
-    constructor(readonly actionInstance: UseGoogleOAuthHelper & Hub.OAuthAction) {}
+    constructor(readonly actionInstance: UseGoogleOAuthHelper & Hub.OAuthAction, readonly log: Logger) {}
 
     makeOAuthClient(redirectUri: string | undefined) {
       return new google.auth.OAuth2(
@@ -41,7 +41,7 @@ export class GoogleOAuthHelper {
         const actionCrypto = new Hub.ActionCrypto()
         encryptedPayload = await actionCrypto.encrypt(payloadString)
       } catch (e) {
-        this.actionInstance.log("error", "Payload encryption error:", e.toString())
+        this.log("error", "Payload encryption error:", e.toString())
         throw e
       }
 
@@ -50,7 +50,7 @@ export class GoogleOAuthHelper {
       const startAuthUrl =
         `${process.env.ACTION_HUB_BASE_URL}/actions/${this.actionInstance.name}/oauth?state=${encryptedPayload}`
 
-      this.actionInstance.log("debug", "login form has startAuthUrl=", startAuthUrl)
+      this.log("debug", "login form has startAuthUrl=", startAuthUrl)
 
       const form = new Hub.ActionForm()
       form.state = new Hub.ActionState()
@@ -76,7 +76,7 @@ export class GoogleOAuthHelper {
 
       const oauthClient = this.makeOAuthClient(redirectUri)
 
-      this.actionInstance.log("debug", "beginning oauth flow with redirect url:", redirectUri)
+      this.log("debug", "beginning oauth flow with redirect url:", redirectUri)
 
       const url = oauthClient.generateAuthUrl({
         access_type: "offline",
@@ -85,7 +85,7 @@ export class GoogleOAuthHelper {
         state: encryptedPayload,
       })
 
-      this.actionInstance.log("debug", "generated auth url:", url)
+      this.log("debug", "generated Google auth url:", url)
 
       return url
     }
@@ -100,7 +100,7 @@ export class GoogleOAuthHelper {
         const actionCrypto = new Hub.ActionCrypto()
         plaintext = await actionCrypto.decrypt(urlParams.state)
       } catch (err) {
-        this.actionInstance.log("error", "Encryption not correctly configured: ", err.toString())
+        this.log("error", "Encryption not correctly configured: ", err.toString())
         throw err
       }
 
@@ -125,12 +125,13 @@ export class GoogleOAuthHelper {
       } catch (err) {
         // We have seen weird behavior where Looker correctly updates the state, but returns a nonsense status code
         if (err instanceof gaxios.GaxiosError && err.response !== undefined && err.response.status < 100) {
-          this.actionInstance.log("debug", "Ignoring state update response with response code <100")
+          this.log("debug", "Ignoring state update response with response code <100")
         } else {
-          this.actionInstance.log("error", "Error sending user state to Looker:", err.toString())
+          this.log("error", "Error sending user state to Looker:", err.toString())
           throw err
         }
       }
+      this.log("debug", "OAuth login flow complete")
     }
 
     /******** Helper for ad hoc token refresh ********/

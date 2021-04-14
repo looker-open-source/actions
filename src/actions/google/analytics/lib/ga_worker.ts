@@ -1,6 +1,7 @@
 import { Credentials } from "google-auth-library"
 import { analytics_v3, google } from "googleapis"
 import * as Hub from "../../../../hub"
+import { Logger } from "../../common/logger"
 import { MissingAuthError } from "../../common/missing_auth_error"
 import { MissingRequiredParamsError } from "../../common/missing_required_params_error"
 import { safeParseJson } from "../../common/utils"
@@ -15,8 +16,12 @@ interface GAUserState {
 
 export class GoogleAnalyticsActionWorker {
 
-  static async fromHubRequest(hubRequest: Hub.ActionRequest, actionInstance: GoogleAnalyticsDataImportAction) {
-    const gaWorker = new GoogleAnalyticsActionWorker(hubRequest, actionInstance)
+  static async fromHubRequest(
+    hubRequest: Hub.ActionRequest,
+    actionInstance: GoogleAnalyticsDataImportAction,
+    logger: Logger,
+  ) {
+    const gaWorker = new GoogleAnalyticsActionWorker(hubRequest, actionInstance, logger)
     return gaWorker
   }
 
@@ -25,7 +30,11 @@ export class GoogleAnalyticsActionWorker {
   formParams: any
   newUploadId?: string
 
-  constructor(readonly hubRequest: Hub.ActionRequest, readonly actionInstance: GoogleAnalyticsDataImportAction) {
+  constructor(
+    readonly hubRequest: Hub.ActionRequest,
+    readonly actionInstance: GoogleAnalyticsDataImportAction,
+    readonly log: Logger,
+  ) {
     const tmpState = safeParseJson(hubRequest.params.state_json)
 
     if (!tmpState || !tmpState.tokens || !tmpState.redirect) {
@@ -35,10 +44,6 @@ export class GoogleAnalyticsActionWorker {
     this.userState = tmpState
     this.formParams = hubRequest.formParams
     this.gaClient = this.makeGAClient()
-  }
-
-  log(level: string, ...rest: any[]) {
-    return this.actionInstance.log(level, ...rest)
   }
 
   makeGAClient() {
