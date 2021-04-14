@@ -9,8 +9,9 @@ import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 import {GoogleDriveAction} from "../google_drive"
 
-const MAX_REQUEST_BATCH = 1024
+const MAX_REQUEST_BATCH = 4096
 const MAX_ROW_BUFFER_INCREASE = 4000
+const MAX_RETRY_COUNT = 5
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -261,6 +262,33 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
             winston.info(e)
+            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
+                winston.warn("Queueing retry")
+                return this.flushRetry(buffer, sheet, spreadsheetId)
+            }
+        })
+    }
+
+    async flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+        let retrySuccess = false
+        let retryCount = 1
+        while (!retrySuccess && retryCount <= MAX_RETRY_COUNT) {
+            retrySuccess = true
+            await this.delay((3 ** retryCount) * 1000)
+            await sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
+                if (e.code === 429) {
+                    retrySuccess = false
+                    winston.warn(`Retry number ${retryCount} failed`)
+                    winston.info(e)
+                }
+            })
+            retryCount++
+        }
+    }
+
+    protected async delay(time: number) {
+        await new Promise<void>((resolve) => {
+            setTimeout(resolve, time)
         })
     }
 
