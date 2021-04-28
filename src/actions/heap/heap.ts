@@ -17,8 +17,9 @@ export class HeapAction extends Hub.Action {
     "https://heapanalytics.com/api/add_user_properties"
   static ADD_ACCOUNT_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_account_properties"
-  description = "Add user properties to your Heap users"
-  label = "Heap Add User Properties"
+  description = "Add user and account properties to your Heap dataset"
+  label = "Heap"
+  iconName = "heap/heap.svg"
   name = "heap"
   params = [
     {
@@ -157,3 +158,5 @@ export class HeapAction extends Hub.Action {
     return { properties, heapFieldValue }
   }
 }
+
+Hub.addAction(new HeapAction())
