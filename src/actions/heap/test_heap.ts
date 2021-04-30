@@ -4,7 +4,13 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../../src/hub"
 
-import { HeapAction, HeapTag, HeapTags } from "./heap"
+import {
+  HeapAction,
+  HeapField,
+  HeapFields,
+  HeapPropertyType,
+  HeapPropertyTypes,
+} from "./heap"
 
 const action = new HeapAction()
 
@@ -18,12 +24,18 @@ describe(`${action.constructor.name} unit tests`, () => {
   after(stubPost.restore)
 
   const buildRequest = (
+    propertyType: HeapPropertyType,
+    heapFieldName: string,
     fields: { name: string }[],
     data: { [K in string]: { value: string } }[],
   ): Hub.ActionRequest => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
     request.params = { heap_app_id: APP_ID }
+    request.formParams = {
+      heap_field: heapFieldName,
+      property_type: propertyType,
+    }
     request.attachment = {
       dataBuffer: Buffer.from(
         JSON.stringify({ fields: { dimensions: fields }, data }),
@@ -35,7 +47,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   const expectRequestSent = (
     url: string,
     properties: { [K in string]: string },
-    heapTag: HeapTag,
+    heapTag: HeapField,
     heapTagValue: string,
   ) => {
     chai.expect(stubPost).to.have.been.calledWith({
@@ -51,61 +63,83 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("Common Validation", () => {
     it("should throw when app ID is missing", async () => {
-      const fields = [{ name: "property1" }]
-      const data = [{ property1: { value: "value1" } }]
-      const request = buildRequest(fields, data)
+      const fields = [{ name: "email" }]
+      const data = [{ email: { value: "value1" } }]
+      const request = buildRequest(
+        HeapPropertyTypes.User,
+        "email",
+        fields,
+        data,
+      )
       request.params = {}
 
       chai.expect(action.validateAndExecute(request)).to.be.eventually.rejected
       chai.expect(stubPost).to.have.not.been.called
     })
 
-    it("should fail when Heap tag is missing", async () => {
-      const fields = [{ name: "property1" }]
-      const data = [{ property1: { value: "value1" } }]
-      const request = buildRequest(fields, data)
+    it("should throw when Heap field column is not provided", async () => {
+      const fields = [{ name: "email" }]
+      const data = [{ email: { value: "value1" } }]
+      const request = buildRequest(HeapPropertyTypes.User, "", fields, data)
 
-      const response = await action.validateAndExecute(request)
-
-      chai.expect(response.success).to.equal(false)
       chai
-        .expect(response.message)
-        .to.match(new RegExp("Did not find one of the required tags"))
-      chai.expect(stubPost).to.have.not.been.called
-    })
-
-    it("should fail when more one fields are tagged with a Heap tag", async () => {
-      const fields = [
-        { name: "property1", tags: ["identity"] },
-        { name: "property2", tags: ["identity"] },
-      ]
-      const data = [
-        { property1: { value: "value1" }, property2: { value: "value2" } },
-      ]
-      const request = buildRequest(fields, data)
-
-      const response = await action.validateAndExecute(request)
-
-      chai.expect(response.success).to.equal(false)
-      chai
-        .expect(response.message)
-        .to.match(
-          new RegExp("Found multiple columns tagged with one of the Heap tags"),
+        .expect(action.validateAndExecute(request))
+        .to.be.eventually.rejectedWith(
+          new RegExp("Column mapping to a Heap field must be provided"),
         )
       chai.expect(stubPost).to.have.not.been.called
     })
 
-    it("should fail when a field is tagged with more than one Heap tag", async () => {
-      const fields = [{ name: "property1", tags: ["identity", "account_id"] }]
-      const data = [{ property1: { value: "value1" } }]
-      const request = buildRequest(fields, data)
+    it("should throw when provided unsupported property type", async () => {
+      const fields = [{ name: "email" }]
+      const data = [{ email: { value: "value1" } }]
+      const request = buildRequest(
+        "unsupported" as HeapPropertyType,
+        "email",
+        fields,
+        data,
+      )
+
+      chai
+        .expect(action.validateAndExecute(request))
+        .to.be.eventually.rejectedWith(new RegExp("Unsupported property type"))
+      chai.expect(stubPost).to.have.not.been.called
+    })
+
+    it("should throw when Heap field is missing", async () => {
+      const fields = [{ name: "name" }]
+      const data = [{ name: { value: "value1" } }]
+      const request = buildRequest(
+        HeapPropertyTypes.User,
+        "email",
+        fields,
+        data,
+      )
+
+      chai
+        .expect(action.validateAndExecute(request))
+        .to.be.eventually.rejectedWith(
+          "Heap field (email) is missing in the query result.",
+        )
+      chai.expect(stubPost).to.have.not.been.called
+    })
+
+    it("should fail when Heap field is empty in a row", async () => {
+      const fields = [{ name: "email" }]
+      const data = [{ email: { value: "" } }]
+      const request = buildRequest(
+        HeapPropertyTypes.User,
+        "email",
+        fields,
+        data,
+      )
 
       const response = await action.validateAndExecute(request)
 
       chai.expect(response.success).to.equal(false)
       chai
         .expect(response.message)
-        .to.match(new RegExp("Found a field tagged with multiple Heap tags"))
+        .to.match(new RegExp("Found a row with an empty email field"))
       chai.expect(stubPost).to.have.not.been.called
     })
   })
@@ -129,7 +163,12 @@ describe(`${action.constructor.name} unit tests`, () => {
           email: { value: "testB@heap.io" },
         },
       ]
-      const request = buildRequest(fields, data)
+      const request = buildRequest(
+        HeapPropertyTypes.User,
+        "email",
+        fields,
+        data,
+      )
 
       const response = await action.validateAndExecute(request)
 
@@ -141,7 +180,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           "Looker property1": "value1A",
           "Looker property2": "value2A",
         },
-        HeapTags.Identity,
+        HeapFields.Identity,
         "testA@heap.io",
       )
       expectRequestSent(
@@ -150,7 +189,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           "Looker property1": "value1B",
           "Looker property2": "value2B",
         },
-        HeapTags.Identity,
+        HeapFields.Identity,
         "testB@heap.io",
       )
     })
@@ -175,7 +214,12 @@ describe(`${action.constructor.name} unit tests`, () => {
           "account ID": { value: "accountB" },
         },
       ]
-      const request = buildRequest(fields, data)
+      const request = buildRequest(
+        HeapPropertyTypes.Account,
+        "account ID",
+        fields,
+        data,
+      )
 
       const response = await action.validateAndExecute(request)
 
@@ -187,7 +231,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           "Looker property1": "value1A",
           "Looker property2": "value2A",
         },
-        HeapTags.AccountId,
+        HeapFields.AccountId,
         "accountA",
       )
       expectRequestSent(
@@ -196,7 +240,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           "Looker property1": "value1B",
           "Looker property2": "value2B",
         },
-        HeapTags.AccountId,
+        HeapFields.AccountId,
         "accountB",
       )
     })

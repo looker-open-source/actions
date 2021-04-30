@@ -2,15 +2,23 @@ import * as Hub from "../../hub"
 
 import * as req from "request-promise-native"
 
-// HeapTags enumerates supported identifiers for each endpoint
+export enum HeapPropertyTypes {
+  User = "user",
+  Account = "account",
+}
+export type HeapPropertyType =
+  | HeapPropertyTypes.Account
+  | HeapPropertyTypes.User
+
+// HeapFields enumerates supported identifiers for each endpoint
 // - "identity" is the user identifier for the user properties export
 // - "account_id" is the account identifier for the account properties export
-export enum HeapTags {
+export enum HeapFields {
   Identity = "identity",
   AccountId = "account_id",
 }
 
-export type HeapTag = HeapTags.Identity | HeapTags.AccountId
+export type HeapField = HeapFields.Identity | HeapFields.AccountId
 
 export class HeapAction extends Hub.Action {
   static ADD_USER_PROPERTIES_URL =
@@ -31,53 +39,63 @@ export class HeapAction extends Hub.Action {
     },
   ]
   supportedActionTypes = [Hub.ActionType.Query]
-  allowedIdTags: string[] = Object.values(HeapTags)
-  requiredFields = [{ any_tag: this.allowedIdTags }]
+  supportedPropertyTypes = [HeapPropertyTypes.User, HeapPropertyTypes.Account]
   usesStreaming = true
   supportedFormats = [Hub.ActionFormat.JsonDetail]
 
   async execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
-    let allFields: Hub.Field[] = []
-    const errors: Error[] = []
-    let heapField: Hub.Field
-    let heapTag: HeapTag
-    let requestUrl: string
-    const baseRequestBody = { app_id: request.params.heap_app_id }
-
-    try {
-      await request.streamJsonDetail({
-        // :TODO: verify onFields is ran synchronously before onRow
-        onFields: (fields) => {
-          allFields = Hub.allFields(fields)
-          const heapFieldAndTag = this.extractHeapFieldAndTag(allFields)
-          heapField = heapFieldAndTag.heapField
-          heapTag = heapFieldAndTag.heapTag
-          requestUrl = this.resolveApiEndpoint(heapTag)
-        },
-        // :TODO: possibly optimize by batching rows and calling the bulk endpoint
-        onRow: (row) => {
-          try {
-            const {
-              heapFieldValue,
-              properties,
-            } = this.extractPropertiesFromRow(row, heapField, heapTag)
-            const requestBody = Object.assign({}, baseRequestBody, {
-              [heapTag]: heapFieldValue,
-              properties,
-            })
-            req.post({
-              uri: requestUrl,
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(requestBody),
-            })
-          } catch (err) {
-            errors.push(err)
-          }
-        },
-      })
-    } catch (err) {
-      errors.push(err)
+    if (
+      !request.formParams.property_type ||
+      !(this.supportedPropertyTypes as string[]).includes(
+        request.formParams.property_type,
+      )
+    ) {
+      throw new Error(
+        `Unsupported property type: ${request.formParams.property_type}`,
+      )
     }
+    const propertyType: HeapPropertyType = request.formParams
+      .property_type as HeapPropertyType
+
+    if (
+      !request.formParams.heap_field ||
+      request.formParams.heap_field.length === 0
+    ) {
+      throw new Error("Column mapping to a Heap field must be provided.")
+    }
+    const heapFieldName: string = request.formParams.heap_field
+
+    const heapField = this.resolveHeapField(propertyType)
+    const requestUrl = this.resolveApiEndpoint(propertyType)
+    const baseRequestBody = { app_id: request.params.heap_app_id }
+    const errors: Error[] = []
+
+    await request.streamJsonDetail({
+      onFields: (fieldset) => {
+        const allFields = Hub.allFields(fieldset)
+        this.validateHeapFieldExistence(allFields, heapFieldName)
+      },
+      // :TODO: possibly optimize by batching rows and calling the bulk endpoint
+      onRow: (row) => {
+        try {
+          const { heapFieldValue, properties } = this.extractPropertiesFromRow(
+            row,
+            heapFieldName,
+          )
+          const requestBody = Object.assign({}, baseRequestBody, {
+            [heapField]: heapFieldValue,
+            properties,
+          })
+          req.post({
+            uri: requestUrl,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+          })
+        } catch (err) {
+          errors.push(err)
+        }
+      },
+    })
 
     if (errors.length === 0) {
       return new Hub.ActionResponse({ success: true })
@@ -86,68 +104,78 @@ export class HeapAction extends Hub.Action {
     return new Hub.ActionResponse({ success: false, message: errorMsg })
   }
 
-  private extractHeapFieldAndTag(
+  async form() {
+    const form = new Hub.ActionForm()
+    form.fields = [
+      {
+        label: "Property Type",
+        name: "property_type",
+        required: true,
+        options: [
+          { name: HeapPropertyTypes.Account, label: "Account" },
+          { name: HeapPropertyTypes.User, label: "User" },
+        ],
+        type: "select",
+      },
+      {
+        label: "Heap Field (identity or account_id field)",
+        name: "heap_field",
+        required: true,
+        type: "string",
+      },
+    ]
+    return form
+  }
+
+  private validateHeapFieldExistence(
     fields: Hub.Field[],
-  ): { heapField: Hub.Field; heapTag: HeapTag } {
-    const maybeHeapFields = fields.filter(
-      (field) =>
-        field.tags &&
-        field.tags.length > 0 &&
-        field.tags.some((tag) => this.allowedIdTags.includes(tag)),
-    )
-    if (maybeHeapFields.length === 1) {
-      const heapField = maybeHeapFields[0]
-      const heapTags = heapField.tags!.filter((tag) =>
-        this.allowedIdTags.includes(tag),
-      )
-      if (heapTags.length > 1) {
-        throw new Error(
-          `Found a field tagged with multiple Heap tags: ${heapTags.join(", ")}`,
-        )
-      }
-      return { heapField, heapTag: heapTags[0] as HeapTag }
-    } else if (maybeHeapFields.length === 0) {
+    heapFieldName: string,
+  ) {
+    const heapFields = fields.filter((field) => field.name === heapFieldName)
+    if (heapFields.length !== 1) {
       throw new Error(
-        `Did not find one of the required tags: ${this.allowedIdTags.join(
-          ", ",
-        )}`,
-      )
-    } else {
-      throw new Error(
-        `Found multiple columns tagged with one of the Heap tags: ${maybeHeapFields
-          .map((field) => field.name)
-          .join(", ")}`,
+        `Heap field (${heapFieldName}) is missing in the query result.`,
       )
     }
   }
 
-  private resolveApiEndpoint(heapTag: HeapTag): string {
-    switch (heapTag) {
-      case HeapTags.Identity:
+  private resolveHeapField(propertyType: HeapPropertyType): HeapField {
+    switch (propertyType) {
+      case HeapPropertyTypes.Account:
+        return HeapFields.AccountId
+      case HeapPropertyTypes.User:
+        return HeapFields.Identity
+      default:
+        throw new Error(`Unsupported property type: ${propertyType}`)
+    }
+  }
+
+  private resolveApiEndpoint(propertyType: HeapPropertyType): string {
+    switch (propertyType) {
+      case HeapPropertyTypes.User:
         return HeapAction.ADD_USER_PROPERTIES_URL
-      case HeapTags.AccountId:
+      case HeapPropertyTypes.Account:
         return HeapAction.ADD_ACCOUNT_PROPERTIES_URL
       default:
-        throw new Error(`Unsupported Heap tag: ${heapTag}`)
+        throw new Error(`Unsupported property type: ${propertyType}`)
     }
   }
 
   private extractPropertiesFromRow(
     row: Hub.JsonDetail.Row,
-    heapField: Hub.Field,
-    heapTag: HeapTag,
+    heapFieldName: string,
   ): { heapFieldValue: string; properties: { [K in string]: string } } {
-    if (!row.hasOwnProperty(heapField.name)) {
-      throw new Error(`Found a row without the ${heapTag} field`)
+    if (!row.hasOwnProperty(heapFieldName)) {
+      throw new Error(`Found a row without the ${heapFieldName} field`)
     }
-    const heapFieldValue = row[heapField.name].value.toString()
+    const heapFieldValue = row[heapFieldName].value.toString()
     if (heapFieldValue === "") {
-      throw new Error(`Found a row with an empty ${heapField.name} field. ${heapTag} is a required value`)
+      throw new Error(`Found a row with an empty ${heapFieldName} field.`)
     }
 
     const properties: { [K in string]: string } = {}
     for (const [fieldName, cell] of Object.entries(row)) {
-      if (fieldName !== heapField.name) {
+      if (fieldName !== heapFieldName) {
         const lookerPropertyName = "Looker " + fieldName
         // :TODO: what are and how to handle PivotCells?
         properties[lookerPropertyName] = cell.value
