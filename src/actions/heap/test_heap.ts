@@ -15,7 +15,7 @@ import {
 const action = new HeapAction()
 
 describe(`${action.constructor.name} unit tests`, () => {
-  const APP_ID = "1"
+  const ENV_ID = "1"
   const stubPost = sinon.stub(req, "post").returns(undefined)
   beforeEach(() => {
     stubPost.reset()
@@ -26,12 +26,12 @@ describe(`${action.constructor.name} unit tests`, () => {
   const buildRequest = (
     propertyType: HeapPropertyType,
     heapFieldName: string,
-    fields: { name: string }[],
+    fields: { name: string, label: string }[],
     data: { [K in string]: { value: string } }[],
   ): Hub.ActionRequest => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
-    request.params = { heap_app_id: APP_ID }
+    request.params = { heap_env_id: ENV_ID }
     request.formParams = {
       heap_field: heapFieldName,
       property_type: propertyType,
@@ -54,7 +54,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       uri: url,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        app_id: APP_ID,
+        app_id: ENV_ID,
         [heapTag]: heapTagValue,
         properties,
       }),
@@ -62,8 +62,8 @@ describe(`${action.constructor.name} unit tests`, () => {
   }
 
   describe("Common Validation", () => {
-    it("should throw when app ID is missing", async () => {
-      const fields = [{ name: "email" }]
+    it("should throw when env ID is missing", async () => {
+      const fields = [{ name: "email", label: "email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(
         HeapPropertyTypes.User,
@@ -78,7 +78,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("should throw when Heap field column is not provided", async () => {
-      const fields = [{ name: "email" }]
+      const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(HeapPropertyTypes.User, "", fields, data)
 
@@ -91,7 +91,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("should throw when provided unsupported property type", async () => {
-      const fields = [{ name: "email" }]
+      const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(
         "unsupported" as HeapPropertyType,
@@ -107,7 +107,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("should throw when Heap field is missing", async () => {
-      const fields = [{ name: "name" }]
+      const fields = [{ name: "name", label: "Email" }]
       const data = [{ name: { value: "value1" } }]
       const request = buildRequest(
         HeapPropertyTypes.User,
@@ -125,7 +125,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("should fail when Heap field is empty in a row", async () => {
-      const fields = [{ name: "email" }]
+      const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "" } }]
       const request = buildRequest(
         HeapPropertyTypes.User,
@@ -147,9 +147,9 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("Add User Properties", () => {
     it("should send a request for each row", async () => {
       const fields = [
-        { name: "property1" },
-        { name: "property2" },
-        { name: "email", tags: ["identity"] },
+        { name: "property1", label: "Property 1" },
+        { name: "property2", label: "Property 2" },
+        { name: "email", tags: ["identity"], label: "Email" },
       ]
       const data = [
         {
@@ -177,8 +177,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       expectRequestSent(
         HeapAction.ADD_USER_PROPERTIES_URL,
         {
-          "Looker property1": "value1A",
-          "Looker property2": "value2A",
+          "Looker Property 1": "value1A",
+          "Looker Property 2": "value2A",
         },
         HeapFields.Identity,
         "testA@heap.io",
@@ -186,8 +186,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       expectRequestSent(
         HeapAction.ADD_USER_PROPERTIES_URL,
         {
-          "Looker property1": "value1B",
-          "Looker property2": "value2B",
+          "Looker Property 1": "value1B",
+          "Looker Property 2": "value2B",
         },
         HeapFields.Identity,
         "testB@heap.io",
@@ -198,9 +198,9 @@ describe(`${action.constructor.name} unit tests`, () => {
   describe("Add Account Properties", () => {
     it("should send a request for each row", async () => {
       const fields = [
-        { name: "property1" },
-        { name: "property2" },
-        { name: "account ID", tags: ["account_id"] },
+        { name: "property1", label: "Property 1" },
+        { name: "property2", label: "Property 2" },
+        { name: "account ID", tags: ["account_id"], label: "Account ID"},
       ]
       const data = [
         {
@@ -228,8 +228,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       expectRequestSent(
         HeapAction.ADD_ACCOUNT_PROPERTIES_URL,
         {
-          "Looker property1": "value1A",
-          "Looker property2": "value2A",
+          "Looker Property 1": "value1A",
+          "Looker Property 2": "value2A",
         },
         HeapFields.AccountId,
         "accountA",
@@ -237,8 +237,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       expectRequestSent(
         HeapAction.ADD_ACCOUNT_PROPERTIES_URL,
         {
-          "Looker property1": "value1B",
-          "Looker property2": "value2B",
+          "Looker Property 1": "value1B",
+          "Looker Property 2": "value2B",
         },
         HeapFields.AccountId,
         "accountB",
