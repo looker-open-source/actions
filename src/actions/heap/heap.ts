@@ -1,7 +1,6 @@
-import * as Hub from "../../hub"
-
 import * as req from "request-promise-native"
-import { Field } from '../../../lib/hub';
+
+import * as Hub from "../../hub"
 
 export enum HeapPropertyTypes {
   User = "user",
@@ -145,12 +144,12 @@ export class HeapAction extends Hub.Action {
     }
   }
 
-  private extractFieldMap(allFields: Field[]): LookerFieldMap {
+  private extractFieldMap(allFields: Hub.Field[]): LookerFieldMap {
     return allFields.reduce((fieldMap: LookerFieldMap, field: Hub.Field) => {
-      const fieldName = field.name;
-      fieldMap[fieldName] = field;
-      return fieldMap;
-    }, {} as LookerFieldMap);
+      const fieldName = field.name
+      fieldMap[fieldName] = field
+      return fieldMap
+    }, {} as LookerFieldMap)
   }
 
   private resolveHeapField(propertyType: HeapPropertyType): HeapField {
@@ -192,7 +191,7 @@ export class HeapAction extends Hub.Action {
     for (const [fieldName, cell] of Object.entries(row)) {
       if (fieldName !== heapFieldName) {
         // Field labels are the original name of the property that has not been sanitized or snake-cased.
-        const fieldLabel = allFieldMap[fieldName].label ?? fieldName;
+        const fieldLabel = allFieldMap[fieldName].label !== undefined ? allFieldMap[fieldName].label : fieldName
         const lookerPropertyName = "Looker " + fieldLabel
         // :TODO: what are and how to handle PivotCells?
         properties[lookerPropertyName] = cell.value
