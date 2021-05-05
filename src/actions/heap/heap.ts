@@ -1,6 +1,7 @@
 import * as Hub from "../../hub"
 
 import * as req from "request-promise-native"
+import { Field } from '../../../lib/hub';
 
 export enum HeapPropertyTypes {
   User = "user",
@@ -20,6 +21,8 @@ export enum HeapFields {
 
 export type HeapField = HeapFields.Identity | HeapFields.AccountId
 
+type LookerFieldMap = { [fieldName: string]: Hub.Field };
+
 export class HeapAction extends Hub.Action {
   static ADD_USER_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_user_properties"
@@ -31,9 +34,9 @@ export class HeapAction extends Hub.Action {
   name = "heap"
   params = [
     {
-      description: "Heap App ID",
-      label: "Heap App ID",
-      name: "heap_app_id",
+      description: "Heap Env ID",
+      label: "Heap Env ID",
+      name: "heap_env_id",
       required: true,
       sensitive: true,
     },
@@ -65,15 +68,17 @@ export class HeapAction extends Hub.Action {
     }
     const heapFieldName: string = request.formParams.heap_field
 
+    let fieldMap: LookerFieldMap = {} as LookerFieldMap;
     const heapField = this.resolveHeapField(propertyType)
     const requestUrl = this.resolveApiEndpoint(propertyType)
-    const baseRequestBody = { app_id: request.params.heap_app_id }
+    const baseRequestBody = { app_id: request.params.heap_env_id }
     const errors: Error[] = []
 
     await request.streamJsonDetail({
       onFields: (fieldset) => {
-        const allFields = Hub.allFields(fieldset)
-        this.validateHeapFieldExistence(allFields, heapFieldName)
+        const allFields = Hub.allFields(fieldset);
+        this.validateHeapFieldExistence(allFields, heapFieldName);
+        fieldMap = this.extractFieldMap(allFields);
       },
       // :TODO: possibly optimize by batching rows and calling the bulk endpoint
       onRow: (row) => {
@@ -81,6 +86,7 @@ export class HeapAction extends Hub.Action {
           const { heapFieldValue, properties } = this.extractPropertiesFromRow(
             row,
             heapFieldName,
+            fieldMap,
           )
           const requestBody = Object.assign({}, baseRequestBody, {
             [heapField]: heapFieldValue,
@@ -139,6 +145,14 @@ export class HeapAction extends Hub.Action {
     }
   }
 
+  private extractFieldMap(allFields: Field[]): LookerFieldMap {
+    return allFields.reduce((fieldMap: LookerFieldMap, field: Hub.Field) => {
+      const fieldName = field.name;
+      fieldMap[fieldName] = field;
+      return fieldMap;
+    }, {} as LookerFieldMap);
+  }
+
   private resolveHeapField(propertyType: HeapPropertyType): HeapField {
     switch (propertyType) {
       case HeapPropertyTypes.Account:
@@ -164,6 +178,7 @@ export class HeapAction extends Hub.Action {
   private extractPropertiesFromRow(
     row: Hub.JsonDetail.Row,
     heapFieldName: string,
+    allFieldMap: LookerFieldMap,
   ): { heapFieldValue: string; properties: { [K in string]: string } } {
     if (!row.hasOwnProperty(heapFieldName)) {
       throw new Error(`Found a row without the ${heapFieldName} field`)
@@ -176,7 +191,9 @@ export class HeapAction extends Hub.Action {
     const properties: { [K in string]: string } = {}
     for (const [fieldName, cell] of Object.entries(row)) {
       if (fieldName !== heapFieldName) {
-        const lookerPropertyName = "Looker " + fieldName
+        // Field labels are the original name of the property that has not been sanitized or snake-cased.
+        const fieldLabel = allFieldMap[fieldName].label ?? fieldName;
+        const lookerPropertyName = "Looker " + fieldLabel
         // :TODO: what are and how to handle PivotCells?
         properties[lookerPropertyName] = cell.value
           .toString()
