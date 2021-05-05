@@ -31,9 +31,9 @@ export class HeapAction extends Hub.Action {
   name = "heap"
   params = [
     {
-      description: "Heap App ID",
-      label: "Heap App ID",
-      name: "heap_app_id",
+      description: "Heap Env ID",
+      label: "Heap Env ID",
+      name: "heap_env_id",
       required: true,
       sensitive: true,
     },
@@ -67,7 +67,7 @@ export class HeapAction extends Hub.Action {
 
     const heapField = this.resolveHeapField(propertyType)
     const requestUrl = this.resolveApiEndpoint(propertyType)
-    const baseRequestBody = { app_id: request.params.heap_app_id }
+    const baseRequestBody = { app_id: request.params.heap_env_id }
     const errors: Error[] = []
 
     await request.streamJsonDetail({
