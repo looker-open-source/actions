@@ -6,8 +6,6 @@ import * as Hub from "../../../src/hub"
 
 import {
   HeapAction,
-  HeapField,
-  HeapFields,
   HeapPropertyType,
   HeapPropertyTypes,
 } from "./heap"
@@ -44,19 +42,42 @@ describe(`${action.constructor.name} unit tests`, () => {
     return request
   }
 
-  const expectRequestSent = (
-    url: string,
+  const expectAddUserPropertyRequest = (
     properties: { [K in string]: string | number },
-    heapTag: HeapField,
-    heapTagValue: string,
+    heapIdentity: string,
   ) => {
     chai.expect(stubPost).to.have.been.calledWith({
-      uri: url,
+      uri: HeapAction.ADD_USER_PROPERTIES_URL,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         app_id: ENV_ID,
-        [heapTag]: heapTagValue,
-        properties,
+        library: "looker",
+        users: [
+          {
+            user_identifier: { email: heapIdentity },
+            properties,
+          },
+        ],
+      }),
+    })
+  }
+
+  const expectAddAccountPropertyRequest = (
+    properties: { [K in string]: string | number },
+    heapAccountId: string,
+  ) => {
+    chai.expect(stubPost).to.have.been.calledWith({
+      uri: HeapAction.ADD_ACCOUNT_PROPERTIES_URL,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_id: ENV_ID,
+        library: "looker",
+        accounts: [
+          {
+            account_id: heapAccountId,
+            properties,
+          },
+        ],
       }),
     })
   }
@@ -174,22 +195,18 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       chai.expect(response.success).to.equal(true)
       chai.expect(stubPost).to.have.been.calledTwice
-      expectRequestSent(
-        HeapAction.ADD_USER_PROPERTIES_URL,
+      expectAddUserPropertyRequest(
         {
           "Looker Property 1": "value1A",
           "Looker Property 2": "value2A",
         },
-        HeapFields.Identity,
         "testA@heap.io",
       )
-      expectRequestSent(
-        HeapAction.ADD_USER_PROPERTIES_URL,
+      expectAddUserPropertyRequest(
         {
           "Looker Property 1": "value1B",
           "Looker Property 2": "value2B",
         },
-        HeapFields.Identity,
         "testB@heap.io",
       )
     })
@@ -225,22 +242,18 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       chai.expect(response.success).to.equal(true)
       chai.expect(stubPost).to.have.been.calledTwice
-      expectRequestSent(
-        HeapAction.ADD_ACCOUNT_PROPERTIES_URL,
+      expectAddAccountPropertyRequest(
         {
           "Looker Property 1": "value1A",
           "Looker Property 2": "value2A",
         },
-        HeapFields.AccountId,
         "accountA",
       )
-      expectRequestSent(
-        HeapAction.ADD_ACCOUNT_PROPERTIES_URL,
+      expectAddAccountPropertyRequest(
         {
           "Looker Property 1": "value1B",
           "Looker Property 2": "value2B",
         },
-        HeapFields.AccountId,
         "accountB",
       )
     })
@@ -269,13 +282,11 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       await action.validateAndExecute(request)
 
-      expectRequestSent(
-        HeapAction.ADD_ACCOUNT_PROPERTIES_URL,
+      expectAddAccountPropertyRequest(
         {
           "Looker Property 1": 1,
           "Looker Property 2": "value2",
         },
-        HeapFields.AccountId,
         "account",
       )
     })
