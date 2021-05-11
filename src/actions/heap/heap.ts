@@ -22,11 +22,15 @@ export type HeapField = HeapFields.Identity | HeapFields.AccountId
 
 interface LookerFieldMap { [fieldName: string]: Hub.Field }
 
+interface PropertyMap { [property: string]: string }
+
 export class HeapAction extends Hub.Action {
   static ADD_USER_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_user_properties"
   static ADD_ACCOUNT_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_account_properties"
+  static HEAP_LIBRARY = "looker"
+
   description = "Add user and account properties to your Heap dataset"
   label = "Heap"
   iconName = "heap/heap.svg"
@@ -71,7 +75,6 @@ export class HeapAction extends Hub.Action {
     let fieldMap: LookerFieldMap = {} as LookerFieldMap
     const heapField = this.resolveHeapField(propertyType)
     const requestUrl = this.resolveApiEndpoint(propertyType)
-    const baseRequestBody = { app_id: request.params.heap_env_id }
     const errors: Error[] = []
 
     await request.streamJsonDetail({
@@ -89,14 +92,16 @@ export class HeapAction extends Hub.Action {
             heapFieldLabel,
             fieldMap,
           )
-          const requestBody = Object.assign({}, baseRequestBody, {
-            [heapField]: heapFieldValue,
+          const requestBody = this.constructBodyForRequest(
+            request.params.heap_env_id!,
+            heapField,
+            heapFieldValue,
             properties,
-          })
+          )
           req.post({
             uri: requestUrl,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody),
+            body: requestBody,
           })
         } catch (err) {
           errors.push(err)
@@ -196,16 +201,41 @@ export class HeapAction extends Hub.Action {
       if (fieldName !== heapFieldName) {
         const field = allFieldMap[fieldName]
         // Field labels are the original name of the property that has not been sanitized or snake-cased.
-        const fieldLabel = field.label !== undefined ? field.label : fieldName
-        const lookerPropertyName = "Looker " + fieldLabel
+        const propertyName = field.label !== undefined ? field.label : fieldName
         // :TODO: what are and how to handle PivotCells?
         const value = field.is_numeric
           ? +cell.value
           : cell.value.toString().substring(0, 1024)
-        properties[lookerPropertyName] = value
+        properties[propertyName] = value
       }
     }
     return { properties, heapFieldValue }
+  }
+
+  private constructBodyForRequest(
+    appId: string,
+    heapField: HeapField,
+    heapFieldValue: string,
+    properties: PropertyMap,
+  ): string {
+    const baseRequestBody = { app_id: appId, library: HeapAction.HEAP_LIBRARY };
+    let jsonBody = {}
+    if (heapField === HeapFields.Identity) {
+      jsonBody = {
+        users: [{
+          user_identifier: { email: heapFieldValue },
+          properties,
+        }],
+      }
+    } else if (heapField === HeapFields.AccountId) {
+      jsonBody = {
+        accounts: [{
+          account_id: heapFieldValue,
+          properties,
+        }],
+      }
+    }
+    return JSON.stringify(Object.assign({}, baseRequestBody, jsonBody));
   }
 }
 
