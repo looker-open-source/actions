@@ -201,13 +201,12 @@ export class HeapAction extends Hub.Action {
       if (fieldName !== heapFieldName) {
         const field = allFieldMap[fieldName]
         // Field labels are the original name of the property that has not been sanitized or snake-cased.
-        const fieldLabel = field.label !== undefined ? field.label : fieldName
-        const lookerPropertyName = "Looker " + fieldLabel
+        const propertyName = field.label !== undefined ? field.label : fieldName
         // :TODO: what are and how to handle PivotCells?
         const value = field.is_numeric
           ? +cell.value
           : cell.value.toString().substring(0, 1024)
-        properties[lookerPropertyName] = value
+        properties[propertyName] = value
       }
     }
     return { properties, heapFieldValue }

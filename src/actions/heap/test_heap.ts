@@ -197,15 +197,15 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(stubPost).to.have.been.calledTwice
       expectAddUserPropertyRequest(
         {
-          "Looker Property 1": "value1A",
-          "Looker Property 2": "value2A",
+          "Property 1": "value1A",
+          "Property 2": "value2A",
         },
         "testA@heap.io",
       )
       expectAddUserPropertyRequest(
         {
-          "Looker Property 1": "value1B",
-          "Looker Property 2": "value2B",
+          "Property 1": "value1B",
+          "Property 2": "value2B",
         },
         "testB@heap.io",
       )
@@ -244,15 +244,15 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(stubPost).to.have.been.calledTwice
       expectAddAccountPropertyRequest(
         {
-          "Looker Property 1": "value1A",
-          "Looker Property 2": "value2A",
+          "Property 1": "value1A",
+          "Property 2": "value2A",
         },
         "accountA",
       )
       expectAddAccountPropertyRequest(
         {
-          "Looker Property 1": "value1B",
-          "Looker Property 2": "value2B",
+          "Property 1": "value1B",
+          "Property 2": "value2B",
         },
         "accountB",
       )
@@ -284,8 +284,8 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       expectAddAccountPropertyRequest(
         {
-          "Looker Property 1": 1,
-          "Looker Property 2": "value2",
+          "Property 1": 1,
+          "Property 2": "value2",
         },
         "account",
       )
