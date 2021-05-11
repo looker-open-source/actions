@@ -20,9 +20,13 @@ export enum HeapFields {
 
 export type HeapField = HeapFields.Identity | HeapFields.AccountId
 
-interface LookerFieldMap { [fieldName: string]: Hub.Field }
+interface LookerFieldMap {
+  [fieldName: string]: Hub.Field
+}
 
-interface PropertyMap { [property: string]: string }
+interface PropertyMap {
+  [property: string]: string
+}
 
 export class HeapAction extends Hub.Action {
   static ADD_USER_PROPERTIES_URL =
@@ -92,6 +96,9 @@ export class HeapAction extends Hub.Action {
             heapFieldLabel,
             fieldMap,
           )
+          if (!heapFieldValue) {
+            return
+          }
           const requestBody = this.constructBodyForRequest(
             request.params.heap_env_id!,
             heapField,
@@ -130,7 +137,8 @@ export class HeapAction extends Hub.Action {
         type: "select",
       },
       {
-        label: "Column name matching user join key or account ID property in Heap",
+        label:
+          "Column name matching user join key or account ID property in Heap",
         name: "heap_field",
         required: true,
         type: "string",
@@ -139,10 +147,7 @@ export class HeapAction extends Hub.Action {
     return form
   }
 
-  private extractHeapFieldName(
-    fields: Hub.Field[],
-    heapFieldLabel: string,
-  ) {
+  private extractHeapFieldName(fields: Hub.Field[], heapFieldLabel: string) {
     const heapFields = fields.filter((field) => field.label === heapFieldLabel)
     if (heapFields.length !== 1) {
       throw new Error(
@@ -187,26 +192,33 @@ export class HeapAction extends Hub.Action {
     heapFieldName: string,
     heapFieldLabel: string,
     allFieldMap: LookerFieldMap,
-  ): { heapFieldValue: string; properties: { [K in string]: string } } {
+  ): {
+    heapFieldValue: string | undefined;
+    properties: { [K in string]: string };
+  } {
     if (!row.hasOwnProperty(heapFieldName)) {
       throw new Error(`Found a row without the ${heapFieldLabel} field`)
     }
-    const heapFieldValue = row[heapFieldName].value.toString()
-    if (heapFieldValue === "") {
-      throw new Error(`Found a row with an empty ${heapFieldLabel} field.`)
+    if (!row[heapFieldName].value) {
+      return { heapFieldValue: undefined, properties: {} }
     }
+    const heapFieldValue = row[heapFieldName].value.toString()
 
     const properties: { [K in string]: string } = {}
     for (const [fieldName, cell] of Object.entries(row)) {
       if (fieldName !== heapFieldName) {
         const field = allFieldMap[fieldName]
         // Field labels are the original name of the property that has not been sanitized or snake-cased.
-        const propertyName = field.label !== undefined ? field.label : fieldName
+        const propertyName =
+          field.label !== undefined ? field.label : fieldName
         // :TODO: what are and how to handle PivotCells?
-        const value = field.is_numeric
-          ? +cell.value
-          : cell.value.toString().substring(0, 1024)
-        properties[propertyName] = value
+        const propertyValue = cell.value
+        if (propertyValue) {
+          const typedValue = field.is_numeric
+            ? +propertyValue
+            : propertyValue.toString().substring(0, 1024)
+          properties[propertyName] = typedValue
+        }
       }
     }
     return { properties, heapFieldValue }
@@ -218,24 +230,28 @@ export class HeapAction extends Hub.Action {
     heapFieldValue: string,
     properties: PropertyMap,
   ): string {
-    const baseRequestBody = { app_id: appId, library: HeapAction.HEAP_LIBRARY };
+    const baseRequestBody = { app_id: appId, library: HeapAction.HEAP_LIBRARY }
     let jsonBody = {}
     if (heapField === HeapFields.Identity) {
       jsonBody = {
-        users: [{
-          user_identifier: { email: heapFieldValue },
-          properties,
-        }],
+        users: [
+          {
+            user_identifier: { email: heapFieldValue },
+            properties,
+          },
+        ],
       }
     } else if (heapField === HeapFields.AccountId) {
       jsonBody = {
-        accounts: [{
-          account_id: heapFieldValue,
-          properties,
-        }],
+        accounts: [
+          {
+            account_id: heapFieldValue,
+            properties,
+          },
+        ],
       }
     }
-    return JSON.stringify(Object.assign({}, baseRequestBody, jsonBody));
+    return JSON.stringify(Object.assign({}, baseRequestBody, jsonBody))
   }
 }
 
