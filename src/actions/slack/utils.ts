@@ -93,7 +93,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
         throw "Missing channel."
     }
 
-    const fileName = request.formParams.filename || request.suggestedFilename()
+    const fileName = request.formParams.filename  ? request.completeFilename() : request.suggestedFilename()
 
     let response = new Hub.ActionResponse({success: true})
     try {

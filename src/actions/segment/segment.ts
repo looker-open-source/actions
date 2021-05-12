@@ -107,7 +107,8 @@ export class SegmentAction extends Hub.Action {
           this.unassignedSegmentFieldsCheck(segmentFields)
           const payload = {
             ...this.prepareSegmentTraitsFromRow(
-              row, fieldset, segmentFields!, hiddenFields, segmentCall === SegmentCalls.Track),
+              row, fieldset, segmentFields!, hiddenFields,
+                segmentCall === SegmentCalls.Track, segmentCall === SegmentCalls.Group),
             ...{event, context, timestamp},
           }
           if (payload.groupId === null) {
@@ -217,6 +218,7 @@ export class SegmentAction extends Hub.Action {
     segmentFields: SegmentFields,
     hiddenFields: string[],
     trackCall: boolean,
+    groupCall: boolean,
   ) {
     const traits: { [key: string]: string } = {}
     for (const field of fields) {
@@ -247,6 +249,10 @@ export class SegmentAction extends Hub.Action {
     let anonymousId: string | null
     if (segmentFields.anonymousIdField) {
       anonymousId = row[segmentFields.anonymousIdField.name].value
+    } else if (groupCall) {
+      // If this is a Segment Group Call, do not send an anonymous ID to preserve
+      // Segment API quotas
+      anonymousId = null
     } else {
       anonymousId = userId ? null : this.generateAnonymousId()
     }

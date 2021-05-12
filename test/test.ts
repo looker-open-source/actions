@@ -12,6 +12,7 @@ winston.remove(winston.transports.Console)
 
 import "../src/actions/index"
 
+import "./test_action_request"
 import "./test_action_response"
 import "./test_actions"
 import "./test_json_detail_stream"
@@ -31,6 +32,8 @@ import "../src/actions/dropbox/test_dropbox"
 import "../src/actions/google/drive/sheets/test_google_sheets"
 import "../src/actions/google/drive/test_google_drive"
 import "../src/actions/google/gcs/test_google_cloud_storage"
+import "../src/actions/hubspot/test_hubspot_companies"
+import "../src/actions/hubspot/test_hubspot_contacts"
 import "../src/actions/jira/test_jira"
 import "../src/actions/kloudio/test_kloudio"
 import "../src/actions/marketo/test_marketo"

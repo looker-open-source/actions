@@ -2,6 +2,7 @@
 
 import { LookmlModelExploreFieldEnumeration } from './lookml_model_explore_field_enumeration'
 import { LookmlModelExploreFieldMapLayer } from './lookml_model_explore_field_map_layer'
+import { LookmlModelExploreFieldMeasureFilters } from './lookml_model_explore_field_measure_filters'
 import { LookmlModelExploreFieldSqlCase } from './lookml_model_explore_field_sql_case'
 import { LookmlModelExploreFieldTimeInterval } from './lookml_model_explore_field_time_interval'
 
@@ -29,6 +30,7 @@ export enum LookmlModelExploreFieldUserAttributeFilterTypes {
   String = 'string',
   Number = 'number',
   Datetime = 'datetime',
+  RelativeUrl = 'relative_url',
   Yesno = 'yesno',
   Zipcode = 'zipcode'
 }
@@ -44,7 +46,7 @@ export enum LookmlModelExploreFieldWeekStartDay {
 }
 
 export interface LookmlModelExploreField {
-  /** The appropriate horizontal text alignment the values of this field shoud be displayed in. Valid values are: "left", "right". */
+  /** The appropriate horizontal text alignment the values of this field should be displayed in. Valid values are: "left", "right". */
   align: LookmlModelExploreFieldAlign
   /** Whether it's possible to filter on this field. */
   can_filter: boolean
@@ -78,6 +80,12 @@ export interface LookmlModelExploreField {
   is_numeric: boolean
   /** Whether this field is of a type that represents a time value. */
   is_timeframe: boolean
+  /** (Undocumented, internal-only) Whether this field is a turtle! */
+  is_turtle: boolean
+  /** (Undocumented, internal-only) Whether this field can actually be turtled! */
+  can_turtle: boolean
+  /** (Undocumented, internal-only) Turtle dimension */
+  turtle_dimension: LookmlModelExploreField | null
   /** Whether this field can be time filtered. */
   can_time_filter: boolean
   /** Details on the time interval this field represents, if it is_timeframe. */
@@ -96,6 +104,8 @@ export interface LookmlModelExploreField {
   measure: boolean
   /** Fully-qualified name of the field. */
   name: string
+  /** If yes, the field will not be localized with the user attribute number_format. Defaults to no */
+  strict_value_format: boolean
   /** Whether this field is a parameter. */
   parameter: boolean
   /** Whether this field can be removed from a query. */
@@ -114,10 +124,12 @@ export interface LookmlModelExploreField {
   source_file: string
   /** The fully-qualified path of the project file this field is defined in. */
   source_file_path: string
-  /** SQL expression as defined in the LookML model. This will be null if the current user does not have the see_lookml permission for the field's model. */
+  /** SQL expression as defined in the LookML model. The SQL syntax shown here is a representation intended for auditability, and is not neccessarily an exact match for what will ultimately be run in the database. It may contain special LookML syntax or annotations that are not valid SQL. This will be null if the current user does not have the see_lookml permission for the field's model. */
   sql: string | null
-  /** An array of conditions and values that make up a SQL Case expression, as defined in the LookML model. This will be null if the current user does not have the see_lookml permission for the field's model. */
+  /** An array of conditions and values that make up a SQL Case expression, as defined in the LookML model. The SQL syntax shown here is a representation intended for auditability, and is not neccessarily an exact match for what will ultimately be run in the database. It may contain special LookML syntax or annotations that are not valid SQL. This will be null if the current user does not have the see_lookml permission for the field's model. */
   sql_case: LookmlModelExploreFieldSqlCase[] | null
+  /** Array of filter conditions defined for the measure in LookML. */
+  filters: LookmlModelExploreFieldMeasureFilters[] | null
   /** The name of the dimension to base suggest queries from. */
   suggest_dimension: string
   /** The name of the explore to base suggest queries from. */
@@ -130,7 +142,7 @@ export interface LookmlModelExploreField {
   tags: string[]
   /** The LookML type of the field. */
   type: string
-  /** An array of user attribute types that are allowed to be used in filters on this field. Valid values are: "advanced_filter_string", "advanced_filter_number", "advanced_filter_datetime", "string", "number", "datetime", "yesno", "zipcode". */
+  /** An array of user attribute types that are allowed to be used in filters on this field. Valid values are: "advanced_filter_string", "advanced_filter_number", "advanced_filter_datetime", "string", "number", "datetime", "relative_url", "yesno", "zipcode". */
   user_attribute_filter_types: LookmlModelExploreFieldUserAttributeFilterTypes[]
   /** If specified, the LookML value format string for formatting values of this field. */
   value_format: string | null

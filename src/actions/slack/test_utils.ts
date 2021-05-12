@@ -155,7 +155,7 @@ describe(`slack/utils unit tests`, () => {
             }
             return expectSlackMatch(request, {
                 file: request.attachment.dataBuffer,
-                filename: request.formParams.filename,
+                filename: `${request.formParams.filename}.csv`,
                 channels: request.formParams.channel,
                 initial_comment: request.formParams.initial_comment,
             })
