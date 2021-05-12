@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-// import * as fs from "fs"
-=======
->>>>>>> master
 import * as gaxios from "gaxios"
 import * as googleAuth from "google-auth-library"
 import { google } from "googleapis"
@@ -119,12 +115,6 @@ export class GoogleOAuthHelper {
       // If the payload does ever contain something besides the stateUrl, we would likely need to add that here
       const userState = { tokens, redirect: redirectUri }
 
-<<<<<<< HEAD
-      // TODO: remove for prod!
-      // fs.writeFileSync("./savedState.json", JSON.stringify(tokens))
-
-=======
->>>>>>> master
       // So now we use that state url to persist the oauth tokens
       try {
         await gaxios.request({
@@ -156,12 +146,6 @@ export class GoogleOAuthHelper {
         return undefined
       }
 
-<<<<<<< HEAD
-      // TODO: remove for prod!
-      // fs.writeFileSync("./savedState.json", JSON.stringify(getTokenResp.res.data))
-
-=======
->>>>>>> master
       return getTokenResp.res.data
     }
 }

@@ -35,10 +35,7 @@ export class WrappedResponse<T extends HubTypes> {
       this._hubResp.success = false
       this._hubResp.message = this.errorPrefix + err.toString()
     } else if (this._hubResp instanceof Hub.ActionForm) {
-<<<<<<< HEAD
       err.message = this.errorPrefix + err.message
-=======
->>>>>>> master
       this._hubResp.error = err
     }
   }
