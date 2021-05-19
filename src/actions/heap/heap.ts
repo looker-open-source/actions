@@ -28,12 +28,18 @@ interface PropertyMap {
   [property: string]: string
 }
 
+interface HeapEntity {
+  heapFieldValue: string
+  properties: PropertyMap
+}
+
 export class HeapAction extends Hub.Action {
   static ADD_USER_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_user_properties"
   static ADD_ACCOUNT_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_account_properties"
   static HEAP_LIBRARY = "looker"
+  static ROWS_PER_BATCH = 1000
 
   description = "Add user and account properties to your Heap dataset"
   label = "Heap"
@@ -80,6 +86,7 @@ export class HeapAction extends Hub.Action {
     const heapField = this.resolveHeapField(propertyType)
     const requestUrl = this.resolveApiEndpoint(propertyType)
     const errors: Error[] = []
+    let requestBatch: HeapEntity[] = []
 
     await request.streamJsonDetail({
       onFields: (fieldset) => {
@@ -87,7 +94,6 @@ export class HeapAction extends Hub.Action {
         heapFieldName = this.extractHeapFieldName(allFields, heapFieldLabel)
         fieldMap = this.extractFieldMap(allFields)
       },
-      // :TODO: possibly optimize by batching rows and calling the bulk endpoint
       onRow: (row) => {
         try {
           const { heapFieldValue, properties } = this.extractPropertiesFromRow(
@@ -99,22 +105,44 @@ export class HeapAction extends Hub.Action {
           if (!heapFieldValue) {
             return
           }
-          const requestBody = this.constructBodyForRequest(
-            request.params.heap_env_id!,
-            heapField,
-            heapFieldValue,
-            properties,
-          )
-          req.post({
-            uri: requestUrl,
-            headers: { "Content-Type": "application/json" },
-            body: requestBody,
-          })
+          requestBatch.push({ heapFieldValue, properties })
+          if (requestBatch.length === HeapAction.ROWS_PER_BATCH) {
+            const requestBody = this.constructBodyForRequest(
+              request.params.heap_env_id!,
+              heapField,
+              requestBatch,
+            )
+            req.post({
+              uri: requestUrl,
+              headers: { "Content-Type": "application/json" },
+              body: requestBody,
+            })
+            requestBatch = []
+          }
         } catch (err) {
           errors.push(err)
         }
       },
     })
+
+    if (requestBatch.length > 0) {
+      try {
+        const requestBody = this.constructBodyForRequest(
+          request.params.heap_env_id!,
+          heapField,
+          requestBatch,
+        )
+        await req
+          .post({
+            uri: requestUrl,
+            headers: { "Content-Type": "application/json" },
+            body: requestBody,
+          })
+          .promise()
+      } catch (err) {
+        errors.push(err)
+      }
+    }
 
     if (errors.length === 0) {
       return new Hub.ActionResponse({ success: true })
@@ -194,7 +222,7 @@ export class HeapAction extends Hub.Action {
     allFieldMap: LookerFieldMap,
   ): {
     heapFieldValue: string | undefined;
-    properties: { [K in string]: string };
+    properties: PropertyMap;
   } {
     if (!row.hasOwnProperty(heapFieldName)) {
       throw new Error(`Found a row without the ${heapFieldLabel} field`)
@@ -227,28 +255,23 @@ export class HeapAction extends Hub.Action {
   private constructBodyForRequest(
     appId: string,
     heapField: HeapField,
-    heapFieldValue: string,
-    properties: PropertyMap,
+    heapEntities: HeapEntity[],
   ): string {
     const baseRequestBody = { app_id: appId, library: HeapAction.HEAP_LIBRARY }
     let jsonBody = {}
     if (heapField === HeapFields.Identity) {
       jsonBody = {
-        users: [
-          {
-            user_identifier: { email: heapFieldValue },
-            properties,
-          },
-        ],
+        users: heapEntities.map(({ heapFieldValue, properties }) => ({
+          user_identifier: { email: heapFieldValue },
+          properties,
+        })),
       }
     } else if (heapField === HeapFields.AccountId) {
       jsonBody = {
-        accounts: [
-          {
-            account_id: heapFieldValue,
-            properties,
-          },
-        ],
+        accounts: heapEntities.map(({ heapFieldValue, properties }) => ({
+          account_id: heapFieldValue,
+          properties,
+        })),
       }
     }
     return JSON.stringify(Object.assign({}, baseRequestBody, jsonBody))

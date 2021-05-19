@@ -4,20 +4,16 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../../src/hub"
 
-import {
-  HeapAction,
-  HeapPropertyType,
-  HeapPropertyTypes,
-} from "./heap"
+import { HeapAction, HeapPropertyType, HeapPropertyTypes } from "./heap"
 
 const action = new HeapAction()
 
 describe(`${action.constructor.name} unit tests`, () => {
   const ENV_ID = "1"
-  const stubPost = sinon.stub(req, "post").returns(undefined)
+  const stubPost = sinon.stub(req, "post")
   beforeEach(() => {
     stubPost.reset()
-    stubPost.returns(null)
+    stubPost.returns({ promise: () => undefined })
   })
   after(stubPost.restore)
 
@@ -43,8 +39,10 @@ describe(`${action.constructor.name} unit tests`, () => {
   }
 
   const expectAddUserPropertyRequest = (
-    properties: { [K in string]: string | number },
-    heapIdentity: string,
+    rows: {
+      properties: { [K in string]: string | number };
+      heapIdentity: string;
+    }[],
   ) => {
     chai.expect(stubPost).to.have.been.calledWith({
       uri: HeapAction.ADD_USER_PROPERTIES_URL,
@@ -52,32 +50,31 @@ describe(`${action.constructor.name} unit tests`, () => {
       body: JSON.stringify({
         app_id: ENV_ID,
         library: "looker",
-        users: [
-          {
-            user_identifier: { email: heapIdentity },
-            properties,
-          },
-        ],
+        users: rows.map(({ heapIdentity, properties }) => ({
+          user_identifier: { email: heapIdentity },
+          properties,
+        })),
       }),
     })
   }
 
   const expectAddAccountPropertyRequest = (
-    properties: { [K in string]: string | number },
-    heapAccountId: string,
+    rows: {
+      properties: { [K in string]: string | number };
+      heapAccountId: string;
+    }[],
+    numCall = 0,
   ) => {
-    chai.expect(stubPost).to.have.been.calledWith({
+    chai.expect(stubPost.getCall(numCall).lastArg).to.deep.equal({
       uri: HeapAction.ADD_ACCOUNT_PROPERTIES_URL,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         app_id: ENV_ID,
         library: "looker",
-        accounts: [
-          {
-            account_id: heapAccountId,
-            properties,
-          },
-        ],
+        accounts: rows.map(({ heapAccountId, properties }) => ({
+          account_id: heapAccountId,
+          properties,
+        })),
       }),
     })
   }
@@ -145,9 +142,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(stubPost).to.have.not.been.called
     })
 
-    it("should fail when Heap field is empty in a row", async () => {
+    it("should skip rows with null heap field", async () => {
       const fields = [{ name: "email", label: "Email" }]
-      const data = [{ email: { value: "" } }]
+      const data = [{ email: { value: null } }]
       const request = buildRequest(
         HeapPropertyTypes.User,
         "Email",
@@ -157,10 +154,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       const response = await action.validateAndExecute(request)
 
-      chai.expect(response.success).to.equal(false)
-      chai
-        .expect(response.message)
-        .to.match(new RegExp("Found a row with an empty Email field"))
+      chai.expect(response.success).to.equal(true)
       chai.expect(stubPost).to.have.not.been.called
     })
   })
@@ -170,7 +164,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const fields = [
         { name: "property1", label: "Property 1" },
         { name: "property2", label: "Property 2" },
-        { name: "email", tags: ["identity"], label: "Email" },
+        { name: "email", label: "Email" },
       ]
       const data = [
         {
@@ -194,21 +188,23 @@ describe(`${action.constructor.name} unit tests`, () => {
       const response = await action.validateAndExecute(request)
 
       chai.expect(response.success).to.equal(true)
-      chai.expect(stubPost).to.have.been.calledTwice
-      expectAddUserPropertyRequest(
+      chai.expect(stubPost).to.have.been.calledOnce
+      expectAddUserPropertyRequest([
         {
-          "Property 1": "value1A",
-          "Property 2": "value2A",
+          properties: {
+            "Property 1": "value1A",
+            "Property 2": "value2A",
+          },
+          heapIdentity: "testA@heap.io",
         },
-        "testA@heap.io",
-      )
-      expectAddUserPropertyRequest(
         {
-          "Property 1": "value1B",
-          "Property 2": "value2B",
+          properties: {
+            "Property 1": "value1B",
+            "Property 2": "value2B",
+          },
+          heapIdentity: "testB@heap.io",
         },
-        "testB@heap.io",
-      )
+      ])
     })
   })
 
@@ -217,7 +213,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const fields = [
         { name: "property1", label: "Property 1" },
         { name: "property2", label: "Property 2" },
-        { name: "account ID", tags: ["account_id"], label: "Account ID" },
+        { name: "account ID", label: "Account ID" },
       ]
       const data = [
         {
@@ -241,21 +237,23 @@ describe(`${action.constructor.name} unit tests`, () => {
       const response = await action.validateAndExecute(request)
 
       chai.expect(response.success).to.equal(true)
-      chai.expect(stubPost).to.have.been.calledTwice
-      expectAddAccountPropertyRequest(
+      chai.expect(stubPost).to.have.been.calledOnce
+      expectAddAccountPropertyRequest([
         {
-          "Property 1": "value1A",
-          "Property 2": "value2A",
+          properties: {
+            "Property 1": "value1A",
+            "Property 2": "value2A",
+          },
+          heapAccountId: "accountA",
         },
-        "accountA",
-      )
-      expectAddAccountPropertyRequest(
         {
-          "Property 1": "value1B",
-          "Property 2": "value2B",
+          properties: {
+            "Property 1": "value1B",
+            "Property 2": "value2B",
+          },
+          heapAccountId: "accountB",
         },
-        "accountB",
-      )
+      ])
     })
   })
 
@@ -264,7 +262,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const fields = [
         { name: "property1", label: "Property 1", is_numeric: true },
         { name: "property2", label: "Property 2", is_numeric: false },
-        { name: "account ID", tags: ["account_id"], label: "Account ID" },
+        { name: "account ID", label: "Account ID" },
       ]
       const data = [
         {
@@ -282,12 +280,54 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       await action.validateAndExecute(request)
 
-      expectAddAccountPropertyRequest(
+      expectAddAccountPropertyRequest([
         {
-          "Property 1": 1,
-          "Property 2": "value2",
+          properties: {
+            "Property 1": 1,
+            "Property 2": "value2",
+          },
+          heapAccountId: "account",
         },
-        "account",
+      ])
+    })
+
+    it("should corectly batch rows", async () => {
+      const fields = [
+        { name: "property", label: "Property" },
+        { name: "account ID", label: "Account ID" },
+      ]
+      const data = [
+        ...Array(Math.floor(HeapAction.ROWS_PER_BATCH * 1.5)).keys(),
+      ].map((value) => ({
+        "property": { value: value.toString() },
+        "account ID": { value: value.toString() },
+      }))
+
+      const request = buildRequest(
+        HeapPropertyTypes.Account,
+        "Account ID",
+        fields,
+        data,
+      )
+
+      const response = await action.validateAndExecute(request)
+
+      chai.expect(response.success).to.equal(true)
+      chai.expect(stubPost).to.have.been.calledTwice
+
+      expectAddAccountPropertyRequest(
+        data.slice(0, HeapAction.ROWS_PER_BATCH).map((row) => ({
+          properties: { Property: row.property.value },
+          heapAccountId: row["account ID"].value,
+        })),
+        0,
+      )
+      expectAddAccountPropertyRequest(
+        data.slice(HeapAction.ROWS_PER_BATCH).map((row) => ({
+          properties: { Property: row.property.value },
+          heapAccountId: row["account ID"].value,
+        })),
+        1,
       )
     })
   })
