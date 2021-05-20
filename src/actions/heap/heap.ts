@@ -35,7 +35,7 @@ interface HeapEntity {
 
 export class HeapAction extends Hub.Action {
   static ADD_USER_PROPERTIES_URL =
-    "https://heapanalytics.com/api/add_user_properties"
+    "https://heapanalytics.com/api/integrations/add_user_properties"
   static ADD_ACCOUNT_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_account_properties"
   static HEAP_LIBRARY = "looker"
