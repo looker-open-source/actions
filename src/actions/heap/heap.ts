@@ -87,6 +87,7 @@ export class HeapAction extends Hub.Action {
     const requestUrl = this.resolveApiEndpoint(propertyType)
     const errors: Error[] = []
     let requestBatch: HeapEntity[] = []
+    const requestPromises: Promise<void>[] = []
 
     await request.streamJsonDetail({
       onFields: (fieldset) => {
@@ -107,16 +108,14 @@ export class HeapAction extends Hub.Action {
           }
           requestBatch.push({ heapFieldValue, properties })
           if (requestBatch.length === HeapAction.ROWS_PER_BATCH) {
-            const requestBody = this.constructBodyForRequest(
-              request.params.heap_env_id!,
-              heapField,
-              requestBatch,
+            requestPromises.push(
+              this.sendRequest(
+                requestBatch,
+                request.params.heap_env_id!,
+                requestUrl,
+                heapField,
+              ),
             )
-            req.post({
-              uri: requestUrl,
-              headers: { "Content-Type": "application/json" },
-              body: requestBody,
-            })
             requestBatch = []
           }
         } catch (err) {
@@ -126,22 +125,20 @@ export class HeapAction extends Hub.Action {
     })
 
     if (requestBatch.length > 0) {
-      try {
-        const requestBody = this.constructBodyForRequest(
-          request.params.heap_env_id!,
-          heapField,
+      requestPromises.push(
+        this.sendRequest(
           requestBatch,
-        )
-        await req
-          .post({
-            uri: requestUrl,
-            headers: { "Content-Type": "application/json" },
-            body: requestBody,
-          })
-          .promise()
-      } catch (err) {
-        errors.push(err)
-      }
+          request.params.heap_env_id!,
+          requestUrl,
+          heapField,
+        ),
+      )
+    }
+
+    try {
+      await Promise.all(requestPromises)
+    } catch (err) {
+      errors.push(err)
     }
 
     if (errors.length === 0) {
@@ -275,6 +272,26 @@ export class HeapAction extends Hub.Action {
       }
     }
     return JSON.stringify(Object.assign({}, baseRequestBody, jsonBody))
+  }
+
+  private async sendRequest(
+    requestBatch: HeapEntity[],
+    envId: string,
+    requestUrl: string,
+    heapField: HeapField,
+  ): Promise<void> {
+    const requestBody = this.constructBodyForRequest(
+      envId,
+      heapField,
+      requestBatch,
+    )
+    await req
+      .post({
+        uri: requestUrl,
+        headers: { "Content-Type": "application/json" },
+        body: requestBody,
+      })
+      .promise()
   }
 }
 

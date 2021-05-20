@@ -330,5 +330,32 @@ describe(`${action.constructor.name} unit tests`, () => {
         1,
       )
     })
+
+    it("should catch rejected request promises", async () => {
+      const fields = [
+        { name: "property", label: "Property" },
+        { name: "account ID", label: "Account ID" },
+      ]
+      const data = [
+        {
+          "property": { value: "value" },
+          "account ID": { value: "account" },
+        },
+      ]
+      const request = buildRequest(
+        HeapPropertyTypes.Account,
+        "Account ID",
+        fields,
+        data,
+      )
+      const requestError = "Error: Incorrect request body format"
+      stubPost.reset()
+      stubPost.returns({ promise: async () => Promise.reject(new Error(requestError)) })
+
+      const response = await action.validateAndExecute(request)
+
+      chai.expect(response.success).to.equal(false)
+      chai.expect(response.message).to.contain(requestError)
+    })
   })
 })
