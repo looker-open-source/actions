@@ -58,6 +58,7 @@ export class GoogleAdsCustomerMatch
   }
 
   sanitizeError(err: any) {
+    // Remove headers with sensitive values
     const headersObjs = []
     if (err.config && err.config.headers) {
       headersObjs.push(err.config.headers)
@@ -72,9 +73,15 @@ export class GoogleAdsCustomerMatch
         }
       }
     }
+    // Remove data payload - this is hashed but makes the logs unreadable
+    if (err.response && err.response.config
+      && err.response.config.data && err.response.config.data.operations
+    ) {
+      err.response.config.data.operations = "[TRUNCATED]"
+    }
   }
 
-  makeBetterErrorMessage(err: any) {
+  makeBetterErrorMessage(err: any, webhookId?: string) {
     let apiError: any
     let subError: any
     let errorCode: number | undefined
@@ -112,6 +119,10 @@ export class GoogleAdsCustomerMatch
       err.name = "Ads API Error"
       err.message = `${errorCode} - ${generalMessage}` + (detailMessage ? ` Details: ${detailMessage}` : "")
     }
+
+    if (webhookId) {
+      err.message = err.message + ` (Webhook ID: ${webhookId})`
+    }
   }
 
   /******** OAuth Endpoints ********/
@@ -141,7 +152,7 @@ export class GoogleAdsCustomerMatch
       return wrappedResp.returnSuccess(adsRequest.userState)
     } catch (err) {
       this.sanitizeError(err)
-      this.makeBetterErrorMessage(err)
+      this.makeBetterErrorMessage(err, hubReq.webhookId)
       log("error", "Execution error toString:", err.toString())
       log("error", "Execution error JSON:", JSON.stringify(err))
       return wrappedResp.returnError(err)
@@ -164,7 +175,7 @@ export class GoogleAdsCustomerMatch
       const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
       // Token errors that we can detect ahead of time
       if (err instanceof MissingAuthError) {
-        log("info", "Caught MissingAuthError; returning login form.")
+        log("debug", "Caught MissingAuthError; returning login form.")
         return loginForm
       }
       log("error", "Form error toString:", err.toString())
