@@ -4,6 +4,7 @@ import { MissingAuthError } from "../common/missing_auth_error"
 import { GoogleOAuthHelper, UseGoogleOAuthHelper } from "../common/oauth_helper"
 import { WrappedResponse } from "../common/wrapped_response"
 import { GoogleAdsActionRequest } from "./lib/ads_request"
+import { makeBetterErrorMessage, sanitizeError } from "./lib/error_utils"
 
 const LOG_PREFIX = "[G Ads Customer Match]"
 
@@ -57,74 +58,6 @@ export class GoogleAdsCustomerMatch
     return this.oauthHelper.makeOAuthClient(this.redirectUri)
   }
 
-  sanitizeError(err: any) {
-    // Remove headers with sensitive values
-    const headersObjs = []
-    if (err.config && err.config.headers) {
-      headersObjs.push(err.config.headers)
-    }
-    if (err.response && err.response.config && err.response.config.headers) {
-      headersObjs.push(err.response.config.headers)
-    }
-    for (const headers of headersObjs) {
-      for (const prop of ["developer-token", "Authorization"]) {
-        if (headers[prop]) {
-          headers[prop] = "[REDACTED]"
-        }
-      }
-    }
-    // Remove data payload - this is hashed but makes the logs unreadable
-    if (err.response && err.response.config
-      && err.response.config.data && err.response.config.data.operations
-    ) {
-      err.response.config.data.operations = "[TRUNCATED]"
-    }
-  }
-
-  makeBetterErrorMessage(err: any, webhookId?: string) {
-    let apiError: any
-    let subError: any
-    let errorCode: number | undefined
-    let generalMessage: string | undefined
-    let detailMessage: string | undefined
-    let userListError: string | undefined
-
-    if (err.response && err.response.data && err.response.data.error) {
-      apiError = err.response.data.error
-      if (apiError.code) {
-        errorCode = apiError.code
-      }
-      if (apiError.message) {
-        generalMessage = apiError.message
-      }
-      if (Array.isArray(apiError.details) && apiError.details[0] && Array.isArray(apiError.details[0].errors)) {
-        subError = apiError.details[0].errors[0]
-        if (subError.message) {
-          detailMessage = subError.message
-        }
-        if (subError.errorCode && subError.errorCode.userListError) {
-          userListError = subError.errorCode.userListError
-        }
-      }
-    }
-
-    if (userListError === "ADVERTISER_NOT_ON_ALLOWLIST_FOR_USING_UPLOADED_DATA") {
-      err.name = ""
-      err.message = "The target account is not enabled for data uploads (e.g. Customer Match lists)."
-          + " Please visit Audience Manager in the Ads UI for further information."
-      return
-    }
-
-    if (apiError) {
-      err.name = "Ads API Error"
-      err.message = `${errorCode} - ${generalMessage}` + (detailMessage ? ` Details: ${detailMessage}` : "")
-    }
-
-    if (webhookId) {
-      err.message = err.message + ` (Webhook ID: ${webhookId})`
-    }
-  }
-
   /******** OAuth Endpoints ********/
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
@@ -151,8 +84,8 @@ export class GoogleAdsCustomerMatch
       log("info", "Execution complete")
       return wrappedResp.returnSuccess(adsRequest.userState)
     } catch (err) {
-      this.sanitizeError(err)
-      this.makeBetterErrorMessage(err, hubReq.webhookId)
+      sanitizeError(err)
+      makeBetterErrorMessage(err, hubReq.webhookId)
       log("error", "Execution error toString:", err.toString())
       log("error", "Execution error JSON:", JSON.stringify(err))
       return wrappedResp.returnError(err)
@@ -171,7 +104,7 @@ export class GoogleAdsCustomerMatch
       // wrappedResp.resetState()
       // return wrappedResp.returnSuccess()
     } catch (err) {
-      this.sanitizeError(err)
+      sanitizeError(err)
       const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
       // Token errors that we can detect ahead of time
       if (err instanceof MissingAuthError) {
