@@ -105,12 +105,15 @@ export class GoogleAdsUserListUploader {
     const schemaMapping = Object.entries(this.schema)
     const outputCells = schemaMapping.map(( [columnLabel, outputPath] ) => {
       let outputValue = row[columnLabel]
+      if (!outputValue){
+        return null
+      }
       if (this.doHashingBool && outputPath.includes("hashed")) {
         outputValue = this.normalizeAndHash(outputValue)
       }
       return lodash.set({} as any, outputPath, outputValue)
     })
-    return outputCells
+    return outputCells.filter(Boolean)
   }
 
   // Formatting guidelines: https://support.google.com/google-ads/answer/7476159?hl=en
