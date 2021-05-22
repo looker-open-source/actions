@@ -205,7 +205,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     })
                                 }
                                 await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
-                                    winston.error(e)
+                                    winston.error(e, {webhookId: request.webhookId})
                                     reject(e)
                                 })
                             }
@@ -222,17 +222,19 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 reject(e)
                             })
                         }
-                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`, {webhookId: request.webhookId})
+                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
+                            {webhookId: request.webhookId})
                         resolve()
                     }).catch((e: any) => {
                         reject(e)
                     })
                 }).on("error", (e: any) => {
-                    winston.error(e)
+                    winston.error(e, {webhookId: request.webhookId})
                     reject(e)
                 }).on("close", () => {
                     if (!finished) {
-                        winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`, {webhookId: request.webhookId})
+                        winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`,
+                            {webhookId: request.webhookId})
                         reject(`"end" event not called before finishing stream`)
                     }
                 })
