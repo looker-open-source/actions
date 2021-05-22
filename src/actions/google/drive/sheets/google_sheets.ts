@@ -222,7 +222,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 reject(e)
                             })
                         }
-                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`)
+                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`, {webhookId: request.webhookId})
                         resolve()
                     }).catch((e: any) => {
                         reject(e)
@@ -232,7 +232,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     reject(e)
                 }).on("close", () => {
                     if (!finished) {
-                        winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`)
+                        winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`, {webhookId: request.webhookId})
                         reject(`"end" event not called before finishing stream`)
                     }
                 })
