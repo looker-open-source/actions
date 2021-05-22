@@ -55,6 +55,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     resp.success = true
                 }
             } catch (e) {
+                winston.error(`Failed execute for Google Sheets.`, {webhookId: request.webhookId})
                 resp.success = false
                 resp.message = e.message
             }
