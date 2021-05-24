@@ -38,8 +38,13 @@ export class HeapAction extends Hub.Action {
     "https://heapanalytics.com/api/integrations/add_user_properties"
   static ADD_ACCOUNT_PROPERTIES_URL =
     "https://heapanalytics.com/api/add_account_properties"
+  static HEAP_TRACK_URL = "https://heapanalytics.com/api/track"
   static HEAP_LIBRARY = "looker"
   static ROWS_PER_BATCH = 1000
+  // TODO: remove me before GA
+  static HEAP_ENV_ID = process.env.HEAP_ENV_ID
+  static HEAP_IDENTITY = process.env.HEAP_IDENTITY
+  static HEAP_EVENT_NAME = "Submit Looker Action"
 
   description = "Add user and account properties to your Heap dataset"
   label = "Heap"
@@ -86,6 +91,7 @@ export class HeapAction extends Hub.Action {
     const heapField = this.resolveHeapField(propertyType)
     const requestUrl = this.resolveApiEndpoint(propertyType)
     const errors: Error[] = []
+    let requestCount = 0
     let requestBatch: HeapEntity[] = []
     const requestPromises: Promise<void>[] = []
 
@@ -106,6 +112,7 @@ export class HeapAction extends Hub.Action {
           if (!heapFieldValue) {
             return
           }
+          requestCount += 1
           requestBatch.push({ heapFieldValue, properties })
           if (requestBatch.length === HeapAction.ROWS_PER_BATCH) {
             requestPromises.push(
@@ -141,6 +148,12 @@ export class HeapAction extends Hub.Action {
       errors.push(err)
     }
 
+    await this.trackLookerAction(
+      request.params.heap_env_id!,
+      requestCount,
+      heapField,
+      errors.length === 0 ? "success" : "failure",
+    )
     if (errors.length === 0) {
       return new Hub.ActionResponse({ success: true })
     }
@@ -292,6 +305,47 @@ export class HeapAction extends Hub.Action {
         body: requestBody,
       })
       .promise()
+  }
+
+  /**
+   * REMOVE ME before GA. Send a track call to heap to summarize the attempted looker action request.
+   * @param envId
+   * @param recordCount the number of records that were processed by this action.
+   * @param heapField identity or account id
+   * @param state success if all records were processed correctly and error if any errors were encountered.
+   */
+  private async trackLookerAction(
+    envId: string,
+    recordCount: number,
+    heapField: HeapField,
+    state: "success" | "failure",
+  ): Promise<void> {
+    const now = new Date().toISOString()
+    const requestBody = {
+      app_id: HeapAction.HEAP_ENV_ID,
+      identity: HeapAction.HEAP_IDENTITY,
+      event: HeapAction.HEAP_EVENT_NAME,
+      timestamp: now,
+      properties: {
+        customer_env_id: envId,
+        record_count: recordCount,
+        field_type: heapField,
+        state,
+      },
+    }
+
+    try {
+      await req
+        .post({
+          uri: HeapAction.HEAP_TRACK_URL,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        })
+        .promise()
+    } catch (err) {
+      // swallow any errors in the track call
+      return
+    }
   }
 }
 
