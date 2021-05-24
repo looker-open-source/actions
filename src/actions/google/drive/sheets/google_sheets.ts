@@ -261,8 +261,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         })
     }
 
-    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string)
-        : GaxiosPromise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> {
+    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
             winston.info(e)
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
@@ -278,15 +277,20 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         while (!retrySuccess && retryCount <= MAX_RETRY_COUNT) {
             retrySuccess = true
             await this.delay((3 ** retryCount) * 1000)
-            await sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
+            try {
+                return await sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer})
+            } catch (e) {
+                retrySuccess = false
                 if (e.code === 429) {
-                    retrySuccess = false
                     winston.warn(`Retry number ${retryCount} failed`)
                     winston.info(e)
+                } else {
+                    throw e
                 }
-            })
-            retryCount++
+                retryCount++
+            }
         }
+        winston.warn("All retries failed")
     }
 
     protected async delay(time: number) {
