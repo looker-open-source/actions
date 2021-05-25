@@ -11,9 +11,11 @@ export class GoogleAdsUserListUploader {
   readonly adsRequest = this.adsExecutor.adsRequest
   readonly doHashingBool = this.adsRequest.doHashingBool
   readonly log = this.adsRequest.log
-  private queue: any[] = []
-  private apiPromises: Promise<any>[] = []
+  private batchPromises: Promise<void>[] = []
+  private batchQueue: any[] = []
+  private currentRequest: Promise<any> | undefined
   private isSchemaDetermined = false
+  private rowQueue: any[] = []
   private schema: {[s: string]: string} = {}
 
   /*
@@ -41,11 +43,11 @@ export class GoogleAdsUserListUploader {
   constructor(readonly adsExecutor: GoogleAdsActionExecutor) {}
 
   private get batchIsReady() {
-    return this.queue.length > BATCH_SIZE
+    return this.rowQueue.length >= BATCH_SIZE
   }
 
   private get numBatches() {
-    return this.apiPromises.length
+    return this.batchPromises.length
   }
 
   async run() {
@@ -59,7 +61,7 @@ export class GoogleAdsUserListUploader {
       // TODO: the oboe fail() handler sends an errorReport object, but that might not be the only thing we catch
       this.log("error", "Streaming parse failure:", errorReport.toString())
     }
-    await Promise.all(this.apiPromises)
+    await Promise.all(this.batchPromises)
     this.log("info",
       `Streaming upload complete. Sent ${this.numBatches} batches (batch size = ${BATCH_SIZE})`,
     )
@@ -73,11 +75,11 @@ export class GoogleAdsUserListUploader {
             this.determineSchema(row)
           }
           this.handleRow(row)
-          this.sendIfBatch()
+          this.scheduleBatch()
           return oboe.drop
         })
         .done(() => {
-          this.sendIfBatch(true)
+          this.scheduleBatch(true)
           resolve()
         })
         .fail(reject)
@@ -98,14 +100,14 @@ export class GoogleAdsUserListUploader {
 
   private handleRow(row: any) {
     const output = this.transformRow(row)
-    this.queue.push(...output)
+    this.rowQueue.push(...output)
   }
 
   private transformRow(row: any) {
     const schemaMapping = Object.entries(this.schema)
     const outputCells = schemaMapping.map(( [columnLabel, outputPath] ) => {
       let outputValue = row[columnLabel]
-      if (!outputValue){
+      if (!outputValue) {
         return null
       }
       if (this.doHashingBool && outputPath.includes("hashed")) {
@@ -123,13 +125,27 @@ export class GoogleAdsUserListUploader {
     return hashed
   }
 
-  private sendIfBatch(force = false) {
+  private scheduleBatch(force = false) {
     if ( !this.batchIsReady && !force ) {
       return
     }
-    const batch = this.queue.splice(0, BATCH_SIZE - 1)
-    const apiPromise = this.adsExecutor.addDataJobOperations(batch)
-    this.apiPromises.push(apiPromise)
+    const batch = this.rowQueue.splice(0, BATCH_SIZE - 1)
+    this.batchQueue.push(batch)
+    this.batchPromises.push(this.sendBatch())
+  }
+
+  // The Ads API seems to generate a concurrent modification exception if we have multiple
+  // addDataJobOperations requests in progress at one time. So we use this funky solution
+  // to run one at a time, without having to refactor the streaming parser and everything too.
+  private async sendBatch(): Promise<void> {
+    if (this.currentRequest !== undefined || this.batchQueue.length === 0) {
+      return
+    }
+    const currentBatch = this.batchQueue.shift()
+    this.currentRequest = this.adsExecutor.addDataJobOperations(currentBatch)
+    await this.currentRequest
+    this.currentRequest = undefined
+    return this.sendBatch()
   }
 
 }
