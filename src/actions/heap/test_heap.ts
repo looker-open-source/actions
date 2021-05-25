@@ -4,16 +4,13 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../../src/hub"
 
-import { HeapAction, HeapField, HeapFields, HeapPropertyType, HeapPropertyTypes } from "./heap"
+import { HeapAction, HeapPropertyType, HeapPropertyTypes } from "./heap"
 
 const action = new HeapAction()
 
 describe(`${action.constructor.name} unit tests`, () => {
   const ENV_ID = "1"
   const stubPost = sinon.stub(req, "post")
-  HeapAction.HEAP_ENV_ID = "11"
-  HeapAction.HEAP_IDENTITY = "example@example.com"
-
   beforeEach(() => {
     stubPost.reset()
     stubPost.returns({ promise: () => undefined })
@@ -46,9 +43,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       properties: { [K in string]: string | number };
       heapIdentity: string;
     }[],
-    numCall = 0,
   ) => {
-    chai.expect(stubPost.getCall(numCall).lastArg).to.deep.equal({
+    chai.expect(stubPost).to.have.been.calledWith({
       uri: HeapAction.ADD_USER_PROPERTIES_URL,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -80,33 +76,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           properties,
         })),
       }),
-    })
-  }
-
-  const expectHeapTrackRequest = (
-    heapField: HeapField,
-    recordCount: number,
-    state: "success" | "failure",
-    numCall: number,
-  ) => {
-    const requestArg = stubPost.getCall(numCall).lastArg
-    const requestBody = requestArg.body
-
-    chai.expect(requestArg).to.deep.include({
-      uri: HeapAction.HEAP_TRACK_URL,
-      headers: { "Content-Type": "application/json" },
-    })
-    chai.expect(requestBody).to.not.be.undefined
-    chai.expect(JSON.parse(requestBody)).to.deep.include({
-      app_id: HeapAction.HEAP_ENV_ID,
-      identity: HeapAction.HEAP_IDENTITY,
-      event: HeapAction.HEAP_EVENT_NAME,
-      properties: {
-        customer_env_id: ENV_ID,
-        record_count: recordCount,
-        field_type: heapField,
-        state,
-      },
     })
   }
 
@@ -186,8 +155,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const response = await action.validateAndExecute(request)
 
       chai.expect(response.success).to.equal(true)
-      chai.expect(stubPost).to.have.been.calledOnce
-      expectHeapTrackRequest(HeapFields.Identity, 0, "success",0)
+      chai.expect(stubPost).to.have.not.been.called
     })
   })
 
@@ -220,7 +188,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const response = await action.validateAndExecute(request)
 
       chai.expect(response.success).to.equal(true)
-      chai.expect(stubPost).to.have.been.calledTwice
+      chai.expect(stubPost).to.have.been.calledOnce
       expectAddUserPropertyRequest([
         {
           properties: {
@@ -237,7 +205,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           heapIdentity: "testB@heap.io",
         },
       ])
-      expectHeapTrackRequest(HeapFields.Identity, 2, "success", 1)
     })
   })
 
@@ -270,7 +237,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const response = await action.validateAndExecute(request)
 
       chai.expect(response.success).to.equal(true)
-      chai.expect(stubPost).to.have.been.calledTwice
+      chai.expect(stubPost).to.have.been.calledOnce
       expectAddAccountPropertyRequest([
         {
           properties: {
@@ -287,7 +254,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           heapAccountId: "accountB",
         },
       ])
-      expectHeapTrackRequest(HeapFields.AccountId, 2, "success",1)
     })
   })
 
@@ -325,14 +291,13 @@ describe(`${action.constructor.name} unit tests`, () => {
       ])
     })
 
-    it("should correctly batch rows", async () => {
-      const requestCount = HeapAction.ROWS_PER_BATCH * 1.5
+    it("should corectly batch rows", async () => {
       const fields = [
         { name: "property", label: "Property" },
         { name: "account ID", label: "Account ID" },
       ]
       const data = [
-        ...Array(Math.floor(requestCount)).keys(),
+        ...Array(Math.floor(HeapAction.ROWS_PER_BATCH * 1.5)).keys(),
       ].map((value) => ({
         "property": { value: value.toString() },
         "account ID": { value: value.toString() },
@@ -348,8 +313,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const response = await action.validateAndExecute(request)
 
       chai.expect(response.success).to.equal(true)
-      // two batched requests and then the Heap track call
-      chai.expect(stubPost).to.have.been.callCount(3)
+      chai.expect(stubPost).to.have.been.calledTwice
 
       expectAddAccountPropertyRequest(
         data.slice(0, HeapAction.ROWS_PER_BATCH).map((row) => ({
@@ -365,7 +329,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         })),
         1,
       )
-      expectHeapTrackRequest(HeapFields.AccountId, requestCount, "success", 2)
     })
 
     it("should catch rejected request promises", async () => {
