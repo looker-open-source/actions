@@ -14,10 +14,10 @@ export function sanitizeError(err: any) {
   }
 
   // Remove data payload - this is hashed but makes the logs unreadable
-  if (err.config && err.config.data && err.config.data.operations){
+  if (err.config && err.config.data && err.config.data.operations) {
     err.config.data.operations = "[TRUNCATED]"
   }
-  if (err.config && err.config.body){
+  if (err.config && err.config.body) {
     err.config.body = "[TRUNCATED]"
   }
 }
