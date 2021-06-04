@@ -250,12 +250,9 @@ export class HeapAction extends Hub.Action {
         const propertyName =
           field.label !== undefined ? field.label : fieldName
         // :TODO: what are and how to handle PivotCells?
-        const propertyValue = cell.value
-        if (propertyValue) {
-          const typedValue = field.is_numeric
-            ? +propertyValue
-            : propertyValue.toString().substring(0, 1024)
-          properties[propertyName] = typedValue
+        if (cell.value) {
+          const propertyValue = cell.value.toString().substring(0, 1024)
+          properties[propertyName] = propertyValue
         }
       }
     }

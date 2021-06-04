@@ -4,7 +4,13 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../../src/hub"
 
-import { HeapAction, HeapField, HeapFields, HeapPropertyType, HeapPropertyTypes } from "./heap"
+import {
+  HeapAction,
+  HeapField,
+  HeapFields,
+  HeapPropertyType,
+  HeapPropertyTypes,
+} from "./heap"
 
 const action = new HeapAction()
 
@@ -187,7 +193,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       chai.expect(response.success).to.equal(true)
       chai.expect(stubPost).to.have.been.calledOnce
-      expectHeapTrackRequest(HeapFields.Identity, 0, "success",0)
+      expectHeapTrackRequest(HeapFields.Identity, 0, "success", 0)
     })
   })
 
@@ -287,12 +293,12 @@ describe(`${action.constructor.name} unit tests`, () => {
           heapAccountId: "accountB",
         },
       ])
-      expectHeapTrackRequest(HeapFields.AccountId, 2, "success",1)
+      expectHeapTrackRequest(HeapFields.AccountId, 2, "success", 1)
     })
   })
 
   describe("Common Processing", () => {
-    it("should send properties with correct types", async () => {
+    it("should stringify all property values", async () => {
       const fields = [
         { name: "property1", label: "Property 1", is_numeric: true },
         { name: "property2", label: "Property 2", is_numeric: false },
@@ -305,6 +311,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           "account ID": { value: "account" },
         },
       ]
+
       const request = buildRequest(
         HeapPropertyTypes.Account,
         "Account ID",
@@ -317,7 +324,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       expectAddAccountPropertyRequest([
         {
           properties: {
-            "Property 1": 1,
+            "Property 1": "1",
             "Property 2": "value2",
           },
           heapAccountId: "account",
@@ -331,9 +338,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         { name: "property", label: "Property" },
         { name: "account ID", label: "Account ID" },
       ]
-      const data = [
-        ...Array(Math.floor(requestCount)).keys(),
-      ].map((value) => ({
+      const data = [...Array(Math.floor(requestCount)).keys()].map((value) => ({
         "property": { value: value.toString() },
         "account ID": { value: value.toString() },
       }))
@@ -387,7 +392,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       )
       const requestError = "Error: Incorrect request body format"
       stubPost.reset()
-      stubPost.returns({ promise: async () => Promise.reject(new Error(requestError)) })
+      stubPost.returns({
+        promise: async () => Promise.reject(new Error(requestError)),
+      })
 
       const response = await action.validateAndExecute(request)
 
