@@ -1,6 +1,5 @@
 import * as Hub from "../../../../hub"
 
-import {Mutex} from "async-mutex"
 import * as parse from "csv-parse"
 import {Credentials} from "google-auth-library"
 import {drive_v3, google, sheets_v4} from "googleapis"
@@ -103,7 +102,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
-        const mutex = new Mutex()
         const parents = request.formParams.folder ? [request.formParams.folder] : undefined
 
         const options: any = {
@@ -149,7 +147,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 const csvparser = parse({rtrim: true, ltrim: true, bom: true})
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet, sheetId)
-                csvparser.on("data", async (line: any) => {
+                csvparser.on("data",  (line: any) => {
                     const rowIndex: number = rowCount++
                     // Sanitize line data and properly encapsulate string formatting for CSV lines
                     const lineData = line.map((record: string) => {
@@ -171,65 +169,58 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     })
                     // @ts-ignore
                     if (requestBody.requests.length > MAX_REQUEST_BATCH) {
-                        await mutex.runExclusive(async () => {
-                            // @ts-ignore
-                            if (requestBody.requests.length > MAX_REQUEST_BATCH) {
-                                const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
-                                // Make sure to do a deep copy of the request
-                                Object.assign(requestCopy, requestBody)
-                                requestBody.requests = []
-                                if (rowCount >= maxRows) {
-                                    // Make sure we grow at least by requestlength.
-                                    // Add MAX_ROW_BUFFER_INCREASE in addition to give headroom for more requests before
-                                    // having to resize again
-                                    const requestLen = requestCopy.requests ? requestCopy.requests.length : 0
-                                    winston.info(`Expanding max rows: ${maxRows} to ` +
-                                      `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
-                                    maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
-                                    // @ts-ignore
-                                    await sheet.spreadsheets.batchUpdate({
-                                        spreadsheetId,
-                                        requestBody: {
-                                            requests: [{
-                                                updateSheetProperties: {
-                                                    properties: {
-                                                        sheetId,
-                                                        gridProperties: {
-                                                            rowCount: maxRows,
-                                                        },
-                                                    },
-                                                    fields: "gridProperties(rowCount)",
+                        const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                        // Make sure to do a deep copy of the request
+                        Object.assign(requestCopy, requestBody)
+                        requestBody.requests = []
+                        if (rowCount >= maxRows) {
+                            // Make sure we grow at least by requestlength.
+                            // Add MAX_ROW_BUFFER_INCREASE in addition to give headroom for more requests before
+                            // having to resize again
+                            const requestLen = requestCopy.requests ? requestCopy.requests.length : 0
+                            winston.info(`Expanding max rows: ${maxRows} to ` +
+                              `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
+                            maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
+                            sheet.spreadsheets.batchUpdate({
+                                spreadsheetId,
+                                requestBody: {
+                                    requests: [{
+                                        updateSheetProperties: {
+                                            properties: {
+                                                sheetId,
+                                                gridProperties: {
+                                                    rowCount: maxRows,
                                                 },
-                                            }],
+                                            },
+                                            fields: "gridProperties(rowCount)",
                                         },
-                                    }).catch((e: any) => {
-                                        reject(e)
-                                    })
-                                }
-                                await this.flush(requestCopy, sheet, spreadsheetId).catch((e: any) => {
-                                    winston.error(e, {webhookId: request.webhookId})
-                                    reject(e)
-                                })
-                            }
-                        }).catch((e: any) => {
-                            reject(e)
-                        })
-                    }
-                }).on("end", async () => {
-                    finished = true
-                    await mutex.runExclusive(async () => {
-                        // @ts-ignore
-                        if (requestBody.requests.length > 0) {
-                            await this.flush(requestBody, sheet, spreadsheetId).catch((e: any) => {
+                                    }],
+                                },
+                            }).catch((e: any) => {
                                 reject(e)
                             })
                         }
-                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
-                            {webhookId: request.webhookId})
-                        resolve()
-                    }).catch((e: any) => {
-                        reject(e)
-                    })
+                        this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
+                            winston.error(e, {webhookId: request.webhookId})
+                            reject(e)
+                        })
+                    }
+                }).on("end", () => {
+                    finished = true
+                    // @ts-ignore
+                    if (requestBody.requests.length > 0) {
+                        this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
+                            reject(e)
+                        }).then(() => {
+                            winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
+                                {webhookId: request.webhookId})
+                            resolve()
+                        }).catch((e) => {
+                            winston.warn("End flush failed.",
+                                {webhookId: request.webhookId})
+                            reject(e)
+                        })
+                    }
                 }).on("error", (e: any) => {
                     winston.error(e, {webhookId: request.webhookId})
                     reject(e)
@@ -264,11 +255,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         })
     }
 
-    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+    async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,
+                sheet: Sheet, spreadsheetId: string, webhookId: string) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
-            winston.info(e)
+            winston.info(`Flush error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
-                winston.warn("Queueing retry")
+                winston.warn("Queueing retry", {webhookId})
                 return this.flushRetry(buffer, sheet, spreadsheetId)
             }
         })
