@@ -1,4 +1,5 @@
 import * as req from "request-promise-native"
+import * as semver from "semver"
 
 import * as Hub from "../../hub"
 
@@ -62,7 +63,13 @@ export class HeapAction extends Hub.Action {
   supportedActionTypes = [Hub.ActionType.Query]
   supportedPropertyTypes = [HeapPropertyTypes.User, HeapPropertyTypes.Account]
   usesStreaming = true
-  supportedFormats = [Hub.ActionFormat.JsonDetail]
+  supportedFormats = (request: Hub.ActionRequest) => {
+    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
+      return [Hub.ActionFormat.JsonDetailLiteStream]
+    } else {
+      return [Hub.ActionFormat.JsonDetail]
+    }
+  }
 
   async execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
     if (
