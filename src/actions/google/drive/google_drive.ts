@@ -246,15 +246,15 @@ export class GoogleDriveAction extends Hub.OAuthAction {
        case "inline_json":
          return "application/json"
        case "json":
-        return "application/json"
+         return "application/json"
        case "json_label":
-        return "application/json"
+         return "application/json"
        case "json_detail":
-        return "application/json"
+         return "application/json"
        case "html":
          return "text/html"
        case "txt":
-          return "text/plain"
+         return "text/plain"
        default:
          return undefined
      }
