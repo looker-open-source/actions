@@ -272,6 +272,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.formParams = {format: "csv"}
       chai.expect(action.getMimeType(request)).to.equal("text/csv")
+      request.formParams = {format: "json"}
+      chai.expect(action.getMimeType(request)).to.equal("application/json")
     })
 
     it("returns undefined if no format is given", () => {
