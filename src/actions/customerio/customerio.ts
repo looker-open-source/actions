@@ -13,15 +13,12 @@ interface CustomerIoFields {
   idFieldNames: string[],
   idField?: Hub.Field,
   userIdField?: Hub.Field,
-  groupIdField?: Hub.Field,
   emailField?: Hub.Field,
-  anonymousIdField?: Hub.Field,
 }
 
 export enum CustomerIoTags {
   UserId = "user_id",
   Email = "email",
-  CustomerIoGroupId = "customerio_group_id",
 }
 
 export enum CustomerIoCalls {
@@ -147,14 +144,10 @@ export class CustomerIoAction extends Hub.Action {
                 customerIoCall === CustomerIoCalls.Track),
             ...{event, context, timestamp},
           }
-          if (payload.groupId === null) {
-            delete payload.groupId
-          }
           if (!payload.event) {
             delete payload.event
           }
           try {
-            customerIoClient.identify(payload)
             customerIoClient[customerIoCall](payload)
           } catch (e) {
             errors.push(e)
@@ -207,14 +200,12 @@ export class CustomerIoAction extends Hub.Action {
     const idFieldNames = this.taggedFields(fields, [
       CustomerIoTags.Email,
       CustomerIoTags.UserId,
-      CustomerIoTags.CustomerIoGroupId,
     ]).map((f: Hub.Field) => (f.name))
 
     return {
       idFieldNames,
       idField: this.taggedField(fields, [CustomerIoTags.UserId]),
       userIdField: this.taggedField(fields, [CustomerIoTags.UserId]),
-      groupIdField: this.taggedField(fields, [CustomerIoTags.CustomerIoGroupId]),
       emailField: this.taggedField(fields, [CustomerIoTags.Email]),
     }
   }
@@ -280,13 +271,11 @@ export class CustomerIoAction extends Hub.Action {
       }
     }
     const userId: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
-    const groupId: string | null = customerIoFields.groupIdField ? row[customerIoFields.groupIdField.name].value : null
 
     const dimensionName = trackCall ? "properties" : "traits"
 
     const segmentRow: any = {
       userId,
-      groupId,
     }
     segmentRow[dimensionName] = traits
     return segmentRow
