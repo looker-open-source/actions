@@ -362,6 +362,16 @@
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
 
+"@types/request@^2.48.5":
+  version "2.48.5"
+  resolved "https://registry.yarnpkg.com/@types/request/-/request-2.48.5.tgz#019b8536b402069f6d11bee1b2c03e7f232937a0"
+  integrity sha512-/LO7xRVnL3DxJ1WkPGDQrp4VTV1reX9RkC85mJ+Qzykj2Bdw+mG15aAfDahc76HtknjzE16SX/Yddn6MxVbmGQ==
+  dependencies:
+    "@types/caseless" "*"
+    "@types/node" "*"
+    "@types/tough-cookie" "*"
+    form-data "^2.5.0"
+
 "@types/retry@^0.12.0":
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/@types/retry/-/retry-0.12.0.tgz#2b35eccfcee7d38cd72ad99232fbd58bffb3c84d"
@@ -1378,6 +1388,14 @@ csv-parse@^4.8.6:
   version "4.8.6"
   resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-4.8.6.tgz#e3e01c2c9593194f1b7aae6291c65304b35022c8"
   integrity sha512-rSJlpgAjrB6pmlPaqiBAp3qVtQHN07VxI+ozs+knMsNvgh4bDQgENKLFYLFMvT+jn/wr/zvqsd7IVZ7Txdkr7w==
+
+customerio-node@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/customerio-node/-/customerio-node-2.1.1.tgz#94a2f6edbd293c383052107f448decc7211b882a"
+  integrity sha512-dGwN9PRvEOjKIw4nikP8zE6fPfH5NxTpDYqth1FikO7VW4XY41a0zNWiHQvLEu2enFZ+OxavTGI1W9YZjW7o7A==
+  dependencies:
+    "@types/request" "^2.48.5"
+    request "^2.58.0"
 
 cycle@1.0.x:
   version "1.0.3"
@@ -4373,7 +4391,7 @@ request-promise@^4.1.1:
     stealthy-require "^1.1.0"
     tough-cookie ">=2.3.3"
 
-request@2.74.0, request@2.88.0, request@^2.72.0, request@^2.79.0, request@^2.81.0, request@^2.85.0, request@^2.86.0, request@^2.87.0, request@^2.88.0, "request@https://github.com/request/request/archive/392db7d127536ff296fb06492db9430790a32d6c.tar.gz":
+request@2.74.0, request@2.88.0, request@^2.58.0, request@^2.72.0, request@^2.79.0, request@^2.81.0, request@^2.85.0, request@^2.86.0, request@^2.87.0, request@^2.88.0, "request@https://github.com/request/request/archive/392db7d127536ff296fb06492db9430790a32d6c.tar.gz":
   version "2.88.1"
   resolved "https://github.com/request/request/archive/392db7d127536ff296fb06492db9430790a32d6c.tar.gz#c2f5e28c595dae4825d2399408c3297d0027ff4e"
   dependencies:
