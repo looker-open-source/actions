@@ -4,8 +4,10 @@ import * as winston from "winston"
 import * as semver from "semver"
 import * as Hub from "../../hub"
 import {CustomerIoActionError} from "./customerio_error"
-
-//const CIO: any = require("customerio-node")
+// import CIO from "customerio-node"
+// import Regions from "customerio-node/regions"
+const CIO: any = require("customerio-node")
+const cioRegions: any = require("customerio-node/regions")
 
 interface CustomerIoFields {
   idFieldNames: string[],
@@ -25,7 +27,6 @@ export enum CustomerIoTags {
 export enum CustomerIoCalls {
   Identify = "identify",
   Track = "track",
-  Group = "group",
 }
 
 export class CustomerIoAction extends Hub.Action {
@@ -38,15 +39,28 @@ export class CustomerIoAction extends Hub.Action {
   description = "Add traits via identify to your customer.io users."
   params = [
     {
-      description: "An api key for customer.io.",
-      label: "customer.io API Key",
+      description: "Api key for customer.io",
+      label: "API Key",
       name: "customer_io_api_key",
       required: true,
       sensitive: true,
     },
     {
-      description:
-        "The number of objects to batch update per call (defaulted to 10)",
+      description: "Region for customer.io",
+      label: "Region",
+      name: "customer_io_region",
+      required: true,
+      sensitive: true,
+    },
+    {
+      description: "Site id for customer.io",
+      label: "Site ID",
+      name: "customer_io_site_id",
+      required: true,
+      sensitive: true,
+    },
+    {
+      description : "The number of objects to batch update per call (defaulted to 10)",
       label: "Batch Update Size",
       name: "customer_io_batch_update_size",
       required: false,
@@ -66,6 +80,22 @@ export class CustomerIoAction extends Hub.Action {
     } else {
       return [Hub.ActionFormat.JsonDetail]
     }
+  }
+  async form() {
+    const form = new Hub.ActionForm()
+    form.fields = [{
+      description: "Override default api key",
+      label: "Override API Key",
+      name: "override_customer_io_api_key",
+      required: true,
+    },
+    {
+      description: "Override default site id",
+      label: "Override Site ID",
+      name: "override_customer_io_site_id",
+      required: true,
+    }]
+    return form
   }
 
   async execute(request: Hub.ActionRequest) {
@@ -124,6 +154,7 @@ export class CustomerIoAction extends Hub.Action {
             delete payload.event
           }
           try {
+            customerIoClient.identify(payload)
             customerIoClient[customerIoCall](payload)
           } catch (e) {
             errors.push(e)
@@ -131,15 +162,15 @@ export class CustomerIoAction extends Hub.Action {
         },
       })
 
-      await new Promise<void>(async (resolve, reject) => {
-          customerIoClient.flush( (err: any) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve()
-            }
-          })
-      })
+      // await new Promise<void>(async (resolve, reject) => {
+      //     customerIoClient.flush( (err: any) => {
+      //       if (err) {
+      //         reject(err)
+      //       } else {
+      //         resolve()
+      //       }
+      //     })
+      // })
     } catch (e) {
       errors.push(e)
     }
@@ -262,9 +293,31 @@ export class CustomerIoAction extends Hub.Action {
   }
 
   protected customerIoClientFromRequest(request: Hub.ActionRequest) {
-    return new segment(request.params.customer_io_api_key)
+    let  cioRegion = cioRegions.RegionUS
+    switch (request.params.customer_io_region) {
+      case "RegionUS":
+        cioRegion = cioRegions.RegionUS
+        break
+      case "RegionEU":
+        cioRegion = cioRegions.RegionEU
+        break
+      default:
+        throw new CustomerIoActionError(`Customer.io requires a valig region (RegionUS or RegionEU)`)
+    }
+
+    let siteId = request.params.customer_io_site_id
+    if (request.formParams.customer_io_site_id && request.formParams.customer_io_site_id.length > 0) {
+      siteId = request.formParams.customer_io_site_id
+    }
+
+    let apiKey = request.params.customer_io_api_key
+    if (request.formParams.customer_io_api_key && request.formParams.customer_io_api_key.length > 0) {
+      apiKey = request.formParams.customer_io_api_key
+    }
+
+    return new CIO(siteId, apiKey, { region: cioRegion })
   }
 
 }
 
-Hub.addAction(new SegmentAction())
+Hub.addAction(new CustomerIoAction())
