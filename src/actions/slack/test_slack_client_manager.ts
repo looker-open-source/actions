@@ -96,10 +96,44 @@ describe("SlackClientManager", () => {
             })
         })
 
-        describe("has fault tolerence for str state json", () => {
+        describe("has fault tolerance for json str state json", () => {
             const request = new Hub.ActionRequest()
             request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
             request.params.state_json = JSON.stringify("token1")
+
+            it("hasAnyClients works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.hasAnyClients()).to.equals(true)
+            })
+            it("getClients works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                const result = clientManager.getClients()
+                chai.expect(result).to.deep.equals(["stubbed"])
+            })
+            it("hasSelectedClient works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.hasSelectedClient()).to.eq(true)
+            })
+            it("getSelectedClient works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.getSelectedClient()).to.equals("stubbed")
+            })
+            it("getClient works", () => {
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                const clientManager = new SlackClientManager(request)
+                chai.expect(clientManager.getClient("WS1")).to.equals(undefined)
+                chai.expect(clientManager.getClient(PLACEHOLDER_WORKSPACE)).to.equals("stubbed")
+            })
+        })
+
+        describe("has fault tolerance for str state json", () => {
+            const request = new Hub.ActionRequest()
+            request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+            request.params.state_json = "token1"
 
             it("hasAnyClients works", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
@@ -149,12 +183,12 @@ describe("SlackClientManager", () => {
             it("hasSelectedClient works", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
                 const clientManager = new SlackClientManager(request)
-                chai.expect(clientManager.hasSelectedClient()).to.eq(false)
+                chai.expect(clientManager.hasSelectedClient()).to.eq(true)
             })
             it("getSelectedClient works", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
                 const clientManager = new SlackClientManager(request)
-                chai.expect(clientManager.getSelectedClient()).to.eq(undefined)
+                chai.expect(clientManager.getSelectedClient()).to.eq("stubbed")
             })
             it("getClient works", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
@@ -185,7 +219,7 @@ describe("SlackClientManager", () => {
             it("hasSelectedClient works", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
                 const clientManager = new SlackClientManager(request)
-                chai.expect(clientManager.hasSelectedClient()).to.eq(false)
+                chai.expect(clientManager.hasSelectedClient()).to.eq(true)
             })
 
             it("hasSelectedClient works - with selected WS", () => {
@@ -196,15 +230,15 @@ describe("SlackClientManager", () => {
             })
 
             it("getSelectedClient works", () => {
-                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns("stubbed")
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").callsFake((token) => `stubbed-${token}`)
                 const clientManager = new SlackClientManager(request)
-                chai.expect(clientManager.getSelectedClient()).to.eq(undefined)
+                chai.expect(clientManager.getSelectedClient()).to.eq("stubbed-token1")
             })
             it("getSelectedClient works - with selected WS", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").callsFake((token) => `stubbed-${token}`)
-                const hasSelecteWSReq = Object.assign({}, request, { formParams: { workspace: "WS1"}})
+                const hasSelecteWSReq = Object.assign({}, request, { formParams: { workspace: "WS2"}})
                 const clientManager = new SlackClientManager(hasSelecteWSReq)
-                chai.expect(clientManager.getSelectedClient()).to.eq("stubbed-token1")
+                chai.expect(clientManager.getSelectedClient()).to.eq("stubbed-token2")
             })
             it("getClient works", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").callsFake((token) => `stubbed-${token}`)

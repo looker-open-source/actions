@@ -29,8 +29,18 @@ function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any) {
 }
 
 describe(`${action.constructor.name} unit tests`, () => {
-  sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
-  sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+  let encryptStub: any
+  let decryptStub: any
+
+  beforeEach(() => {
+    encryptStub = sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
+    decryptStub = sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+  })
+
+  afterEach(() => {
+    encryptStub.restore()
+    decryptStub.restore()
+  })
 
   describe("action", () => {
 
@@ -43,10 +53,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
-        stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        stateJson: `{"access_token": "token"}`,
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: `{"access_token": "token"}`,
       }
       return expectDropboxMatch(request,
         {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
@@ -58,8 +66,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {filename: stubFileName, directory: stubDirectory}
       request.type = Hub.ActionType.Query
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -89,8 +95,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -116,8 +120,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -154,7 +156,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           default: "__root",
-          description: "Dropbox folder where file will be saved",
+          description: "Dropbox folder where your file will be saved",
           label: "Select folder to save file",
           name: "directory",
           options: [{ name: "__root", label: "Home" }, { name: "fake_name", label: "fake_name" }],

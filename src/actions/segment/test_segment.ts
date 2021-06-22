@@ -31,7 +31,6 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
     timestamp: now,
   }
   const merged = {...baseMatch, ...match}
-
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
     chai.expect(segmentCallSpy).to.have.been.calledWithExactly(merged)
     stubClient.restore()
@@ -75,6 +74,24 @@ describe(`${action.constructor.name} unit tests`, () => {
         userId: null,
         traits: {email: "funvalue"},
        })
+    })
+
+    it("works with pivoted values", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        segment_write_key: "mykey",
+      }
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+          fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}],
+                   measures: [{name: "users.count"}]},
+          data: [{"coolfield": {value: "funvalue"}, "users.count": {f: {value: 1}, z: {value: 3}}}],
+        }))}
+      return expectSegmentMatch(request, {
+        userId: "funvalue",
+        anonymousId: null,
+        traits: { "users.count": [{ f: 1 }, { z: 3 }] },
+      })
     })
 
     it("works with email and user id", () => {

@@ -1,5 +1,7 @@
 # Marketo
 
+> This action is not currently supported by Looker. Looker is unable to respond to bugs or feature requests for this action. All actions are [open source](https://github.com/looker/actions), so users may attempt to remedy any issues and implement a [custom action](https://docs.looker.com/sharing-and-publishing/action-hub#building_a_custom_action)."
+
 This action takes a query result and uses it to update a set of leads in Marketo, and to edit the leads' memberships in campaigns and lists. 
 
 ## SETUP

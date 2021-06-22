@@ -1,11 +1,12 @@
 import * as express from "express"
 import * as oboe from "oboe"
 import * as httpRequest from "request"
-import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
-import { truncateString } from "./utils"
+import { formatToFileExtension, truncateString } from "./utils"
+
+const sanitizeFilename = require("sanitize-filename")
 
 import {
   DataWebhookPayload,
@@ -70,7 +71,7 @@ export class ActionRequest {
     const userAgent = request.header("user-agent")
     if (userAgent) {
       const version = userAgent.split("LookerOutgoingWebhook/")[1]
-      actionRequest.lookerVersion = semver.valid(version)
+      actionRequest.lookerVersion = semver.valid(version, true)
     }
     return actionRequest
   }
@@ -150,8 +151,8 @@ export class ActionRequest {
   lookerVersion: string | null = null
 
   empty(): boolean {
-    const url = !!this.scheduledPlan && !this.scheduledPlan.downloadUrl
-    const buffer = !!this.attachment && !this.attachment.dataBuffer
+    const url = !this.scheduledPlan || !this.scheduledPlan.downloadUrl
+    const buffer = !this.attachment || !this.attachment.dataBuffer
     return url && buffer
   }
 
@@ -355,7 +356,30 @@ export class ActionRequest {
       } else {
         return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
       }
+    } else if (this.formParams.format) {
+      if (this.scheduledPlan && this.scheduledPlan.title) {
+        return sanitizeFilename(`${this.scheduledPlan.title}.${formatToFileExtension(this.formParams.format)}`)
+      } else {
+        return sanitizeFilename(`looker_file_${Date.now()}.${formatToFileExtension(this.formParams.format)}`)
+      }
     }
+    winston.warn("Couldn't infer file extension from action request, using default filename scheme")
+    return sanitizeFilename(`looker_file_${Date.now()}`)
+  }
+
+  /** Returns filename with whitespace removed and the file extension included
+   */
+  completeFilename() {
+    if (this.attachment && this.formParams.filename) {
+      if (this.formParams.filename.endsWith(this.attachment.fileExtension!)) {
+        return this.formParams.filename.trim().replace(/\s/g, "_")
+      } else if (this.formParams.filename.indexOf(".") !== -1) {
+        return this.suggestedFilename()
+      } else {
+        return `${this.formParams.filename.trim().replace(/\s/g, "_")}.${this.attachment.fileExtension}`
+      }
+    }
+    return this.formParams.filename
   }
 
   /** creates a truncated message with a max number of lines and max number of characters with Title, Url,

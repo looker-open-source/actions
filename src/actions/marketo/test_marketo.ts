@@ -10,6 +10,7 @@ import { MarketoTransaction } from "./marketo_transaction"
 
 (async () => {
   const action = new MarketoAction()
+  action.executeInOwnProcess = false
   const form = await action.form()
   const sampleData = {
     fields: {

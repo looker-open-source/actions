@@ -371,17 +371,18 @@ describe(`${action.constructor.name} tests`, () => {
         return chai.expect(form).to.eventually.deep.equal(response)
       })
 
-       it("doesn't have a selected workspace", () => {
-        const request = new Hub.ActionRequest()
-        request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
-        request.params = { state_json: JSON.stringify([{ install_id: "ws1", token: "someToken"}]) }
+       it("doesn't have a selected workspace default to the first one", () => {
+         const response = new Hub.ActionResponse({success: true})
 
-        const form = action.execute(request)
+         handleExecuteStub = sinon.stub(utils, "handleExecute").returns(Promise.resolve(response))
 
-        return chai.expect(form).to.eventually.deep.equal(new Hub.ActionResponse(
-            {success: false, message: "You must connect to a Slack workspace first."},
-            ),
-        )
+         const request = new Hub.ActionRequest()
+         request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
+         request.params = { state_json: JSON.stringify([{ install_id: "ws1", token: "someToken"}]) }
+
+         const form = action.execute(request)
+
+         return chai.expect(form).to.eventually.deep.equal(response)
       })
 
        it("uses the selected workspace if multiple ws is given", () => {

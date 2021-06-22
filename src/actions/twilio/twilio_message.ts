@@ -29,10 +29,10 @@ export class TwilioMessageAction extends Hub.Action {
       description: "Auth Token from www.twilio.com/console.",
     }, {
       name: "from",
-      label: "Twilio Verified Phone # Caller Id",
+      label: "Twilio Phone Number",
       required: true,
       sensitive: false,
-      description: "A valid Twilio number from www.twilio.com/console/phone-numbers/verified.",
+      description: "A valid Twilio number from https://www.twilio.com/console",
     },
   ]
 

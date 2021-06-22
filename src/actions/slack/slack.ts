@@ -15,7 +15,7 @@ const AUTH_MESSAGE = "You must connect to a Slack workspace first."
 export class SlackAction extends Hub.DelegateOAuthAction {
 
   name = "slack_app"
-  label = "Slack (Beta)"
+  label = "Slack"
   iconName = "slack/slack.png"
   description = "Explore and share Looker content in Slack."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
@@ -82,7 +82,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     }
 
     try {
-      form.fields = form.fields.concat(await getDisplayedFormFields(client, false))
+      form.fields = form.fields.concat(await getDisplayedFormFields(client))
     } catch (e) {
       return this.loginForm(request, form)
     }

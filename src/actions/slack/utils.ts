@@ -10,14 +10,13 @@ interface Channel {
     label: string,
 }
 
-const _usableChannels = async (slack: WebClient, legacy: boolean): Promise<Channel[]> => {
+const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
     const options: any = {
         types: "public_channel,private_channel",
         exclude_archived: true,
-        exclude_members: true,
         limit: API_LIMIT_SIZE,
     }
-    const channelList: any = legacy ? slack.channels.list : slack.conversations.list
+    const channelList: any = slack.conversations.list
     const pageLoaded = async (accumulatedChannels: any[], response: any): Promise<any[]> => {
         const mergedChannels = accumulatedChannels.concat(response.channels)
 
@@ -60,15 +59,15 @@ const usableDMs = async (slack: WebClient): Promise<Channel[]> => {
     return users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
 }
 
-const usableChannels = async (slack: WebClient, legacy: boolean): Promise<Channel[]> => {
-    let channels = await _usableChannels(slack, legacy)
+const usableChannels = async (slack: WebClient): Promise<Channel[]> => {
+    let channels = await _usableChannels(slack)
     channels = channels.concat(await usableDMs(slack))
     channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
     return channels
 }
 
-export const getDisplayedFormFields = async (slack: WebClient, legacy: boolean): Promise<ActionFormField[]> => {
-    const channels = await usableChannels(slack, legacy)
+export const getDisplayedFormFields = async (slack: WebClient): Promise<ActionFormField[]> => {
+    const channels = await usableChannels(slack)
     return [
         {
             description: "Name of the Slack channel you would like to post to.",
@@ -94,7 +93,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
         throw "Missing channel."
     }
 
-    const fileName = request.formParams.filename || request.suggestedFilename()
+    const fileName = request.formParams.filename  ? request.completeFilename() : request.suggestedFilename()
 
     let response = new Hub.ActionResponse({success: true})
     try {

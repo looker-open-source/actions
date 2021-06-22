@@ -7,7 +7,7 @@ import { PassThrough } from "stream"
 import * as winston from "winston"
 import { xgboostHosts } from "./algorithm_hosts"
 import { awsInstanceTypes } from "./aws_instance_types"
-import { logRejection } from "./utils"
+import { DEFAULT_REGION, logRejection } from "./utils"
 
 const striplines = require("striplines")
 
@@ -16,7 +16,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
   name = "amazon_sagemaker_train_xgboost"
   label = "Amazon SageMaker Train: Xgboost"
   iconName = "sagemaker/sagemaker_train.png"
-  description = "Start a traingin job on Amazon SageMaker, using the Xgboost algorithm."
+  description = "Start a training job on Amazon SageMaker, using the Xgboost algorithm."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
@@ -368,8 +368,11 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
       Bucket: bucket,
     }
     const response = await s3.getBucketLocation(params).promise()
-
-    return response.LocationConstraint
+    if (response.LocationConstraint) {
+      return response.LocationConstraint
+    } else {
+      return DEFAULT_REGION
+    }
   }
 
   private async uploadToS3(request: Hub.ActionRequest, bucket: string, key: string) {
