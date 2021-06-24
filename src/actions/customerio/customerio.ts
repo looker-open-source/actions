@@ -30,8 +30,8 @@ export class CustomerIoAction extends Hub.Action {
 
   allowedTags = [CustomerIoTags.Email, CustomerIoTags.UserId]
 
-  name = "customerio_event"
-  label = "customer.io Identify"
+  name = "customerio_identify"
+  label = "Customer.io Identify XXX"
   iconName = "customerio/customerio.png"
   description = "Add traits via identify to your customer.io users."
   params = [
@@ -43,7 +43,7 @@ export class CustomerIoAction extends Hub.Action {
       sensitive: true,
     },
     {
-      description: "Region for customer.io",
+      description: "Region for customer.io (could be RegionUS or RegionEU)",
       label: "Region",
       name: "customer_io_region",
       required: true,
@@ -84,13 +84,13 @@ export class CustomerIoAction extends Hub.Action {
       description: "Override default api key",
       label: "Override API Key",
       name: "override_customer_io_api_key",
-      required: true,
+      required: false,
     },
     {
       description: "Override default site id",
       label: "Override Site ID",
       name: "override_customer_io_site_id",
-      required: true,
+      required: false,
     }]
     return form
   }
@@ -114,7 +114,7 @@ export class CustomerIoAction extends Hub.Action {
     let fieldset: Hub.Field[] = []
     const errors: Error[] = []
 
-    let timestamp = new Date()
+    let timestamp = Math.round(+new Date() / 1000)
     const context = {
       app: {
         name: "looker/actions",
@@ -133,22 +133,35 @@ export class CustomerIoAction extends Hub.Action {
         },
         onRanAt: (iso8601string) => {
           if (iso8601string) {
-            timestamp = new Date(iso8601string)
+            timestamp = timestamp
           }
         },
         onRow: (row) => {
           this.unassignedCustomerIoFieldsCheck(customerIoFields)
           const payload = {
             ...this.prepareCustomerIoTraitsFromRow(
-              row, fieldset, customerIoFields!, hiddenFields,
-                customerIoCall === CustomerIoCalls.Track),
-            ...{event, context, timestamp},
+                row, fieldset, customerIoFields!, hiddenFields),
+            ...{event, context, created_at: timestamp},
           }
           if (!payload.event) {
             delete payload.event
           }
           try {
-            customerIoClient[customerIoCall](payload)
+            // let response = await customerIoClient[customerIoCall]("" + payload.id || payload.email, payload)
+            //     .catch((error: any) => {
+            //   winston.warn(`response: ${JSON.stringify(error)}`)
+            // })
+            // winston.warn(`response: ${JSON.stringify(response)}`)
+            customerIoClient[customerIoCall](payload.email || "" + payload.user_id, payload).then((response: any) => {
+              winston.warn(`response: ${JSON.stringify(response)}`)
+              return customerIoClient.track(payload.id || payload.email, {
+                name: "updated",
+                data: {
+                  updated: true,
+                  plan: "free",
+                },
+              })
+            })
           } catch (e) {
             errors.push(e)
           }
@@ -243,7 +256,6 @@ export class CustomerIoAction extends Hub.Action {
     fields: Hub.Field[],
     customerIoFields: CustomerIoFields,
     hiddenFields: string[],
-    trackCall: boolean,
   ) {
     const traits: { [key: string]: string } = {}
     for (const field of fields) {
@@ -261,7 +273,8 @@ export class CustomerIoAction extends Hub.Action {
           }
           for (const key in values) {
             if (values.hasOwnProperty(key)) {
-              traits[key] = values[key]
+              const customKey = key.indexOf(".") >= 0 ? key.split(".")[1] : key
+              traits[customKey] = values[key]
             }
           }
         }
@@ -270,15 +283,16 @@ export class CustomerIoAction extends Hub.Action {
         traits.email = row[field.name].value
       }
     }
-    const userId: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
-
-    const dimensionName = trackCall ? "properties" : "traits"
+    const user_id: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
+    const id: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
+    // const dimensionName = trackCall ? "properties" : "traits"
 
     const segmentRow: any = {
-      userId,
+      user_id,
+      id
     }
-    segmentRow[dimensionName] = traits
-    return segmentRow
+    // segmentRow[dimensionName] = traits
+    return {...traits, ...segmentRow}
   }
 
   protected customerIoClientFromRequest(request: Hub.ActionRequest) {
@@ -303,7 +317,7 @@ export class CustomerIoAction extends Hub.Action {
     if (request.formParams.customer_io_api_key && request.formParams.customer_io_api_key.length > 0) {
       apiKey = request.formParams.customer_io_api_key
     }
-
+    winston.error(`creds ${apiKey}-${siteId}`)
     return new CIO(siteId, apiKey, { region: cioRegion })
   }
 

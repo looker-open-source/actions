@@ -4,9 +4,9 @@ import { CustomerIoAction, CustomerIoCalls } from "./customerio"
 export class CustomerIoTrackAction extends CustomerIoAction {
 
   name = "customerio_track"
-  label = "Customerio Track"
+  label = "Customer.io Track"
   iconName = "customerio/customerio.png"
-  description = "Add traits via track to your customerio users."
+  description = "Add traits via track to your customer.io users."
   minimumSupportedLookerVersion = "5.5.0"
 
   async execute(request: Hub.ActionRequest) {
