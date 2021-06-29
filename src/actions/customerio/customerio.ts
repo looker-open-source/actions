@@ -5,9 +5,22 @@ import * as semver from "semver"
 import * as Hub from "../../hub"
 import {CustomerIoActionError} from "./customerio_error"
 // import CIO from "customerio-node"
-// import Regions from "customerio-node/regions"
+// import Regions as cioRegions from "customerio-node/regions"
+
+// import CIO from "customerio-node/track"
 const CIO: any = require("customerio-node")
 const cioRegions: any = require("customerio-node/regions")
+import { RateLimiter } from "limiter"
+
+// Allow 150 requests per hour (the Twitter search limit). Also understands
+// 'second', 'minute', 'day', or a number of milliseconds
+const limiter = new RateLimiter({ tokensPerInterval: 100, interval: "second" })
+
+// const logger = new (winston.Logger)({
+//         transports: [
+//           new (winston.transports.Console)({'timestamp': true}),
+//         ],
+//       })
 
 interface CustomerIoFields {
   idFieldNames: string[],
@@ -31,7 +44,7 @@ export class CustomerIoAction extends Hub.Action {
   allowedTags = [CustomerIoTags.Email, CustomerIoTags.UserId]
 
   name = "customerio_identify"
-  label = "Customer.io Identify XXX"
+  label = "Customer.io Identify"
   iconName = "customerio/customerio.png"
   description = "Add traits via identify to your customer.io users."
   params = [
@@ -57,7 +70,7 @@ export class CustomerIoAction extends Hub.Action {
       sensitive: true,
     },
     {
-      description : "The number of objects to batch update per call (defaulted to 10)",
+      description : "The number of objects to batch update per call (defaulted to 100)",
       label: "Batch Update Size",
       name: "customer_io_batch_update_size",
       required: false,
@@ -114,7 +127,7 @@ export class CustomerIoAction extends Hub.Action {
     let fieldset: Hub.Field[] = []
     const errors: Error[] = []
 
-    let timestamp = Math.round(+new Date() / 1000)
+    const timestamp = Math.round(+new Date() / 1000)
     const context = {
       app: {
         name: "looker/actions",
@@ -122,7 +135,7 @@ export class CustomerIoAction extends Hub.Action {
       },
     }
     const event = request.formParams.event
-
+    // const batchUpdateObjects: any = []
     try {
 
       await request.streamJsonDetail({
@@ -133,10 +146,10 @@ export class CustomerIoAction extends Hub.Action {
         },
         onRanAt: (iso8601string) => {
           if (iso8601string) {
-            timestamp = timestamp
+            winston.debug(`${timestamp}`)
           }
         },
-        onRow: (row) => {
+        onRow: async (row) => {
           this.unassignedCustomerIoFieldsCheck(customerIoFields)
           const payload = {
             ...this.prepareCustomerIoTraitsFromRow(
@@ -146,21 +159,20 @@ export class CustomerIoAction extends Hub.Action {
           if (!payload.event) {
             delete payload.event
           }
+          // try {
+          //     batchUpdateObjects.push({
+          //       id: payload.user_id || payload.email,
+          //       payload,
+          //     })
+          //   } catch (e) {
+          //     errors.push(e)
+          //   }
+
           try {
-            // let response = await customerIoClient[customerIoCall]("" + payload.id || payload.email, payload)
-            //     .catch((error: any) => {
-            //   winston.warn(`response: ${JSON.stringify(error)}`)
-            // })
-            // winston.warn(`response: ${JSON.stringify(response)}`)
-            customerIoClient[customerIoCall](payload.email || "" + payload.user_id, payload).then((response: any) => {
-              winston.warn(`response: ${JSON.stringify(response)}`)
-              return customerIoClient.track(payload.id || payload.email, {
-                name: "updated",
-                data: {
-                  updated: true,
-                  plan: "free",
-                },
-              })
+            const remainingMessages = await limiter.removeTokens(1)
+            winston.info(`remainingMessages: ${remainingMessages}`)
+            customerIoClient[customerIoCall](payload.user_id || payload.email, payload).then((response: any) => {
+              winston.info(`response: ${JSON.stringify(response)}`)
             })
           } catch (e) {
             errors.push(e)
@@ -168,15 +180,48 @@ export class CustomerIoAction extends Hub.Action {
         },
       })
 
-      // await new Promise<void>(async (resolve, reject) => {
-      //     customerIoClient.flush( (err: any) => {
-      //       if (err) {
-      //         reject(err)
-      //       } else {
-      //         resolve()
-      //       }
-      //     })
+      // await Promise.all(promiseArray)
+      //   .then( async (allResponsesArray: any) => { // [1 .. 100]
+      //       winston.info("All results: " + allResponsesArray)
+      //   }).catch( (e: any) => {
+      //     winston.info(`Promises aborted ${e}`)
       // })
+
+      await new Promise<void>(async (resolve) => {
+        resolve()
+          // customerIoClient.flush( (err: any) => {
+          //   if (err) {
+          //     reject(err)
+          //   } else {
+          //     resolve()
+          //   }
+          // })
+      })
+      // logger.info(`Start ${batchUpdateObjects.length}`)
+      // if (customerIoClient[customerIoCall]) {
+      //   let limit = CUSTOMERIO_BATCH_UPDATE_DEFAULT_LIMIT
+      //   if (request.params.customer_io_batch_update_size) {
+      //     limit = +request.params.customer_io_batch_update_size
+      //   }
+      //   for (let i = 0; i < batchUpdateObjects.length; i++) {
+      //     try {
+      //       await customerIoClient[customerIoCall](
+      //         batchUpdateObjects[i].id,
+      //           batchUpdateObjects[i].payload,
+      //       )
+      //     } catch (e) {
+      //       errors.push(e)
+      //     }
+      //
+      //     if (i > 0 && i % limit === 0) {
+      //       await delay(CUSTOMERIO_BATCH_UPDATE_ITERATION_DELAY_MS)
+      //     }
+      //   }
+      // } else {
+      //   const error = `Unable to determine a batch update request method for ${customerIoCall}`
+      //   winston.error(error, request.webhookId)
+      //   throw new CustomerIoActionError(`Error: ${error}`)
+      // }
     } catch (e) {
       errors.push(e)
     }
@@ -225,10 +270,10 @@ export class CustomerIoAction extends Hub.Action {
 
   // Removes JsonDetail Cell metadata and only sends relevant nested data to Segment
   // See JsonDetail.ts to see structure of a JsonDetail Row
-  protected filterJson(jsonRow: any, customerIoFields: CustomerIoFields, fieldName: string) {
+  protected filterJsonCustomerIo(jsonRow: any, customerIoFields: CustomerIoFields, fieldName: string) {
     const pivotValues: any = {}
     pivotValues[fieldName] = []
-    const filterFunction = (currentObject: any, name: string) => {
+    const filterFunctionCustomerIo = (currentObject: any, name: string) => {
       const returnVal: any = {}
       if (Object(currentObject) === currentObject) {
         for (const key in currentObject) {
@@ -237,7 +282,7 @@ export class CustomerIoAction extends Hub.Action {
               returnVal[name] = currentObject[key]
               return returnVal
             } else if (customerIoFields.idFieldNames.indexOf(key) === -1) {
-              const res = filterFunction(currentObject[key], key)
+              const res = filterFunctionCustomerIo(currentObject[key], key)
               if (res !== {}) {
                 pivotValues[fieldName].push(res)
               }
@@ -247,7 +292,7 @@ export class CustomerIoAction extends Hub.Action {
       }
       return returnVal
     }
-    filterFunction(jsonRow, fieldName)
+    filterFunctionCustomerIo(jsonRow, fieldName)
     return pivotValues
   }
 
@@ -269,7 +314,7 @@ export class CustomerIoAction extends Hub.Action {
           if (row[field.name].value || row[field.name].value === 0) {
             values[field.name] = row[field.name].value
           } else {
-            values = this.filterJson(row[field.name], customerIoFields, field.name)
+            values = this.filterJsonCustomerIo(row[field.name], customerIoFields, field.name)
           }
           for (const key in values) {
             if (values.hasOwnProperty(key)) {
@@ -283,13 +328,13 @@ export class CustomerIoAction extends Hub.Action {
         traits.email = row[field.name].value
       }
     }
-    const user_id: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
+    const userId: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
     const id: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
     // const dimensionName = trackCall ? "properties" : "traits"
 
     const segmentRow: any = {
-      user_id,
-      id
+      user_id: userId,
+      id,
     }
     // segmentRow[dimensionName] = traits
     return {...traits, ...segmentRow}
@@ -317,7 +362,6 @@ export class CustomerIoAction extends Hub.Action {
     if (request.formParams.customer_io_api_key && request.formParams.customer_io_api_key.length > 0) {
       apiKey = request.formParams.customer_io_api_key
     }
-    winston.error(`creds ${apiKey}-${siteId}`)
     return new CIO(siteId, apiKey, { region: cioRegion })
   }
 
