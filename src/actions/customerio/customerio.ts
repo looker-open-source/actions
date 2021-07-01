@@ -10,17 +10,25 @@ import {CustomerIoActionError} from "./customerio_error"
 // import CIO from "customerio-node/track"
 const CIO: any = require("customerio-node")
 const cioRegions: any = require("customerio-node/regions")
-import { RateLimiter } from "limiter"
+process.env.UV_THREADPOOL_SIZE = "128"
+// import { RateLimiter } from "limiter"
+
+const CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT = 100
 
 // Allow 150 requests per hour (the Twitter search limit). Also understands
 // 'second', 'minute', 'day', or a number of milliseconds
-const limiter = new RateLimiter({ tokensPerInterval: 100, interval: "second" })
 
-// const logger = new (winston.Logger)({
-//         transports: [
-//           new (winston.transports.Console)({'timestamp': true}),
-//         ],
-//       })
+async function delayPromiseAll(ms: number) {
+  // tslint continually complains about this function, not sure why
+  // tslint:disable-next-line
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+const logger = new (winston.Logger)({
+        transports: [
+          new (winston.transports.Console)({timestamp: true}),
+        ],
+      })
 
 interface CustomerIoFields {
   idFieldNames: string[],
@@ -70,9 +78,9 @@ export class CustomerIoAction extends Hub.Action {
       sensitive: true,
     },
     {
-      description : "The number of objects to batch update per call (defaulted to 100)",
-      label: "Batch Update Size",
-      name: "customer_io_batch_update_size",
+      description : "The number maximum api calls rate per second",
+      label: "Rate per second limit",
+      name: "customer_io_rate_per_second_limit",
       required: false,
       sensitive: false,
     },
@@ -80,6 +88,7 @@ export class CustomerIoAction extends Hub.Action {
   minimumSupportedLookerVersion = "4.20.0"
   supportedActionTypes = [Hub.ActionType.Query]
   usesStreaming = true
+  extendedAction = true
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   requiredFields = [{ any_tag: this.allowedTags }]
@@ -114,6 +123,13 @@ export class CustomerIoAction extends Hub.Action {
 
   protected async executeCustomerIo(request: Hub.ActionRequest, customerIoCall: CustomerIoCalls) {
     const customerIoClient = this.customerIoClientFromRequest(request)
+    let ratePerSecondLimit = CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT
+    if (request.params.customer_io_rate_per_second_limit) {
+      ratePerSecondLimit = +request.params.customer_io_rate_per_second_limit
+    }
+    // const limiter = new RateLimiter(
+    //      { tokensPerInterval: ratePerSecondLimit * 0.9, // was ratePerSecondLimit
+    //        interval: "second" })
 
     let hiddenFields: string[] = []
     if (request.scheduledPlan &&
@@ -136,6 +152,7 @@ export class CustomerIoAction extends Hub.Action {
     }
     const event = request.formParams.event
     // const batchUpdateObjects: any = []
+    const promiseArray: any = []
     try {
 
       await request.streamJsonDetail({
@@ -149,7 +166,7 @@ export class CustomerIoAction extends Hub.Action {
             winston.debug(`${timestamp}`)
           }
         },
-        onRow: async (row) => {
+        onRow: (row) => {
           this.unassignedCustomerIoFieldsCheck(customerIoFields)
           const payload = {
             ...this.prepareCustomerIoTraitsFromRow(
@@ -159,66 +176,94 @@ export class CustomerIoAction extends Hub.Action {
           if (!payload.event) {
             delete payload.event
           }
-          // try {
-          //     batchUpdateObjects.push({
-          //       id: payload.user_id || payload.email,
-          //       payload,
-          //     })
-          //   } catch (e) {
-          //     errors.push(e)
-          //   }
-
           try {
-            const remainingMessages = await limiter.removeTokens(1)
-            winston.info(`remainingMessages: ${remainingMessages}`)
-            customerIoClient[customerIoCall](payload.user_id || payload.email, payload).then((response: any) => {
-              winston.info(`response: ${JSON.stringify(response)}`)
-            })
-          } catch (e) {
-            errors.push(e)
-          }
+              // batchUpdateObjects.push({
+              //   id: payload.user_id || payload.email,
+              //   payload,
+              // })
+              promiseArray.push(
+                  customerIoClient[customerIoCall](payload.user_id || payload.email, payload).then(() => {
+                    // const remainingMessages = await limiter.removeTokens(1)
+                    // winston.debug(`remainingMessages: ${remainingMessages}`)
+                    winston.debug(`ok`)
+                  }).catch(async (err: any) => {
+                    winston.debug(err.message)
+                    await delayPromiseAll(800)
+                    customerIoClient[customerIoCall](payload.user_id || payload.email, payload)
+                    // some coding error in handling happened
+            }).catch((errRetry: any) => {
+              winston.warn(errRetry.message)
+                  }),
+              )
+            } catch (e) {
+              errors.push(e)
+            }
+
+          // let response
+          // try {
+          //   return this.send2CustomerIo(customerIoClient, customerIoCall, payload, limiter)
+          // } catch (e) {
+          //   errors.push(e)
+          // }
         },
       })
 
-      // await Promise.all(promiseArray)
-      //   .then( async (allResponsesArray: any) => { // [1 .. 100]
-      //       winston.info("All results: " + allResponsesArray)
-      //   }).catch( (e: any) => {
-      //     winston.info(`Promises aborted ${e}`)
+      // await new Promise<void>(async (resolve) => {
+      //   resolve()
+      //     // customerIoClient.flush( (err: any) => {
+      //     //   if (err) {
+      //     //     reject(err)
+      //     //   } else {
+      //     //     resolve()
+      //     //   }
+      //     // })
       // })
+      logger.info(`Start ${promiseArray.length}`)
+      const chunks = promiseArray.reduce((resultArray: any, item: any, index: number) => {
+      const chunkIndex = Math.floor(index / ratePerSecondLimit)
 
-      await new Promise<void>(async (resolve) => {
-        resolve()
-          // customerIoClient.flush( (err: any) => {
-          //   if (err) {
-          //     reject(err)
-          //   } else {
-          //     resolve()
-          //   }
-          // })
-      })
-      // logger.info(`Start ${batchUpdateObjects.length}`)
+      if (!resultArray[chunkIndex]) {
+      resultArray[chunkIndex] = [] // start a new chunk
+      }
+
+      resultArray[chunkIndex].push(item)
+
+      return resultArray
+      }, [])
+      let promiseIndex = 1
+      if (customerIoClient[customerIoCall]) {
+        for (const chunkedPromises of chunks) {
+            // const remainingMessages = await limiter.removeTokens(ratePerSecondLimit)
+            winston.info(`${promiseIndex}/${chunks.length}`)
+            await Promise.all(chunkedPromises).then((arrayOfValuesOrErrors: any) => {
+              winston.debug(arrayOfValuesOrErrors[0])
+              // return delayPromiseAll(1000)
+            })
+            .catch((err) => {
+              winston.warn(err.message) // some coding error in handling happened
+            })
+            await delayPromiseAll(1000)
+            promiseIndex += 1
+        }
+        await delayPromiseAll(500)
+        logger.info(`Done ${promiseArray.length}`)
+      } else {
+        const error = `Unable to determine a the api request method for ${customerIoCall}`
+        winston.error(error, request.webhookId)
+        errors.push(new CustomerIoActionError(`Error: ${error}`))
+      }
       // if (customerIoClient[customerIoCall]) {
-      //   let limit = CUSTOMERIO_BATCH_UPDATE_DEFAULT_LIMIT
-      //   if (request.params.customer_io_batch_update_size) {
-      //     limit = +request.params.customer_io_batch_update_size
-      //   }
-      //   for (let i = 0; i < batchUpdateObjects.length; i++) {
+      //   for (const item of batchUpdateObjects) {
       //     try {
-      //       await customerIoClient[customerIoCall](
-      //         batchUpdateObjects[i].id,
-      //           batchUpdateObjects[i].payload,
-      //       )
+      //       const remainingMessages = await limiter.removeTokens(1)
+      //       winston.info(`remainingMessages: ${remainingMessages}`)
+      //       await customerIoClient[customerIoCall](item.id, item.payload)
       //     } catch (e) {
       //       errors.push(e)
       //     }
-      //
-      //     if (i > 0 && i % limit === 0) {
-      //       await delay(CUSTOMERIO_BATCH_UPDATE_ITERATION_DELAY_MS)
-      //     }
       //   }
       // } else {
-      //   const error = `Unable to determine a batch update request method for ${customerIoCall}`
+      //   const error = `Unable to determine a the api request method for ${customerIoCall}`
       //   winston.error(error, request.webhookId)
       //   throw new CustomerIoActionError(`Error: ${error}`)
       // }
@@ -237,6 +282,21 @@ export class CustomerIoAction extends Hub.Action {
       return new Hub.ActionResponse({success: true})
     }
   }
+  // protected async send2CustomerIo(customerIoClient: any, customerIoCall: CustomerIoCalls,
+  // payload: any, limiter: any) {
+  //   const remainingMessages = await limiter.removeTokens(1)
+  //   winston.info(`remainingMessages: ${remainingMessages}`)
+  //
+  //   await new Promise<void>((resolve) => {
+  //         // Resolve the promise
+  //         resolve(customerIoClient[customerIoCall](payload.user_id || payload.email, payload))
+  //   }).then(() => {
+  //     winston.info("this will succeed")
+  //   }).catch( (err) => {
+  //     winston.warn(err)
+  //   })
+  //   winston.info(`ok promise: ${remainingMessages}`)
+  // }
 
   protected unassignedCustomerIoFieldsCheck(customerIoFields: CustomerIoFields | undefined) {
     if (!(customerIoFields && customerIoFields.idFieldNames.length > 0)) {
