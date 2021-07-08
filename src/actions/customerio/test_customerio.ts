@@ -15,21 +15,21 @@ function expectCustomerIoMatch(request: Hub.ActionRequest, match: any) {
     .callsFake(() => {
       return {identify: customerIoCallSpy, flush: (cb: () => void) => cb()}
      })
-
-  const now = new Date()
-  const clock = sinon.useFakeTimers(now.getTime())
+  const currentDate = new Date()
+  const timestamp = Math.round(+currentDate / 1000)
+  const clock = sinon.useFakeTimers(currentDate.getTime())
 
   const baseMatch = {
-    traits: {},
     context: {
       app: {
         name: "looker/actions",
         version: "dev",
       },
-    },
-    timestamp: now,
+      },
+    created_at: timestamp,
   }
   const merged = {...baseMatch, ...match}
+
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
     chai.expect(customerIoCallSpy).to.have.been.calledWithExactly(merged)
     stubClient.restore()
@@ -45,14 +45,16 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
           fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
-          data: [{coolfield: {value: "funvalue"}}],
+          data: [{coolfield: {value: 200}}],
         }))}
       return expectCustomerIoMatch(request, {
-        userId: "funvalue",
+        id: 200,
       })
     })
 
@@ -60,7 +62,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
@@ -68,7 +72,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       }))}
       return expectCustomerIoMatch(request, {
         userId: null,
-        traits: {email: "funvalue"},
        })
     })
 
@@ -76,7 +79,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
           fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}],
@@ -93,7 +98,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [{name: "coolemail", tags: ["email"]}, {name: "coolid", tags: ["user_id"]}]},
@@ -109,7 +116,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [
@@ -127,7 +136,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [
@@ -154,7 +165,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [
@@ -172,7 +185,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {
@@ -209,7 +224,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
@@ -220,29 +237,13 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
-    it("works with ran_at", () => {
-      const request = new Hub.ActionRequest()
-      request.type = Hub.ActionType.Query
-      request.params = {
-        segment_write_key: "mykey",
-      }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
-        ran_at: "2017-07-28T02:25:19+00:00",
-        data: [{coolfield: {value: "funvalue"}}],
-      }))}
-      return expectCustomerIoMatch(request, {
-        userId: null,
-        timestamp: new Date("2017-07-28T02:25:19+00:00"),
-        traits: {email: "funvalue"},
-       })
-    })
-
     it("errors if the input has no attachment", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith(
@@ -253,7 +254,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         data: [{coolfield: {value: "funvalue"}}],
@@ -272,7 +275,9 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
       request.params = {
-        segment_write_key: "mykey",
+        customer_io_api_key: "mykey",
+        customer_io_site_id: "mysiteId",
+        customer_io_region: "RegionEU",
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
         fields: {dimensions: [{name: "coolfield", tags: []}]},

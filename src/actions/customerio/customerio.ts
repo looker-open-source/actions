@@ -1,17 +1,16 @@
 import * as util from "util"
 import * as winston from "winston"
 
+import { RegionEU, RegionUS, TrackClient } from "customerio-node"
 import * as semver from "semver"
 import * as Hub from "../../hub"
 import {CustomerIoActionError} from "./customerio_error"
-// import CIO from "customerio-node"
 // import Regions as cioRegions from "customerio-node/regions"
 
 // import CIO from "customerio-node/track"
-const CIO: any = require("customerio-node")
-const cioRegions: any = require("customerio-node/regions")
+// const { TrackClient, RegionUS, RegionEU } = require("customerio-node")
 
-const CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT = 5000
+const CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT = 100
 
 async function delayPromiseAll(ms: number) {
     // tslint continually complains about this function, not sure why
@@ -52,20 +51,6 @@ export class CustomerIoAction extends Hub.Action {
     description = "Add traits via identify to your customer.io users."
     params = [
         {
-            description: "Api key for customer.io",
-            label: "API Key",
-            name: "customer_io_api_key",
-            required: true,
-            sensitive: true,
-        },
-        {
-            description: "Region for customer.io (could be `RegionUS` or `RegionEU`)",
-            label: "Region",
-            name: "customer_io_region",
-            required: true,
-            sensitive: true,
-        },
-        {
             description: "Site id for customer.io",
             label: "Site ID",
             name: "customer_io_site_id",
@@ -73,7 +58,22 @@ export class CustomerIoAction extends Hub.Action {
             sensitive: true,
         },
         {
-            description: "The maximum number of api calls per second, should be less than `10000`",
+            description: "Api key for customer.io",
+            label: "API Key",
+            name: "customer_io_api_key",
+            required: true,
+            sensitive: true,
+        },
+        {
+            description: "Region for customer.io (could be RegionUS or RegionEU)",
+            label: "Region",
+            name: "customer_io_region",
+            required: true,
+            sensitive: false,
+        },
+        {
+            description: `The maximum number of api calls per second, should be less than:
+            ${CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT}`,
             label: "Rate per second limit",
             name: "customer_io_rate_per_second_limit",
             required: false,
@@ -103,8 +103,7 @@ export class CustomerIoAction extends Hub.Action {
             label: "Override API Key",
             name: "override_customer_io_api_key",
             required: false,
-        },
-            {
+        }, {
                 description: "Override default site id",
                 label: "Override Site ID",
                 name: "override_customer_io_site_id",
@@ -144,7 +143,6 @@ export class CustomerIoAction extends Hub.Action {
         }
         const event = request.formParams.event
         const batchUpdateObjects: any = []
-        // const promiseArray: any = []
         try {
 
             await request.streamJsonDetail({
@@ -162,15 +160,12 @@ export class CustomerIoAction extends Hub.Action {
                     this.unassignedCustomerIoFieldsCheck(customerIoFields)
                     const payload = {
                         ...this.prepareCustomerIoTraitsFromRow(
-                            row, fieldset, customerIoFields!, hiddenFields),
-                        ...{event, context, created_at: timestamp},
-                    }
-                    if (!payload.event) {
-                        delete payload.event
+                            row, fieldset, customerIoFields!, hiddenFields, event,
+                            {context, created_at: timestamp}),
                     }
                     try {
                         batchUpdateObjects.push({
-                          id: payload.user_id || payload.email,
+                          id: payload.id,
                           payload,
                         })
                     } catch (e) {
@@ -179,38 +174,45 @@ export class CustomerIoAction extends Hub.Action {
                 },
             })
             logger.info(`Start ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
-
+            const erroredPromises: any = []
             if (customerIoClient[customerIoCall]) {
             const divider = ratePerSecondLimit
             let promiseArray: any = []
             for (let index = 0; index < batchUpdateObjects.length; index++) {
-                promiseArray.push((
-                    customerIoClient[customerIoCall](batchUpdateObjects[index].id,
+                promiseArray.push( () => {
+                    return customerIoClient[customerIoCall](batchUpdateObjects[index].id,
                         batchUpdateObjects[index].payload).then(() => {
                         winston.debug(`ok`)
-                        // winston.info(`remainingMessages: ${batchUpdateObjects.length - (index + 1)}`)
                     }).catch(async (err: any) => {
-                        winston.debug(`retrying after first ${err.message}`)
-                        await delayPromiseAll(600)
+                        winston.warn(`retrying after first ${JSON.stringify(err)}`)
+                        winston.warn(`trying to recover ${(index + 1)}`)
+                        // await delayPromiseAll(600)
+                        erroredPromises.push(batchUpdateObjects[index])
                         customerIoClient[customerIoCall](batchUpdateObjects[index].id,
                             batchUpdateObjects[index].payload).then(() => {
-                            winston.debug(`remainingMessages: ${batchUpdateObjects.length - (index + 1)}`)
+                            erroredPromises.splice(
+                                erroredPromises.findIndex( (a: any) => a.id === batchUpdateObjects[index].id) , 1)
+                            winston.info(`recovered ${(index + 1)}`)
+                            // winston.warn(`remainingMessages: ${batchUpdateObjects.length - (index + 1)}`)
                         }).catch(async (errRetry: any) => {
-                            winston.debug(errRetry.message)
+                            winston.warn(errRetry.message)
                         })
-                    })))
+                    })})
                 if ( promiseArray.length === divider || index + 1 === batchUpdateObjects.length ) {
-                    await Promise.all(promiseArray).then((arrayOfValuesOrErrors: any) => {
-                        winston.debug(arrayOfValuesOrErrors[0])
-                    })
-                        .catch((err) => {
-                            winston.warn(err.message) // some coding error in handling happened
-                        })
+                    await Promise.all(promiseArray.map( (promise: any) => promise()))
+                    //     .then((arrayOfValuesOrErrors: any) => {
+                    //     winston.debug(JSON.stringify(arrayOfValuesOrErrors))
+                    // })
+                    //     .catch((err) => {
+                    //         winston.warn(err.message) // some coding error in handling happened
+                    //     })
                     promiseArray = []
                     winston.info(`${index + 1}/${batchUpdateObjects.length}`)
+                    await delayPromiseAll(1000)
                 }
             }
             logger.info(`Done ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
+            winston.warn(`errored ${erroredPromises.length}/${batchUpdateObjects.length}`)
             } else {
                 const error = `Unable to determine a the api request method for ${customerIoCall}`
                 winston.error(error, request.webhookId)
@@ -295,6 +297,8 @@ export class CustomerIoAction extends Hub.Action {
         fields: Hub.Field[],
         customerIoFields: CustomerIoFields,
         hiddenFields: string[],
+        event: any,
+        context: any,
     ) {
         const traits: { [key: string]: string } = {}
         for (const field of fields) {
@@ -322,42 +326,46 @@ export class CustomerIoAction extends Hub.Action {
                 traits.email = row[field.name].value
             }
         }
-        const userId: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
         const id: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
-        // const dimensionName = trackCall ? "properties" : "traits"
+        const email: string | null = customerIoFields.emailField ? row[customerIoFields.emailField.name].value : null
 
         const segmentRow: any = {
-            user_id: userId,
-            id,
+            id: id || email,
         }
-        // segmentRow[dimensionName] = traits
-        return {...traits, ...segmentRow}
+        if (event) {
+            context.context.app.looker_sent_at = + context.created_at
+            delete context.created_at
+
+            return {...{name: event}, ...{data: {...traits, ... context}, email: traits.email}, ...segmentRow}
+        } else {
+            return {...traits, ...context, ...segmentRow}
+        }
     }
 
     protected customerIoClientFromRequest(request: Hub.ActionRequest) {
-        let cioRegion = cioRegions.RegionUS
+        let cioRegion = RegionUS
         switch (request.params.customer_io_region) {
             case "RegionUS":
-                cioRegion = cioRegions.RegionUS
+                cioRegion = RegionUS
                 break
             case "RegionEU":
-                cioRegion = cioRegions.RegionEU
+                cioRegion = RegionEU
                 break
             default:
                 throw new CustomerIoActionError(`Customer.io requires a valig region (RegionUS or RegionEU)`)
         }
 
-        let siteId = request.params.customer_io_site_id
+        let siteId: string = "" + request.params.customer_io_site_id
         if (request.formParams.customer_io_site_id && request.formParams.customer_io_site_id.length > 0) {
             siteId = request.formParams.customer_io_site_id
         }
 
-        let apiKey = request.params.customer_io_api_key
+        let apiKey: string = "" + request.params.customer_io_api_key
         if (request.formParams.customer_io_api_key && request.formParams.customer_io_api_key.length > 0) {
             apiKey = request.formParams.customer_io_api_key
         }
-
-        return new CIO(siteId, apiKey, {region: cioRegion, timeout: 50000})
+        return new TrackClient(siteId, apiKey, {region: cioRegion})
+        // return new TrackClient(siteId, apiKey, {region: cioRegion, timeout: 120000})
     }
 
 }
