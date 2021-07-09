@@ -1,22 +1,20 @@
+import {RegionEU, RegionUS, TrackClient} from "customerio-node"
+import * as https from "https"
+import * as semver from "semver"
 import * as util from "util"
 import * as winston from "winston"
-
-import { RegionEU, RegionUS, TrackClient } from "customerio-node"
-import * as semver from "semver"
 import * as Hub from "../../hub"
 import {CustomerIoActionError} from "./customerio_error"
-// import Regions as cioRegions from "customerio-node/regions"
 
-// import CIO from "customerio-node/track"
-// const { TrackClient, RegionUS, RegionEU } = require("customerio-node")
+const CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT = 500
+const CUSTOMER_IO_UPDATE_DEFAULT_REQUEST_TIMEOUT = 10000
 
-const CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT = 100
 
-async function delayPromiseAll(ms: number) {
-    // tslint continually complains about this function, not sure why
-    // tslint:disable-next-line
-    return new Promise((resolve) => setTimeout(resolve, ms))
-}
+// async function delayPromiseAll(ms: number) {
+//     // tslint continually complains about this function, not sure why
+//     // tslint:disable-next-line
+//     return new Promise((resolve) => setTimeout(resolve, ms))
+// }
 
 const logger = new (winston.Logger)({
     transports: [
@@ -72,10 +70,18 @@ export class CustomerIoAction extends Hub.Action {
             sensitive: false,
         },
         {
-            description: `The maximum number of api calls per second, should be less than:
+            description: `The maximum number of api calls per second should be less than:
             ${CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT}`,
             label: "Rate per second limit",
             name: "customer_io_rate_per_second_limit",
+            required: false,
+            sensitive: false,
+        },
+        {
+            description: `The request timeout for api calls in ms should at least be:
+            ${CUSTOMER_IO_UPDATE_DEFAULT_REQUEST_TIMEOUT}`,
+            label: "Request timeout",
+            name: "customer_io_request_timeout",
             required: false,
             sensitive: false,
         },
@@ -104,11 +110,11 @@ export class CustomerIoAction extends Hub.Action {
             name: "override_customer_io_api_key",
             required: false,
         }, {
-                description: "Override default site id",
-                label: "Override Site ID",
-                name: "override_customer_io_site_id",
-                required: false,
-            }]
+            description: "Override default site id",
+            label: "Override Site ID",
+            name: "override_customer_io_site_id",
+            required: false,
+        }]
         return form
     }
 
@@ -165,8 +171,8 @@ export class CustomerIoAction extends Hub.Action {
                     }
                     try {
                         batchUpdateObjects.push({
-                          id: payload.id,
-                          payload,
+                            id: payload.id,
+                            payload,
                         })
                     } catch (e) {
                         errors.push(e)
@@ -175,44 +181,45 @@ export class CustomerIoAction extends Hub.Action {
             })
             logger.info(`Start ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
             const erroredPromises: any = []
-            if (customerIoClient[customerIoCall]) {
-            const divider = ratePerSecondLimit
-            let promiseArray: any = []
-            for (let index = 0; index < batchUpdateObjects.length; index++) {
-                promiseArray.push( () => {
-                    return customerIoClient[customerIoCall](batchUpdateObjects[index].id,
-                        batchUpdateObjects[index].payload).then(() => {
-                        winston.debug(`ok`)
-                    }).catch(async (err: any) => {
-                        winston.warn(`retrying after first ${JSON.stringify(err)}`)
-                        winston.warn(`trying to recover ${(index + 1)}`)
-                        // await delayPromiseAll(600)
-                        erroredPromises.push(batchUpdateObjects[index])
-                        customerIoClient[customerIoCall](batchUpdateObjects[index].id,
+            if (customerIoCall in customerIoClient) {
+                const divider = ratePerSecondLimit
+                let promiseArray: any = []
+                for (let index = 0; index < batchUpdateObjects.length; index++) {
+                    promiseArray.push(async () => {
+                        return customerIoClient[customerIoCall](batchUpdateObjects[index].id,
                             batchUpdateObjects[index].payload).then(() => {
-                            erroredPromises.splice(
-                                erroredPromises.findIndex( (a: any) => a.id === batchUpdateObjects[index].id) , 1)
-                            winston.info(`recovered ${(index + 1)}`)
-                            // winston.warn(`remainingMessages: ${batchUpdateObjects.length - (index + 1)}`)
-                        }).catch(async (errRetry: any) => {
-                            winston.warn(errRetry.message)
+                            winston.debug(`ok`)
+                        }).catch(async (err: any) => {
+                            winston.warn(`retrying after first ${JSON.stringify(err)}`)
+                            winston.warn(`trying to recover ${(index + 1)}`)
+                            // await delayPromiseAll(600)
+                            erroredPromises.push(batchUpdateObjects[index])
+                            customerIoClient[customerIoCall](batchUpdateObjects[index].id,
+                                batchUpdateObjects[index].payload).then(() => {
+                                erroredPromises.splice(
+                                    erroredPromises.findIndex((a: any) => a.id === batchUpdateObjects[index].id), 1)
+                                winston.info(`recovered ${(index + 1)}`)
+                                // winston.warn(`remainingMessages: ${batchUpdateObjects.length - (index + 1)}`)
+                            }).catch(async (errRetry: any) => {
+                                winston.warn(errRetry.message)
+                            })
                         })
-                    })})
-                if ( promiseArray.length === divider || index + 1 === batchUpdateObjects.length ) {
-                    await Promise.all(promiseArray.map( (promise: any) => promise()))
-                    //     .then((arrayOfValuesOrErrors: any) => {
-                    //     winston.debug(JSON.stringify(arrayOfValuesOrErrors))
-                    // })
-                    //     .catch((err) => {
-                    //         winston.warn(err.message) // some coding error in handling happened
-                    //     })
-                    promiseArray = []
-                    winston.info(`${index + 1}/${batchUpdateObjects.length}`)
-                    await delayPromiseAll(1000)
+                    })
+                    if (promiseArray.length === divider || index + 1 === batchUpdateObjects.length) {
+                        await Promise.all(promiseArray.map((promise: any) => promise()))
+                        //     .then((arrayOfValuesOrErrors: any) => {
+                        //     winston.debug(JSON.stringify(arrayOfValuesOrErrors))
+                        // })
+                        //     .catch((err) => {
+                        //         winston.warn(err.message) // some coding error in handling happened
+                        //     })
+                        promiseArray = []
+                        winston.info(`${index + 1}/${batchUpdateObjects.length}`)
+                        // await delayPromiseAll(1000)
+                    }
                 }
-            }
-            logger.info(`Done ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
-            winston.warn(`errored ${erroredPromises.length}/${batchUpdateObjects.length}`)
+                logger.info(`Done ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
+                winston.warn(`errored ${erroredPromises.length}/${batchUpdateObjects.length}`)
             } else {
                 const error = `Unable to determine a the api request method for ${customerIoCall}`
                 winston.error(error, request.webhookId)
@@ -333,10 +340,10 @@ export class CustomerIoAction extends Hub.Action {
             id: id || email,
         }
         if (event) {
-            context.context.app.looker_sent_at = + context.created_at
+            context.context.app.looker_sent_at = +context.created_at
             delete context.created_at
 
-            return {...{name: event}, ...{data: {...traits, ... context}, email: traits.email}, ...segmentRow}
+            return {...{name: event}, ...{data: {...traits, ...context}, email: traits.email}, ...segmentRow}
         } else {
             return {...traits, ...context, ...segmentRow}
         }
@@ -354,18 +361,23 @@ export class CustomerIoAction extends Hub.Action {
             default:
                 throw new CustomerIoActionError(`Customer.io requires a valig region (RegionUS or RegionEU)`)
         }
-
+        let requestTimeout = CUSTOMER_IO_UPDATE_DEFAULT_REQUEST_TIMEOUT
+        if (request.params.customer_io_request_timeout) {
+            requestTimeout = +request.params.customer_io_request_timeout
+        }
         let siteId: string = "" + request.params.customer_io_site_id
         if (request.formParams.customer_io_site_id && request.formParams.customer_io_site_id.length > 0) {
             siteId = request.formParams.customer_io_site_id
         }
-
         let apiKey: string = "" + request.params.customer_io_api_key
         if (request.formParams.customer_io_api_key && request.formParams.customer_io_api_key.length > 0) {
             apiKey = request.formParams.customer_io_api_key
         }
-        return new TrackClient(siteId, apiKey, {region: cioRegion})
-        // return new TrackClient(siteId, apiKey, {region: cioRegion, timeout: 120000})
+        const keepAliveAgent = new https.Agent({ keepAlive: true })
+        return new TrackClient(siteId, apiKey, {
+            region: cioRegion, timeout: requestTimeout, keepAliveTimeout: 120000,
+            agent: keepAliveAgent,
+        })
     }
 
 }
