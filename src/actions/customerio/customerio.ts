@@ -9,7 +9,6 @@ import {CustomerIoActionError} from "./customerio_error"
 const CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT = 500
 const CUSTOMER_IO_UPDATE_DEFAULT_REQUEST_TIMEOUT = 10000
 
-
 // async function delayPromiseAll(ms: number) {
 //     // tslint continually complains about this function, not sure why
 //     // tslint:disable-next-line
@@ -70,7 +69,7 @@ export class CustomerIoAction extends Hub.Action {
             sensitive: false,
         },
         {
-            description: `The maximum number of api calls per second should be less than:
+            description: `The maximum number of concurrent api calls should be less than:
             ${CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT}`,
             label: "Rate per second limit",
             name: "customer_io_rate_per_second_limit",
@@ -78,10 +77,17 @@ export class CustomerIoAction extends Hub.Action {
             sensitive: false,
         },
         {
-            description: `The request timeout for api calls in ms should at least be:
-            ${CUSTOMER_IO_UPDATE_DEFAULT_REQUEST_TIMEOUT}`,
+            description: `The request timeout for api calls in ms, default value is:
+            ${CUSTOMER_IO_UPDATE_DEFAULT_REQUEST_TIMEOUT}ms`,
             label: "Request timeout",
             name: "customer_io_request_timeout",
+            required: false,
+            sensitive: false,
+        },
+        {
+            description: `Looker customer.io attribute prefix, could be something like looker_`,
+            label: "Attribute prefix",
+            name: "customer_io_looker_attribute_prefix",
             required: false,
             sensitive: false,
         },
@@ -89,7 +95,7 @@ export class CustomerIoAction extends Hub.Action {
     minimumSupportedLookerVersion = "4.20.0"
     supportedActionTypes = [Hub.ActionType.Query]
     usesStreaming = true
-    // extendedAction = true
+    extendedAction = true
     supportedFormattings = [Hub.ActionFormatting.Unformatted]
     supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
     requiredFields = [{any_tag: this.allowedTags}]
@@ -127,6 +133,10 @@ export class CustomerIoAction extends Hub.Action {
         let ratePerSecondLimit = CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT
         if (request.params.customer_io_rate_per_second_limit) {
             ratePerSecondLimit = +request.params.customer_io_rate_per_second_limit
+        }
+        let lookerAttributePrefix = ""
+        if (request.params.customer_io_looker_attribute_prefix) {
+            lookerAttributePrefix = request.params.customer_io_looker_attribute_prefix
         }
         let hiddenFields: string[] = []
         if (request.scheduledPlan &&
@@ -167,7 +177,7 @@ export class CustomerIoAction extends Hub.Action {
                     const payload = {
                         ...this.prepareCustomerIoTraitsFromRow(
                             row, fieldset, customerIoFields!, hiddenFields, event,
-                            {context, created_at: timestamp}),
+                            {context, created_at: timestamp}, lookerAttributePrefix),
                     }
                     try {
                         batchUpdateObjects.push({
@@ -306,6 +316,7 @@ export class CustomerIoAction extends Hub.Action {
         hiddenFields: string[],
         event: any,
         context: any,
+        lookerAttributePrefix: string,
     ) {
         const traits: { [key: string]: string } = {}
         for (const field of fields) {
@@ -324,7 +335,7 @@ export class CustomerIoAction extends Hub.Action {
                     for (const key in values) {
                         if (values.hasOwnProperty(key)) {
                             const customKey = key.indexOf(".") >= 0 ? key.split(".")[1] : key
-                            traits[customKey] = values[key]
+                            traits[lookerAttributePrefix + customKey] = values[key]
                         }
                     }
                 }
@@ -339,10 +350,9 @@ export class CustomerIoAction extends Hub.Action {
         const segmentRow: any = {
             id: id || email,
         }
+        context.context.app.looker_sent_at = +context.created_at
+        delete context.created_at
         if (event) {
-            context.context.app.looker_sent_at = +context.created_at
-            delete context.created_at
-
             return {...{name: event}, ...{data: {...traits, ...context}, email: traits.email}, ...segmentRow}
         } else {
             return {...traits, ...context, ...segmentRow}
