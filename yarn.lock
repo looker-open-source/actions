@@ -2475,9 +2475,9 @@ hipchatter@^1.0.0:
     needle "^1.0.0"
 
 hosted-git-info@^2.1.4:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-2.6.0.tgz#23235b29ab230c576aab0d4f13fc046b0b038222"
-  integrity sha512-lIbgIIQA3lz5XaB6vxakj6sDHADJiZadYEJB+FgA+C4nubM1NwcuvUr9EJPmnH1skZqpqUzWborWo8EIUi0Sdw==
+  version "2.8.9"
+  resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-2.8.9.tgz#dffc0bf9a21c02209090f2aa69429e1414daf3f9"
+  integrity sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==
 
 http-errors@1.6.2:
   version "1.6.2"
@@ -3670,10 +3670,10 @@ normalize-path@^2.1.1:
   dependencies:
     remove-trailing-separator "^1.0.1"
 
-normalize-url@4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-4.0.0.tgz#6c2214dde2fc8ea88509ec79774ccbd1d426c1ea"
-  integrity sha512-OrtNzJOeI9+UaF8KfvPoqh8ZVjLiun+fggtLzrpPsmdOU01eIp3vYXDfeFv4KwqJxcmmrW/ubNCN+9iIQRVtfw==
+normalize-url@4.5.1:
+  version "4.5.1"
+  resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-4.5.1.tgz#0dd90cf1288ee1d1313b87081c9a5932ee48518a"
+  integrity sha512-9UZCFRHQdNrfTpGg8+1INIg93B6zE0aXMVFkw1WFwvO4SlZywU6aLg5Of0Ap/PgcbSw4LNxvMWXMeugwMCX0AA==
 
 npm-bundled@^1.0.1:
   version "1.0.3"

@@ -79,7 +79,7 @@ interface ActionDefinition {
   params?: Param[]
   /** A list of descriptions of required fields that this action is compatible with. If there are multiple entries in this list, the action requires more than one field. */
   required_fields?: RequiredField[]
-  /** (required) A list of action types the action supports. Valid values are: "cell", "query", "dashboard". */
+  /** (required) A list of action types the action supports. Valid values are: "cell", "query", "dashboard". Use "query" to see your action in the send form */
   supported_action_types: string[]
   /** A list of data formats the action supports. Valid values are: "txt", "csv", "inline_json", "json", "json_detail", "json_detail_lite_stream", "xlsx", "html", "wysiwyg_pdf", "assembled_pdf", "wysiwyg_png", "csv_zip". */
   supported_formats?: string[]
