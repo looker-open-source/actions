@@ -217,12 +217,12 @@ export class CustomerIoAction extends Hub.Action {
                     })
                     if (promiseArray.length === divider || index + 1 === batchUpdateObjects.length) {
                         await Promise.all(promiseArray.map((promise: any) => promise()))
-                        //     .then((arrayOfValuesOrErrors: any) => {
-                        //     winston.debug(JSON.stringify(arrayOfValuesOrErrors))
-                        // })
-                        //     .catch((err) => {
-                        //         winston.warn(err.message) // some coding error in handling happened
-                        //     })
+                        // .then((arrayOfValuesOrErrors: any) => {
+                        //      winston.debug(JSON.stringify(arrayOfValuesOrErrors))
+                        //  })
+                        //      .catch((err) => {
+                        //          winston.warn(err.message) // some coding error in handling happened
+                        //      })
                         promiseArray = []
                         winston.info(`${index + 1}/${batchUpdateObjects.length}`)
                         // await delayPromiseAll(1000)
@@ -340,12 +340,13 @@ export class CustomerIoAction extends Hub.Action {
                     }
                 }
             }
-            if (customerIoFields.emailField && field.name === customerIoFields.emailField.name) {
+            if (customerIoFields.emailField && field.name === customerIoFields.emailField.name && row[field.name]) {
                 traits.email = row[field.name].value
             }
         }
         const id: string | null = customerIoFields.idField ? row[customerIoFields.idField.name].value : null
-        const email: string | null = customerIoFields.emailField ? row[customerIoFields.emailField.name].value : null
+        const email: string | null = customerIoFields.emailField && customerIoFields.emailField.name in row
+            ? row[customerIoFields.emailField.name].value : null
 
         const segmentRow: any = {
             id: id || email,

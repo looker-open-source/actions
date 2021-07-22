@@ -12,9 +12,9 @@ action.executeInOwnProcess = false
 function expectCustomerIoMatch(request: Hub.ActionRequest, match: any) {
   const customerIoCallSpy = sinon.spy()
   const stubClient = sinon.stub(action as any, "customerIoClientFromRequest")
-    .callsFake(() => {
-      return {identify: customerIoCallSpy, flush: (cb: () => void) => cb()}
-     })
+      .callsFake(() => {
+        return {identify: customerIoCallSpy}
+      })
   const currentDate = new Date()
   const timestamp = Math.round(+currentDate / 1000)
   const clock = sinon.useFakeTimers(currentDate.getTime())
@@ -22,14 +22,13 @@ function expectCustomerIoMatch(request: Hub.ActionRequest, match: any) {
   const baseMatch = {
     context: {
       app: {
+        looker_sent_at: timestamp,
         name: "looker/actions",
         version: "dev",
       },
-      },
-    created_at: timestamp,
+    },
   }
   const merged = {...baseMatch, ...match}
-
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
     chai.expect(customerIoCallSpy).to.have.been.calledWithExactly(merged)
     stubClient.restore()
@@ -51,8 +50,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
           fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
-          data: [{coolfield: {value: 200}}],
-        }))}
+          data: [{coolfield: {value: 200}}]}))}
       return expectCustomerIoMatch(request, {
         id: 200,
       })
