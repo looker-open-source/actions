@@ -8,7 +8,7 @@ import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 import {GoogleDriveAction} from "../google_drive"
 
-const MAX_REQUEST_BATCH = 4096
+const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process.env.GOOGLE_SHEETS_WRITE_BATCH) : 4096
 const MAX_ROW_BUFFER_INCREASE = 4000
 const MAX_RETRY_COUNT = 5
 
