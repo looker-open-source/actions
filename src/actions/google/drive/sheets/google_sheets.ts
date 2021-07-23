@@ -181,22 +181,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             winston.info(`Expanding max rows: ${maxRows} to ` +
                               `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                             maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
-                            sheet.spreadsheets.batchUpdate({
-                                spreadsheetId,
-                                requestBody: {
-                                    requests: [{
-                                        updateSheetProperties: {
-                                            properties: {
-                                                sheetId,
-                                                gridProperties: {
-                                                    rowCount: maxRows,
-                                                },
-                                            },
-                                            fields: "gridProperties(rowCount)",
-                                        },
-                                    }],
-                                },
-                            }).catch((e: any) => {
+                            this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
                                 reject(e)
                             })
                         }
@@ -209,6 +194,18 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     finished = true
                     // @ts-ignore
                     if (requestBody.requests.length > 0) {
+                        if (rowCount >= maxRows) {
+                            // Make sure we grow at least by requestlength.
+                            // Add MAX_ROW_BUFFER_INCREASE in addition to give headroom for more requests before
+                            // having to resize again
+                            const requestLen = requestBody.requests ? requestBody.requests.length : 0
+                            winston.info(`Expanding max rows: ${maxRows} to ` +
+                                `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
+                            maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
+                            this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
+                                reject(e)
+                            })
+                        }
                         this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
                             reject(e)
                         }).then(() => {
@@ -252,6 +249,27 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     },
                   ],
             },
+        })
+    }
+
+    async resize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number) {
+        sheet.spreadsheets.batchUpdate({
+            spreadsheetId,
+            requestBody: {
+                requests: [{
+                    updateSheetProperties: {
+                        properties: {
+                            sheetId,
+                            gridProperties: {
+                                rowCount: maxRows,
+                            },
+                        },
+                        fields: "gridProperties(rowCount)",
+                    },
+                }],
+            },
+        }).catch((e: any) => {
+            throw e
         })
     }
 
