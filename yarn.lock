@@ -1379,7 +1379,7 @@ csv-parse@^4.8.6:
   resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-4.8.6.tgz#e3e01c2c9593194f1b7aae6291c65304b35022c8"
   integrity sha512-rSJlpgAjrB6pmlPaqiBAp3qVtQHN07VxI+ozs+knMsNvgh4bDQgENKLFYLFMvT+jn/wr/zvqsd7IVZ7Txdkr7w==
 
-customerio-node@^3.0.0:
+customerio-node@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/customerio-node/-/customerio-node-3.0.1.tgz#6507d43811fae4274fe455baa625da1796075f9d"
   integrity sha512-e/G/QqTAlLurhDm6siwD5gym2mowueDcIIaZgxVBvh0AO5jnRdDQNkXldkh/oAit2L/RcAe2O8KlRv3ZOicXLg==
