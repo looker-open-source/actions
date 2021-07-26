@@ -8,13 +8,6 @@ import {CustomerIoActionError} from "./customerio_error"
 
 const CUSTOMER_IO_UPDATE_DEFAULT_RATE_PER_SECOND_LIMIT = 500
 const CUSTOMER_IO_UPDATE_DEFAULT_REQUEST_TIMEOUT = 10000
-
-// async function delayPromiseAll(ms: number) {
-//     // tslint continually complains about this function, not sure why
-//     // tslint:disable-next-line
-//     return new Promise((resolve) => setTimeout(resolve, ms))
-// }
-
 const logger = new (winston.Logger)({
     transports: [
         new (winston.transports.Console)({timestamp: true}),
@@ -189,7 +182,7 @@ export class CustomerIoAction extends Hub.Action {
                     }
                 },
             })
-            logger.info(`Start ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
+            logger.debug(`Start ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
             const erroredPromises: any = []
             if (customerIoCall in customerIoClient) {
                 const divider = ratePerSecondLimit
@@ -200,16 +193,15 @@ export class CustomerIoAction extends Hub.Action {
                             batchUpdateObjects[index].payload).then(() => {
                             winston.debug(`ok`)
                         }).catch(async (err: any) => {
-                            winston.warn(`retrying after first ${JSON.stringify(err)}`)
-                            winston.warn(`trying to recover ${(index + 1)}`)
+                            winston.debug(`retrying after first ${JSON.stringify(err)}`)
+                            winston.debug(`trying to recover ${(index + 1)}`)
                             // await delayPromiseAll(600)
                             erroredPromises.push(batchUpdateObjects[index])
                             customerIoClient[customerIoCall](batchUpdateObjects[index].id,
                                 batchUpdateObjects[index].payload).then(() => {
                                 erroredPromises.splice(
                                     erroredPromises.findIndex((a: any) => a.id === batchUpdateObjects[index].id), 1)
-                                winston.info(`recovered ${(index + 1)}`)
-                                // winston.warn(`remainingMessages: ${batchUpdateObjects.length - (index + 1)}`)
+                                winston.debug(`recovered ${(index + 1)}`)
                             }).catch(async (errRetry: any) => {
                                 winston.warn(errRetry.message)
                             })
@@ -217,18 +209,11 @@ export class CustomerIoAction extends Hub.Action {
                     })
                     if (promiseArray.length === divider || index + 1 === batchUpdateObjects.length) {
                         await Promise.all(promiseArray.map((promise: any) => promise()))
-                        // .then((arrayOfValuesOrErrors: any) => {
-                        //      winston.debug(JSON.stringify(arrayOfValuesOrErrors))
-                        //  })
-                        //      .catch((err) => {
-                        //          winston.warn(err.message) // some coding error in handling happened
-                        //      })
                         promiseArray = []
                         winston.info(`${index + 1}/${batchUpdateObjects.length}`)
-                        // await delayPromiseAll(1000)
                     }
                 }
-                logger.info(`Done ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
+                logger.debug(`Done ${batchUpdateObjects.length} for ${ratePerSecondLimit} ratePerSecondLimit`)
                 winston.warn(`errored ${erroredPromises.length}/${batchUpdateObjects.length}`)
             } else {
                 const error = `Unable to determine a the api request method for ${customerIoCall}`
