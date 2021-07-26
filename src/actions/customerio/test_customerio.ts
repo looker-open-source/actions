@@ -34,12 +34,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         customer_io_site_id: "mysiteId",
         customer_io_region: "RegionEU",
       }
-      // request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-      //     fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
-      //     data: [{coolfield: {value: 200}}]}))}
-      // return expectCustomerIoMatch(request, {
-      //   id: 200,
-      // })
 
       request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
           fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
@@ -302,7 +296,5 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(action.hasForm).equals(true)
     })
   })
-
-
 
 })
