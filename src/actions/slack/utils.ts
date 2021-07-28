@@ -59,16 +59,23 @@ const usableDMs = async (slack: WebClient): Promise<Channel[]> => {
     return users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
 }
 
-const usableChannels = async (slack: WebClient): Promise<Channel[]> => {
-    let channels = await _usableChannels(slack)
-    channels = channels.concat(await usableDMs(slack))
+export const getDisplayedFormFields = async (slack: WebClient, channelType: string): Promise<ActionFormField[]> => {
+    let channels
+    if (channelType === "channels") {
+        channels = await _usableChannels(slack)
+    } else {
+        channels = await usableDMs(slack)
+    }
     channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
-    return channels
-}
-
-export const getDisplayedFormFields = async (slack: WebClient): Promise<ActionFormField[]> => {
-    const channels = await usableChannels(slack)
     return [
+        {
+            description: "Type of destination to fetch",
+            label: "Channel Type",
+            name: "channelType",
+            options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
+            type: "select",
+            default: "channels",
+        },
         {
             description: "Name of the Slack channel you would like to post to.",
             label: "Share In",
