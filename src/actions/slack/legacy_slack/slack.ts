@@ -29,7 +29,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     let channelType = "channels"
-    if (request.formParams.channelType !== undefined && request.formParams.channelType !== "users") {
+    if (request.formParams.channelType !== undefined && request.formParams.channelType === "users") {
       channelType = "users"
     }
 

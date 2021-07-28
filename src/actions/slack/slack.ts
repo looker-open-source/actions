@@ -82,7 +82,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     }
 
     let channelType = "channels"
-    if (request.formParams.channelType !== undefined && request.formParams.channelType !== "users") {
+    if (request.formParams.channelType !== undefined && request.formParams.channelType === "users") {
       channelType = "users"
     }
 
