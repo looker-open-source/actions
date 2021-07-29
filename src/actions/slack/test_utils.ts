@@ -102,6 +102,7 @@ describe(`slack/utils unit tests`, () => {
                     options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
                     type: "select",
                     default: "channels",
+                    interactive: true,
                 },
                 {
                     description: "Name of the Slack channel you would like to post to.",
@@ -177,6 +178,7 @@ describe(`slack/utils unit tests`, () => {
                     options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
                     type: "select",
                     default: "channels",
+                    interactive: true,
                 },
                 {
                     description: "Name of the Slack channel you would like to post to.",
