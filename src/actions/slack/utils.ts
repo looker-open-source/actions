@@ -75,6 +75,7 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
             options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
             type: "select",
             default: "channels",
+            interactive: true,
         },
         {
             description: "Name of the Slack channel you would like to post to.",
