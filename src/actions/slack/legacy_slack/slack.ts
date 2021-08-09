@@ -1,6 +1,7 @@
 import * as Hub from "../../../hub"
 
 import { WebClient } from "@slack/client"
+import _ = require("lodash")
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
 
 export class SlackAttachmentAction extends Hub.Action {
@@ -28,10 +29,8 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    let channelType = "channels"
-    if (request.formParams.channelType !== undefined && request.formParams.channelType === "users") {
-      channelType = "users"
-    }
+    const channelType = _.isNil(request.formParams.channelType) && request.formParams.channelType === "users"
+        ? "users" : "channels"
 
     try {
       form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), channelType)

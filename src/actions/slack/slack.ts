@@ -1,4 +1,5 @@
 import {WebClient} from "@slack/client"
+import _ = require("lodash")
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
@@ -81,10 +82,8 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       return this.loginForm(request, form)
     }
 
-    let channelType = "channels"
-    if (request.formParams.channelType !== undefined && request.formParams.channelType === "users") {
-      channelType = "users"
-    }
+    const channelType = _.isNil(request.formParams.channelType) && request.formParams.channelType === "users"
+        ? "users" : "channels"
 
     try {
       form.fields = form.fields.concat(await getDisplayedFormFields(client, channelType))
