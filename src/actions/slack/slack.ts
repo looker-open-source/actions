@@ -82,8 +82,8 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       return this.loginForm(request, form)
     }
 
-    const channelType = _.isNil(request.formParams.channelType) && request.formParams.channelType === "users"
-        ? "users" : "channels"
+    const channelType = _.isNil(request.formParams.channelType) || request.formParams.channelType === "channels"
+        ? "channels" : "users"
 
     try {
       form.fields = form.fields.concat(await getDisplayedFormFields(client, channelType))
