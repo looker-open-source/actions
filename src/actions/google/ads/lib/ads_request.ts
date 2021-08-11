@@ -128,7 +128,7 @@ export class GoogleAdsActionRequest {
       if (!newListName) {
         throw new MissingRequiredParamsError("Name for new list is missing")
       }
-      const timestamp = new Date().toISOString().substr(0, 19).replace('T', ' ')
+      const timestamp = new Date().toISOString().substr(0, 19).replace("T", " ")
       const newListNameWithTimestamp = `${newListName} (from Looker ${timestamp}Z)`
       await executor.createUserList(newListNameWithTimestamp, newListDescription)
     } else {
