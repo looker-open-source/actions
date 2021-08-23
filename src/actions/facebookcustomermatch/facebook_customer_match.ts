@@ -15,9 +15,9 @@ export class FacebookCustomerMatchAction extends Hub.OAuthAction {
   readonly name = "facebook_customer_match"
   readonly label = "Facebook Customer Match"
   readonly iconName = "facebookcustomermatch/facebook_ads_icon.png"
-  readonly description = "TODO."
+  readonly description = "Upload data to Facebook Ads Custom Audience from Customer List"
   readonly supportedActionTypes = [Hub.ActionType.Query]
-  readonly supportedFormats = [Hub.ActionFormat.JsonLabel]
+  readonly supportedFormats = [Hub.ActionFormat.JsonDetail]
   readonly supportedFormattings = [Hub.ActionFormatting.Unformatted]
   readonly supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   readonly supportedDownloadSettings = [Hub.ActionDownloadSettings.Url]
@@ -75,7 +75,7 @@ export class FacebookCustomerMatchAction extends Hub.OAuthAction {
   async oauthUrl(redirectUri: string, encryptedState: string) {
     const url = new URL("https://www.facebook.com/v11.0/dialog/oauth")
     url.search = querystring.stringify({
-      client_id: process.env.FACEBOOK_CLIENT_ID,
+      client_id: this.oauthClientId,
       redirect_uri: redirectUri,
       state: encryptedState,
       scope: this.oauthScope

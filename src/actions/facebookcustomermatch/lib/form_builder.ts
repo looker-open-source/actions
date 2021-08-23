@@ -46,7 +46,7 @@ export default class FacebookFormBuilder {
         form.fields.push({
           label: "Would you like to create a new audience, update existing, or replace existing?",
           name: "choose_create_update_replace",
-          description: "Replacing deletes all users from the audience then replaces them with new ones",
+          description: "Updating appends users. Replacing first deletes all users from the audience then appends users.",
           required: true,
           interactive: true,
           type: "select" as "select",
@@ -96,7 +96,7 @@ export default class FacebookFormBuilder {
 
         const audienceActionType = actionRequest.formParams.choose_create_update_replace === "update_audience" ? "update" : "replace"
         const customAudienceOptions = [... await (this.generateOptionsFromNamesAndIds(customAudiences))]
-        let audienceSelectDescription = audienceActionType === "replace" ? "Replacing deletes all users from the audience then replaces them with new ones" : "";
+        let audienceSelectDescription = audienceActionType === "replace" ? "Replacing first deletes all users from the audience then appends users." : "";
         if(customAudienceOptions.length <= 0) {
           audienceSelectDescription = "You have no custom audiences for this ad account. You can create one by selecting \"Create new audience\" above."
         }
