@@ -20,6 +20,7 @@ export interface UserUploadPayload {
     "data": string[] | string[][],
 }
 
+// formatting guide: https://developers.facebook.com/docs/marketing-api/audiences/guides/custom-audiences#hash
 export interface UserFields {
     email?: string | null,
     phone?: string | null, // as 7705555555 with no spaces, dashes, zeros. add country code if country field is missing
@@ -32,8 +33,8 @@ export interface UserFields {
     firstName?: string | null,
     firstInitial?: string | null,
     city?: string | null, // a-z only, lowercase, no punctuation, no whitespace, no special characters
-    state?: string | null, // 2 character ANSI abbreviation code https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code
-    zip?: string | null, // in US i.e. 30008, in UK Area/District/Sector format
+    state?: string | null, // 2 character ANSI abbreviation code https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code if !US make lowercase, a-z, NO whitespace
+    zip?: string | null, // in US i.e. 30008, in UK Area/District/Sector format lowercase NO whitespace
     country?: string | null, // 2 letter codes https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
     madid?: string | null, // all lowercase, keep hyphens 
     externalId?: string | null,

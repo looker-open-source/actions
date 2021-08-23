@@ -7,6 +7,15 @@ import { Readable } from "stream"
 
 import { UserUploadSession, UserUploadPayload, UserFields, validFacebookHashCombinations} from "./api"
 import FacebookCustomerMatchApi from "./api"
+import {
+  removeNonRomanAlphaNumeric, 
+  countryNameTo2Code, 
+  usStateNameTo2Code, 
+  genderNameToCode, 
+  getMonth, 
+  getDayOfMonth, 
+  formatFullDate,
+} from "./util"
 
 const BATCH_SIZE = 10000; // Maximum size allowable by Facebook endpoint
 
@@ -75,31 +84,31 @@ export default class FacebookCustomerMatchExecutor {
       lookMLFieldName: "Phone",
       fallbackRegex: /phone/i,
       userField: "phone",
-      normalizationFunction: this.normalize
+      normalizationFunction: removeNonRomanAlphaNumeric
     },
     {
       lookMLFieldName: "Gender",
       fallbackRegex: /gender/i,
       userField: "gender",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => genderNameToCode(this.normalize(value))
     },
     {
       lookMLFieldName: "BirthYear",
       fallbackRegex: /year/i,
       userField: "birthYear",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => formatFullDate(this.normalize(value))
     },
     {
       lookMLFieldName: "BirthMonth",
       fallbackRegex: /month/i,
       userField: "birthMonth",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => getMonth(this.normalize(value))
     },
     {
       lookMLFieldName: "BirthDay",
       fallbackRegex: /day/i,
       userField: "birthDay",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => getDayOfMonth(this.normalize(value))
     },
     {
       lookMLFieldName: "LastName",
@@ -117,19 +126,19 @@ export default class FacebookCustomerMatchExecutor {
       lookMLFieldName: "FirstInitial",
       fallbackRegex: /initial/i,
       userField: "firstInitial",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value))
     },
     {
       lookMLFieldName: "City",
       fallbackRegex: /city/i,
       userField: "city",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value))
     },
     {
       lookMLFieldName: "State",
       fallbackRegex: /state/i,
       userField: "state",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => usStateNameTo2Code(this.normalize(value))
     },
     {
       lookMLFieldName: "Zip",
@@ -141,7 +150,7 @@ export default class FacebookCustomerMatchExecutor {
       lookMLFieldName: "Country",
       fallbackRegex: /country/i,
       userField: "country",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value: string) => countryNameTo2Code(this.normalize(value))
     },
     {
       lookMLFieldName: "MadID",
@@ -153,7 +162,7 @@ export default class FacebookCustomerMatchExecutor {
       lookMLFieldName: "ExternalID",
       fallbackRegex: /external/i,
       userField: "externalId",
-      normalizationFunction: this.normalize
+      normalizationFunction: (value:string) => value // NOOP
     },
   ]
 
@@ -195,13 +204,42 @@ export default class FacebookCustomerMatchExecutor {
   private async startAsyncParser(downloadStream: Readable) {
     return new Promise<void>((resolve, reject) => {
       oboe(downloadStream)
-        .node("!.*", (row: any) => {          
+        .node({"!.fields": (fieldData: any) => {
+          // we only pull the high level fields data once in a separate listener. purely to determine the schema
+          winston.debug("info",
+            `Received stream data. Determining schema from LookML field tags and regex.`,
+          )
+          debugger;
+          
           if (!this.isSchemaDetermined) {
-            this.determineSchema(row)
+            // Field data looks like: {measures: Array(0), dimensions: Array(8), table_calculations: Array(0), pivots: Array(0)}
+            let combinedFields = [...fieldData.dimensions, ...fieldData.measures]
+            // prune the object to just the subset of data we need, then combine into one object
+            combinedFields = combinedFields.reduce((aggregator, field) => {
+              aggregator[field.name] = {
+                value: null, // not important for determining schema
+                tags: field.tags || []
+              }
+              return aggregator
+            }, {})
+            this.determineSchema(combinedFields)
           }
+          
+          return oboe.drop
+        }, "!.data.*" :(row: any) => {
+          // the reduce below just strips the superfluous object and "value property from the row
+          // i.e. { users.city:{value: 'Abbeville'}, "users.zip": ... }
+          // becomes
+          // { users.city: 'Abbeville' }
+          debugger;
+          row = Object.entries(row).reduce((accumulator: any, [key, val]: any[]) => {
+            accumulator[key] = val["value"]
+            return accumulator
+          }, {})
           this.handleRow(row)
           this.scheduleBatch()
           return oboe.drop
+        }
         })
         .done(() => {
           this.scheduleBatch(true)
@@ -214,10 +252,28 @@ export default class FacebookCustomerMatchExecutor {
   private determineSchema(row: any) {
     for (const columnLabel of Object.keys(row)) {
       for (const mapping of this.fieldMapping) {
-        const {fallbackRegex} = mapping
+        const {fallbackRegex, lookMLFieldName} = mapping
+        let tagMatched: boolean = false
 
-        if(columnLabel.match(fallbackRegex)) {
+        // attempt to match fields by lookml tags first
+        if(row[columnLabel].tags && row[columnLabel].tags.length > 0) {
+          if (row[columnLabel].tags.some((tag: string) => tag.toLowerCase() === lookMLFieldName.toLowerCase())) {
+            tagMatched = true
+            winston.debug("info",
+              `Matched ${columnLabel} by LookML field tag.`,
+            )
+          }
+        }
+
+        if(tagMatched || columnLabel.match(fallbackRegex)) {
           this.schema[columnLabel] = mapping
+          winston.debug("info",
+              `Matched ${columnLabel} by regex.`,
+            )
+        } else {
+          winston.debug("info",
+            `Could not match field ${columnLabel} by tags or regex. Dropping it from upload.`,
+          )
         }
       }
     }
@@ -332,7 +388,8 @@ OUT
   private normalizeRow(row: any) {
     const normalizedRow = {...row}
     Object.entries(this.schema).forEach(([columnLabel, mapping]) => {
-      normalizedRow[columnLabel] = mapping.normalizationFunction(row[columnLabel])
+      const rowValue = row[columnLabel] + "" // coercec things like phone numbers to string
+      normalizedRow[columnLabel] = mapping.normalizationFunction(rowValue)
     })
     return normalizedRow
   }
