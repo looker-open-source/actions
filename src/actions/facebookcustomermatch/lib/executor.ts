@@ -209,7 +209,6 @@ export default class FacebookCustomerMatchExecutor {
           winston.debug("info",
             `Received stream data. Determining schema from LookML field tags and regex.`,
           )
-          debugger;
           
           if (!this.isSchemaDetermined) {
             // Field data looks like: {measures: Array(0), dimensions: Array(8), table_calculations: Array(0), pivots: Array(0)}
@@ -231,7 +230,6 @@ export default class FacebookCustomerMatchExecutor {
           // i.e. { users.city:{value: 'Abbeville'}, "users.zip": ... }
           // becomes
           // { users.city: 'Abbeville' }
-          debugger;
           row = Object.entries(row).reduce((accumulator: any, [key, val]: any[]) => {
             accumulator[key] = val["value"]
             return accumulator
