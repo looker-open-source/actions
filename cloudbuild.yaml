@@ -1,5 +1,5 @@
 steps:
-- name: node:14.8.0
+- name: node:12.13.0
   entrypoint: yarn
   args: ["install"]
 - name: node:12.13.0
