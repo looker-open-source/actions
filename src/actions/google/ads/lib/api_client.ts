@@ -131,7 +131,7 @@ export class GoogleAdsApiClient {
         url,
         data,
         headers,
-        baseURL: "https://googleads.googleapis.com/v6/",
+        baseURL: "https://googleads.googleapis.com/v8/",
       })
 
       return response.data
