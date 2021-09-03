@@ -1,20 +1,31 @@
-import * as Hub from "../../hub";
+import * as Hub from "../../../hub";
 import * as semver from "semver";
 import * as jsforce from "jsforce";
+import { SalesforceLoginHelper } from "../common/login_helper";
 
 const TAGS = ["sfdc_contact_id", "sfdc_lead_id"];
-const CHUNK_SIZE = 200;
+const CHUNK_SIZE = 200; // number of records to send at once
+const MAX_RESULTS = 4000; // for appending to existing campaigns
 
 interface CampaignMember {
   ContactId?: string;
   LeadId?: string;
   CampaignId: string;
+  Status?: string;
 }
 
-export class SalesforceAction extends Hub.Action {
-  name = "salesforce";
-  label = "Salesforce";
-  iconName = "salesforce/salesforce.png";
+export class SalesforceCampaignsAction extends Hub.Action {
+  // login helper
+  readonly salesforceLoginHelper: SalesforceLoginHelper;
+
+  constructor() {
+    super();
+    this.salesforceLoginHelper = new SalesforceLoginHelper();
+  }
+
+  name = "salesforce_campaigns";
+  label = "Salesforce Campaigns";
+  iconName = "salesforce/common/salesforce.png";
   description = "Add contacts or leads to Salesforce campaign.";
   params = [
     {
@@ -53,6 +64,8 @@ export class SalesforceAction extends Hub.Action {
     Hub.ActionVisualizationFormatting.Noapply,
   ];
   supportedFormattings = [Hub.ActionFormatting.Unformatted];
+  // todo stream results
+  // todo support All Results vs Results in Table
   supportedFormats = (request: Hub.ActionRequest) => {
     if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
       return [Hub.ActionFormat.JsonDetailLiteStream];
@@ -82,6 +95,7 @@ export class SalesforceAction extends Hub.Action {
     const identifiableFields = fields.filter(
       (f: any) => f.tags && f.tags.some((t: string) => TAGS.includes(t))
     );
+    // todo if no tags, search field names for match as backup, if nothing, then throw error
     if (identifiableFields.length !== 1) {
       throw `Query requires 1 field tagged with: ${TAGS.join(" or ")}.`;
     }
@@ -101,20 +115,37 @@ export class SalesforceAction extends Hub.Action {
   }
 
   async sendData(request: Hub.ActionRequest, memberIds: string[]) {
-    const client = await this.salesforceLogin(request);
+    const client = await this.salesforceLoginHelper.salesforceLogin(request);
 
-    const newCampaign = await client
-      .sobject("Campaign")
-      .create({ Name: "request.formParams.campaign_name" });
+    let campaignId: string;
 
-    if (!newCampaign.success) {
-      throw `Campaign creation error: ${JSON.stringify(newCampaign.errors)}`;
+    switch (request.formParams.create_or_append) {
+      case "create":
+        const newCampaign = await client
+          .sobject("Campaign")
+          .create({ Name: request.formParams.campaign_name });
+
+        if (!newCampaign.success) {
+          throw new Error(
+            `Campaign creation error: ${JSON.stringify(newCampaign.errors)}`
+          );
+        } else {
+          campaignId = newCampaign.id;
+        }
+
+        break;
+      case "append":
+        campaignId = request.formParams.campaign_name!;
     }
 
     const memberType =
       request.formParams.member_type === "lead" ? "LeadId" : "ContactId";
     const memberList = memberIds.map((m) => {
-      return { [memberType]: m, CampaignId: newCampaign.id };
+      return {
+        [memberType]: m,
+        CampaignId: campaignId,
+        Status: request.formParams.member_status,
+      };
     });
 
     // POST request with sObject Collections to execute actions on multiple records in a single request
@@ -135,6 +166,7 @@ export class SalesforceAction extends Hub.Action {
     // function signature as the compiler picks the first definition in declaration order, which is
     // a single record. Hence the need to use the 'any' type below
     const records: any = await Promise.all(
+      // todo replicate promise.allSettled behaviour in ES6
       memberGrouped.map(async (m) => {
         return await client.sobject("CampaignMember").create(m);
       })
@@ -155,8 +187,6 @@ export class SalesforceAction extends Hub.Action {
           };
         })
       );
-      console.log("BROKEN!!!");
-      console.log(cleanErrors);
       throw new Error(JSON.stringify(cleanErrors));
     }
   }
@@ -169,20 +199,81 @@ export class SalesforceAction extends Hub.Action {
     return chunks;
   }
 
-  async form() {
+  async getCampaigns(request: Hub.ActionRequest) {
+    try {
+      const client = await this.salesforceLoginHelper.salesforceLogin(request);
+      const results: jsforce.QueryResult<any> = await client
+        .query("SELECT Id, Name FROM Campaign ORDER BY Name")
+        .run({ maxFetch: MAX_RESULTS });
+
+      // When maxFetch option is not set, the default value (10,000) is applied.
+      // If you really want to fetch more records than the default value, you should explicitly set the maxFetch value in your query.
+
+      const campaigns = results.records.map((c) => {
+        return { name: c.Id, label: c.Name };
+      });
+      return campaigns;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm();
+
     form.fields = [
       {
-        name: "campaign_name",
-        label: "Campaign Name",
-        description: "Identifying name for the campaign",
-        type: "string",
+        name: "create_or_append",
+        label: "Create or Append",
+        description: "Create a new Campaign or append to an existing Campaign",
+        type: "select",
         required: true,
+        interactive: true,
+        options: [
+          {
+            name: "create",
+            label: "Create",
+          },
+          {
+            name: "append",
+            label: "Append",
+          },
+        ],
       },
+    ];
+
+    if (Object.keys(request.formParams).length === 0) {
+      return form;
+    }
+
+    switch (request.formParams.create_or_append) {
+      case "create":
+        form.fields.push({
+          name: "campaign_name",
+          label: "Campaign Name",
+          description: "Identifying name for the campaign",
+          type: "string",
+          required: true,
+        });
+        break;
+      case "append":
+        const campaigns = await this.getCampaigns(request);
+        form.fields.push({
+          name: "campaign_name",
+          label: "Campaign Name",
+          description: "Identifying name for the campaign",
+          type: "select",
+          required: true,
+          options: campaigns,
+        });
+        break;
+    }
+
+    const memberFields: Hub.ActionFormField[] = [
       {
         name: "member_type",
         label: "Member Type",
-        description: "The record type of the campaign members: lead or contact",
+        description: "The record type of the campaign members: Contact or Lead",
         type: "select",
         options: [
           { name: "contact", label: "Contact" },
@@ -190,28 +281,22 @@ export class SalesforceAction extends Hub.Action {
         ],
         required: true,
       },
+      {
+        name: "member_status", // todo make this dynamic - https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_campaignmember.htm
+        label: "Member Status",
+        description: "The status of the campaign members: Responded or Sent",
+        type: "select",
+        options: [
+          { name: "Sent", label: "Sent" },
+          { name: "Responded", label: "Responded" },
+        ],
+        required: false,
+      },
     ];
+    form.fields.push(...memberFields);
+
     return form;
-  }
-
-  // login with (username, password + security_token) for now
-  private async salesforceLogin(request: Hub.ActionRequest) {
-    const sfdcConn = new jsforce.Connection({
-      loginUrl: request.params.salesforce_domain!,
-    });
-
-    await sfdcConn
-      .login(
-        request.params.salesforce_username!,
-        request.params.salesforce_password! +
-          request.params.salesforce_security_token!
-      )
-      .catch((e) => {
-        throw e;
-      });
-
-    return sfdcConn;
   }
 }
 
-Hub.addAction(new SalesforceAction());
+Hub.addAction(new SalesforceCampaignsAction());
