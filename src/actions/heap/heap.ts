@@ -1,5 +1,6 @@
 import * as req from "request-promise-native"
 import * as semver from "semver"
+import * as winston from "winston"
 
 import * as Hub from "../../hub"
 
@@ -128,6 +129,7 @@ export class HeapAction extends Hub.Action {
                 request.params.heap_env_id!,
                 requestUrl,
                 heapField,
+                errors,
               ),
             )
             requestBatch = []
@@ -145,6 +147,7 @@ export class HeapAction extends Hub.Action {
           request.params.heap_env_id!,
           requestUrl,
           heapField,
+          errors,
         ),
       )
     }
@@ -155,16 +158,25 @@ export class HeapAction extends Hub.Action {
       errors.push(err)
     }
 
-    await this.trackLookerAction(
-      request.params.heap_env_id!,
-      requestCount,
-      heapField,
-      errors.length === 0 ? "success" : "failure",
-    )
+    try {
+      await this.trackLookerAction(
+        request.params.heap_env_id!,
+        requestCount,
+        heapField,
+        errors.length === 0 ? "success" : "failure",
+      )
+    } catch (err) {
+      winston.warn("Heap track call failed.")
+      // swallow internal track call error
+    }
+
     if (errors.length === 0) {
       return new Hub.ActionResponse({ success: true })
     }
     const errorMsg = errors.map((err) => err.message).join(", ")
+    winston.error(
+      `Heap action for envId ${request.params.heap_env_id} failed with errors: ${errorMsg}`,
+    )
     return new Hub.ActionResponse({ success: false, message: errorMsg })
   }
 
@@ -296,19 +308,24 @@ export class HeapAction extends Hub.Action {
     envId: string,
     requestUrl: string,
     heapField: HeapField,
+    errors: Error[],
   ): Promise<void> {
     const requestBody = this.constructBodyForRequest(
       envId,
       heapField,
       requestBatch,
     )
-    await req
-      .post({
-        uri: requestUrl,
-        headers: { "Content-Type": "application/json" },
-        body: requestBody,
-      })
-      .promise()
+    try {
+      await req
+        .post({
+          uri: requestUrl,
+          headers: { "Content-Type": "application/json" },
+          body: requestBody,
+        })
+        .promise()
+    } catch (err) {
+      errors.push(err)
+    }
   }
 
   /**
