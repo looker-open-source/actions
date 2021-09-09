@@ -4,6 +4,7 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
 import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
+import {WebAPICallResult} from '@slack/web-api/dist/WebClient';
 
 interface AuthTestResult {
   ok: boolean,
@@ -142,7 +143,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async authTest(clients: WebClient[]) {
     const resp = await Promise.all(
         clients
-            .map(async (client) => client.auth.test() as Promise<AuthTestResult | Error>)
+            .map(async (client) => client.auth.test() as Promise<WebAPICallResult | Error>)
             .map(async (p) => p.catch((e) => e)),
     )
 
