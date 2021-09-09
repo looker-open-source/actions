@@ -47,6 +47,7 @@ export class HeapAction extends Hub.Action {
   static HEAP_ENV_ID = process.env.HEAP_ENV_ID
   static HEAP_IDENTITY = process.env.HEAP_IDENTITY
   static HEAP_EVENT_NAME = "Submit Looker Action"
+  static LOG_PROGRESS_STEP = 10000
 
   description = "Add user and account properties to your Heap dataset"
   label = "Heap"
@@ -99,7 +100,7 @@ export class HeapAction extends Hub.Action {
     const heapField = this.resolveHeapField(propertyType)
     const requestUrl = this.resolveApiEndpoint(propertyType)
     const errors: Error[] = []
-    let requestCount = 0
+    let rowCount = 0
     let requestBatch: HeapEntity[] = []
     const requestPromises: Promise<void>[] = []
 
@@ -120,7 +121,7 @@ export class HeapAction extends Hub.Action {
           if (!heapFieldValue) {
             return
           }
-          requestCount += 1
+          rowCount += 1
           requestBatch.push({ heapFieldValue, properties })
           if (requestBatch.length === HeapAction.ROWS_PER_BATCH) {
             requestPromises.push(
@@ -133,6 +134,14 @@ export class HeapAction extends Hub.Action {
               ),
             )
             requestBatch = []
+
+            if (rowCount % HeapAction.LOG_PROGRESS_STEP === 0) {
+              winston.info(
+                `Processed ${rowCount} rows in ${
+                  rowCount / HeapAction.ROWS_PER_BATCH
+                } batch requests.`,
+              )
+            }
           }
         } catch (err) {
           errors.push(err)
@@ -161,7 +170,7 @@ export class HeapAction extends Hub.Action {
     try {
       await this.trackLookerAction(
         request.params.heap_env_id!,
-        requestCount,
+        rowCount,
         heapField,
         errors.length === 0 ? "success" : "failure",
       )
