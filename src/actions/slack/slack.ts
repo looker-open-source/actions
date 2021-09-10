@@ -1,10 +1,10 @@
 import {WebClient} from "@slack/client"
+import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
 import _ = require("lodash")
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
 import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
-import {WebAPICallResult} from '@slack/web-api/dist/WebClient';
 
 interface AuthTestResult {
   ok: boolean,

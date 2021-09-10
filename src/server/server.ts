@@ -86,7 +86,7 @@ export default class Server implements Hub.RouteBuilder {
   constructor() {
 
     this.app = express()
-    this.app.use(bodyParser.json({limit: "250mb"}))
+    this.app.use(express.json({limit: "250mb"}))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
       dynamicMeta: this.requestLog,
