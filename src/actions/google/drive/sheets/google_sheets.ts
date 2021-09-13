@@ -126,7 +126,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         if (files.data.files[0].id === undefined) {
             throw "No spreadsheet ID"
         }
-        const spreadsheetId = files.data.files[0].id
+        const spreadsheetId = files.data.files[0].id!
 
         const sheets = await sheet.spreadsheets.get({spreadsheetId})
         if (!sheets.data.sheets || sheets.data.sheets[0].properties === undefined) {
