@@ -95,8 +95,17 @@ describe(`slack/utils unit tests`, () => {
                         next_cursor: "cursor",
                     },
                 })
-            const result = getDisplayedFormFields(slackClient)
+            const result = getDisplayedFormFields(slackClient, "channels")
             chai.expect(result).to.eventually.deep.equal([
+                {
+                    description: "Type of destination to fetch",
+                    label: "Channel Type",
+                    name: "channelType",
+                    options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
+                    type: "select",
+                    default: "channels",
+                    interactive: true,
+                },
                 {
                     description: "Name of the Slack channel you would like to post to.",
                     label: "Share In",
@@ -106,6 +115,78 @@ describe(`slack/utils unit tests`, () => {
                         {name: "2", label: "#B"},
                         {name: "3", label: "#C"},
                         {name: "4", label: "#D"},
+                    ],
+                    required: true,
+                    type: "select",
+                }, {
+                    label: "Comment",
+                    type: "string",
+                    name: "initial_comment",
+                }, {
+                    label: "Filename",
+                    name: "filename",
+                    type: "string",
+                },
+            ]).and.notify(done)
+        })
+
+        it("returns correct users", (done) => {
+            const slackClient = new WebClient("token")
+            // @ts-ignore
+            sinon.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
+                {
+                    ok: true,
+                    channels: [
+                        {id: "3", name: "C", is_member: true},
+                        {id: "4", name: "D", is_member: true},
+                    ],
+                } :
+                {
+                    ok: true,
+                    channels: [
+                        {id: "1", name: "A", is_member: true},
+                        {id: "2", name: "B", is_member: true},
+                    ],
+                    response_metadata: {
+                        next_cursor: "cursor",
+                    },
+                },
+            )
+            // @ts-ignore
+            sinon.stub(slackClient.users, "list").callsFake((filters: any) => filters.cursor ?
+                {
+                    ok: true,
+                    members: [
+                        {id: "30", name: "W"},
+                        {id: "40", name: "X"},
+                    ],
+                } :
+                {
+                    ok: true,
+                    members: [
+                        {id: "10", name: "Z"},
+                        {id: "20", name: "Y"},
+                    ],
+                    response_metadata: {
+                        next_cursor: "cursor",
+                    },
+                })
+            const result = getDisplayedFormFields(slackClient, "users")
+            chai.expect(result).to.eventually.deep.equal([
+                {
+                    description: "Type of destination to fetch",
+                    label: "Channel Type",
+                    name: "channelType",
+                    options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
+                    type: "select",
+                    default: "channels",
+                    interactive: true,
+                },
+                {
+                    description: "Name of the Slack channel you would like to post to.",
+                    label: "Share In",
+                    name: "channel",
+                    options: [
                         {name: "30", label: "@W"},
                         {name: "40", label: "@X"},
                         {name: "20", label: "@Y"},

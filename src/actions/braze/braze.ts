@@ -25,7 +25,6 @@ interface BrazeApiRow {
 }
 
 interface BrazeApiBody {
-  api_key: string
   attributes: BrazeApiRow[]
 }
 
@@ -53,6 +52,13 @@ export class BrazeAction extends Hub.Action {
   supportedFormats = [Hub.ActionFormat.JsonDetail]
 
   params = [{
+    name: "braze_description",
+    label: "Braze Description",
+    required: false,
+    sensitive: false,
+    description: "Braze Action Description",
+  },
+  {
     name: "braze_api_key",
     label: "Braze API Key",
     required: true,
@@ -66,7 +72,8 @@ export class BrazeAction extends Hub.Action {
     required: true,
     sensitive: false,
     description: "Braze REST API endpoint based on the instance location. " +
-      "See: https://www.braze.com/docs/developer_guide/rest_api/basics/#endpoints",
+      "See: https://www.braze.com/docs/developer_guide/rest_api/basics/#endpoints" +
+      " Example: https://rest.iad-01.braze.com",
   }]
 
   async execute( request: Hub.ActionRequest) {
@@ -202,7 +209,6 @@ export class BrazeAction extends Hub.Action {
   async sendChunk(endpoint: string, apiKey: string, chunk: BrazeApiRow[]) {
     const urlendpoint = new URL(endpoint)
     const reqbody: BrazeApiBody = {
-      api_key: apiKey,
       attributes: chunk,
     }
     await req.post({

@@ -126,7 +126,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         if (files.data.files[0].id === undefined) {
             throw "No spreadsheet ID"
         }
-        const spreadsheetId = files.data.files[0].id as string
+        const spreadsheetId = files.data.files[0].id
 
         const sheets = await sheet.spreadsheets.get({spreadsheetId})
         if (!sheets.data.sheets || sheets.data.sheets[0].properties === undefined) {
@@ -253,7 +253,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async resize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number) {
-        sheet.spreadsheets.batchUpdate({
+        await sheet.spreadsheets.batchUpdate({
             spreadsheetId,
             requestBody: {
                 requests: [{

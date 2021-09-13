@@ -49,7 +49,7 @@ describe("SlackClientManager", () => {
             stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns(new WebClient())
             const clientManager = new SlackClientManager(request)
             const result = clientManager.getClients()
-            chai.expect(result).to.deep.equals(["stubbed"])
+            chai.expect(result).to.deep.equals([new WebClient()])
         })
         it("hasSelectedClient works", () => {
             stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns(new WebClient())
@@ -59,12 +59,12 @@ describe("SlackClientManager", () => {
         it("getSelectedClient works", () => {
             stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns(new WebClient())
             const clientManager = new SlackClientManager(request)
-            chai.expect(clientManager.getSelectedClient()).to.eq("stubbed")
+            chai.expect(clientManager.getSelectedClient()).to.eq(new WebClient())
         })
         it("getClient works", () => {
             stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns(new WebClient())
             const clientManager = new SlackClientManager(request)
-            chai.expect(clientManager.getClient(PLACEHOLDER_WORKSPACE)).to.eq("stubbed")
+            chai.expect(clientManager.getClient(PLACEHOLDER_WORKSPACE)).to.eq(new WebClient())
         })
     })
 
