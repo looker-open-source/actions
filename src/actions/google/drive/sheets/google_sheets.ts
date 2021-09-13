@@ -251,7 +251,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async resize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number) {
-        sheet.spreadsheets.batchUpdate({
+        await sheet.spreadsheets.batchUpdate({
             spreadsheetId,
             requestBody: {
                 requests: [{
