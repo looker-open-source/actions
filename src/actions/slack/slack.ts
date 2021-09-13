@@ -1,4 +1,5 @@
 import {WebClient} from "@slack/client"
+import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
 import _ = require("lodash")
 import * as winston from "winston"
 import * as Hub from "../../hub"
@@ -142,7 +143,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async authTest(clients: WebClient[]) {
     const resp = await Promise.all(
         clients
-            .map(async (client) => client.auth.test() as Promise<AuthTestResult | Error>)
+            .map(async (client) => client.auth.test() as Promise<WebAPICallResult | Error>)
             .map(async (p) => p.catch((e) => e)),
     )
 
