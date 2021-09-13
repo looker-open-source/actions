@@ -207,18 +207,16 @@ export class BrazeAction extends Hub.Action {
   }
 
   async sendChunk(endpoint: string, apiKey: string, chunk: BrazeApiRow[]) {
-    const urlendpoint = new URL(endpoint)
+    const urlendpoint = new URL(endpoint).toString()
     const reqbody: BrazeApiBody = {
       attributes: chunk,
     }
     await req.post({
-        uri: urlendpoint,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey,
-        },
-        body: reqbody, json: true})
-      .promise()
+      uri: urlendpoint, headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey,
+      },
+      body: reqbody, json: true}).promise()
   }
 }
 
