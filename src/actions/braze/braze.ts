@@ -212,13 +212,13 @@ export class BrazeAction extends Hub.Action {
       attributes: chunk,
     }
     await req.post({
-          uri: urlendpoint,
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + apiKey,
-          },
-          body: reqbody, json: true})
-        .promise()
+        uri: urlendpoint,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + apiKey,
+        },
+        body: reqbody, json: true})
+      .promise()
   }
 }
 
