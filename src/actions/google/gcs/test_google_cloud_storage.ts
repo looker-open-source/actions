@@ -142,6 +142,28 @@ describe(`${action.constructor.name} unit tests`, () => {
         Buffer.from("1,2,3,4", "utf8"))
     })
 
+    it("sends to right filename if specified and overwrite no with attachment", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "mywackyfilename.csv",
+        overwrite: "no",
+      }
+
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+          "mybucket",
+          "mywackyfilename_1234.csv",
+          Buffer.from("1,2,3,4", "utf8"))
+    })
+
+
   })
 
   describe("form", () => {
