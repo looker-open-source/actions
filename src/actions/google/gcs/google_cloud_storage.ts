@@ -2,6 +2,8 @@ import * as Hub from "../../../hub"
 
 const storage = require("@google-cloud/storage")
 
+const FILE_EXTENSION = new RegExp(/(.*)\.(.*)$/)
+
 export class GoogleCloudStorageAction extends Hub.Action {
 
   name = "google_cloud_storage"
@@ -43,7 +45,12 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
     // If the overwrite formParam exists and it is "no" - ensure a timestamp is appended
     if (request.formParams.overwrite && request.formParams.overwrite === "no") {
-      filename += `_${Date.now()}`
+      const captures = filename.match(FILE_EXTENSION)
+      if (captures && captures.length > 1) {
+        filename = captures[1] + `_${Date.now()}.` + captures[2]
+      } else {
+        filename += `_${Date.now()}`
+      }
     }
 
     if (!filename) {
