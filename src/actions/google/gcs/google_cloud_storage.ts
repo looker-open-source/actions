@@ -2,7 +2,7 @@ import * as Hub from "../../../hub"
 
 const storage = require("@google-cloud/storage")
 
-const FILE_EXTENSION = new RegExp(/(.*[^.])\.(.*)/)
+const FILE_EXTENSION = new RegExp(/(.*)\.(.*)$/)
 
 export class GoogleCloudStorageAction extends Hub.Action {
 
