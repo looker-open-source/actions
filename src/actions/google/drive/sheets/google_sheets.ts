@@ -278,6 +278,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
                 winston.warn("Queueing retry", {webhookId})
                 return this.flushRetry(buffer, sheet, spreadsheetId)
+            } else {
+                throw e
             }
         })
     }
