@@ -182,12 +182,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                               `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                             maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
                             this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
-                                reject(e)
+                                throw e
                             })
                         }
                         this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
                             winston.error(e, {webhookId: request.webhookId})
-                            reject(e)
+                            throw e
                         })
                     }
                 }).on("end", () => {
@@ -203,11 +203,11 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                             maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
                             this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
-                                reject(e)
+                                throw e
                             })
                         }
                         this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
-                            reject(e)
+                            throw e
                         }).then(() => {
                             winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
                                 {webhookId: request.webhookId})
