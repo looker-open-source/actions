@@ -138,7 +138,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const sheetId = sheets.data.sheets[0].properties.sheetId as number
         let maxRows = sheets.data.sheets[0].properties.gridProperties.rowCount as number
         const columns = sheets.data.sheets[0].properties.gridProperties.columnCount as number
-        const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT/columns)
+        const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT / columns)
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
         let finished = false
