@@ -1,21 +1,21 @@
-import { Tokens, MAX_RESULTS } from "../campaigns/salesforce_campaigns";
-import { sfdcConnFromRequest } from "../common/oauth_helper";
-import * as Hub from "../../../hub";
-import * as jsforce from "jsforce";
+import * as jsforce from "jsforce"
+import * as Hub from "../../../hub"
+import { MAX_RESULTS, Tokens } from "../campaigns/salesforce_campaigns"
+import { sfdcConnFromRequest } from "../common/oauth_helper"
 
 export class SalesforceCampaignsFormBuilder {
   async formBuilder(request: Hub.ActionRequest, tokens: Tokens) {
     // const sfdcConn = await salesforceLogin(request);
-    const sfdcConn = await sfdcConnFromRequest(request, tokens);
+    const sfdcConn = await sfdcConnFromRequest(request, tokens)
 
     // with refresh token we can get new access token and update the state without forcing a re-login
-    let newTokens = { ...tokens };
+    let newTokens = { ...tokens }
     sfdcConn.on("refresh", (newAccessToken: string) => {
       newTokens = {
         access_token: newAccessToken,
         refresh_token: sfdcConn.refreshToken,
-      };
-    });
+      }
+    })
 
     const fields: Hub.ActionFormField[] = [
       {
@@ -36,9 +36,9 @@ export class SalesforceCampaignsFormBuilder {
           },
         ],
       },
-    ];
+    ]
     if (Object.keys(request.formParams).length === 0) {
-      return { fields: fields, tokens: newTokens };
+      return { fields, tokens: newTokens }
     }
     switch (request.formParams.create_or_append) {
       case "create":
@@ -48,10 +48,10 @@ export class SalesforceCampaignsFormBuilder {
           description: "Identifying name for the campaign",
           type: "string",
           required: true,
-        });
-        break;
+        })
+        break
       case "append":
-        const campaigns = await this.getCampaigns(sfdcConn);
+        const campaigns = await this.getCampaigns(sfdcConn)
         fields.push({
           name: "campaign_name",
           label: "Campaign Name",
@@ -59,8 +59,8 @@ export class SalesforceCampaignsFormBuilder {
           type: "select",
           required: true,
           options: campaigns,
-        });
-        break;
+        })
+        break
     }
     const memberFields: Hub.ActionFormField[] = [
       {
@@ -75,7 +75,10 @@ export class SalesforceCampaignsFormBuilder {
         required: true,
       },
       {
-        name: "member_status", // todo make this dynamic - https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_campaignmember.htm
+        // todo make this dynamic
+        // https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta
+        // /object_reference/sforce_api_objects_campaignmember.htm
+        name: "member_status",
         label: "Member Status",
         description: "The status of the campaign members: Responded or Sent",
         type: "select",
@@ -85,22 +88,24 @@ export class SalesforceCampaignsFormBuilder {
         ],
         required: false,
       },
-    ];
-    fields.push(...memberFields);
-    return { fields: fields, tokens: newTokens };
+    ]
+    fields.push(...memberFields)
+    return { fields, tokens: newTokens }
   }
 
   async getCampaigns(sfdcConn: jsforce.Connection) {
-    const results: jsforce.QueryResult<any> = await sfdcConn
-      .query("SELECT Id, Name FROM Campaign ORDER BY Name")
-      .run({ maxFetch: MAX_RESULTS });
+    const results: jsforce.QueryResult<any> = await Promise.resolve(
+      sfdcConn
+        .query("SELECT Id, Name FROM Campaign ORDER BY Name")
+        .run({ maxFetch: MAX_RESULTS }),
+    )
 
     // todo - return error back if user does not have access to campaigns, should return INVALID_TYPE
 
     const campaigns = results.records.map((c) => {
-      return { name: c.Id, label: c.Name };
-    });
+      return { name: c.Id, label: c.Name }
+    })
 
-    return campaigns;
+    return campaigns
   }
 }
