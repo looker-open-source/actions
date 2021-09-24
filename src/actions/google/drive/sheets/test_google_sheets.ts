@@ -424,7 +424,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
           done()
@@ -441,7 +441,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
           done()
@@ -464,8 +464,9 @@ describe(`${action.constructor.name} unit tests`, () => {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
-          chai.expect(batchUpdateCallSpy).to.have.callCount(5)
+        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.rejectedWith("Max retries attempted")
+            .then( () => {
+          chai.expect(batchUpdateStub).to.have.callCount(5)
           chai.expect(delayStub).to.have.been.calledWith(3000)
           chai.expect(delayStub).to.have.been.calledWith(9000)
           chai.expect(delayStub).to.have.been.calledWith(27000)
@@ -477,7 +478,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
       })
 
-      it("will only retry if a 429 code is recieved", (done) => {
+      it("will only retry if a 429 code is received", (done) => {
         const delayStub = sinon.stub(action as any, "delay")
 
         const spreadSheetsStub = {
@@ -489,10 +490,13 @@ describe(`${action.constructor.name} unit tests`, () => {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.throw
-        batchUpdateStub.restore()
-        delayStub.restore()
-        done()
+        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
+          chai.expect(batchUpdateStub).to.have.callCount(1)
+          chai.expect(delayStub).to.have.been.calledWith(3000)
+          batchUpdateStub.restore()
+          delayStub.restore()
+          done()
+        })
       })
     })
 
