@@ -10,6 +10,7 @@ import {GoogleDriveAction} from "../google_drive"
 
 const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process.env.GOOGLE_SHEETS_WRITE_BATCH) : 4096
 const MAX_ROW_BUFFER_INCREASE = 4000
+const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_RETRY_COUNT = 5
 
 export class GoogleSheetsAction extends GoogleDriveAction {
@@ -128,15 +129,16 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const spreadsheetId = files.data.files[0].id
 
         const sheets = await sheet.spreadsheets.get({spreadsheetId})
-        if (!sheets.data.sheets || sheets.data.sheets[0].properties === undefined) {
+        if (!sheets.data.sheets ||
+            sheets.data.sheets[0].properties === undefined ||
+            sheets.data.sheets[0].properties.gridProperties === undefined) {
             throw "Now sheet data available"
         }
         // The ignore is here because Typescript is not correctly inferring that I have done existence checks
-        // @ts-ignore
         const sheetId = sheets.data.sheets[0].properties.sheetId as number
-        // @ts-ignore
         let maxRows = sheets.data.sheets[0].properties.gridProperties.rowCount as number
-
+        const columns = sheets.data.sheets[0].properties.gridProperties.columnCount as number
+        const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT/columns)
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
         let finished = false
@@ -147,6 +149,9 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 // This will not clear formulas or protected regions
                 await this.clearSheet(spreadsheetId, sheet, sheetId)
                 csvparser.on("data",  (line: any) => {
+                    if (rowCount > maxPossibleRows) {
+                        throw `Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`
+                    }
                     const rowIndex: number = rowCount++
                     // Sanitize line data and properly encapsulate string formatting for CSV lines
                     const lineData = line.map((record: string) => {
@@ -180,6 +185,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             winston.info(`Expanding max rows: ${maxRows} to ` +
                               `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                             maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
+                            if (rowCount > maxPossibleRows) {
+                                winston.info(`Resetting back to max possible rows`, request.webhookId)
+                                maxRows = maxPossibleRows
+                            }
                             this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
                                 throw e
                             })
@@ -201,6 +210,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             winston.info(`Expanding max rows: ${maxRows} to ` +
                                 `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                             maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
+                            if (rowCount > maxPossibleRows) {
+                                winston.info(`Resetting back to max possible rows`, request.webhookId)
+                                maxRows = maxPossibleRows
+                            }
                             this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
                                 throw e
                             })
