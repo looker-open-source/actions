@@ -251,7 +251,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async resize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number) {
-        await sheet.spreadsheets.batchUpdate({
+        return sheet.spreadsheets.batchUpdate({
             spreadsheetId,
             requestBody: {
                 requests: [{
@@ -273,7 +273,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
     async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,
                 sheet: Sheet, spreadsheetId: string, webhookId: string) {
-        return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch((e: any) => {
+        return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch(async (e: any) => {
             winston.info(`Flush error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
                 winston.warn("Queueing retry", {webhookId})
@@ -295,10 +295,13 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     retrySuccess = false
                     winston.warn(`Retry number ${retryCount} failed`)
                     winston.info(e)
+                } else {
+                    throw e
                 }
             })
             retryCount++
         }
+        throw `Max retries attempted`
     }
 
     protected async delay(time: number) {
