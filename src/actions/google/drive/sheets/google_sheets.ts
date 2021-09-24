@@ -185,7 +185,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             winston.info(`Expanding max rows: ${maxRows} to ` +
                               `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                             maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
-                            if (rowCount > maxPossibleRows) {
+                            if (maxRows > maxPossibleRows) {
                                 winston.info(`Resetting back to max possible rows`, request.webhookId)
                                 maxRows = maxPossibleRows
                             }
@@ -210,7 +210,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             winston.info(`Expanding max rows: ${maxRows} to ` +
                                 `${maxRows + requestLen + MAX_ROW_BUFFER_INCREASE}`, request.webhookId)
                             maxRows = maxRows + requestLen + MAX_ROW_BUFFER_INCREASE
-                            if (rowCount > maxPossibleRows) {
+                            if (maxRows > maxPossibleRows) {
                                 winston.info(`Resetting back to max possible rows`, request.webhookId)
                                 maxRows = maxPossibleRows
                             }
