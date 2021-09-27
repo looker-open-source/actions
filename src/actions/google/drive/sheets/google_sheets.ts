@@ -149,7 +149,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     const csvparser = parse({
                         rtrim: true,
                         ltrim: true,
-                        bom: true
+                        bom: true,
                     })
                     // This will not clear formulas or protected regions
                     await this.clearSheet(spreadsheetId, sheet, sheetId)
