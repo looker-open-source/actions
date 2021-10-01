@@ -6,6 +6,8 @@ export class GoogleAdsActionExecutor {
   readonly apiClient = this.adsRequest.apiClient!
   readonly log = this.adsRequest.log
   readonly targetCid = this.adsRequest.targetCid
+  readonly mobileAppId = this.adsRequest.mobileAppId
+  readonly uploadKeyType = this.adsRequest.uploadKeyType
   offlineUserDataJobResourceName: string
   targetUserListRN: string
 
@@ -15,7 +17,8 @@ export class GoogleAdsActionExecutor {
   }
 
   async createUserList(newListName: string, newListDescription: string) {
-    const createListResp = await this.apiClient.createUserList(this.targetCid, newListName, newListDescription)
+    const createListResp = await this.apiClient.createUserList(this.targetCid, newListName, newListDescription,
+      this.mobileAppId, this.uploadKeyType)
     this.targetUserListRN = createListResp.results[0].resourceName
     this.log("info", "Created user list: ", this.targetUserListRN)
     return
