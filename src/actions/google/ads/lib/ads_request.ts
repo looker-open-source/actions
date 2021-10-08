@@ -73,6 +73,22 @@ export class GoogleAdsActionRequest {
     return this.formParams.createOrAppend
   }
 
+  get mobileDevice() {
+    return this.formParams.mobileDevice
+  }
+
+  get isMobileDevice() {
+    return this.mobileDevice === "yes"
+  }
+
+  get mobileAppId() {
+    return this.formParams.mobileAppId
+  }
+
+  get uploadKeyType() {
+    return this.isMobileDevice ? "MOBILE_ADVERTISING_ID" : "CONTACT_INFO"
+  }
+
   get developerToken() {
     return this.actionInstance.developerToken
   }
@@ -111,6 +127,9 @@ export class GoogleAdsActionRequest {
       throw new MissingRequiredParamsError(
         `createOrAppend must be either 'create' or 'append' (got '${this.formParams.createOrAppend}')`,
       )
+    }
+    if (this.isMobileDevice && !this.mobileAppId) {
+      throw new MissingRequiredParamsError("Mobile application id is missing")
     }
     if (!["yes", "no"].includes(this.formParams.doHashing)) {
       throw new MissingRequiredParamsError(`Hashing must be either 'yes' or 'no' (got '${this.formParams.doHashing}')`)
