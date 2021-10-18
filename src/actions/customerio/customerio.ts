@@ -371,7 +371,7 @@ export class CustomerIoAction extends Hub.Action {
         }
         const keepAliveAgent = new https.Agent({ keepAlive: true })
         return new TrackClient(siteId, apiKey, {
-            region: cioRegion, timeout: requestTimeout, keepAliveTimeout: 120000,
+            region: cioRegion, timeout: requestTimeout,
             agent: keepAliveAgent,
         })
     }

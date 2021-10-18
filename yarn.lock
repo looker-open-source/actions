@@ -1513,10 +1513,10 @@ csv-parse@^4.8.6:
   resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-4.16.3.tgz#7ca624d517212ebc520a36873c3478fa66efbaf7"
   integrity sha512-cO1I/zmz4w2dcKHVvpCr7JVRu8/FymG5OEpmvsZYlccYolPBLoVGKUHgNoc4ZGkFeFlWGEDmMyBM+TTqRdW/wg==
 
-customerio-node@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/customerio-node/-/customerio-node-3.0.1.tgz#6507d43811fae4274fe455baa625da1796075f9d"
-  integrity sha512-e/G/QqTAlLurhDm6siwD5gym2mowueDcIIaZgxVBvh0AO5jnRdDQNkXldkh/oAit2L/RcAe2O8KlRv3ZOicXLg==
+customerio-node@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/customerio-node/-/customerio-node-3.1.0.tgz#bb39a63e5d9541cc746cb7ec7af2c38f30a8274a"
+  integrity sha512-aA27xJFUQT4KvDb8ihzNs4mH0GVdopCkBFMC95uFS+/k/LUTHiQcT3A7q+SHGoAvXrApm3fCdCijQiu2BjxABg==
 
 cycle@1.0.x:
   version "1.0.3"
