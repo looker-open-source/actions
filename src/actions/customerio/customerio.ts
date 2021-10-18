@@ -341,7 +341,7 @@ export class CustomerIoAction extends Hub.Action {
         if (event) {
             return {...{name: event}, ...{data: {...traits, ...context}, email: traits.email}, ...segmentRow}
         } else {
-            return {...traits, ...context, ...segmentRow}
+            return {...traits, ...context, ...segmentRow, _update: true}
         }
     }
 
