@@ -424,7 +424,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
           done()
@@ -441,7 +441,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
           done()
@@ -462,7 +462,8 @@ describe(`${action.constructor.name} unit tests`, () => {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.rejectedWith("Max retries attempted")
+            .then( () => {
           chai.expect(batchUpdateStub).to.have.callCount(5)
           chai.expect(delayStub).to.have.been.calledWith(3000)
           chai.expect(delayStub).to.have.been.calledWith(9000)
@@ -475,7 +476,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
       })
 
-      it("will only retry if a 429 code is recieved", (done) => {
+      it("will only retry if a 429 code is received", (done) => {
         const delayStub = sinon.stub(action as any, "delay")
 
         const spreadSheetsStub = {
@@ -487,7 +488,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(batchUpdateStub).to.have.callCount(1)
           chai.expect(delayStub).to.have.been.calledWith(3000)
           batchUpdateStub.restore()
@@ -576,6 +577,15 @@ describe(`${action.constructor.name} unit tests`, () => {
             data: JSON.stringify({tokens: "access", redirect: "url"}),
           },
         }).and.notify(stubClient.restore).and.notify(done)
+      })
+    })
+
+    describe("mimeType", () => {
+      it("uses the action mimeType if it exists", () => {
+        const request = new Hub.ActionRequest()
+        request.attachment = {mime: "foo"}
+        request.formParams = {format: "bar"}
+        chai.expect(action.getMimeType(request)).to.equal("application/vnd.google-apps.spreadsheet")
       })
     })
   })
