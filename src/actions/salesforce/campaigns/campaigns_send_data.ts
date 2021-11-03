@@ -1,4 +1,5 @@
 import * as jsforce from "jsforce"
+import * as winston from "winston"
 import * as Hub from "../../../hub"
 import { CHUNK_SIZE, Tokens } from "../campaigns/salesforce_campaigns"
 import { sfdcConnFromRequest } from "../common/oauth_helper"
@@ -10,14 +11,25 @@ interface CampaignMember {
   Status?: string
 }
 
+interface MemberErrors {
+  memberId: string
+  errors: jsforce.ErrorResult
+}
+
 export class SalesforceCampaignsSendData {
+  readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
+
+  constructor(oauthClientId: string, oauthClientSecret: string) {
+    this.oauthCreds = { oauthClientId, oauthClientSecret }
+  }
+
   async sendData(
     request: Hub.ActionRequest,
     memberIds: string[],
     tokens: Tokens,
   ) {
     // const sfdcConn = await salesforceLogin(request);
-    const sfdcConn = await sfdcConnFromRequest(request, tokens)
+    const sfdcConn = await sfdcConnFromRequest(request, tokens, this.oauthCreds)
 
     // with refresh token we can get new access token and update the state without forcing a re-login
     let newTokens = { ...tokens }
@@ -47,6 +59,8 @@ export class SalesforceCampaignsSendData {
         break
       case "append":
         campaignId = request.formParams.campaign_name!
+      case "replace":
+      // TODO build out replace
     }
 
     const memberType =
@@ -73,37 +87,40 @@ export class SalesforceCampaignsSendData {
 
     // bottom limit = 1,000 requests * 200 members = 200,000 members in 24h period per user
     const memberGrouped = this.chunk(memberList, CHUNK_SIZE)
-    const memberErrors: jsforce.ErrorResult[] = []
+    const memberErrors: MemberErrors[] = []
+    let message = ""
 
     // jsforce uses function overloading for the create function, which causes issues resolving the
     // function signature as the compiler picks the first definition in declaration order, which is
     // a single record. Hence the need to use the 'any' type below
     const records: any = await Promise.all(
-      // todo replicate promise.allSettled behaviour in ES6
       memberGrouped.map(async (m) => {
         return await sfdcConn.sobject("CampaignMember").create(m)
       }),
     )
 
-    records.map((group: jsforce.RecordResult[]) => {
-      group.map((r) => {
-        !r.success ? memberErrors.push(r) : null
+    records.map((chunk: jsforce.RecordResult[], chunkIndex: number) => {
+      chunk.map((result, index) => {
+        !result.success
+          ? memberErrors.push({
+              memberId: memberGrouped[chunkIndex][index][memberType]!,
+              errors: result,
+            })
+          : null
       })
     })
 
     if (memberErrors.length > 0) {
-      const cleanErrors = memberErrors.map((members) =>
-        members.errors.map((e: any) => {
-          return {
-            statusCode: e.statusCode,
-            message: e.message,
-          }
-        }),
-      )
-      throw new Error(JSON.stringify(cleanErrors))
+      const cleanErrors = memberErrors.map((me) => {
+        const memberMessage = me.errors.errors.map((e: any) => e.message)
+        return { [me.memberId]: memberMessage }
+      })
+      const summary = `Errors with ${memberErrors.length} out of ${memberIds.length} members`
+      message = `${summary}. ${JSON.stringify(cleanErrors)}`
+      winston.debug(message)
     }
 
-    return newTokens
+    return { tokens: newTokens, message }
   }
 
   chunk(items: CampaignMember[], size: number) {

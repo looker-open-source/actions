@@ -3,18 +3,21 @@ import * as jsforce from "jsforce"
 import * as querystring from "querystring"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
-import {
-  AUTHORIZE_URL,
-  REDIRECT_URL,
-  Tokens,
-} from "../campaigns/salesforce_campaigns"
+import { REDIRECT_URL, Tokens } from "../campaigns/salesforce_campaigns"
 
 export class SalesforceOauthHelper {
+  readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
+
+  constructor(oauthClientId: string, oauthClientSecret: string) {
+    this.oauthCreds = { oauthClientId, oauthClientSecret }
+  }
+
   async makeLoginForm(request: Hub.ActionRequest) {
     // Step 0 in the outh flow - generate an *ActionHub* url that user can visit to kick things off
     const payloadString = JSON.stringify({
       stateUrl: request.params.state_url,
-      salesforceClientId: request.params.salesforce_client_id,
+      salesforce_domain: request.params.salesforce_domain,
+      salesforceClientId: this.oauthCreds.oauthClientId,
     })
 
     //  Payload is encrypted to keep things private and prevent tampering
@@ -69,8 +72,8 @@ export class SalesforceOauthHelper {
       })
 
     const payload = JSON.parse(plaintext)
-
-    const url = new URL(AUTHORIZE_URL)
+    const authorizeUrl = `${payload.salesforce_domain}/services/oauth2/authorize`
+    const url = new URL(authorizeUrl)
     url.search = querystring.stringify({
       response_type: "code",
       client_id: payload.salesforceClientId,
@@ -127,17 +130,14 @@ export class SalesforceOauthHelper {
     }
   }
 
-  async getAccessTokensFromAuthCode(
-    request: Hub.ActionRequest,
-    stateJson: any,
-  ) {
+  async getAccessTokensFromAuthCode(stateJson: any) {
     if (!stateJson.code || !stateJson.redirect) {
       throw new Error("Request state is missing code and redirect")
     }
 
     const oauth2 = new jsforce.OAuth2({
-      clientId: request.params.salesforce_client_id,
-      clientSecret: request.params.salesforce_client_secret,
+      clientId: this.oauthCreds.oauthClientId,
+      clientSecret: this.oauthCreds.oauthClientSecret,
       redirectUri: stateJson.redirect,
     })
 
@@ -161,10 +161,11 @@ export class SalesforceOauthHelper {
 export const sfdcConnFromRequest = async (
   request: Hub.ActionRequest,
   tokens: Tokens,
+  oauthCreds: { oauthClientId: string; oauthClientSecret: string },
 ) => {
   const oauth2 = new jsforce.OAuth2({
-    clientId: request.params.salesforce_client_id,
-    clientSecret: request.params.salesforce_client_secret,
+    clientId: oauthCreds.oauthClientId,
+    clientSecret: oauthCreds.oauthClientSecret,
     redirectUri: REDIRECT_URL,
   })
 
