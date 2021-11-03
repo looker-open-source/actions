@@ -4,9 +4,15 @@ import { MAX_RESULTS, Tokens } from "../campaigns/salesforce_campaigns"
 import { sfdcConnFromRequest } from "../common/oauth_helper"
 
 export class SalesforceCampaignsFormBuilder {
+  readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
+
+  constructor(oauthClientId: string, oauthClientSecret: string) {
+    this.oauthCreds = { oauthClientId, oauthClientSecret }
+  }
+
   async formBuilder(request: Hub.ActionRequest, tokens: Tokens) {
     // const sfdcConn = await salesforceLogin(request);
-    const sfdcConn = await sfdcConnFromRequest(request, tokens)
+    const sfdcConn = await sfdcConnFromRequest(request, tokens, this.oauthCreds)
 
     // with refresh token we can get new access token and update the state without forcing a re-login
     let newTokens = { ...tokens }
@@ -62,6 +68,7 @@ export class SalesforceCampaignsFormBuilder {
         })
         break
     }
+    const statuses = await this.getCampaignMemberStatuses(sfdcConn)
     const memberFields: Hub.ActionFormField[] = [
       {
         name: "member_type",
@@ -75,22 +82,46 @@ export class SalesforceCampaignsFormBuilder {
         required: true,
       },
       {
-        // todo make this dynamic
-        // https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta
-        // /object_reference/sforce_api_objects_campaignmember.htm
         name: "member_status",
         label: "Member Status",
         description: "The status of the campaign members: Responded or Sent",
         type: "select",
+        options: statuses,
+        required: false,
+      },
+      {
+        name: "surface_sfdc_errors",
+        label: "Surface Salesforce Errors In Looker",
+        description:
+          'Set this to "Yes" to surface any Salesforce errors with modifying campaign members \
+          in Looker\'s scheduled job status detail. This will record an Error in Looker\'s \
+          scheduled job status, which is useful for troubleshooting errors on member level. \
+          Set this to "No" to ignore all errors related to campaign members (default). This \
+          will record a Complete status, regardless if there were any campaign member errors.',
+        type: "select",
         options: [
-          { name: "Sent", label: "Sent" },
-          { name: "Responded", label: "Responded" },
+          { name: "yes", label: "Yes" },
+          { name: "no", label: "No" },
         ],
         required: false,
+        default: "no",
       },
     ]
     fields.push(...memberFields)
     return { fields, tokens: newTokens }
+  }
+
+  async getCampaignMemberStatuses(sfdcConn: jsforce.Connection) {
+    const results = await sfdcConn.describe("CampaignMember")
+    const pickListValues = results.fields
+      .filter((f) => f.name === "Status")[0]
+      .picklistValues!.filter((v) => v.active)
+
+    const statuses = pickListValues.map((v) => {
+      return { name: v.value, label: v.label ? v.label : v.value }
+    })
+
+    return statuses
   }
 
   async getCampaigns(sfdcConn: jsforce.Connection) {
@@ -98,9 +129,10 @@ export class SalesforceCampaignsFormBuilder {
       sfdcConn
         .query("SELECT Id, Name FROM Campaign ORDER BY Name")
         .run({ maxFetch: MAX_RESULTS }),
+      // TODO: only display recent campaigns?
     )
 
-    // todo - return error back if user does not have access to campaigns, should return INVALID_TYPE
+    // TODO: - return error back if user does not have access to campaigns, should return INVALID_TYPE
 
     const campaigns = results.records.map((c) => {
       return { name: c.Id, label: c.Name }

@@ -5,8 +5,6 @@ import { SalesforceOauthHelper } from "../common/oauth_helper"
 import { SalesforceCampaignsFormBuilder } from "./campaigns_form_builder"
 import { SalesforceCampaignsSendData } from "./campaigns_send_data"
 
-export const AUTHORIZE_URL =
-  "https://login.salesforce.com/services/oauth2/authorize"
 export const REDIRECT_URL = `${process.env.ACTION_HUB_BASE_URL}/actions/salesforce_campaigns/oauth_redirect`
 export const MAX_RESULTS = 10000 // how many existing campaigns to retrieve to append members to
 export const CHUNK_SIZE = 200 // number of records to send at once
@@ -35,20 +33,6 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       required: true,
       sensitive: false,
     },
-    {
-      description: "Client ID for Salesforce Connected App",
-      label: "Salesforce Connected App Consumer Key",
-      name: "salesforce_client_id",
-      required: true,
-      sensitive: false,
-    },
-    {
-      description: "Client Secret for Salesforce Connected App",
-      label: "Salesforce Connected App Consumer Secret",
-      name: "salesforce_client_secret",
-      required: true,
-      sensitive: true,
-    },
   ]
   supportedActionTypes = [Hub.ActionType.Query]
   requiredFields = [{ any_tag: TAGS }]
@@ -57,16 +41,16 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   ]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   usesOauth = true
-  // todo support All Results vs Results in Table
-  // todo stream results
+  // TODO: support All Results vs Results in Table
+  // TODO: stream results
 
   /******** Constructor & Helpers ********/
 
-  constructor() {
+  constructor(oauthClientId: string, oauthClientSecret: string) {
     super()
-    this.salesforceOauthHelper = new SalesforceOauthHelper()
-    this.salesforceCampaignsFormBuilder = new SalesforceCampaignsFormBuilder()
-    this.salesforceCampaignsSendData = new SalesforceCampaignsSendData()
+    this.salesforceOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
+    this.salesforceCampaignsFormBuilder = new SalesforceCampaignsFormBuilder(oauthClientId, oauthClientSecret)
+    this.salesforceCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret)
   }
 
   supportedFormats = (request: Hub.ActionRequest) => {
@@ -123,7 +107,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       (f: any) => f.tags && f.tags.some((t: string) => TAGS.includes(t)),
     )
 
-    // todo if no tags, search field names for match as backup, if nothing, then throw error
+    // TODO: if no tags, search field names for match as backup, if nothing, then throw error
 
     if (identifiableFields.length !== 1) {
       throw `Query requires 1 field tagged with: ${TAGS.join(" or ")}.`
@@ -134,6 +118,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     )
 
     let response: any = {}
+    let message = ""
     let tokens: Tokens
 
     try {
@@ -141,18 +126,23 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       if (stateJson.access_token && stateJson.refresh_token) {
         tokens = stateJson
       } else {
-        tokens = await this.salesforceOauthHelper.getAccessTokensFromAuthCode(
-          request,
-          stateJson,
-        )
+        tokens = await this.salesforceOauthHelper.getAccessTokensFromAuthCode(stateJson)
       }
 
-      tokens = await this.salesforceCampaignsSendData.sendData(
+      // errors with salesforce API will be returned in message to Looker
+      // message will only be visible in Looker if we send a fail status
+      ({ tokens, message } = await this.salesforceCampaignsSendData.sendData(
         request,
         memberIds,
         tokens,
-      )
+      ))
 
+      // return a fail status to surface salesforce API errors in the response message
+      if (request.formParams.surface_sfdc_errors === "yes") {
+        response.success = message.length === 0
+      }
+
+      response.message = message
       response.state = new Hub.ActionState()
       response.state.data = JSON.stringify(tokens)
     } catch (e) {
@@ -186,11 +176,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
         if (stateJson.access_token && stateJson.refresh_token) {
           tokens = stateJson
         } else {
-          tokens = await this.salesforceOauthHelper.getAccessTokensFromAuthCode(
-            request,
-            stateJson,
-          )
-
+          tokens = await this.salesforceOauthHelper.getAccessTokensFromAuthCode(stateJson)
           form.state = new Hub.ActionState()
           form.state.data = JSON.stringify(tokens)
         }
@@ -210,9 +196,20 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       }
     }
 
+    // login form will be displayed if any errrors occur while fetching and building form
     const loginForm = await this.salesforceOauthHelper.makeLoginForm(request)
     return loginForm
   }
 }
 
-Hub.addAction(new SalesforceCampaignsAction())
+if (process.env.SALESFORCE_CLIENT_ID && process.env.SALESFORCE_CLIENT_SECRET) {
+  const sfdcCampaigns = new SalesforceCampaignsAction(
+    process.env.SALESFORCE_CLIENT_ID,
+    process.env.SALESFORCE_CLIENT_SECRET,
+  )
+  Hub.addAction(sfdcCampaigns)
+} else {
+  winston.warn(
+    `[Salesforce Campaigns] Action not registered because required environment variables are missing.`,
+  )
+}
