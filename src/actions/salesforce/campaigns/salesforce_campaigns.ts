@@ -8,11 +8,24 @@ import { SalesforceCampaignsSendData } from "./campaigns_send_data"
 export const REDIRECT_URL = `${process.env.ACTION_HUB_BASE_URL}/actions/salesforce_campaigns/oauth_redirect`
 export const MAX_RESULTS = 10000 // how many existing campaigns to retrieve to append members to
 export const CHUNK_SIZE = 200 // number of records to send at once
-const TAGS = ["sfdc_contact_id", "sfdc_lead_id"]
+const FIELD_MAPPING = [
+  { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: /contact id/i },
+  { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: /lead id/i },
+]
+const TAGS = FIELD_MAPPING.map((fm) => fm.tag)
 
 export interface Tokens {
   access_token?: string
   refresh_token?: string
+}
+
+export interface Mapper {
+  fieldname: string
+  sfdcMemberType: string
+}
+
+export interface MemberIds extends Mapper {
+  data: string[]
 }
 
 export class SalesforceCampaignsAction extends Hub.OAuthAction {
@@ -32,6 +45,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       name: "salesforce_domain",
       required: true,
       sensitive: false,
+      user_attribute_name: "salesforce_campaigns_action_domain",
     },
   ]
   supportedActionTypes = [Hub.ActionType.Query]
@@ -86,8 +100,8 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       throw "No attached json."
     }
 
-    if (!(request.formParams.campaign_name && request.formParams.member_type)) {
-      throw "Missing Salesforce campaign name or member type."
+    if (!(request.formParams.campaign_name)) {
+      throw "Missing Salesforce campaign name."
     }
 
     const qr = request.attachment.dataJSON
@@ -103,19 +117,54 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       ...Object.keys(qr.fields).map((k) => qr.fields[k]),
     )
 
-    const identifiableFields = fields.filter(
-      (f: any) => f.tags && f.tags.some((t: string) => TAGS.includes(t)),
+    const mapper: Mapper[] = []
+
+    // first try to match fields by tag
+    fields.filter((f) =>
+        f.tags && f.tags.some((t: string) =>
+          TAGS.map((tag) => {
+            if (tag === t) {
+              mapper.push({
+                fieldname: f.name,
+                sfdcMemberType: FIELD_MAPPING.filter((fm) => fm.tag === t)[0].sfdcMemberType,
+              })
+            }
+          }),
+        ),
     )
 
-    // TODO: if no tags, search field names for match as backup, if nothing, then throw error
+    if (mapper.length < fields.length) {
+      winston.debug(`only ${mapper.length} out of ${fields.length} fields matched with tags, attemping regex`)
 
-    if (identifiableFields.length !== 1) {
-      throw `Query requires 1 field tagged with: ${TAGS.join(" or ")}.`
+      fields.filter((f) => !mapper.map((m) => m.fieldname).includes(f.name))
+        .map((f) => {
+          for (const fm of FIELD_MAPPING) {
+            winston.debug(`testing ${fm.fallbackRegex} against ${f.label}`)
+            if (f.label.match(fm.fallbackRegex)) {
+              mapper.push({
+                fieldname: f.name,
+                sfdcMemberType: fm.sfdcMemberType,
+              })
+              break
+            }
+          }
+        })
     }
 
-    const memberIds = qr.data.map(
-      (row: any) => row[identifiableFields[0].name].value,
-    )
+    winston.debug(`${mapper.length} fields matched: ${JSON.stringify(mapper)}`)
+    if (mapper.length === 0) {
+      const fieldMapping = FIELD_MAPPING.map((fm: any) => { fm.fallbackRegex = fm.fallbackRegex.toString(); return fm })
+      const e = `Query requires at least 1 field with a tag or regex match: ${JSON.stringify(fieldMapping)}`
+      return new Hub.ActionResponse({ success: false, message: e })
+    }
+
+    const memberIds: MemberIds[] = []
+    mapper.forEach((m) => {
+      memberIds.push({
+        ...m,
+        data: qr.data.map((row: any) => row[m.fieldname].value),
+      })
+    })
 
     let response: any = {}
     let message = ""
