@@ -13,6 +13,7 @@ The Salesforce Campaigns Action enables you to create campaigns in Salesforce an
    - User Access: `View`
    - Hide Values: `No`
    - No default value
+     
      ![Salesforce Domain UA](sfdc_campaigns_user_attributes.png)
 
 1. Assign your Salesforce domain (e.g. "https://MyDomainName.my.salesforce.com") as a value to specified users/groups that will use the Action.
@@ -21,6 +22,7 @@ The Salesforce Campaigns Action enables you to create campaigns in Salesforce an
    - Users that do not have an assigned value will not see the action as a destination option.
 
 1. Go to admin/actions, and click `Enable`. Slide the `Enabled` toggle bar to on, and select the `Salesforce Campaigns Action Domain` User Attribute for the "Salesforce domain" parameter. Click Save:
+
    ![Salesforce Admin Action](sfdc_campaigns_admin_action.png)
 
 1. [Optional] Set up LookML tags `sfdc_contact_id` and `sfdc_lead_id` for contacts and lead fields respectively. Alternatively, the action will attempt to regex match the field label with the following expressions: `/contact id/i` and `/lead id/i` (case insensitive).
@@ -32,8 +34,10 @@ The Salesforce Campaigns Action enables you to create campaigns in Salesforce an
 1. From a Look or Explore, create a schedule or select the send data option.
 1. Select the Salesforce Campaigns Action.
 1. The first time you use the Action you will be prompted to login to Salesforce. Click "Log In":
+
    ![Salesforce Login](sfdc_campaigns_login.png)
 1. This will take you to the OAuth consent screen. Click "Allow":
+
    ![Salesforce OAuth Consent](sfdc_campaigns_oauth_consent.png)
 1. You can now return to the send modal in Looker. Click "Verify credentials".
 
@@ -43,6 +47,7 @@ The Salesforce Campaigns Action enables you to create campaigns in Salesforce an
 1. `Campaign Name`: Enter the name for the new Campaign or select an existing Campaign
 1. `Member Status`: Select the status of the campaign members. This list will be populated from available statuses from your Salesforce instance
 1. `Surface Salesforce Errors In Looker`: Set this to "Yes" to surface any Salesforce errors with setting campaign members in Looker's scheduled job status detail. This will record an Error in Looker's scheduled job status, which is useful for troubleshooting errors on a member level. Set this to "No" to ignore all errors related to campaign members (default). This will record a Complete status, regardless if there were any errors setting campaign members.
+
    ![Salesforce Form](sfdc_campaigns_form.png)
 
 ### Removal
