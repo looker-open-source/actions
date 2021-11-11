@@ -71,20 +71,9 @@ export class SalesforceCampaignsFormBuilder {
     const statuses = await this.getCampaignMemberStatuses(sfdcConn)
     const memberFields: Hub.ActionFormField[] = [
       {
-        name: "member_type",
-        label: "Member Type",
-        description: "The record type of the campaign members: Contact or Lead",
-        type: "select",
-        options: [
-          { name: "contact", label: "Contact" },
-          { name: "lead", label: "Lead" },
-        ],
-        required: true,
-      },
-      {
         name: "member_status",
         label: "Member Status",
-        description: "The status of the campaign members: Responded or Sent",
+        description: "The status of the campaign members",
         type: "select",
         options: statuses,
         required: false,
@@ -93,11 +82,11 @@ export class SalesforceCampaignsFormBuilder {
         name: "surface_sfdc_errors",
         label: "Surface Salesforce Errors In Looker",
         description:
-          'Set this to "Yes" to surface any Salesforce errors with modifying campaign members \
+          'Set this to "Yes" to surface any Salesforce errors with setting campaign members \
           in Looker\'s scheduled job status detail. This will record an Error in Looker\'s \
-          scheduled job status, which is useful for troubleshooting errors on member level. \
+          scheduled job status, which is useful for troubleshooting errors on a member level. \
           Set this to "No" to ignore all errors related to campaign members (default). This \
-          will record a Complete status, regardless if there were any campaign member errors.',
+          will record a Complete status, regardless if there were any errors setting campaign members.',
         type: "select",
         options: [
           { name: "yes", label: "Yes" },
@@ -131,8 +120,6 @@ export class SalesforceCampaignsFormBuilder {
         .run({ maxFetch: MAX_RESULTS }),
       // TODO: only display recent campaigns?
     )
-
-    // TODO: - return error back if user does not have access to campaigns, should return INVALID_TYPE
 
     const campaigns = results.records.map((c) => {
       return { name: c.Id, label: c.Name }

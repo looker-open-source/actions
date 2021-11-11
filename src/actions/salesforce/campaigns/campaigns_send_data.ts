@@ -1,7 +1,7 @@
 import * as jsforce from "jsforce"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
-import { CHUNK_SIZE, Tokens } from "../campaigns/salesforce_campaigns"
+import {CHUNK_SIZE, MemberIds, Tokens} from "../campaigns/salesforce_campaigns"
 import { sfdcConnFromRequest } from "../common/oauth_helper"
 
 interface CampaignMember {
@@ -16,6 +16,8 @@ interface MemberErrors {
   errors: jsforce.ErrorResult
 }
 
+type MemberType = "ContactId" | "LeadId"
+
 export class SalesforceCampaignsSendData {
   readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
 
@@ -25,7 +27,7 @@ export class SalesforceCampaignsSendData {
 
   async sendData(
     request: Hub.ActionRequest,
-    memberIds: string[],
+    memberIds: MemberIds[],
     tokens: Tokens,
   ) {
     // const sfdcConn = await salesforceLogin(request);
@@ -59,19 +61,22 @@ export class SalesforceCampaignsSendData {
         break
       case "append":
         campaignId = request.formParams.campaign_name!
-      case "replace":
-      // TODO build out replace
+      // case "replace": // TODO build out replace
     }
 
-    const memberType =
-      request.formParams.member_type === "lead" ? "LeadId" : "ContactId"
-    const memberList = memberIds.map((m) => {
-      return {
-        [memberType]: m,
-        CampaignId: campaignId,
-        Status: request.formParams.member_status,
-      }
-    })
+    const memberListColumns = memberIds.map((column) =>
+      column.data.map((id) => {
+        return {
+          [column.sfdcMemberType]: id,
+          CampaignId: campaignId,
+          Status: request.formParams.member_status,
+        }
+      }),
+    )
+
+    // flattan array of arrays into one big list
+    const memberList = ([] as CampaignMember[]).concat.apply([], memberListColumns)
+    const memberCount = memberList.length
 
     // POST request with sObject Collections to execute multiple records in a single request
     // https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta
@@ -103,7 +108,7 @@ export class SalesforceCampaignsSendData {
       chunk.map((result, index) => {
         !result.success
           ? memberErrors.push({
-              memberId: memberGrouped[chunkIndex][index][memberType]!,
+              memberId: this.getSfdcMemberType(memberGrouped[chunkIndex][index]),
               errors: result,
             })
           : null
@@ -115,7 +120,7 @@ export class SalesforceCampaignsSendData {
         const memberMessage = me.errors.errors.map((e: any) => e.message)
         return { [me.memberId]: memberMessage }
       })
-      const summary = `Errors with ${memberErrors.length} out of ${memberIds.length} members`
+      const summary = `Errors with ${memberErrors.length} out of ${memberCount} members`
       message = `${summary}. ${JSON.stringify(cleanErrors)}`
       winston.debug(message)
     }
@@ -129,5 +134,9 @@ export class SalesforceCampaignsSendData {
       chunks.push(items.splice(0, size))
     }
     return chunks
+  }
+
+  getSfdcMemberType(record: CampaignMember) {
+    return Object.keys(record).filter((key) => !["CampaignId", "Status"].includes(key))[0] as MemberType
   }
 }
