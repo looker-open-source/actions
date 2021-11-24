@@ -1,23 +1,24 @@
-import * as Hub from "../../../hub";
+import * as Hub from "../../../hub"
 
-import * as winston from "winston"
 import * as crypto from "crypto"
 import * as oboe from "oboe"
 import { Readable } from "stream"
+import * as winston from "winston"
 
-import { UserUploadSession, UserUploadPayload, UserFields, validFacebookHashCombinations} from "./api"
+import { UserFields, UserUploadPayload, UserUploadSession, validFacebookHashCombinations} from "./api"
 import FacebookCustomerMatchApi from "./api"
 import {
-  removeNonRomanAlphaNumeric, 
-  countryNameTo2Code, 
-  usStateNameTo2Code, 
-  genderNameToCode, 
-  getMonth, 
-  getDayOfMonth, 
+  countryNameTo2Code,
   formatFullDate,
+  genderNameToCode,
+  getDayOfMonth,
+  getMonth,
+  removeNonRomanAlphaNumeric,
+  sanitizeError,
+  usStateNameTo2Code,
 } from "./util"
 
-const BATCH_SIZE = 10000; // Maximum size allowable by Facebook endpoint
+const BATCH_SIZE = 10000 // Maximum size allowable by Facebook endpoint
 
 interface FieldMapping {
   lookMLFieldName: string, // TODO remove this property if it turns out tags can't be obtained with JsonLabel streams
@@ -27,6 +28,14 @@ interface FieldMapping {
 }
 
 export default class FacebookCustomerMatchExecutor {
+
+  private get batchIsReady() {
+    return this.rowQueue.length >= BATCH_SIZE
+  }
+
+  private get numBatches() {
+    return this.batchPromises.length
+  }
   private actionRequest: Hub.ActionRequest
   private batchPromises: Promise<void>[] = []
   private batchQueue: any[] = []
@@ -35,17 +44,110 @@ export default class FacebookCustomerMatchExecutor {
   private matchedHashCombinations: [(f: UserFields) => string, string][] = []
   private rowQueue: any[] = []
   private schema: {[s: string]: FieldMapping} = {}
-  private batchIncrementer: number = 0
+  private batchIncrementer = 0
   private sessionId: number
   private facebookAPI: FacebookCustomerMatchApi
-  
+
   // form params
-  private shouldHash: boolean = true
+  private shouldHash = true
   private operationType: string
   private adAccountId: string
   private customAudienceId: string | undefined = ""
   private customAudienceName: string | undefined = ""
   private customAudienceDescription: string | undefined = ""
+
+  private fieldMapping: FieldMapping[] = [
+    {
+      lookMLFieldName: "email",
+      fallbackRegex: /email/i,
+      userField: "email",
+      normalizationFunction: this.normalize,
+    },
+    {
+      lookMLFieldName: "phone",
+      fallbackRegex: /phone/i,
+      userField: "phone",
+      normalizationFunction: removeNonRomanAlphaNumeric,
+    },
+    {
+      lookMLFieldName: "gender",
+      fallbackRegex: /gender/i,
+      userField: "gender",
+      normalizationFunction: (value: string) => genderNameToCode(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "birth_year",
+      fallbackRegex: /year/i,
+      userField: "birthYear",
+      normalizationFunction: (value: string) => formatFullDate(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "birth_month",
+      fallbackRegex: /month/i,
+      userField: "birthMonth",
+      normalizationFunction: (value: string) => getMonth(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "birth_day",
+      fallbackRegex: /day/i,
+      userField: "birthDay",
+      normalizationFunction: (value: string) => getDayOfMonth(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "last_name",
+      fallbackRegex: /last/i,
+      userField: "lastName",
+      normalizationFunction: this.normalize,
+    },
+    {
+      lookMLFieldName: "first_name",
+      fallbackRegex: /first/i,
+      userField: "firstName",
+      normalizationFunction: this.normalize,
+    },
+    {
+      lookMLFieldName: "first_initial",
+      fallbackRegex: /initial/i,
+      userField: "firstInitial",
+      normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "city",
+      fallbackRegex: /city/i,
+      userField: "city",
+      normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "state",
+      fallbackRegex: /state/i,
+      userField: "state",
+      normalizationFunction: (value: string) => usStateNameTo2Code(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "zip",
+      fallbackRegex: /postal|zip/i,
+      userField: "zip",
+      normalizationFunction: this.normalize,
+    },
+    {
+      lookMLFieldName: "country",
+      fallbackRegex: /country/i,
+      userField: "country",
+      normalizationFunction: (value: string) => countryNameTo2Code(this.normalize(value)),
+    },
+    {
+      lookMLFieldName: "mad_id",
+      fallbackRegex: /madid/i,
+      userField: "madid",
+      normalizationFunction: this.normalize,
+    },
+    {
+      lookMLFieldName: "external_id",
+      fallbackRegex: /external/i,
+      userField: "externalId",
+      normalizationFunction: (value: string) => value, // NOOP
+    },
+  ]
 
   constructor(actionRequest: Hub.ActionRequest, accessToken: string) {
     this.actionRequest = actionRequest
@@ -53,15 +155,15 @@ export default class FacebookCustomerMatchExecutor {
     this.facebookAPI = new FacebookCustomerMatchApi(accessToken)
     this.shouldHash = actionRequest.formParams.should_hash === "do_no_hashing" ? false : true
     const operationType = actionRequest.formParams.choose_create_update_replace
-    if(!operationType) {
+    if (!operationType) {
       throw new Error("Cannot execute action without choosing an operation type.")
     }
     this.operationType = operationType
 
-    if(!actionRequest.formParams.choose_business || !actionRequest.formParams.choose_ad_account) {
+    if (!actionRequest.formParams.choose_business || !actionRequest.formParams.choose_ad_account) {
       throw new Error("Cannot execute action without business id or ad account id.")
     }
-    if(!actionRequest.formParams.choose_custom_audience && (
+    if (!actionRequest.formParams.choose_custom_audience && (
       operationType === "update_audience" || operationType === "replace_audience"
     )) {
       throw new Error("Cannot update or replace without a custom audience id.")
@@ -73,116 +175,15 @@ export default class FacebookCustomerMatchExecutor {
     this.customAudienceDescription = actionRequest.formParams.create_audience_description
   }
 
-  private fieldMapping : FieldMapping[] = [
-    {
-      lookMLFieldName: "Email",
-      fallbackRegex: /email/i,
-      userField: "email",
-      normalizationFunction: this.normalize
-    },
-    {
-      lookMLFieldName: "Phone",
-      fallbackRegex: /phone/i,
-      userField: "phone",
-      normalizationFunction: removeNonRomanAlphaNumeric
-    },
-    {
-      lookMLFieldName: "Gender",
-      fallbackRegex: /gender/i,
-      userField: "gender",
-      normalizationFunction: (value: string) => genderNameToCode(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "BirthYear",
-      fallbackRegex: /year/i,
-      userField: "birthYear",
-      normalizationFunction: (value: string) => formatFullDate(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "BirthMonth",
-      fallbackRegex: /month/i,
-      userField: "birthMonth",
-      normalizationFunction: (value: string) => getMonth(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "BirthDay",
-      fallbackRegex: /day/i,
-      userField: "birthDay",
-      normalizationFunction: (value: string) => getDayOfMonth(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "LastName",
-      fallbackRegex: /last/i,
-      userField: "lastName",
-      normalizationFunction: this.normalize
-    },
-    {
-      lookMLFieldName: "FirstName",
-      fallbackRegex: /first/i,
-      userField: "firstName",
-      normalizationFunction: this.normalize
-    },
-    {
-      lookMLFieldName: "FirstInitial",
-      fallbackRegex: /initial/i,
-      userField: "firstInitial",
-      normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "City",
-      fallbackRegex: /city/i,
-      userField: "city",
-      normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "State",
-      fallbackRegex: /state/i,
-      userField: "state",
-      normalizationFunction: (value: string) => usStateNameTo2Code(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "Zip",
-      fallbackRegex: /postal|zip/i,
-      userField: "zip",
-      normalizationFunction: this.normalize
-    },
-    {
-      lookMLFieldName: "Country",
-      fallbackRegex: /country/i,
-      userField: "country",
-      normalizationFunction: (value: string) => countryNameTo2Code(this.normalize(value))
-    },
-    {
-      lookMLFieldName: "MadID",
-      fallbackRegex: /madid/i,
-      userField: "madid",
-      normalizationFunction: this.normalize
-    },
-    {
-      lookMLFieldName: "ExternalID",
-      fallbackRegex: /external/i,
-      userField: "externalId",
-      normalizationFunction: (value:string) => value // NOOP
-    },
-  ]
-
-  private get batchIsReady() {
-    return this.rowQueue.length >= BATCH_SIZE
-  }
-
-  private get numBatches() {
-    return this.batchPromises.length
-  }
-
   async run() {
+    const resp = new Hub.ActionResponse()
+
     if (this.operationType === "create_audience") {
-      if(!this.customAudienceName || !this.customAudienceDescription) {
+      if (!this.customAudienceName || !this.customAudienceDescription) {
         throw new Error("Cannot create an audience if name or description are missing.")
       }
-      const customAudienceId = await this.facebookAPI.createCustomAudience(this.adAccountId, this.customAudienceName, this.customAudienceDescription)
-      if(!customAudienceId || typeof customAudienceId !== "string") {
-        throw new Error("Failed to create audience. Cannot execute action.")
-      }
+      const customAudienceId = await this.facebookAPI.createCustomAudience(this.adAccountId,
+      this.customAudienceName, this.customAudienceDescription)
       this.customAudienceId = customAudienceId
     }
     try {
@@ -191,14 +192,28 @@ export default class FacebookCustomerMatchExecutor {
       await this.actionRequest.stream(async (downloadStream: Readable) => {
         return this.startAsyncParser(downloadStream)
       })
+
     } catch (errorReport) {
+      const response = new Hub.ActionResponse()
+      response.success = false
+      response.message = "Streaming upload failure: " + sanitizeError(errorReport)
       // TODO: the oboe fail() handler sends an errorReport object, but that might not be the only thing we catch
-      winston.error("Streaming parse failure:" +  errorReport.toString())
+      winston.error("Streaming parse failure:" +  sanitizeError(errorReport + ""))
+
+      if ((errorReport + "").indexOf("CLEANFAIL") >= 0) {
+        response.success = true
+      }
+
+      return response
     }
+
     await Promise.all(this.batchPromises)
-    winston.debug("info",
-      `Streaming upload complete. Sent ${this.numBatches} batches (batch size = ${BATCH_SIZE})`,
-    )
+
+    const successMessage = `Streaming upload complete. Sent ${this.numBatches} batches (batch size = ${BATCH_SIZE})`
+    winston.debug("info", successMessage)
+    resp.success = true
+    resp.message = successMessage
+    return resp
   }
 
   private async startAsyncParser(downloadStream: Readable) {
@@ -209,35 +224,38 @@ export default class FacebookCustomerMatchExecutor {
           winston.debug("info",
             `Received stream data. Determining schema from LookML field tags and regex.`,
           )
-          
+
           if (!this.isSchemaDetermined) {
-            // Field data looks like: {measures: Array(0), dimensions: Array(8), table_calculations: Array(0), pivots: Array(0)}
-            let combinedFields = [...fieldData.dimensions, ...fieldData.measures]
+            // Field data looks like: {measures: Array(0),
+            // dimensions: Array(8), table_calculations: Array(0), pivots: Array(0)}
+            let combinedFields = [...fieldData.dimensions,
+                                  ...fieldData.measures,
+                                  ...fieldData.table_calculations]
             // prune the object to just the subset of data we need, then combine into one object
             combinedFields = combinedFields.reduce((aggregator, field) => {
               aggregator[field.name] = {
                 value: null, // not important for determining schema
-                tags: field.tags || []
+                tags: field.tags,
               }
               return aggregator
             }, {})
             this.determineSchema(combinedFields)
           }
-          
+
           return oboe.drop
-        }, "!.data.*" :(row: any) => {
+        }, "!.data.*" : (row: any) => {
           // the reduce below just strips the superfluous object and "value property from the row
           // i.e. { users.city:{value: 'Abbeville'}, "users.zip": ... }
           // becomes
           // { users.city: 'Abbeville' }
           row = Object.entries(row).reduce((accumulator: any, [key, val]: any[]) => {
-            accumulator[key] = val["value"]
+            accumulator[key] = val.value
             return accumulator
           }, {})
           this.handleRow(row)
           this.scheduleBatch()
           return oboe.drop
-        }
+        },
         })
         .done(() => {
           this.scheduleBatch(true)
@@ -249,37 +267,42 @@ export default class FacebookCustomerMatchExecutor {
 
   private determineSchema(row: any) {
     for (const columnLabel of Object.keys(row)) {
+      let tagMatched = false
       for (const mapping of this.fieldMapping) {
         const {fallbackRegex, lookMLFieldName} = mapping
-        let tagMatched: boolean = false
 
         // attempt to match fields by lookml tags first
-        if(row[columnLabel].tags && row[columnLabel].tags.length > 0) {
-          if (row[columnLabel].tags.some((tag: string) => tag.toLowerCase() === lookMLFieldName.toLowerCase())) {
+        if (row[columnLabel].tags && row[columnLabel].tags.length > 0) {
+          if (row[columnLabel].tags.some((tag: string) =>
+          tag.toLowerCase() === lookMLFieldName.toLowerCase())) {
             tagMatched = true
-            winston.debug("info",
-              `Matched ${columnLabel} by LookML field tag.`,
-            )
+            this.schema[columnLabel] = mapping;
+            winston.debug("info", `Matched ${columnLabel} by LookML field tag.`)
+            break
           }
         }
 
-        if(tagMatched || columnLabel.match(fallbackRegex)) {
+        if (columnLabel.match(fallbackRegex)) {
+          tagMatched = true
           this.schema[columnLabel] = mapping
-          winston.debug("info",
-              `Matched ${columnLabel} by regex.`,
-            )
-        } else {
-          winston.debug("info",
-            `Could not match field ${columnLabel} by tags or regex. Dropping it from upload.`,
-          )
+          winston.debug("info", `Matched ${columnLabel} by regex.`)
+          break
         }
+      }
+      if (!tagMatched) {
+        winston.debug("info", `Could not match field ${columnLabel}
+        by tags or regex. Dropping it from upload.`)
       }
     }
     const formattedRow = this.getFormattedRow(row, this.schema)
-    this.matchedHashCombinations = this.getMatchingHashCombinations(formattedRow, validFacebookHashCombinations)
+    this.matchedHashCombinations = this.getMatchingHashCombinations(formattedRow,
+      validFacebookHashCombinations)
+    if (this.matchedHashCombinations.length <= 0) {
+      throw new Error("Could not match your data to any valid Facebook data combinations." +
+      "See documentation for details. No data has been sent to Facebook. CLEANFAIL")
+    }
     this.isSchemaDetermined = true
   }
-
 
   /*
 IN
@@ -315,14 +338,14 @@ OUT
 */
   // Get a uniform object that's easy to feed to transform functions
   private getFormattedRow(row: any, schema: {[s: string]: FieldMapping}): UserFields {
-    let formattedRow: UserFields = this.getEmptyFormattedRow()
+    const formattedRow: UserFields = this.getEmptyFormattedRow()
     Object.entries(schema).forEach(([columnLabel, mapping]) => {
       formattedRow[mapping.userField] = row[columnLabel]
-    });
+    })
     return formattedRow
   }
 
-  private getEmptyFormattedRow(initialValue: string | null | undefined = null) : UserFields {
+  private getEmptyFormattedRow(initialValue: string | null | undefined = null): UserFields {
     return {
       email: initialValue,
       phone: initialValue,
@@ -343,20 +366,23 @@ OUT
     }
   }
 
-  // Pass in the ones you have and this will return only the hash combinations you have enough data for
-  private getMatchingHashCombinations(fieldsWithData: UserFields, hashCombinations: [(f: UserFields) => string, string][]): any[] {
+  // Pass in the ones you have and this will
+  // return only the hash combinations you have enough data for
+  private getMatchingHashCombinations(fieldsWithData: UserFields,
+                                      hashCombinations: [(f: UserFields) => string, string][]): any[] {
     const dummyFormattedRow = this.getEmptyFormattedRow("EMPTY")
     Object.entries(fieldsWithData).forEach(([field, data]) => {
       if (data !== null) {
         dummyFormattedRow[field] = "FILLED"
       }
     })
-    // this was a very fancy way of creating a complete formatted row with only the fields you have using non-null values
-  
+    // this was a very fancy way of creating a complete formatted row with
+    // only the fields you have using non-null values
+
     // just return the ones that didn't have the EMPTY string in them
     return hashCombinations.filter((hc) => {
       const transformFunction = hc[0]
-      const returnedString:string = transformFunction(dummyFormattedRow)
+      const returnedString: string = transformFunction(dummyFormattedRow)
       return returnedString.indexOf("EMPTY") < 0
     })
   }
@@ -366,21 +392,22 @@ OUT
     this.rowQueue.push(output)
   }
 
-  /* 
+  /*
     Transforms a row of Looker data into a row of data formatted for the Facebook marketing API.
     Missing data is filled in with empty strings.
   */
   private transformRow(row: any) {
-    row = this.normalizeRow(row)    
+    row = this.normalizeRow(row)
     const formattedRow = this.getFormattedRow(row, this.schema) // get a uniform object
     // turn our uniform object into X strings like doe_john_30008_1974. One per transform we have enough data for
-    let transformedRow = this.matchedHashCombinations.map(([transformFunction, _facebookAPIFieldName]) => {
+    const transformedRow = this.matchedHashCombinations.map(([transformFunction, _facebookAPIFieldName]) => {
       if (this.shouldHash) {
-        return this.hash(transformFunction(formattedRow)) || ""
+        return this.hash(transformFunction(formattedRow))
       }
-      return transformFunction(formattedRow) || ""
+      return transformFunction(formattedRow)
     })
-    return transformedRow.length === 1 ? transformedRow[0] : transformedRow; // unwrap an array of one entry, per facebook docs
+    return transformedRow.length === 1 ? transformedRow[0] : transformedRow
+    // unwrap an array of one entry, per facebook docs
   }
 
   private normalizeRow(row: any) {
@@ -392,13 +419,16 @@ OUT
     return normalizedRow
   }
 
-  private createUploadSessionObject(batchSequence: number, finalBatch: boolean, totalRows?:number): UserUploadSession {
-    return {
-      "session_id": this.sessionId, 
-      "batch_seq":batchSequence, 
-      "last_batch_flag": finalBatch, 
-      "estimated_num_total": totalRows 
+  private createUploadSessionObject(batchSequence: number, finalBatch: boolean, totalRows?: number): UserUploadSession {
+    let sessionObject: UserUploadSession = {
+      session_id: this.sessionId,
+      batch_seq: batchSequence,
+      last_batch_flag: finalBatch,
+    };
+    if (totalRows) {
+      sessionObject.estimated_num_total = totalRows
     }
+    return sessionObject;
   }
 
   private hash(rawValue: string) {
@@ -416,7 +446,7 @@ OUT
     const batch = {
       data: this.rowQueue.splice(0, BATCH_SIZE - 1),
       batchSequence: this.batchIncrementer,
-      finalBatch
+      finalBatch,
     }
     this.batchQueue.push(batch)
     this.batchPromises.push(this.sendBatch())
@@ -424,25 +454,25 @@ OUT
 
   private async sendBatch(): Promise<void> {
     if (this.currentRequest !== undefined || this.batchQueue.length === 0) {
-      return;
+      return
     }
-    const {batchSequence, data : currentBatch , finalBatch} = this.batchQueue.shift();
+    const {batchSequence, data : currentBatch , finalBatch} = this.batchQueue.shift()
     const sessionParameter = this.createUploadSessionObject(batchSequence, finalBatch)
     const payloadParameter: UserUploadPayload = {
       schema: this.matchedHashCombinations.map(([_transformFunction, facebookAPIFieldName]) => facebookAPIFieldName),
       data: currentBatch,
-    };
-   
+    }
+
     let apiMethodToCall = this.facebookAPI.appendUsersToCustomAudience.bind(this.facebookAPI)
-    if(this.operationType === "replace_audience") {
+    if (this.operationType === "replace_audience") {
       apiMethodToCall = this.facebookAPI.replaceUsersInCustomAudience.bind(this.facebookAPI)
     }
-    if(!this.customAudienceId) {
+    if (!this.customAudienceId) {
       throw new Error("Could not upload users because customAudienceId was missing.")
     }
     this.currentRequest = apiMethodToCall(this.customAudienceId, sessionParameter, payloadParameter)
-    await this.currentRequest;
-    this.currentRequest = undefined;
-    return this.sendBatch();
+    await this.currentRequest
+    this.currentRequest = undefined
+    return this.sendBatch()
   }
 }
