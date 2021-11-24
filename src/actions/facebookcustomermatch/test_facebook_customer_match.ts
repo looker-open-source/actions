@@ -4,6 +4,7 @@ import * as gaxios from "gaxios"
 import * as sinon from "sinon"
 import * as Hub from "../../hub"
 import { FacebookCustomerMatchAction } from "./facebook_customer_match"
+import { API_VERSION } from "./lib/api"
 
 const testOAuthClientId = "test_oauth_client_id"
 const testOAuthClientSecret = "test_oauth_client_secret"
@@ -109,7 +110,8 @@ describe(`${action.constructor.name} class`, () => {
           }
 
           const expectedResponse = makeErrorResponse({
-            message: "Failed to execute Facebook Customer Match due to missing authentication credentials. No data sent to Facebook. Please try again or contact support",
+            message: "Failed to execute Facebook Customer Match due to missing authentication credentials." +
+            " No data sent to Facebook. Please try again or contact support",
           })
 
           const actualResponse = await action.validateAndExecute(request)
@@ -118,13 +120,12 @@ describe(`${action.constructor.name} class`, () => {
       }
     })
   })
-  
 
   describe("oauth interface", () => {
     describe("oauthUrl", () => {
       it("generates the correct Google login URL", async () => {
         const expectedUrl =
-        "https://www.facebook.com/v11.0/dialog/oauth?" +
+        `https://www.facebook.com/${API_VERSION}/dialog/oauth?` +
         "client_id=test_oauth_client_id" +
         `&redirect_uri=https%3A%2F%2Faction-hub.looker.test%2Factions%2F${action.name}%2Foauth_redirect` +
         "&state=not-actually-encrypted-payload-used-for-test" +
@@ -160,7 +161,8 @@ describe(`${action.constructor.name} class`, () => {
 
         const expectedGetArgs = {
             method: "GET",
-            url: `https://graph.facebook.com/v11.0/oauth/access_token?client_id=${testOAuthClientId}&redirect_uri=${redirectUri}&client_secret=${testOAuthClientSecret}&code=${oauthCode}`,
+            url: `https://graph.facebook.com/${API_VERSION}/oauth/access_token?client_id=${testOAuthClientId}` +
+            `&redirect_uri=${redirectUri}&client_secret=${testOAuthClientSecret}&code=${oauthCode}`,
           }
 
         const expectedPostArgs = {
@@ -177,7 +179,7 @@ describe(`${action.constructor.name} class`, () => {
         expect(gaxiosStub.getCall(1).args[0]).to.deep.equal(expectedPostArgs)
       })
     })
-    
+
   })
 })
 
