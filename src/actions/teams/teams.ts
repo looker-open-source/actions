@@ -8,7 +8,7 @@ export class TeamsAction extends Hub.Action {
   iconName = "teams/teams.png"
   description = "Send data to Teams Incoming webhook"
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
-  supportedFormats = [Hub.ActionFormat.Csv, Hub.ActionFormat.WysiwygPng]
+  supportedFormats = [Hub.ActionFormat.Csv, Hub.ActionFormat.WysiwygPng, Hub.ActionFormat.WysiwygPdf]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [
     Hub.ActionVisualizationFormatting.Noapply,

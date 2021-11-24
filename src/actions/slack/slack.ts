@@ -1,4 +1,6 @@
 import {WebClient} from "@slack/client"
+import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
+import _ = require("lodash")
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
@@ -81,8 +83,11 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       return this.loginForm(request, form)
     }
 
+    const channelType = _.isNil(request.formParams.channelType) || request.formParams.channelType === "channels"
+        ? "channels" : "users"
+
     try {
-      form.fields = form.fields.concat(await getDisplayedFormFields(client))
+      form.fields = form.fields.concat(await getDisplayedFormFields(client, channelType))
     } catch (e) {
       return this.loginForm(request, form)
     }
@@ -138,7 +143,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async authTest(clients: WebClient[]) {
     const resp = await Promise.all(
         clients
-            .map(async (client) => client.auth.test() as Promise<AuthTestResult | Error>)
+            .map(async (client) => client.auth.test() as Promise<WebAPICallResult | Error>)
             .map(async (p) => p.catch((e) => e)),
     )
 

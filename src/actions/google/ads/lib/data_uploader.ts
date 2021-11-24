@@ -28,16 +28,25 @@ export class GoogleAdsUserListUploader {
    * Schema object: {"User Email Address": "hashed_email", "US Zipcode": "address_info.postal_code"}
    * Parsed result: [{"hashed_email": "lukeperry@example.com"}, {"address_info": {"postal_code": "90210"}}]
    *                                   ^^^^^^^ Except the email could actually be a hash
+   *
+   * Note: mobile device data cannot be combined with any other types of customer data,
+   * therefore the regex conditions are kept separate
    */
   private regexes = [
-    [/email/i, "hashed_email"],
-    [/phone/i, "hashed_phone_number"],
-    [/first/i, "address_info.hashed_first_name"],
-    [/last/i, "address_info.hashed_last_name"],
-    [/city/i, "address_info.city"],
-    [/state/i, "address_info.state"],
-    [/country/i, "address_info.country_code"],
-    [/postal|zip/i, "address_info.postal_code"],
+    ... this.adsRequest.isMobileDevice ? [
+      [/idfa|identifier.for.advertising/i, "mobile_id"],
+      [/aaid|advertiser.assigned.user|google.advertising/i, "third_party_user_id"],
+    ] : [
+      [/email/i, "hashed_email"],
+      [/phone/i, "hashed_phone_number"],
+      [/first/i, "address_info.hashed_first_name"],
+      [/last/i, "address_info.hashed_last_name"],
+      [/street|address/i, "address_info.hashed_street_address"],
+      [/city/i, "address_info.city"],
+      [/state/i, "address_info.state"],
+      [/country/i, "address_info.country_code"],
+      [/postal|zip/i, "address_info.postal_code"],
+    ],
   ]
 
   constructor(readonly adsExecutor: GoogleAdsActionExecutor) {}
