@@ -281,7 +281,7 @@ export class HeapAction extends Hub.Action {
           const propertyValue = cell.value.toString().substring(0, 1024)
           // Certain number formats are displayed with commas
           const sanitizedPropertyValue = field.is_numeric
-            ? propertyValue.replace(",", "")
+            ? propertyValue.replace(/[^0-9\.]+/g, "")
             : propertyValue
           properties[propertyName] = sanitizedPropertyValue
         }
