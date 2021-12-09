@@ -274,12 +274,12 @@ export class HeapAction extends Hub.Action {
 
     const properties: { [K in string]: string } = {}
     for (const [fieldName, cell] of Object.entries(row)) {
-      if (appId === HeapAction.HEAP_ENV_ID) {
-        winston.info("HoH field", fieldName, cell)
-      }
       if (fieldName !== heapFieldName) {
         const field = allFieldMap[fieldName]
         // Field labels are the original name of the property that has not been sanitized or snake-cased.
+        if (appId === HeapAction.HEAP_ENV_ID) {
+          winston.info("HoH field", fieldName, cell, field)
+        }
         const propertyName =
           field.label !== undefined ? field.label : fieldName
         const cellValue = cell.value ? cell.value : cell.filterable_value
