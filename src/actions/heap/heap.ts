@@ -53,15 +53,7 @@ export class HeapAction extends Hub.Action {
   label = "Heap"
   iconName = "heap/heap.svg"
   name = "heap"
-  params = [
-    {
-      description: "Heap Env ID",
-      label: "Heap Env ID",
-      name: "heap_env_id",
-      required: true,
-      sensitive: true,
-    },
-  ]
+  params = []
   supportedActionTypes = [Hub.ActionType.Query]
   supportedPropertyTypes = [HeapPropertyTypes.User, HeapPropertyTypes.Account]
   usesStreaming = true
@@ -93,6 +85,7 @@ export class HeapAction extends Hub.Action {
     ) {
       throw new Error("Column mapping to a Heap field must be provided.")
     }
+    const envId = request.formParams.env_id!
     const heapFieldLabel: string = request.formParams.heap_field
     let heapFieldName: string
 
@@ -127,7 +120,7 @@ export class HeapAction extends Hub.Action {
             requestPromises.push(
               this.sendRequest(
                 requestBatch,
-                request.params.heap_env_id!,
+                envId,
                 requestUrl,
                 heapField,
                 errors,
@@ -151,13 +144,7 @@ export class HeapAction extends Hub.Action {
 
     if (requestBatch.length > 0) {
       requestPromises.push(
-        this.sendRequest(
-          requestBatch,
-          request.params.heap_env_id!,
-          requestUrl,
-          heapField,
-          errors,
-        ),
+        this.sendRequest(requestBatch, envId, requestUrl, heapField, errors),
       )
     }
 
@@ -169,7 +156,7 @@ export class HeapAction extends Hub.Action {
 
     try {
       await this.trackLookerAction(
-        request.params.heap_env_id!,
+        envId,
         rowCount,
         heapField,
         errors.length === 0 ? "success" : "failure",
@@ -184,7 +171,7 @@ export class HeapAction extends Hub.Action {
     }
     const errorMsg = errors.map((err) => err.message).join(", ")
     winston.error(
-      `Heap action for envId ${request.params.heap_env_id} failed with errors: ${errorMsg}`,
+      `Heap action for envId ${envId} failed with errors: ${errorMsg}`,
     )
     return new Hub.ActionResponse({ success: false, message: errorMsg })
   }
@@ -192,6 +179,12 @@ export class HeapAction extends Hub.Action {
   async form() {
     const form = new Hub.ActionForm()
     form.fields = [
+      {
+        label: "Heap Environment ID",
+        name: "env_id",
+        required: true,
+        type: "string",
+      },
       {
         label: "Property Type",
         name: "property_type",

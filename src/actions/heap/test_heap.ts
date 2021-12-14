@@ -34,10 +34,11 @@ describe(`${action.constructor.name} unit tests`, () => {
   ): Hub.ActionRequest => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
-    request.params = { heap_env_id: ENV_ID }
+    request.params = { }
     request.formParams = {
       heap_field: heapFieldLabel,
       property_type: propertyType,
+      env_id: ENV_ID,
     }
     request.attachment = {
       dataBuffer: Buffer.from(
