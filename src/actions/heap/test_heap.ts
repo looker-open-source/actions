@@ -118,7 +118,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   }
 
   describe("Common Validation", () => {
-    it("should throw when env ID is missing", async () => {
+    it("should fail when env ID is missing", async () => {
       const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(
@@ -129,15 +129,16 @@ describe(`${action.constructor.name} unit tests`, () => {
       )
       request.formParams.env_id = undefined
 
+      const response = await action.validateAndExecute(request)
+
+      chai.expect(response.success).to.equal(false)
       chai
-        .expect(action.validateAndExecute(request))
-        .to.be.eventually.rejectedWith(
-          new RegExp("Heap environment ID is invalid"),
-        )
+        .expect(response.message)
+        .to.contain("Heap environment ID is invalid")
       chai.expect(stubPost).to.have.not.been.called
     })
 
-    it("should throw when env ID is malformed", async () => {
+    it("should fail when env ID is malformed", async () => {
       const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(
@@ -148,28 +149,30 @@ describe(`${action.constructor.name} unit tests`, () => {
       )
       request.formParams.env_id = "abc"
 
+      const response = await action.validateAndExecute(request)
+
+      chai.expect(response.success).to.equal(false)
       chai
-        .expect(action.validateAndExecute(request))
-        .to.be.eventually.rejectedWith(
-          new RegExp("Heap environment ID is invalid"),
-        )
+        .expect(response.message)
+        .to.contain("Heap environment ID is invalid")
       chai.expect(stubPost).to.have.not.been.called
     })
 
-    it("should throw when Heap field column is not provided", async () => {
+    it("should fail when Heap field column is not provided", async () => {
       const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(HeapPropertyTypes.User, "", fields, data)
 
+      const response = await action.validateAndExecute(request)
+
+      chai.expect(response.success).to.equal(false)
       chai
-        .expect(action.validateAndExecute(request))
-        .to.be.eventually.rejectedWith(
-          new RegExp("Column mapping to a Heap field must be provided"),
-        )
+        .expect(response.message)
+        .to.contain("Column mapping to a Heap field must be provided")
       chai.expect(stubPost).to.have.not.been.called
     })
 
-    it("should throw when provided unsupported property type", async () => {
+    it("should fail when provided unsupported property type", async () => {
       const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(
@@ -179,9 +182,10 @@ describe(`${action.constructor.name} unit tests`, () => {
         data,
       )
 
-      chai
-        .expect(action.validateAndExecute(request))
-        .to.be.eventually.rejectedWith(new RegExp("Unsupported property type"))
+      const response = await action.validateAndExecute(request)
+
+      chai.expect(response.success).to.equal(false)
+      chai.expect(response.message).to.contain("Unsupported property type")
       chai.expect(stubPost).to.have.not.been.called
     })
 

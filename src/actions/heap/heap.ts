@@ -66,7 +66,17 @@ export class HeapAction extends Hub.Action {
   }
 
   async execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
-    this.validateRequest(request)
+    const maybeValidationError = this.validateRequest(request)
+    if (!!maybeValidationError) {
+      winston.error(
+        `Heap action for envId failed with errors: ${maybeValidationError.message}`,
+      )
+      return new Hub.ActionResponse({
+        success: false,
+        message: maybeValidationError.message,
+      })
+    }
+
     const propertyType: HeapPropertyType = request.formParams
       .property_type as HeapPropertyType
     const envId = request.formParams.env_id!
@@ -190,9 +200,11 @@ export class HeapAction extends Hub.Action {
     return form
   }
 
-  private validateRequest(request: Hub.ActionRequest): void {
+  private validateRequest(request: Hub.ActionRequest): Error | undefined {
     if (!request.formParams.env_id || request.formParams.env_id.match(/\D/g)) {
-      throw new Error(`Heap environment ID is invalid: ${request.formParams.env_id}`)
+      return new Error(
+        `Heap environment ID is invalid: ${request.formParams.env_id}`,
+      )
     }
 
     if (
@@ -201,7 +213,7 @@ export class HeapAction extends Hub.Action {
         request.formParams.property_type,
       )
     ) {
-      throw new Error(
+      return new Error(
         `Unsupported property type: ${request.formParams.property_type}`,
       )
     }
@@ -210,7 +222,7 @@ export class HeapAction extends Hub.Action {
       !request.formParams.heap_field ||
       request.formParams.heap_field.length === 0
     ) {
-      throw new Error("Column mapping to a Heap field must be provided.")
+      return new Error("Column mapping to a Heap field must be provided.")
     }
   }
 
