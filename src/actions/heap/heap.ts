@@ -66,27 +66,11 @@ export class HeapAction extends Hub.Action {
   }
 
   async execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
-    if (
-      !request.formParams.property_type ||
-      !(this.supportedPropertyTypes as string[]).includes(
-        request.formParams.property_type,
-      )
-    ) {
-      throw new Error(
-        `Unsupported property type: ${request.formParams.property_type}`,
-      )
-    }
+    this.validateRequest(request)
     const propertyType: HeapPropertyType = request.formParams
       .property_type as HeapPropertyType
-
-    if (
-      !request.formParams.heap_field ||
-      request.formParams.heap_field.length === 0
-    ) {
-      throw new Error("Column mapping to a Heap field must be provided.")
-    }
     const envId = request.formParams.env_id!
-    const heapFieldLabel: string = request.formParams.heap_field
+    const heapFieldLabel: string = request.formParams.heap_field!
     let heapFieldName: string
 
     let fieldMap: LookerFieldMap = {} as LookerFieldMap
@@ -204,6 +188,30 @@ export class HeapAction extends Hub.Action {
       },
     ]
     return form
+  }
+
+  private validateRequest(request: Hub.ActionRequest): void {
+    if (!request.formParams.env_id || request.formParams.env_id === "") {
+      throw new Error(`Heap environment ID is a required parameter`)
+    }
+
+    if (
+      !request.formParams.property_type ||
+      !(this.supportedPropertyTypes as string[]).includes(
+        request.formParams.property_type,
+      )
+    ) {
+      throw new Error(
+        `Unsupported property type: ${request.formParams.property_type}`,
+      )
+    }
+
+    if (
+      !request.formParams.heap_field ||
+      request.formParams.heap_field.length === 0
+    ) {
+      throw new Error("Column mapping to a Heap field must be provided.")
+    }
   }
 
   private extractHeapFieldName(fields: Hub.Field[], heapFieldLabel: string) {

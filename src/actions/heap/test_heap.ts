@@ -34,7 +34,7 @@ describe(`${action.constructor.name} unit tests`, () => {
   ): Hub.ActionRequest => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
-    request.params = { }
+    request.params = {}
     request.formParams = {
       heap_field: heapFieldLabel,
       property_type: propertyType,
@@ -127,9 +127,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields,
         data,
       )
-      request.params = {}
+      request.formParams.env_id = ""
 
-      chai.expect(action.validateAndExecute(request)).to.be.eventually.rejected
+      chai
+        .expect(action.validateAndExecute(request))
+        .to.be.eventually.rejectedWith(
+          "Heap environment ID is a required parameter",
+        )
       chai.expect(stubPost).to.have.not.been.called
     })
 
