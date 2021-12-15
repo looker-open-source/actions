@@ -119,7 +119,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("Common Validation", () => {
     it("should throw when env ID is missing", async () => {
-      const fields = [{ name: "email", label: "email" }]
+      const fields = [{ name: "email", label: "Email" }]
       const data = [{ email: { value: "value1" } }]
       const request = buildRequest(
         HeapPropertyTypes.User,
@@ -127,12 +127,31 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields,
         data,
       )
-      request.formParams.env_id = ""
+      request.formParams.env_id = undefined
 
       chai
         .expect(action.validateAndExecute(request))
         .to.be.eventually.rejectedWith(
-          "Heap environment ID is a required parameter",
+          new RegExp("Heap environment ID is invalid"),
+        )
+      chai.expect(stubPost).to.have.not.been.called
+    })
+
+    it("should throw when env ID is malformed", async () => {
+      const fields = [{ name: "email", label: "Email" }]
+      const data = [{ email: { value: "value1" } }]
+      const request = buildRequest(
+        HeapPropertyTypes.User,
+        "Email",
+        fields,
+        data,
+      )
+      request.formParams.env_id = "abc"
+
+      chai
+        .expect(action.validateAndExecute(request))
+        .to.be.eventually.rejectedWith(
+          new RegExp("Heap environment ID is invalid"),
         )
       chai.expect(stubPost).to.have.not.been.called
     })

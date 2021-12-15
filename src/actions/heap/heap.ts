@@ -191,8 +191,8 @@ export class HeapAction extends Hub.Action {
   }
 
   private validateRequest(request: Hub.ActionRequest): void {
-    if (!request.formParams.env_id || request.formParams.env_id === "") {
-      throw new Error(`Heap environment ID is a required parameter`)
+    if (!request.formParams.env_id || request.formParams.env_id.match(/\D/g)) {
+      throw new Error(`Heap environment ID is invalid: ${request.formParams.env_id}`)
     }
 
     if (
