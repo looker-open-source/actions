@@ -1,4 +1,3 @@
-import * as semver from "semver"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
 import { SalesforceOauthHelper } from "../common/oauth_helper"
@@ -8,7 +7,7 @@ import { SalesforceCampaignsSendData } from "./campaigns_send_data"
 export const REDIRECT_URL = `${process.env.ACTION_HUB_BASE_URL}/actions/salesforce_campaigns/oauth_redirect`
 export const MAX_RESULTS = 10000 // how many existing campaigns to retrieve to append members to
 export const CHUNK_SIZE = 200 // number of records to send at once
-const FIELD_MAPPING = [
+export const FIELD_MAPPING = [
   { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: /contact id/i },
   { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: /lead id/i },
 ]
@@ -50,9 +49,9 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   ]
   supportedActionTypes = [Hub.ActionType.Query]
   requiredFields = [{ any_tag: TAGS }]
-  supportedVisualizationFormattings = [
-    Hub.ActionVisualizationFormatting.Noapply,
-  ]
+  supportedFormats = [Hub.ActionFormat.JsonDetailLiteStream]
+  supportedDownloadSettings = [Hub.ActionDownloadSettings.Push]
+  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   usesOauth = true
   // TODO: support All Results vs Results in Table
@@ -65,14 +64,6 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     this.salesforceOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
     this.salesforceCampaignsFormBuilder = new SalesforceCampaignsFormBuilder(oauthClientId, oauthClientSecret)
     this.salesforceCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret)
-  }
-
-  supportedFormats = (request: Hub.ActionRequest) => {
-    if (request.lookerVersion && semver.gte(request.lookerVersion, "6.2.0")) {
-      return [Hub.ActionFormat.JsonDetailLiteStream]
-    } else {
-      return [Hub.ActionFormat.JsonDetail]
-    }
   }
 
   /******** OAuth Endpoints ********/
@@ -110,7 +101,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     }
 
     if (!request.params.state_json) {
-      throw "Request is missing state_json"
+      throw "Request is missing state_json."
     }
 
     const fields: any[] = [].concat(
