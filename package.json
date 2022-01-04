@@ -102,7 +102,8 @@
     "**/extend": "^3.0.2",
     "**/qs": "^6.9.0",
     "**/just-extend": "^4.0.2",
-    "**/request": "https://github.com/request/request/archive/392db7d127536ff296fb06492db9430790a32d6c.tar.gz"
+    "**/request": "https://github.com/request/request/archive/392db7d127536ff296fb06492db9430790a32d6c.tar.gz",
+    "**/lodash": "^4.17.20"
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",
