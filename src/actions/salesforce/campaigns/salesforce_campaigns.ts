@@ -125,13 +125,13 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     )
 
     if (mapper.length < fields.length) {
-      winston.debug(`only ${mapper.length} out of ${fields.length} fields matched with tags, attemping regex`)
+      winston.debug(`${mapper.length} out of ${fields.length} fields matched with tags, attemping regex`)
 
       fields.filter((f) => !mapper.map((m) => m.fieldname).includes(f.name))
         .map((f) => {
           for (const fm of FIELD_MAPPING) {
             winston.debug(`testing ${fm.fallbackRegex} against ${f.label}`)
-            if (f.label.match(fm.fallbackRegex)) {
+            if (fm.fallbackRegex.test(f.label)) {
               mapper.push({
                 fieldname: f.name,
                 sfdcMemberType: fm.sfdcMemberType,
