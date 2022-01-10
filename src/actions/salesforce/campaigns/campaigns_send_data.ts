@@ -108,7 +108,7 @@ export class SalesforceCampaignsSendData {
       chunk.map((result, index) => {
         !result.success
           ? memberErrors.push({
-              memberId: this.getSfdcMemberType(memberGrouped[chunkIndex][index]),
+              memberId: this.getSfdcMemberId(memberGrouped[chunkIndex][index])!,
               errors: result,
             })
           : null
@@ -136,7 +136,8 @@ export class SalesforceCampaignsSendData {
     return chunks
   }
 
-  getSfdcMemberType(record: CampaignMember) {
-    return Object.keys(record).filter((key) => !["CampaignId", "Status"].includes(key))[0] as MemberType
+  getSfdcMemberId(record: CampaignMember) {
+    const memberType =  Object.keys(record).filter((key) => !["CampaignId", "Status"].includes(key))[0] as MemberType
+    return record[memberType]
   }
 }
