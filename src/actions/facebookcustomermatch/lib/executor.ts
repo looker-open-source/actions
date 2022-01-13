@@ -9,10 +9,9 @@ import { UserFields, UserUploadPayload, UserUploadSession, validFacebookHashComb
 import FacebookCustomerMatchApi from "./api"
 import {
   countryNameTo2Code,
-  formatFullDate,
-  genderNameToCode,
   getDayOfMonth,
   getMonth,
+  getYear,
   removeNonRomanAlphaNumeric,
   sanitizeError,
   usStateNameTo2Code,
@@ -70,16 +69,10 @@ export default class FacebookCustomerMatchExecutor {
       normalizationFunction: removeNonRomanAlphaNumeric,
     },
     {
-      lookMLFieldName: "gender",
-      fallbackRegex: /gender/i,
-      userField: "gender",
-      normalizationFunction: (value: string) => genderNameToCode(this.normalize(value)),
-    },
-    {
       lookMLFieldName: "birth_year",
       fallbackRegex: /year/i,
       userField: "birthYear",
-      normalizationFunction: (value: string) => formatFullDate(this.normalize(value)),
+      normalizationFunction: (value: string) => getYear(this.normalize(value)),
     },
     {
       lookMLFieldName: "birth_month",
@@ -239,7 +232,11 @@ export default class FacebookCustomerMatchExecutor {
               }
               return aggregator
             }, {})
-            this.determineSchema(combinedFields)
+            try {
+              this.determineSchema(combinedFields)
+            } catch (err) {
+              reject("CLEANFAIL " + err) // cleanly fail without crashing action hub
+            }
           }
 
           return oboe.drop
@@ -320,11 +317,9 @@ OUT
     {
       email: "tt@coolguy.net",
       phone: null,
-      gender: null,
       birthYear: null,
       birthMonth: null,
-      birthDayOfMonth: null,
-      birthday: null,
+      birthDay: null,
       lastName: null,
       firstName: "Timmy",
       firstInitial: null,
@@ -349,11 +344,9 @@ OUT
     return {
       email: initialValue,
       phone: initialValue,
-      gender: initialValue,
       birthYear: initialValue,
       birthMonth: initialValue,
-      birthDayOfMonth: initialValue,
-      birthday: initialValue,
+      birthDay: initialValue,
       lastName: initialValue,
       firstName: initialValue,
       firstInitial: initialValue,

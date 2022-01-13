@@ -1,6 +1,6 @@
 import * as gaxios from "gaxios"
 import * as winston from "winston"
-import {sanitizeError} from "./util"
+import {formatFullDate, isNullOrUndefined, sanitizeError} from "./util"
 
 export const API_VERSION = "v12.0"
 export const API_BASE_URL = `https://graph.facebook.com/${API_VERSION}/`
@@ -27,11 +27,9 @@ export interface UserUploadPayload {
 export interface UserFields {
     email?: string | null,
     phone?: string | null,
-    gender?: string | null,
     birthYear?: string | null,
     birthMonth?: string | null,
-    birthDayOfMonth?: string | null,
-    birthday?: string | null,
+    birthDay?: string | null,
     lastName?: string | null,
     firstName?: string | null,
     firstInitial?: string | null,
@@ -59,13 +57,19 @@ export const validFacebookHashCombinations: [(f: UserFields) => string, string][
     [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstName}_${formattedRow.city}_${formattedRow.state}_${formattedRow.birthYear}`, "LN_FN_CT_ST_DOBY_SHA256"],
     [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstInitial}_${formattedRow.zip}`, "LN_FI_ZIP_SHA256"],
     [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstInitial}_${formattedRow.city}_${formattedRow.state}`, "LN_FI_CT_ST_SHA256"],
-    [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstInitial}_${formattedRow.state}_${formattedRow.birthday}`, "LN_FI_ST_DOB_SHA256"],
+    [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstInitial}_${formattedRow.state}_${getDateOfBirthFromUserFields(formattedRow)}`, "LN_FI_ST_DOB_SHA256"],
     [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstName}_${formattedRow.state}_${formattedRow.birthYear}`, "LN_FN_ST_DOBY_SHA256"],
-    [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstName}_${formattedRow.country}_${formattedRow.birthday}`, "LN_FN_COUNTRY_DOB_SHA256"],
-    [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstName}_${formattedRow.birthday}`, "LN_FN_DOB_SHA256"],
+    [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstName}_${formattedRow.country}_${getDateOfBirthFromUserFields(formattedRow)}`, "LN_FN_COUNTRY_DOB_SHA256"],
+    [(formattedRow: UserFields) => `${formattedRow.lastName}_${formattedRow.firstName}_${getDateOfBirthFromUserFields(formattedRow)}`, "LN_FN_DOB_SHA256"],
     [(formattedRow: UserFields) => `${formattedRow.externalId}`, "EXTERN_ID"],
   ]
 /* tslint:enable */
+function getDateOfBirthFromUserFields(uf: UserFields): string | null {
+    if(isNullOrUndefined(uf.birthDay) || isNullOrUndefined(uf.birthMonth) || isNullOrUndefined(uf.birthYear)) {
+        return null
+    }
+    return formatFullDate(uf.birthDay + "", uf.birthMonth + "", uf.birthYear + "")
+}
 
 export default class FacebookCustomerMatchApi {
     readonly accessToken: string

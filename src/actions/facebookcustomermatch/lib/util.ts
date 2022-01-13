@@ -47,18 +47,6 @@ export function usStateNameTo2Code(name: string): string {
     return usStates[name.toLowerCase()] || name
 }
 
-export function genderNameToCode(name: string) {
-    switch (name) {
-        case "male":
-            return "m"
-        case "female":
-            return "f"
-        default:
-            return name
-        // facebook marketing api has no support for other values. just pass whatever the data is!
-    }
-}
-
 export function getMonth(date: string | number): string {
     date = date.toString()
     if (date.length <= 2) { // 01, 5, etc
@@ -77,13 +65,26 @@ export function getMonth(date: string | number): string {
 export function getDayOfMonth(date: string | number): string {
     return (date + "").padStart(2, "0")
 }
-
-export function formatFullDate(date: string | number) {
+export function getYear(date: string | number): string {
     try {
         return sugarDate.create(date).format("{yyyy}")
     } catch {
         // we don't care about the parsing error
         return ""
+    }
+}
+
+// formatting guide: https://www.facebook.com/business/help/2082575038703844?id=2469097953376494
+export function formatFullDate(dayOfMonth: string, month: string, year: string) {
+    const formattedDayOfMonth = getDayOfMonth(dayOfMonth);
+    const formattedMonth = getMonth(month);
+    const formattedYear = getYear(year);
+    return `${formattedDayOfMonth}-${formattedMonth}-${formattedYear}` 
+}
+
+export function isNullOrUndefined(a: any) {
+    if(a === null || a === undefined) {
+        return true
     }
 }
 
