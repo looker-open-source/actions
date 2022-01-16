@@ -27,7 +27,7 @@ export class FacebookCustomerMatchAction extends Hub.OAuthAction {
 
   readonly oauthClientId: string
   readonly oauthClientSecret: string
-  readonly oauthScope: string = "read_insights,ads_management,ads_read,business_management,public_profile"
+  readonly oauthScope: string = "ads_management,business_management"
 
   constructor(oauthClientId: string, oauthClientSecret: string) {
     super()

@@ -65,7 +65,7 @@ export const validFacebookHashCombinations: [(f: UserFields) => string, string][
   ]
 /* tslint:enable */
 function getDateOfBirthFromUserFields(uf: UserFields): string | null {
-    if(isNullOrUndefined(uf.birthDay) || isNullOrUndefined(uf.birthMonth) || isNullOrUndefined(uf.birthYear)) {
+    if (isNullOrUndefined(uf.birthDay) || isNullOrUndefined(uf.birthMonth) || isNullOrUndefined(uf.birthYear)) {
         return null
     }
     return formatFullDate(uf.birthDay + "", uf.birthMonth + "", uf.birthYear + "")

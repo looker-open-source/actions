@@ -11,9 +11,9 @@ export function sanitizeError(err: any) {
     // Remove headers with sensitive values
     if (err.config && err.config.headers) {
         for (const prop in err.config.headers) {
-        if (["developer-token", "Authorization"].includes(prop)) {
-            err.config.headers[prop] = "[REDACTED]"
-        }
+            if (["developer-token", "Authorization"].includes(prop)) {
+                err.config.headers[prop] = "[REDACTED]"
+            }
         }
     }
 
@@ -54,6 +54,7 @@ export function getMonth(date: string | number): string {
     }
 
     try {
+        sugarDate.extend()
         return sugarDate.create(date).format("{MM}")
         // accepts really wild things like: "January", "Jan", "next wednesday". last ditch effort
     } catch {
@@ -65,6 +66,7 @@ export function getMonth(date: string | number): string {
 export function getDayOfMonth(date: string | number): string {
     return (date + "").padStart(2, "0")
 }
+
 export function getYear(date: string | number): string {
     try {
         return sugarDate.create(date).format("{yyyy}")
@@ -76,14 +78,14 @@ export function getYear(date: string | number): string {
 
 // formatting guide: https://www.facebook.com/business/help/2082575038703844?id=2469097953376494
 export function formatFullDate(dayOfMonth: string, month: string, year: string) {
-    const formattedDayOfMonth = getDayOfMonth(dayOfMonth);
-    const formattedMonth = getMonth(month);
-    const formattedYear = getYear(year);
-    return `${formattedDayOfMonth}-${formattedMonth}-${formattedYear}` 
+    const formattedDayOfMonth = getDayOfMonth(dayOfMonth)
+    const formattedMonth = getMonth(month)
+    const formattedYear = getYear(year)
+    return `${formattedDayOfMonth}-${formattedMonth}-${formattedYear}`
 }
 
 export function isNullOrUndefined(a: any) {
-    if(a === null || a === undefined) {
+    if (a === null || a === undefined) {
         return true
     }
 }

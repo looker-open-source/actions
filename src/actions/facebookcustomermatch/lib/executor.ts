@@ -20,7 +20,7 @@ import {
 const BATCH_SIZE = 10000 // Maximum size allowable by Facebook endpoint
 
 interface FieldMapping {
-  lookMLFieldName: string, // TODO remove this property if it turns out tags can't be obtained with JsonLabel streams
+  lookMLTagName: string,
   fallbackRegex: any,
   userField: string, // The property that ties looker columnLabels to facebook API fields
   normalizationFunction: (s: string) => string // each one is a special snowflake...
@@ -57,85 +57,85 @@ export default class FacebookCustomerMatchExecutor {
 
   private fieldMapping: FieldMapping[] = [
     {
-      lookMLFieldName: "email",
+      lookMLTagName: "email",
       fallbackRegex: /email/i,
       userField: "email",
       normalizationFunction: this.normalize,
     },
     {
-      lookMLFieldName: "phone",
+      lookMLTagName: "phone",
       fallbackRegex: /phone/i,
       userField: "phone",
       normalizationFunction: removeNonRomanAlphaNumeric,
     },
     {
-      lookMLFieldName: "birth_year",
+      lookMLTagName: "birth_year",
       fallbackRegex: /year/i,
       userField: "birthYear",
       normalizationFunction: (value: string) => getYear(this.normalize(value)),
     },
     {
-      lookMLFieldName: "birth_month",
+      lookMLTagName: "birth_month",
       fallbackRegex: /month/i,
       userField: "birthMonth",
       normalizationFunction: (value: string) => getMonth(this.normalize(value)),
     },
     {
-      lookMLFieldName: "birth_day",
+      lookMLTagName: "birth_day",
       fallbackRegex: /day/i,
       userField: "birthDay",
       normalizationFunction: (value: string) => getDayOfMonth(this.normalize(value)),
     },
     {
-      lookMLFieldName: "last_name",
+      lookMLTagName: "last_name",
       fallbackRegex: /last/i,
       userField: "lastName",
       normalizationFunction: this.normalize,
     },
     {
-      lookMLFieldName: "first_name",
+      lookMLTagName: "first_name",
       fallbackRegex: /first/i,
       userField: "firstName",
       normalizationFunction: this.normalize,
     },
     {
-      lookMLFieldName: "first_initial",
+      lookMLTagName: "first_initial",
       fallbackRegex: /initial/i,
       userField: "firstInitial",
       normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value)),
     },
     {
-      lookMLFieldName: "city",
+      lookMLTagName: "city",
       fallbackRegex: /city/i,
       userField: "city",
       normalizationFunction: (value: string) => removeNonRomanAlphaNumeric(this.normalize(value)),
     },
     {
-      lookMLFieldName: "state",
+      lookMLTagName: "state",
       fallbackRegex: /state/i,
       userField: "state",
       normalizationFunction: (value: string) => usStateNameTo2Code(this.normalize(value)),
     },
     {
-      lookMLFieldName: "zip",
+      lookMLTagName: "zip",
       fallbackRegex: /postal|zip/i,
       userField: "zip",
       normalizationFunction: this.normalize,
     },
     {
-      lookMLFieldName: "country",
+      lookMLTagName: "country",
       fallbackRegex: /country/i,
       userField: "country",
       normalizationFunction: (value: string) => countryNameTo2Code(this.normalize(value)),
     },
     {
-      lookMLFieldName: "mad_id",
+      lookMLTagName: "mad_id",
       fallbackRegex: /madid/i,
       userField: "madid",
       normalizationFunction: this.normalize,
     },
     {
-      lookMLFieldName: "external_id",
+      lookMLTagName: "external_id",
       fallbackRegex: /external/i,
       userField: "externalId",
       normalizationFunction: (value: string) => value, // NOOP
@@ -266,14 +266,14 @@ export default class FacebookCustomerMatchExecutor {
     for (const columnLabel of Object.keys(row)) {
       let tagMatched = false
       for (const mapping of this.fieldMapping) {
-        const {fallbackRegex, lookMLFieldName} = mapping
+        const {fallbackRegex, lookMLTagName} = mapping
 
         // attempt to match fields by lookml tags first
         if (row[columnLabel].tags && row[columnLabel].tags.length > 0) {
           if (row[columnLabel].tags.some((tag: string) =>
-          tag.toLowerCase() === lookMLFieldName.toLowerCase())) {
+          tag.toLowerCase() === lookMLTagName.toLowerCase())) {
             tagMatched = true
-            this.schema[columnLabel] = mapping;
+            this.schema[columnLabel] = mapping
             winston.debug("info", `Matched ${columnLabel} by LookML field tag.`)
             break
           }
@@ -412,16 +412,13 @@ OUT
     return normalizedRow
   }
 
-  private createUploadSessionObject(batchSequence: number, finalBatch: boolean, totalRows?: number): UserUploadSession {
-    let sessionObject: UserUploadSession = {
+  private createUploadSessionObject(batchSequence: number, finalBatch: boolean): UserUploadSession {
+    const sessionObject: UserUploadSession = {
       session_id: this.sessionId,
       batch_seq: batchSequence,
       last_batch_flag: finalBatch,
-    };
-    if (totalRows) {
-      sessionObject.estimated_num_total = totalRows
     }
-    return sessionObject;
+    return sessionObject
   }
 
   private hash(rawValue: string) {
