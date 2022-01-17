@@ -6,7 +6,7 @@ import { Readable } from "stream"
 import * as winston from "winston"
 
 import { UserFields, UserUploadPayload, UserUploadSession, validFacebookHashCombinations} from "./api"
-import FacebookCustomerMatchApi from "./api"
+import FacebookCustomAudiencesApi from "./api"
 import {
   countryNameTo2Code,
   getDayOfMonth,
@@ -26,7 +26,7 @@ interface FieldMapping {
   normalizationFunction: (s: string) => string // each one is a special snowflake...
 }
 
-export default class FacebookCustomerMatchExecutor {
+export default class FacebookCustomAudiencesExecutor {
 
   private get batchIsReady() {
     return this.rowQueue.length >= BATCH_SIZE
@@ -45,7 +45,7 @@ export default class FacebookCustomerMatchExecutor {
   private schema: {[s: string]: FieldMapping} = {}
   private batchIncrementer = 0
   private sessionId: number
-  private facebookAPI: FacebookCustomerMatchApi
+  private facebookAPI: FacebookCustomAudiencesApi
 
   // form params
   private shouldHash = true
@@ -145,7 +145,7 @@ export default class FacebookCustomerMatchExecutor {
   constructor(actionRequest: Hub.ActionRequest, accessToken: string) {
     this.actionRequest = actionRequest
     this.sessionId =  Date.now() // a unique id used to associate multiple requests with one custom audience API action
-    this.facebookAPI = new FacebookCustomerMatchApi(accessToken)
+    this.facebookAPI = new FacebookCustomAudiencesApi(accessToken)
     this.shouldHash = actionRequest.formParams.should_hash === "do_no_hashing" ? false : true
     const operationType = actionRequest.formParams.choose_create_update_replace
     if (!operationType) {

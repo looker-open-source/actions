@@ -5,17 +5,17 @@ import * as querystring from "querystring"
 import {URL} from "url"
 import * as winston from "winston"
 
-import FacebookCustomerMatchApi, { API_VERSION } from "./lib/api"
-import FacebookCustomerMatchExecutor from "./lib/executor"
+import FacebookCustomAudiencesApi, { API_VERSION } from "./lib/api"
+import FacebookCustomAudiencesExecutor from "./lib/executor"
 import FacebookFormBuilder from "./lib/form_builder"
 import {sanitizeError} from "./lib/util"
 
-export class FacebookCustomerMatchAction extends Hub.OAuthAction {
+export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
 
-  readonly name = "facebook_customer_match"
-  readonly label = "Facebook Customer Match"
-  readonly iconName = "facebookcustomermatch/facebook_ads_icon.png"
-  readonly description = "Upload data to Facebook Ads Custom Audience from Customer List"
+  readonly name = "facebook_custom_audiences"
+  readonly label = "Facebook Custom Audiences"
+  readonly iconName = "facebook/facebook_ads_icon.png"
+  readonly description = "Upload data to Facebook Ads Custom Audiences from Customer List"
   readonly supportedActionTypes = [Hub.ActionType.Query]
   readonly supportedFormats = [Hub.ActionFormat.JsonDetailLiteStream]
   readonly supportedFormattings = [Hub.ActionFormatting.Unformatted]
@@ -43,11 +43,10 @@ export class FacebookCustomerMatchAction extends Hub.OAuthAction {
       response.state = new Hub.ActionState()
       response.state.data = "reset"
       response.success = false
-      response.message = "Failed to execute Facebook Customer Match due to missing" +
-        "authentication credentials. No data sent to Facebook. Please try again or contact support"
+      response.message = "Failed to execute Facebook Custom Audiences due to missing authentication credentials. No data sent to Facebook. Please try again or contact support"
       return response
     }
-    const executor = new FacebookCustomerMatchExecutor(hubRequest, accessToken)
+    const executor = new FacebookCustomAudiencesExecutor(hubRequest, accessToken)
     response = await executor.run()
     return response
   }
@@ -58,7 +57,7 @@ export class FacebookCustomerMatchAction extends Hub.OAuthAction {
       const isAlreadyAuthenticated = await this.oauthCheck(hubRequest)
       const accessToken = await this.getAccessTokenFromRequest(hubRequest)
       if (isAlreadyAuthenticated && accessToken) {
-        const facebookApi = new FacebookCustomerMatchApi(accessToken)
+        const facebookApi = new FacebookCustomAudiencesApi(accessToken)
         const actionForm = formBuilder.generateActionForm(hubRequest, facebookApi)
         return actionForm
       }
@@ -177,7 +176,7 @@ export class FacebookCustomerMatchAction extends Hub.OAuthAction {
 if (process.env.FACEBOOK_CLIENT_ID
   && process.env.FACEBOOK_CLIENT_SECRET
   ) {
-    const fcma = new FacebookCustomerMatchAction(
+    const fcma = new FacebookCustomAudiencesAction(
       process.env.FACEBOOK_CLIENT_ID,
       process.env.FACEBOOK_CLIENT_SECRET,
     )

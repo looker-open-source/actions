@@ -1,10 +1,10 @@
 import * as winston from "winston"
 import * as Hub from "../../../hub"
-import FacebookCustomerMatchApi from "./api"
+import FacebookCustomAudiencesApi from "./api"
 
 export default class FacebookFormBuilder {
 
-    async generateActionForm(actionRequest: Hub.ActionRequest, facebookApi: FacebookCustomerMatchApi) {
+    async generateActionForm(actionRequest: Hub.ActionRequest, facebookApi: FacebookCustomAudiencesApi) {
       let businesses: {name: string, id: string}[] = []
       let adAccounts: {name: string, id: string}[] = []
       let customAudiences: {name: string, id: string}[] = []
@@ -158,7 +158,7 @@ export default class FacebookFormBuilder {
       // Step 1 in the oauth flow - user clicks the button in the form and visits the AH url generated here.
       // That response will be auto handled by the AH server as a redirect to the result of oauthUrl function below.
       const startAuthUrl =
-        `${process.env.ACTION_HUB_BASE_URL}/actions/facebook_customer_match/oauth?state=${encryptedPayload}`
+        `${process.env.ACTION_HUB_BASE_URL}/actions/facebook_custom_audiences/oauth?state=${encryptedPayload}`
 
       winston.debug("login form has startAuthUrl=", startAuthUrl)
 
@@ -170,7 +170,7 @@ export default class FacebookFormBuilder {
         name: "login",
         type: "oauth_link",
         label: "Log in to Facebook",
-        description: "In order to use Facebook Customer Match as a destination, you will need to log in" +
+        description: "In order to use Facebook Custom Audiences as a destination, you will need to log in" +
           " once to your Facebook account.",
         oauth_url: startAuthUrl,
       })

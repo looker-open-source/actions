@@ -3,14 +3,14 @@ import { expect } from "chai"
 import * as gaxios from "gaxios"
 import * as sinon from "sinon"
 import * as Hub from "../../hub"
-import { FacebookCustomerMatchAction } from "./facebook_customer_match"
+import { FacebookCustomAudiencesAction } from "./facebook_custom_audiences"
 import { API_VERSION } from "./lib/api"
 
 const testOAuthClientId = "test_oauth_client_id"
 const testOAuthClientSecret = "test_oauth_client_secret"
 const testClientCid = "test_client_cid"
 
-const action = new FacebookCustomerMatchAction(
+const action = new FacebookCustomAudiencesAction(
   testOAuthClientId,
   testOAuthClientSecret,
 )
@@ -35,19 +35,19 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("name", () => {
-      expect(action.name).to.equal("facebook_customer_match")
+      expect(action.name).to.equal("facebook_custom_audiences")
     })
 
     it("label", () => {
-      expect(action.label).to.equal("Facebook Customer Match")
+      expect(action.label).to.equal("Facebook Custom Audiences")
     })
 
     it("iconName", () => {
-      expect(action.iconName).to.equal("facebookcustomermatch/facebook_ads_icon.png")
+      expect(action.iconName).to.equal("facebook/facebook_ads_icon.png")
     })
 
     it("description", () => {
-      expect(action.description).to.equal("Upload data to Facebook Ads Custom Audience from Customer List")
+      expect(action.description).to.equal("Upload data to Facebook Ads Custom Audiences from Customer List")
     })
 
     it("supportedActionTypes", () => {
@@ -55,7 +55,7 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("supportedFormats", () => {
-      expect(action.supportedFormats).to.deep.equal(["json_detail"])
+      expect(action.supportedFormats).to.deep.equal(["json_detail_lite_stream"])
     })
 
     it("supportedFormattings", () => {
@@ -110,7 +110,7 @@ describe(`${action.constructor.name} class`, () => {
           }
 
           const expectedResponse = makeErrorResponse({
-            message: "Failed to execute Facebook Customer Match due to missing authentication credentials." +
+            message: "Failed to execute Facebook Custom Audiences due to missing authentication credentials." +
             " No data sent to Facebook. Please try again or contact support",
           })
 
@@ -129,7 +129,7 @@ describe(`${action.constructor.name} class`, () => {
         "client_id=test_oauth_client_id" +
         `&redirect_uri=https%3A%2F%2Faction-hub.looker.test%2Factions%2F${action.name}%2Foauth_redirect` +
         "&state=not-actually-encrypted-payload-used-for-test" +
-        "&scope=read_insights%2Cads_management%2Cads_read%2Cbusiness_management%2Cpublic_profile"
+        "&scope=ads_management%2Cbusiness_management"
 
         const actualUrl = await action.oauthUrl(
           `https://action-hub.looker.test/actions/${action.name}/oauth_redirect`,

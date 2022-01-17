@@ -1,6 +1,6 @@
 import * as gaxios from "gaxios"
 import * as winston from "winston"
-import {formatFullDate, isNullOrUndefined, sanitizeError} from "./util"
+import {formatFullDate, isNullOrUndefined, sanitizeError, sortCompare} from "./util"
 
 export const API_VERSION = "v12.0"
 export const API_BASE_URL = `https://graph.facebook.com/${API_VERSION}/`
@@ -71,7 +71,7 @@ function getDateOfBirthFromUserFields(uf: UserFields): string | null {
     return formatFullDate(uf.birthDay + "", uf.birthMonth + "", uf.birthYear + "")
 }
 
-export default class FacebookCustomerMatchApi {
+export default class FacebookCustomAudiencesApi {
     readonly accessToken: string
     constructor(accessToken: string) {
         this.accessToken = accessToken
@@ -142,8 +142,10 @@ export default class FacebookCustomerMatchApi {
     async getCustomAudiences(adAccountId: string): Promise<{name: string, id: string}[]> {
         const customAudienceUrl = `act_${adAccountId}/customaudiences?fields=name`
         const response = await this.apiCall("GET", customAudienceUrl)
-        const namesAndIds = response.data.map((customAudienceMetadata: any) =>
+        const namesAndIds = response.data
+            .map((customAudienceMetadata: any) =>
             ({name: customAudienceMetadata.name, id: customAudienceMetadata.id}))
+            .sort(sortCompare)
         return namesAndIds
     }
 
