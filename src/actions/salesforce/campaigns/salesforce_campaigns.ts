@@ -8,8 +8,8 @@ export const REDIRECT_URL = `${process.env.ACTION_HUB_BASE_URL}/actions/salesfor
 export const MAX_RESULTS = 10000 // how many existing campaigns to retrieve to append members to
 export const CHUNK_SIZE = 200 // number of records to send at once
 export const FIELD_MAPPING = [
-  { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: /contact id/i },
-  { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: /lead id/i },
+  { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: new RegExp("contact id", "i") },
+  { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: new RegExp("lead id", "i") },
 ]
 const TAGS = FIELD_MAPPING.map((fm) => fm.tag)
 
