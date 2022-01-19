@@ -456,7 +456,9 @@ describe(`${action.constructor.name} unit tests`, () => {
         const spreadSheetsStub = {
           batchUpdate: async () => Promise.resolve(),
         }
-        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 429})
+        const batchUpdateCallSpy = sinon.spy(async () => { throw {code: 429}})
+        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate")
+            .callsFake(batchUpdateCallSpy)
 
         const sheet = {
           spreadsheets: spreadSheetsStub,
