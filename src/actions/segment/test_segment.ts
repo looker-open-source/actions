@@ -161,6 +161,31 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("uses the field's short label as the trait name when present", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        segment_write_key: "mykey",
+      }
+      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
+        fields: {dimensions: [
+          {name: "coolid", tags: ["user_id"]},
+          {name: "cooltrait", label_short: "coolshortlabel", tags: []},
+        ]},
+        data: [{
+          coolid: {value: "id"},
+          cooltrait: {value: "funtrait"},
+        }],
+      }))}
+      return expectSegmentMatch(request, {
+        userId: "id",
+        traits: {
+          coolshortlabel: "funtrait",
+        },
+        anonymousId: null,
+      })
+    })
+    
     it("works with user id and anonymous id", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
