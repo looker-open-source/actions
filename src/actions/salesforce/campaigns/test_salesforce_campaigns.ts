@@ -9,6 +9,8 @@ import { FIELD_MAPPING, REDIRECT_URL, SalesforceCampaignsAction } from "./salesf
 
 const testOAuthClientId = "test_oauth_client_id"
 const testOAuthClientSecret = "test_oauth_client_secret"
+const testMaxResults = 10000
+const testChunkSize = 200
 const testSalesforceDomain = "https://notarealsalesforceorg.lightning.force.com"
 const testStateUrl = "abc"
 
@@ -17,20 +19,20 @@ const validLookerData = {
     data: [{ "salesforce.contact_id": { value: "abc" } }, { "salesforce.contact_id": { value: "def" } }],
 }
 
-const action = new SalesforceCampaignsAction(testOAuthClientId, testOAuthClientSecret)
+const action = new SalesforceCampaignsAction(testOAuthClientId, testOAuthClientSecret, testMaxResults, testChunkSize)
 
 describe(`${action.constructor.name} class`, () => {
   // Use a sandbox to avoid interaction with other test files
-  const adsSinonSandbox = sinon.createSandbox()
+  const sinonSandbox = sinon.createSandbox()
 
   beforeEach(() => {
-    adsSinonSandbox.stub(Hub.ActionCrypto.prototype, "encrypt").callsFake(async (s: string) => b64.encode(s))
-    adsSinonSandbox.stub(Hub.ActionCrypto.prototype, "decrypt").callsFake(async (s: string) => b64.decode(s))
+    sinonSandbox.stub(Hub.ActionCrypto.prototype, "encrypt").callsFake(async (s: string) => b64.encode(s))
+    sinonSandbox.stub(Hub.ActionCrypto.prototype, "decrypt").callsFake(async (s: string) => b64.decode(s))
   })
 
   afterEach(() => {
-    adsSinonSandbox.reset()
-    adsSinonSandbox.restore()
+    sinonSandbox.reset()
+    sinonSandbox.restore()
   })
 
   describe("action properties", () => {
@@ -97,15 +99,23 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("oauthClientId", () => {
-      expect(action.salesforceOauthHelper.oauthCreds.oauthClientId).to.equal(testOAuthClientId)
+      expect(action.sfdcOauthHelper.oauthCreds.oauthClientId).to.equal(testOAuthClientId)
     })
 
     it("oauthClientSecret", () => {
-      expect(action.salesforceOauthHelper.oauthCreds.oauthClientSecret).to.equal(testOAuthClientSecret)
+      expect(action.sfdcOauthHelper.oauthCreds.oauthClientSecret).to.equal(testOAuthClientSecret)
+    })
+
+    it("maxResults", () => {
+      expect(action.sfdcCampaignsFormBuilder.maxResults).to.equal(testMaxResults)
+    })
+
+    it("chunkSize", () => {
+      expect(action.sfdcCampaignsSendData.chunkSize).to.equal(testChunkSize)
     })
 
     it("oauthHelper", () => {
-      expect(action.salesforceOauthHelper).to.be.an.instanceOf(SalesforceOauthHelper)
+      expect(action.sfdcOauthHelper).to.be.an.instanceOf(SalesforceOauthHelper)
     })
   })
 
@@ -164,16 +174,6 @@ describe(`${action.constructor.name} class`, () => {
 
       expect(actualResponse).to.deep.equal(expectedResponse)
     })
-
-    // it("returns an error response if domain is invalid", async () => {
-    //   request.params.state_json = JSON.stringify({access_token: "accesstoken", refresh_token: "refreshtoken"})
-    //   const expectedResponse = makeErrorResponse({
-    //     message: `getaddrinfo ENOTFOUND ${testSalesforceDomain.substring(8)}`,
-    //   })
-    //   const actualResponse = await action.validateAndExecute(request)
-
-    //   expect(actualResponse).to.deep.equal(expectedResponse)
-    // })
   })
 
   describe("oauth interface", () => {
@@ -203,7 +203,7 @@ describe(`${action.constructor.name} class`, () => {
       const request = new Hub.ActionRequest()
       request.params.salesforce_domain = testSalesforceDomain
       request.params.state_url = testStateUrl
-      const actualForm = await action.salesforceOauthHelper.makeLoginForm(request)
+      const actualForm = await action.sfdcOauthHelper.makeLoginForm(request)
 
       expect(form).to.be.deep.equal(actualForm)
     })
@@ -224,7 +224,7 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("correctly handles redirect from authorization server", async () => {
-      const gaxiosStub = adsSinonSandbox.stub(gaxios, "request")
+      const gaxiosStub = sinonSandbox.stub(gaxios, "request")
       gaxiosStub.resolves("<action doesn't do anything with this post response>")
 
       const redirectUri = `https://action-hub.looker.test/actions/${action.name}/oauth_redirect`

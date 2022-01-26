@@ -5,8 +5,6 @@ import { SalesforceCampaignsFormBuilder } from "./campaigns_form_builder"
 import { SalesforceCampaignsSendData } from "./campaigns_send_data"
 
 export const REDIRECT_URL = `${process.env.ACTION_HUB_BASE_URL}/actions/salesforce_campaigns/oauth_redirect`
-export const MAX_RESULTS = 10000 // how many existing campaigns to retrieve to append members to
-export const CHUNK_SIZE = 200 // number of records to send at once
 export const FIELD_MAPPING = [
   { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: new RegExp("contact id", "i") },
   { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: new RegExp("lead id", "i") },
@@ -28,9 +26,9 @@ export interface MemberIds extends Mapper {
 }
 
 export class SalesforceCampaignsAction extends Hub.OAuthAction {
-  readonly salesforceOauthHelper: SalesforceOauthHelper
-  readonly salesforceCampaignsFormBuilder: SalesforceCampaignsFormBuilder
-  readonly salesforceCampaignsSendData: SalesforceCampaignsSendData
+  readonly sfdcOauthHelper: SalesforceOauthHelper
+  readonly sfdcCampaignsFormBuilder: SalesforceCampaignsFormBuilder
+  readonly sfdcCampaignsSendData: SalesforceCampaignsSendData
 
   name = "salesforce_campaigns"
   label = "Salesforce Campaigns"
@@ -59,24 +57,24 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
 
   /******** Constructor & Helpers ********/
 
-  constructor(oauthClientId: string, oauthClientSecret: string) {
+  constructor(oauthClientId: string, oauthClientSecret: string, maxResults: number, chunkSize: number) {
     super()
-    this.salesforceOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
-    this.salesforceCampaignsFormBuilder = new SalesforceCampaignsFormBuilder(oauthClientId, oauthClientSecret)
-    this.salesforceCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret)
+    this.sfdcOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
+    this.sfdcCampaignsFormBuilder = new SalesforceCampaignsFormBuilder(oauthClientId, oauthClientSecret, maxResults)
+    this.sfdcCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret, chunkSize)
   }
 
   /******** OAuth Endpoints ********/
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
-    return this.salesforceOauthHelper.oauthUrl(redirectUri, encryptedState)
+    return this.sfdcOauthHelper.oauthUrl(redirectUri, encryptedState)
   }
 
   async oauthFetchInfo(
     urlParams: { [key: string]: string },
     redirectUri: string,
   ) {
-    return this.salesforceOauthHelper.oauthFetchInfo(urlParams, redirectUri)
+    return this.sfdcOauthHelper.oauthFetchInfo(urlParams, redirectUri)
   }
 
   async oauthCheck(_request: Hub.ActionRequest) {
@@ -95,8 +93,8 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       throw "Missing Salesforce campaign name."
     }
 
-    const qr = request.attachment.dataJSON
-    if (!qr.fields || !qr.data) {
+    const dataJSON = request.attachment.dataJSON
+    if (!dataJSON.fields || !dataJSON.data) {
       throw "Request payload is an invalid format."
     }
 
@@ -105,7 +103,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     }
 
     const fields: any[] = [].concat(
-      ...Object.keys(qr.fields).map((k) => qr.fields[k]),
+      ...Object.keys(dataJSON.fields).map((k) => dataJSON.fields[k]),
     )
 
     const mapper: Mapper[] = []
@@ -153,12 +151,11 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     mapper.forEach((m) => {
       memberIds.push({
         ...m,
-        data: qr.data.map((row: any) => row[m.fieldname].value),
+        data: dataJSON.data.map((row: any) => row[m.fieldname].value),
       })
     })
 
     let response: any = {}
-    let message = ""
     let tokens: Tokens
 
     try {
@@ -166,23 +163,20 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       if (stateJson.access_token && stateJson.refresh_token) {
         tokens = stateJson
       } else {
-        tokens = await this.salesforceOauthHelper.getAccessTokensFromAuthCode(stateJson)
+        tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson)
       }
 
-      // errors with salesforce API will be returned in message to Looker
-      // message will only be visible in Looker if we send a fail status
-      ({ tokens, message } = await this.salesforceCampaignsSendData.sendData(
-        request,
-        memberIds,
-        tokens,
-      ))
+      // passing back connection object to handle access token refresh and update state
+      const { message, sfdcConn } = await this.sfdcCampaignsSendData.sendData(request, memberIds, tokens)
 
       // return a fail status to surface salesforce API errors in the response message
+      // message will only be visible in Looker if we send a fail status
       if (request.formParams.surface_sfdc_errors === "yes") {
         response.success = message.length === 0
       }
 
       response.message = message
+      tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
       response.state = new Hub.ActionState()
       response.state.data = JSON.stringify(tokens)
     } catch (e) {
@@ -193,6 +187,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
+    let tokens: Tokens
 
     // uncomment the below to force a state reset and redo oauth login
     // if (request.params.state_json) {
@@ -200,9 +195,6 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     //   form.state.data = "reset";
     //   return form;
     // }
-
-    let tokens: Tokens
-    let fields: Hub.ActionFormField[]
 
     // state_json can be any of the four:
     //    1. first time user, an empty state: {},
@@ -216,17 +208,16 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
         if (stateJson.access_token && stateJson.refresh_token) {
           tokens = stateJson
         } else {
-          tokens = await this.salesforceOauthHelper.getAccessTokensFromAuthCode(stateJson)
+          tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson)
           form.state = new Hub.ActionState()
           form.state.data = JSON.stringify(tokens)
         }
 
-        ({ fields, tokens } =
-          await this.salesforceCampaignsFormBuilder.formBuilder(
-            request,
-            tokens,
-          ))
+        // passing back connection object to handle access token refresh and update state
+        const { fields, sfdcConn } = await this.sfdcCampaignsFormBuilder.formBuilder(request, tokens)
+
         form.fields = fields
+        tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
         form.state = new Hub.ActionState()
         form.state.data = JSON.stringify(tokens)
 
@@ -237,15 +228,29 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     }
 
     // login form will be displayed if any errrors occur while fetching and building form
-    const loginForm = await this.salesforceOauthHelper.makeLoginForm(request)
+    const loginForm = await this.sfdcOauthHelper.makeLoginForm(request)
     return loginForm
   }
 }
 
-if (process.env.SALESFORCE_CLIENT_ID && process.env.SALESFORCE_CLIENT_SECRET) {
+// Client ID is Salesforce Consumer Key
+// Client Secret is Salesforce Consumer Secret
+// Max results is max number of objects to fetch. Used in the form builder to get existing campaigns (default is 10,000)
+// Chunk size is the number of sObject sent per single request (limit is 200 records)
+if (process.env.SALESFORCE_CLIENT_ID && process.env.SALESFORCE_CLIENT_SECRET
+  && process.env.SALESFORCE_MAX_RESULTS && process.env.SALESFORCE_CHUNK_SIZE) {
+
+  const envMaxResults = parseInt(process.env.SALESFORCE_MAX_RESULTS + "", 10)
+  const maxResults = Number.isInteger(envMaxResults) ? envMaxResults : 10000
+
+  const envChunkSize = parseInt(process.env.SALESFORCE_CHUNK_SIZE + "", 10)
+  const chunkSize = Number.isInteger(envChunkSize) ? envChunkSize : 200
+
   const sfdcCampaigns = new SalesforceCampaignsAction(
     process.env.SALESFORCE_CLIENT_ID,
     process.env.SALESFORCE_CLIENT_SECRET,
+    maxResults,
+    chunkSize,
   )
   Hub.addAction(sfdcCampaigns)
 } else {

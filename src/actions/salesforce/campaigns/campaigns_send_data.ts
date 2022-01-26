@@ -1,7 +1,7 @@
 import * as jsforce from "jsforce"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
-import {CHUNK_SIZE, MemberIds, Tokens} from "../campaigns/salesforce_campaigns"
+import { MemberIds, Tokens } from "../campaigns/salesforce_campaigns"
 import { sfdcConnFromRequest } from "../common/oauth_helper"
 
 interface CampaignMember {
@@ -20,28 +20,15 @@ type MemberType = "ContactId" | "LeadId"
 
 export class SalesforceCampaignsSendData {
   readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
+  readonly chunkSize: number
 
-  constructor(oauthClientId: string, oauthClientSecret: string) {
+  constructor(oauthClientId: string, oauthClientSecret: string, chunkSize: number) {
     this.oauthCreds = { oauthClientId, oauthClientSecret }
+    this.chunkSize = chunkSize
   }
 
-  async sendData(
-    request: Hub.ActionRequest,
-    memberIds: MemberIds[],
-    tokens: Tokens,
-  ) {
-    // const sfdcConn = await salesforceLogin(request);
+  async sendData(request: Hub.ActionRequest, memberIds: MemberIds[], tokens: Tokens) {
     const sfdcConn = await sfdcConnFromRequest(request, tokens, this.oauthCreds)
-
-    // with refresh token we can get new access token and update the state without forcing a re-login
-    let newTokens = { ...tokens }
-    sfdcConn.on("refresh", (newAccessToken: string) => {
-      newTokens = {
-        access_token: newAccessToken,
-        refresh_token: sfdcConn.refreshToken,
-      }
-    })
-
     let campaignId: string
 
     switch (request.formParams.create_or_append) {
@@ -61,6 +48,7 @@ export class SalesforceCampaignsSendData {
         break
       case "append":
         campaignId = request.formParams.campaign_name!
+        break
       // case "replace": // TODO build out replace
     }
 
@@ -74,9 +62,10 @@ export class SalesforceCampaignsSendData {
       }),
     )
 
-    // flattan array of arrays into one big list
+    // flatten array of arrays into one big list
     const memberList = ([] as CampaignMember[]).concat.apply([], memberListColumns)
     const memberCount = memberList.length
+    const memberGrouped = this.chunk(memberList, this.chunkSize)
 
     // POST request with sObject Collections to execute multiple records in a single request
     // https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta
@@ -91,9 +80,6 @@ export class SalesforceCampaignsSendData {
     // /salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_api.htm
 
     // bottom limit = 1,000 requests * 200 members = 200,000 members in 24h period per user
-    const memberGrouped = this.chunk(memberList, CHUNK_SIZE)
-    const memberErrors: MemberErrors[] = []
-    let message = ""
 
     // jsforce uses function overloading for the create function, which causes issues resolving the
     // function signature as the compiler picks the first definition in declaration order, which is
@@ -104,28 +90,13 @@ export class SalesforceCampaignsSendData {
       }),
     )
 
-    records.map((chunk: jsforce.RecordResult[], chunkIndex: number) => {
-      chunk.map((result, index) => {
-        !result.success
-          ? memberErrors.push({
-              memberId: this.getSfdcMemberId(memberGrouped[chunkIndex][index])!,
-              errors: result,
-            })
-          : null
-      })
-    })
+    const cleanErrors = this.cleanErrors(records, memberGrouped)
+    const summary = `Errors with ${cleanErrors.length} out of ${memberCount} members`
+    const errorSummary = `${summary}. ${JSON.stringify(cleanErrors)}`
+    winston.debug(errorSummary)
 
-    if (memberErrors.length > 0) {
-      const cleanErrors = memberErrors.map((me) => {
-        const memberMessage = me.errors.errors.map((e: any) => e.message)
-        return { [me.memberId]: memberMessage }
-      })
-      const summary = `Errors with ${memberErrors.length} out of ${memberCount} members`
-      message = `${summary}. ${JSON.stringify(cleanErrors)}`
-      winston.debug(message)
-    }
-
-    return { tokens: newTokens, message }
+    const message = cleanErrors.length > 0 ? errorSummary : ""
+    return { message, sfdcConn }
   }
 
   chunk(items: CampaignMember[], size: number) {
@@ -139,5 +110,32 @@ export class SalesforceCampaignsSendData {
   getSfdcMemberId(record: CampaignMember) {
     const memberType =  Object.keys(record).filter((key) => !["CampaignId", "Status"].includes(key))[0] as MemberType
     return record[memberType]
+  }
+
+  // filters results to only errors and returns simplified error object:
+  // [
+  //   { abc1: ["Already a campaign member."] },
+  //   { abc2: ["Attempted to add an entity 'abc2' to a campaign 'xyz' more than once.", "Some other error message"] },
+  //   ...
+  // ]
+  cleanErrors(records: any, memberGrouped: CampaignMember[][]) {
+    const memberErrors: MemberErrors[] = []
+
+    records.map((chunk: jsforce.RecordResult[], chunkIndex: number) => {
+      chunk.map((result, index) => {
+        !result.success
+          ? memberErrors.push({
+              memberId: this.getSfdcMemberId(memberGrouped[chunkIndex][index])!,
+              errors: result,
+            })
+          : null
+      })
+    })
+
+    const cleanErrors = memberErrors.map((me) => {
+      const memberMessage = me.errors.errors.map((e: any) => e.message)
+      return { [me.memberId]: memberMessage }
+    })
+    return cleanErrors
   }
 }

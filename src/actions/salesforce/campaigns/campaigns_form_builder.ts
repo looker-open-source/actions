@@ -1,27 +1,19 @@
 import * as jsforce from "jsforce"
 import * as Hub from "../../../hub"
-import { MAX_RESULTS, Tokens } from "../campaigns/salesforce_campaigns"
+import { Tokens } from "../campaigns/salesforce_campaigns"
 import { sfdcConnFromRequest } from "../common/oauth_helper"
 
 export class SalesforceCampaignsFormBuilder {
   readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
+  readonly maxResults: number
 
-  constructor(oauthClientId: string, oauthClientSecret: string) {
+  constructor(oauthClientId: string, oauthClientSecret: string, maxResults: number) {
     this.oauthCreds = { oauthClientId, oauthClientSecret }
+    this.maxResults = maxResults
   }
 
   async formBuilder(request: Hub.ActionRequest, tokens: Tokens) {
-    // const sfdcConn = await salesforceLogin(request);
     const sfdcConn = await sfdcConnFromRequest(request, tokens, this.oauthCreds)
-
-    // with refresh token we can get new access token and update the state without forcing a re-login
-    let newTokens = { ...tokens }
-    sfdcConn.on("refresh", (newAccessToken: string) => {
-      newTokens = {
-        access_token: newAccessToken,
-        refresh_token: sfdcConn.refreshToken,
-      }
-    })
 
     const fields: Hub.ActionFormField[] = [
       {
@@ -44,7 +36,7 @@ export class SalesforceCampaignsFormBuilder {
       },
     ]
     if (Object.keys(request.formParams).length === 0) {
-      return { fields, tokens: newTokens }
+      return { fields, sfdcConn }
     }
     switch (request.formParams.create_or_append) {
       case "create":
@@ -97,7 +89,7 @@ export class SalesforceCampaignsFormBuilder {
       },
     ]
     fields.push(...memberFields)
-    return { fields, tokens: newTokens }
+    return { fields, sfdcConn }
   }
 
   async getCampaignMemberStatuses(sfdcConn: jsforce.Connection) {
@@ -117,7 +109,7 @@ export class SalesforceCampaignsFormBuilder {
     const results: jsforce.QueryResult<any> = await Promise.resolve(
       sfdcConn
         .query("SELECT Id, Name FROM Campaign ORDER BY Name")
-        .run({ maxFetch: MAX_RESULTS }),
+        .run({ maxFetch: this.maxResults }),
       // TODO: only display recent campaigns?
     )
 
