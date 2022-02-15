@@ -1,10 +1,10 @@
 import * as winston from "winston"
 import * as Hub from "../../../hub"
+import { makeBetterErrorMessage, sanitizeError } from "../common/error_utils"
 import { MissingAuthError } from "../common/missing_auth_error"
 import { GoogleOAuthHelper, UseGoogleOAuthHelper } from "../common/oauth_helper"
 import { WrappedResponse } from "../common/wrapped_response"
 import { GoogleAdsActionRequest } from "./lib/ads_request"
-import { makeBetterErrorMessage, sanitizeError } from "./lib/error_utils"
 
 const LOG_PREFIX = "[G Ads Customer Match]"
 
@@ -113,7 +113,15 @@ export class GoogleAdsCustomerMatch
       }
       log("error", "Form error toString:", err.toString())
       log("error", "Form error JSON:", JSON.stringify(err))
-      // Errors from the API client - typically an auth problem
+
+      // AuthorizationError from API client - this occurs when request contains bad loginCid + targetCid combo
+      if (err.code === "403") {
+        wrappedResp.errorPrefix = `Error loading target accounts: ${err.response.data.error.message}.`
+          + ` Please retry loading the form again with the correct login account. `
+        return wrappedResp.returnError(err)
+      }
+
+      // Other errors from the API client - typically an auth problem
       if (err.code) {
         loginForm.fields[0].label =
           `Received error code ${err.code} from the API, so your credentials have been discarded.`

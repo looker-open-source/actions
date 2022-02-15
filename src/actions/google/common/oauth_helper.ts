@@ -2,6 +2,7 @@ import * as gaxios from "gaxios"
 import * as googleAuth from "google-auth-library"
 import { google } from "googleapis"
 import * as Hub from "../../../hub"
+import { sanitizeError } from "./error_utils"
 import { Logger } from "./logger"
 
 // Double dispatch type pattern at work here
@@ -81,7 +82,7 @@ export class GoogleOAuthHelper {
       const url = oauthClient.generateAuthUrl({
         access_type: "offline",
         scope: this.actionInstance.oauthScopes,
-        prompt: "consent",
+        prompt: "select_account",
         state: encryptedPayload,
       })
 
@@ -128,6 +129,7 @@ export class GoogleOAuthHelper {
           this.log("debug", "Ignoring state update response with response code <100")
         } else {
           this.log("error", "Error sending user state to Looker:", err.toString())
+          sanitizeError(err)
           throw err
         }
       }
