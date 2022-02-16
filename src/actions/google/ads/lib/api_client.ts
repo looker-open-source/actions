@@ -1,8 +1,12 @@
 import * as gaxios from "gaxios"
+import * as lodash from "lodash"
+import { sanitizeError as sanitize } from "../../common/error_utils"
+import { Logger } from "../../common/logger"
 
 export class GoogleAdsApiClient {
 
-    constructor(readonly accessToken: string, readonly developerToken: string, readonly loginCid?: string) {}
+    constructor(readonly log: Logger, readonly accessToken: string
+              , readonly developerToken: string, readonly loginCid?: string) {}
 
     async listAccessibleCustomers() {
         const method = "GET"
@@ -51,8 +55,7 @@ export class GoogleAdsApiClient {
       return this.apiCall(method, path, body)
     }
 
-    async createUserList(targetCid: string, newListName: string, newListDescription: string, mobileAppId: string,
-                         uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO") {
+    async createUserList(targetCid: string, newListName: string, newListDescription: string, uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO", mobileAppId?: string) {
       const method = "POST"
       const path = `customers/${targetCid}/userLists:mutate`
       const body = {
@@ -101,11 +104,7 @@ export class GoogleAdsApiClient {
       const body = {
         resource_name: offlineUserDataJobResourceName,
         enable_partial_failure: true,
-        operations: [{
-          create: {
-            user_identifiers: userIdentifiers,
-          },
-        }],
+        operations: userIdentifiers,
       }
 
       return this.apiCall(method, path, body)
@@ -134,8 +133,14 @@ export class GoogleAdsApiClient {
         url,
         data,
         headers,
-        baseURL: "https://googleads.googleapis.com/v8/",
+        baseURL: "https://googleads.googleapis.com/v9/",
       })
+
+      if (process.env.ACTION_HUB_DEBUG) {
+        const apiResponse = lodash.cloneDeep(response)
+        sanitize(apiResponse)
+        this.log("debug", `Response from ${url}: ${JSON.stringify(apiResponse)}`)
+      }
 
       return response.data
     }
