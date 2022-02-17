@@ -13,6 +13,7 @@ export async function allActions(opts?: { lookerVersion?: string | null }) {
   let filtered: Action[]
   if (typeof whitelistNames === "string" && whitelistNames.length > 0) {
     const whitelist = whitelistNames.split(",")
+
     filtered = actions.filter((i) => whitelist.indexOf(i.name) !== -1)
   } else {
     filtered = actions
