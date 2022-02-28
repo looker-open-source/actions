@@ -19,6 +19,10 @@ export enum HeapFields {
   Identity = "identity",
   AccountId = "account_id",
 }
+const logLevel: string = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "debug"
+const logger = new winston.Logger({
+  level: logLevel,
+})
 
 export type HeapField = HeapFields.Identity | HeapFields.AccountId
 
@@ -48,6 +52,7 @@ export class HeapAction extends Hub.Action {
   static HEAP_IDENTITY = process.env.HEAP_IDENTITY
   static HEAP_EVENT_NAME = "Submit Looker Action"
   static LOG_PROGRESS_STEP = 10000
+  static DISPLAY_ERROR_COUNT = 250
 
   description = "Add user and account properties to your Heap dataset"
   label = "Heap"
@@ -68,7 +73,7 @@ export class HeapAction extends Hub.Action {
   async execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
     const maybeValidationError = this.validateRequest(request)
     if (!!maybeValidationError) {
-      winston.error(
+      logger.error(
         `Heap action for envId failed with errors: ${maybeValidationError.message}`,
       )
       return new Hub.ActionResponse({
@@ -87,17 +92,26 @@ export class HeapAction extends Hub.Action {
     const heapField = this.resolveHeapField(propertyType)
     const requestUrl = this.resolveApiEndpoint(propertyType)
     const errors: Error[] = []
-    let rowCount = 0
+    let rowsProcessed = 0
+    let rowsReceived = 0
     let requestBatch: HeapEntity[] = []
     const requestPromises: Promise<void>[] = []
 
     await request.streamJsonDetail({
       onFields: (fieldset) => {
+        logger.debug(`envId ${envId} fieldset ${JSON.stringify(fieldset)}`)
         const allFields = Hub.allFields(fieldset)
+        logger.debug(`envId ${envId} allFields ${JSON.stringify(allFields)}`)
         heapFieldName = this.extractHeapFieldName(allFields, heapFieldLabel)
+        logger.debug(`envId ${envId} heapFieldName ${heapFieldName} heapFieldLabel ${heapFieldLabel}`)
         fieldMap = this.extractFieldMap(allFields)
+        logger.debug(`envId ${envId} fieldMap ${JSON.stringify(fieldMap)}`)
       },
       onRow: (row) => {
+        if (rowsReceived % HeapAction.LOG_PROGRESS_STEP === 0) {
+          logger.info(`Example row for envId ${envId} ${JSON.stringify(row)}`)
+        }
+        rowsReceived += 1
         try {
           const { heapFieldValue, properties } = this.extractPropertiesFromRow(
             row,
@@ -108,7 +122,7 @@ export class HeapAction extends Hub.Action {
           if (!heapFieldValue) {
             return
           }
-          rowCount += 1
+          rowsProcessed += 1
           requestBatch.push({ heapFieldValue, properties })
           if (requestBatch.length === HeapAction.ROWS_PER_BATCH) {
             requestPromises.push(
@@ -122,11 +136,11 @@ export class HeapAction extends Hub.Action {
             )
             requestBatch = []
 
-            if (rowCount % HeapAction.LOG_PROGRESS_STEP === 0) {
-              winston.info(
-                `Processed ${rowCount} rows in ${
-                  rowCount / HeapAction.ROWS_PER_BATCH
-                } batch requests.`,
+            if (rowsProcessed % HeapAction.LOG_PROGRESS_STEP === 0) {
+              logger.info(
+                `Processed ${rowsProcessed} rows in ${
+                  rowsProcessed / HeapAction.ROWS_PER_BATCH
+                } batch requests for envId ${envId}.`,
               )
             }
           }
@@ -151,23 +165,30 @@ export class HeapAction extends Hub.Action {
     try {
       await this.trackLookerAction(
         envId,
-        rowCount,
+        rowsProcessed,
         heapField,
         errors.length === 0 ? "success" : "failure",
       )
     } catch (err) {
-      winston.warn("Heap track call failed.")
+      logger.warn("Heap track call failed.")
       // swallow internal track call error
     }
 
     if (errors.length === 0) {
       return new Hub.ActionResponse({ success: true })
     }
-    const errorMsg = errors.map((err) => err.message).join(", ")
-    winston.error(
-      `Heap action for envId ${envId} failed with errors: ${errorMsg}`,
-    )
-    return new Hub.ActionResponse({ success: false, message: errorMsg })
+    // limit error message to the first N to avoid returning enormous error messages
+    // (arbitrary limit)
+    const errorsToDisplay = errors.slice(0, HeapAction.DISPLAY_ERROR_COUNT)
+    // tell how many errors there were in total since we're only displaying the first N
+    const errorDesc = `Heap action for envId ${envId} failed with ${errors.length} errors ` +
+      (errors.length > HeapAction.DISPLAY_ERROR_COUNT ? `(displaying first ${HeapAction.DISPLAY_ERROR_COUNT})` : "")
+    logger.error(errorDesc)
+    // log first N errors
+    errorsToDisplay.forEach((err) => logger.error(`envId ${envId} error: ${err.message}`))
+    // concat first N errors into a signle errorMsg to return to the looker action hub.
+    const errorMsg = errorsToDisplay.map((err) => err.message).join(", ")
+    return new Hub.ActionResponse({ success: false, message: `${errorDesc} - ${errorMsg}` })
   }
 
   async form() {
@@ -276,7 +297,8 @@ export class HeapAction extends Hub.Action {
     properties: PropertyMap;
   } {
     if (!row.hasOwnProperty(heapFieldName)) {
-      throw new Error(`Found a row without the ${heapFieldLabel} field`)
+      const heapFieldDesc = `(label: ${heapFieldLabel} name: ${heapFieldName})`
+      throw new Error(`Found a row without the ${heapFieldDesc} field. row: ${JSON.stringify(row)}`)
     }
     if (!row[heapFieldName].value) {
       return { heapFieldValue: undefined, properties: {} }
