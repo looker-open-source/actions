@@ -19,10 +19,6 @@ export enum HeapFields {
   Identity = "identity",
   AccountId = "account_id",
 }
-const logLevel: string = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "debug"
-const logger = new winston.Logger({
-  level: logLevel,
-})
 
 export type HeapField = HeapFields.Identity | HeapFields.AccountId
 
@@ -73,7 +69,7 @@ export class HeapAction extends Hub.Action {
   async execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse> {
     const maybeValidationError = this.validateRequest(request)
     if (!!maybeValidationError) {
-      logger.error(
+      winston.error(
         `Heap action for envId failed with errors: ${maybeValidationError.message}`,
       )
       return new Hub.ActionResponse({
@@ -99,17 +95,17 @@ export class HeapAction extends Hub.Action {
 
     await request.streamJsonDetail({
       onFields: (fieldset) => {
-        logger.debug(`envId ${envId} fieldset ${JSON.stringify(fieldset)}`)
+        winston.info(`envId ${envId} fieldset ${JSON.stringify(fieldset)}`)
         const allFields = Hub.allFields(fieldset)
-        logger.debug(`envId ${envId} allFields ${JSON.stringify(allFields)}`)
+        winston.info(`envId ${envId} allFields ${JSON.stringify(allFields)}`)
         heapFieldName = this.extractHeapFieldName(allFields, heapFieldLabel)
-        logger.debug(`envId ${envId} heapFieldName ${heapFieldName} heapFieldLabel ${heapFieldLabel}`)
+        winston.info(`envId ${envId} heapFieldName ${heapFieldName} heapFieldLabel ${heapFieldLabel}`)
         fieldMap = this.extractFieldMap(allFields)
-        logger.debug(`envId ${envId} fieldMap ${JSON.stringify(fieldMap)}`)
+        winston.info(`envId ${envId} fieldMap ${JSON.stringify(fieldMap)}`)
       },
       onRow: (row) => {
         if (rowsReceived % HeapAction.LOG_PROGRESS_STEP === 0) {
-          logger.info(`Example row for envId ${envId} ${JSON.stringify(row)}`)
+          winston.info(`Example row for envId ${envId} ${JSON.stringify(row)}`)
         }
         rowsReceived += 1
         try {
@@ -137,7 +133,7 @@ export class HeapAction extends Hub.Action {
             requestBatch = []
 
             if (rowsProcessed % HeapAction.LOG_PROGRESS_STEP === 0) {
-              logger.info(
+              winston.info(
                 `Processed ${rowsProcessed} rows in ${
                   rowsProcessed / HeapAction.ROWS_PER_BATCH
                 } batch requests for envId ${envId}.`,
@@ -170,7 +166,7 @@ export class HeapAction extends Hub.Action {
         errors.length === 0 ? "success" : "failure",
       )
     } catch (err) {
-      logger.warn("Heap track call failed.")
+      winston.warn("Heap track call failed.")
       // swallow internal track call error
     }
 
@@ -183,9 +179,9 @@ export class HeapAction extends Hub.Action {
     // tell how many errors there were in total since we're only displaying the first N
     const errorDesc = `Heap action for envId ${envId} failed with ${errors.length} errors ` +
       (errors.length > HeapAction.DISPLAY_ERROR_COUNT ? `(displaying first ${HeapAction.DISPLAY_ERROR_COUNT})` : "")
-    logger.error(errorDesc)
+    winston.error(errorDesc)
     // log first N errors
-    errorsToDisplay.forEach((err) => logger.error(`envId ${envId} error: ${err.message}`))
+    errorsToDisplay.forEach((err) => winston.error(`envId ${envId} error: ${err.message}`))
     // concat first N errors into a signle errorMsg to return to the looker action hub.
     const errorMsg = errorsToDisplay.map((err) => err.message).join(", ")
     return new Hub.ActionResponse({ success: false, message: `${errorDesc} - ${errorMsg}` })
