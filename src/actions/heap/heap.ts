@@ -82,7 +82,7 @@ export class HeapAction extends Hub.Action {
       .property_type as HeapPropertyType
     const envId = request.formParams.env_id!
     const heapFieldLabel: string = request.formParams.heap_field!
-    let heapFieldName: string
+    let identityField: Hub.Field
 
     let fieldMap: LookerFieldMap = {} as LookerFieldMap
     const heapField = this.resolveHeapField(propertyType)
@@ -98,8 +98,8 @@ export class HeapAction extends Hub.Action {
         winston.info(`envId ${envId} fieldset ${JSON.stringify(fieldset)}`)
         const allFields = Hub.allFields(fieldset)
         winston.info(`envId ${envId} allFields ${JSON.stringify(allFields)}`)
-        heapFieldName = this.extractHeapFieldName(allFields, heapFieldLabel)
-        winston.info(`envId ${envId} heapFieldName ${heapFieldName} heapFieldLabel ${heapFieldLabel}`)
+        identityField = this.extractHeapFieldByLabel(allFields, heapFieldLabel)
+        winston.info(`envId ${envId} heapFieldName ${identityField} heapFieldLabel ${heapFieldLabel}`)
         fieldMap = this.extractFieldMap(allFields)
         winston.info(`envId ${envId} fieldMap ${JSON.stringify(fieldMap)}`)
       },
@@ -111,8 +111,7 @@ export class HeapAction extends Hub.Action {
         try {
           const { heapFieldValue, properties } = this.extractPropertiesFromRow(
             row,
-            heapFieldName,
-            heapFieldLabel,
+            identityField,
             fieldMap,
           )
           if (!heapFieldValue) {
@@ -243,18 +242,25 @@ export class HeapAction extends Hub.Action {
     }
   }
 
-  private extractHeapFieldName(fields: Hub.Field[], heapFieldLabel: string) {
-    const heapFields = fields.filter((field) => field.label === heapFieldLabel)
-    if (heapFields.length !== 1) {
+  private extractHeapFieldByLabel(fields: Hub.Field[], heapFieldLabel: string): Hub.Field {
+    const heapField = fields.find((field) => field.label === heapFieldLabel)
+    if (!heapField) {
       throw new Error(
         `Heap field (${heapFieldLabel}) is missing in the query result.`,
       )
     }
-    return heapFields[0].name
+    return heapField
   }
 
+  // we add all labels that might be used as keys for the rows
   private extractFieldMap(allFields: Hub.Field[]): LookerFieldMap {
     return allFields.reduce((fieldMap: LookerFieldMap, field: Hub.Field) => {
+      if (field.field_group_label) {
+        fieldMap[field.field_group_label] = field
+      }
+      if (field.label_short) {
+        fieldMap[field.label_short] = field
+      }
       const fieldName = field.name
       fieldMap[fieldName] = field
       return fieldMap
@@ -283,27 +289,39 @@ export class HeapAction extends Hub.Action {
     }
   }
 
+  private extractRequiredField(row: Hub.JsonDetail.Row, field: Hub.Field): {key: string, value: any} {
+    // we have observed different behavior based on how the view is created
+    // each of the following could potentially be used as keys of the field,
+    // so we check each one until we find one that exists.
+    const propertiesToCheck = [field.name, field.label_short, field.field_group_label]
+    const fieldName = propertiesToCheck.find((f) => !!f && row.hasOwnProperty(f))
+    if (fieldName) {
+      return {
+        key: fieldName,
+        value: row[fieldName].value,
+      }
+    }
+    const heapFieldDesc = `${JSON.stringify(propertiesToCheck)}`
+    throw new Error(`Found a row without the ${heapFieldDesc} field. row: ${JSON.stringify(row)}`)
+  }
+
   private extractPropertiesFromRow(
     row: Hub.JsonDetail.Row,
-    heapFieldName: string,
-    heapFieldLabel: string,
+    identityField: Hub.Field,
     allFieldMap: LookerFieldMap,
   ): {
     heapFieldValue: string | undefined;
     properties: PropertyMap;
   } {
-    if (!row.hasOwnProperty(heapFieldName)) {
-      const heapFieldDesc = `(label: ${heapFieldLabel} name: ${heapFieldName})`
-      throw new Error(`Found a row without the ${heapFieldDesc} field. row: ${JSON.stringify(row)}`)
-    }
-    if (!row[heapFieldName].value) {
+    const identityFieldValue = this.extractRequiredField(row, identityField)
+    if (!identityFieldValue.value) {
       return { heapFieldValue: undefined, properties: {} }
     }
-    const heapFieldValue = row[heapFieldName].value.toString()
+    const heapFieldValue = identityFieldValue.value.toString()
 
     const properties: { [K in string]: string } = {}
     for (const [fieldName, cell] of Object.entries(row)) {
-      if (fieldName !== heapFieldName) {
+      if (fieldName !== identityFieldValue.key) {
         const field = allFieldMap[fieldName]
         // Field labels are the original name of the property that has not been sanitized or snake-cased.
         const propertyName =
