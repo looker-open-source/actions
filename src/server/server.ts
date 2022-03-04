@@ -245,7 +245,7 @@ export default class Server implements Hub.RouteBuilder {
       }
 
       const headerValue = req.header("authorization")
-      const tokenMatch = headerValue ? headerValue.match(TOKEN_REGEX) : "undefined"
+      const tokenMatch = headerValue ? headerValue.match(TOKEN_REGEX) : undefined
       if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
         res.status(403)
         res.json({success: false, error: "Invalid 'Authorization' header."})
@@ -316,7 +316,7 @@ export default class Server implements Hub.RouteBuilder {
   }
 
   private absUrl(rootRelativeUrl: string) {
-    return `http://localhost:8080${rootRelativeUrl}`
+    return `${process.env.ACTION_HUB_BASE_URL}${rootRelativeUrl}`
   }
 
 }
