@@ -7,30 +7,26 @@ import { FirebaseAction } from "./firebase"
 
 const action = new FirebaseAction()
 
-// function expectFirebaseMatch(request: Hub.ActionRequest, uploadImageMatch: any, sendMessageMatch: any) {
-//
-//   const sendSpyUploadImage = sinon.spy(async () => {
-//     Promise.resolve("image")
-//     })
-//   const sendSpySendMessage = sinon.spy(async () => Promise.resolve())
-//
-//   const stubClientUploadImage = sinon.stub(action as any, "uploadImage")
-//     .callsFake(() => ({
-//       uploadImage: sendSpyUploadImage,
-//     }))
-//
-//   const stubClientSendMessage = sinon.stub(action as any, "verifyAndSendMessage")
-//     .callsFake(() => ({
-//       verifyAndSendMessage: sendSpySendMessage,
-//     }))
-//
-//   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-//     chai.expect(sendSpyUploadImage).to.have.been.calledWithMatch(uploadImageMatch)
-//     chai.expect(sendSpySendMessage).to.have.been.calledWithMatch(sendMessageMatch)
-//     stubClientUploadImage.restore()
-//     stubClientSendMessage.restore()
-//   })
-// }
+function expectFirebaseMatch(request: Hub.ActionRequest, uploadImageMatch: any, sendMessageMatch: any) {
+
+  const spyUploadImage = sinon.spy(async () => {
+    Promise.resolve("image")
+    })
+  const spySendMessage = sinon.spy(async () => Promise.resolve())
+
+  const stubClientUploadImage = sinon.stub(action as any, "uploadImage")
+    .callsFake(spyUploadImage)
+
+  const stubClientSendMessage = sinon.stub(action as any, "verifyAndSendMessage")
+    .callsFake(spySendMessage)
+
+  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
+    chai.expect(stubClientUploadImage).to.have.been.calledWithMatch(uploadImageMatch)
+    chai.expect(stubClientSendMessage).to.have.been.calledWithMatch(sendMessageMatch)
+    stubClientUploadImage.restore()
+    stubClientSendMessage.restore()
+  })
+}
 
 describe(`${action.constructor.name} unit tests`, () => {
 
@@ -58,6 +54,24 @@ describe(`${action.constructor.name} unit tests`, () => {
         .deep.equal(response)
     })
 
+    it("errors if there is no valid title.", () => {
+      const response = new Hub.ActionResponse({success: false, message: "Needs a valid title."})
+      const request = new Hub.ActionRequest()
+      const alertIdData = {"alertId": "123"}
+      request.formParams = {data: alertIdData as any}
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+
+      const sendSpyUploadImage = sinon.spy(async () => Promise.resolve())
+      const stubClientUploadImage = sinon.stub(action as any, "uploadImage")
+        .callsFake(sendSpyUploadImage)
+
+      return chai.expect(action.execute(request)).to.eventually
+        .deep.equal(response).then(() => {
+          stubClientUploadImage.restore()
+        })
+    })
+
     it("no errors if there is valid request", () => {
       const response = new Hub.ActionResponse({success: true})
       const request = new Hub.ActionRequest()
@@ -65,9 +79,35 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {title: "title", data: alertIdData as any}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
-//       return expectFirebaseMatch(request, {request: request}, {params: request.formParams, image: "image"})
+
+      const sendSpyUploadImage = sinon.spy(async () => Promise.resolve())
+      const stubClientUploadImage = sinon.stub(action as any, "uploadImage")
+        .callsFake(sendSpyUploadImage)
+
       return chai.expect(action.execute(request)).to.eventually
-        .deep.equal(response)
+        .deep.equal(response).then(() => {
+          stubClientUploadImage.restore()
+        })
+    })
+
+    it("no errors if there is valid deviceId's", () => {
+      const request = new Hub.ActionRequest()
+      const alertIdData = {"alertId": "123"}
+      const deviceIdData = {"deviceIds": [{"userId": "1", "deviceId": "1"}, {"userId": "1", "deviceId": "1"}]}
+      request.formParams = {title: "title", data: alertIdData as any, deviceIds: deviceIdData as any}
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+
+      return expectFirebaseMatch(request, request, request.formParams)
+    })
+
+    it("Check right methods being called", () => {
+      const request = new Hub.ActionRequest()
+      const alertIdData = {"alertId": "123"}
+      request.formParams = {title: "title", data: alertIdData as any}
+      request.attachment = {}
+      request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
+      return expectFirebaseMatch(request, request, request.formParams)
     })
   })
 })

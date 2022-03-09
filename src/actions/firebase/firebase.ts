@@ -1,5 +1,6 @@
 	import * as Hub from "../../hub"
 	import * as admin from 'firebase-admin';
+	import * as app from 'firebase-admin/app';
 
 	export class FirebaseAction extends Hub.Action {
 
@@ -15,18 +16,24 @@
       contentAvailable: true,
       mutableContent: true
 	  }
-	  static firebaseAdmin = admin.initializeApp({
-								credential: admin.credential.cert({projectId: process.env.FIREBASE_PROJECT_ID,
-																   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-																   privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-																   }),
-								databaseURL: process.env.FIREBASE_DATABASE,
-							});
+	  static firebaseAdmin: app.App
 	  params = []
 	  supportedActionTypes = [Hub.ActionType.Query]
 	  supportedFormats = [Hub.ActionFormat.JsonDetail]
 	  supportedFormattings = [Hub.ActionFormatting.Unformatted]
 	  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+
+    static setFirebaseClient() {
+      if (!FirebaseAction.firebaseAdmin) {
+        FirebaseAction.firebaseAdmin = admin.initializeApp({
+        								credential: admin.credential.cert({projectId: process.env.FIREBASE_PROJECT_ID,
+        																   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        																   privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        																   }),
+        								databaseURL: process.env.FIREBASE_DATABASE,
+        							});
+      }
+    }
 
 	  async execute(request: Hub.ActionRequest) {
       let response = new Hub.ActionResponse({success: true})
@@ -105,6 +112,7 @@
 
     async sendMessageToDevice(deviceId: string, payload: admin.messaging.MessagingPayload, options?: admin.messaging.MessagingOptions): Promise<any> {
       return new Promise((resolve, reject) => {
+        FirebaseAction.setFirebaseClient()
         admin.messaging().sendToDevice(deviceId, payload, options)
           .then( (_: any) => {
             resolve()
@@ -124,6 +132,7 @@
       try {
         if (request.attachment?.dataBuffer) {
           return new Promise((resolve, reject) => {
+            FirebaseAction.setFirebaseClient()
             let dateString = new Date().toISOString()
             let alertId = data.alertId ?? ""
             const destFileName = dateString + alertId;
