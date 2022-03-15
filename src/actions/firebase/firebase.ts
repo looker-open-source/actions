@@ -1,27 +1,27 @@
-	import * as Hub from "../../hub"
-	import * as admin from 'firebase-admin';
-	import * as app from 'firebase-admin/app';
+  import * as Hub from "../../hub"
+  import * as admin from 'firebase-admin';
+  import * as app from 'firebase-admin/app';
 
-	export class FirebaseAction extends Hub.Action {
+  export class FirebaseAction extends Hub.Action {
 
-	  name = "firebase"
-	  label = "Firebase"
-	  iconName = "firebase/firebase.png"
-	  description = "Use firebase to send push notifications to mobile."
-	  storageBucket = process.env.FIREBASE_BUCKET
-	  contentType = "image/jpeg"
-	  notificationOptions = {
+    name = "firebase"
+    label = "Firebase"
+    iconName = "firebase/firebase.png"
+    description = "Use firebase to send push notifications to mobile."
+    storageBucket = process.env.FIREBASE_BUCKET
+    contentType = "image/jpeg"
+    notificationOptions = {
       priority: "high",
       timeToLive: 60 * 60 * 24,
       contentAvailable: true,
       mutableContent: true
-	  }
-	  static firebaseAdmin: app.App
-	  params = []
-	  supportedActionTypes = [Hub.ActionType.Query]
-	  supportedFormats = [Hub.ActionFormat.JsonDetail]
-	  supportedFormattings = [Hub.ActionFormatting.Unformatted]
-	  supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+    }
+    static firebaseAdmin: app.App
+    params = []
+    supportedActionTypes = [Hub.ActionType.Query]
+    supportedFormats = [Hub.ActionFormat.JsonDetail]
+    supportedFormattings = [Hub.ActionFormatting.Unformatted]
+    supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
 
     static setFirebaseClient() {
       if (!FirebaseAction.firebaseAdmin) {
@@ -36,7 +36,7 @@
       }
     }
 
-	  async execute(request: Hub.ActionRequest) {
+    async execute(request: Hub.ActionRequest) {
       let response = new Hub.ActionResponse({success: true})
       let data: any = {}
       if (request.formParams.data) {
@@ -50,7 +50,7 @@
       let imageName = await this.uploadImage(request)
       await this.verifyAndSendMessage(request.formParams, imageName)
       return new Hub.ActionResponse(response)
-	  }
+    }
 
     async verifyAndSendMessage(params: Hub.ParamMap, imageName: string): Promise<any> {
       return new Promise(async (resolve, reject) => {
@@ -152,7 +152,7 @@
       const form = new Hub.ActionForm()
       form.fields = []
       return form
-	  }
-	}
+    }
+  }
 
-	Hub.addAction(new FirebaseAction())
+  Hub.addAction(new FirebaseAction())
