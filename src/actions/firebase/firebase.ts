@@ -6,9 +6,9 @@
 
 	  name = "firebase"
 	  label = "Firebase"
-	  iconName = "airtable/airtable.png"
+	  iconName = "firebase/firebase.png"
 	  description = "Use firebase to send push notifications to mobile."
-	  storageBucket = 'gs://looker-9d4d2.appspot.com'
+	  storageBucket = process.env.FIREBASE_BUCKET
 	  contentType = "image/jpeg"
 	  notificationOptions = {
       priority: "high",
@@ -26,32 +26,29 @@
     static setFirebaseClient() {
       if (!FirebaseAction.firebaseAdmin) {
         FirebaseAction.firebaseAdmin = admin.initializeApp({
-        								credential: admin.credential.cert({projectId: process.env.FIREBASE_PROJECT_ID,
-        																   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        																   privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        																   }),
-        								databaseURL: process.env.FIREBASE_DATABASE,
-        							});
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+          }),
+          databaseURL: process.env.FIREBASE_DATABASE,
+        });
       }
     }
 
 	  async execute(request: Hub.ActionRequest) {
       let response = new Hub.ActionResponse({success: true})
-      try {
-        let data: any = {}
-        if (request.formParams.data) {
-          data = request.formParams.data
-          if (!data.alertId) {
-            throw "Need Valid AlertId."
-          }
-        } else {
-          throw "Need valid notification data."
+      let data: any = {}
+      if (request.formParams.data) {
+        data = request.formParams.data
+        if (!data.alertId) {
+          throw "Need Valid AlertId."
         }
-        let imageName = await this.uploadImage(request)
-        await this.verifyAndSendMessage(request.formParams, imageName)
-      } catch(e) {
-          response = new Hub.ActionResponse({success: false, message: e})
+      } else {
+        throw "Need valid notification data."
       }
+      let imageName = await this.uploadImage(request)
+      await this.verifyAndSendMessage(request.formParams, imageName)
       return new Hub.ActionResponse(response)
 	  }
 
@@ -79,9 +76,9 @@
           if (deviceIdObject.length == 0) {
             resolve()
           }
-          await userObj.forEach(async (userDevices) => {
+          for (let userDevices of userObj) {
             let devices = userDevices as any[]
-            await devices.forEach(async (device, index) => {
+            for (let device of devices) {
               if (device.device_id && device.user_id) {
                 let deviceId = device.device_id.toString()
                 notificationData.userId = device.user_id.toString()
@@ -96,14 +93,12 @@
                   reject(error)
                 }
               }
-              if (index === devices.length -1) {
-                resolve()
-              }
-            })
-          });
+            }
+          }
         } catch (error) {
           reject(error)
         }
+        resolve()
       })
       .catch((error) => {
         throw error
@@ -129,31 +124,27 @@
     async uploadImage(request: Hub.ActionRequest): Promise<any> {
       let data = request.formParams.data as any
 
-      try {
-        if (request.attachment?.dataBuffer) {
-          return new Promise((resolve, reject) => {
-            FirebaseAction.setFirebaseClient()
-            let dateString = new Date().toISOString()
-            let alertId = data.alertId ?? ""
-            const destFileName = dateString + alertId;
-            const fileCloud = admin.storage().bucket(this.storageBucket).file(destFileName);
-              fileCloud.save(request.attachment?.dataBuffer!, {
-                metadata: {
-                  contentType: this.contentType
-                }
-               }, (err) => {
-                if (err) {
-                  reject(err)
-                }
-                resolve(destFileName)
-            });
-          })
-        } else {
-          return
-        }
-
-      } catch (e) {
-        return
+      if (request.attachment?.dataBuffer) {
+        return new Promise((resolve, reject) => {
+          FirebaseAction.setFirebaseClient()
+          let dateString = new Date().toISOString()
+          let alertId = data.alertId ?? ""
+          let instance = data.instance ?? ""
+          const destFileName = instance + dateString + alertId;
+          const fileCloud = admin.storage().bucket(this.storageBucket).file(destFileName);
+            fileCloud.save(request.attachment?.dataBuffer!, {
+              metadata: {
+                contentType: this.contentType
+              }
+            }, (err) => {
+            if (err) {
+              reject(err)
+            }
+            resolve(destFileName)
+          });
+        })
+      } else {
+        throw "Need valid image data"
       }
     }
 

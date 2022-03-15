@@ -32,18 +32,16 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   describe("action", () => {
     it("errors if there is no notification data", () => {
-      const response = new Hub.ActionResponse({success: false, message: "Need valid notification data."})
       const request = new Hub.ActionRequest()
       request.formParams = {}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
       return chai.expect(action.execute(request)).to.eventually
-        .deep.equal(response)
+              .be.rejectedWith("Need valid notification data.")
     })
 
     it("errors if there is no alertId.", () => {
-      const response = new Hub.ActionResponse({success: false, message: "Need Valid AlertId."})
       const request = new Hub.ActionRequest()
       let dashboardData = {"dashboardId": "123"}
       request.formParams = {title: "title", "data": JSON.stringify(dashboardData)}
@@ -51,11 +49,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
       return chai.expect(action.execute(request)).to.eventually
-        .deep.equal(response)
+                    .be.rejectedWith("Need Valid AlertId.")
     })
 
     it("errors if there is no valid title.", () => {
-      const response = new Hub.ActionResponse({success: false, message: "Needs a valid title."})
       const request = new Hub.ActionRequest()
       const alertIdData = {"alertId": "123"}
       request.formParams = {data: alertIdData as any}
@@ -67,7 +64,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         .callsFake(sendSpyUploadImage)
 
       return chai.expect(action.execute(request)).to.eventually
-        .deep.equal(response).then(() => {
+        .be.rejectedWith("Needs a valid title.").then(() => {
           stubClientUploadImage.restore()
         })
     })
