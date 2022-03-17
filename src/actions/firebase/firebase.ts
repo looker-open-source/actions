@@ -1,7 +1,10 @@
+import * as winston from "winston"
 import * as Hub from "../../hub"
 import * as admin from 'firebase-admin';
 import * as app from 'firebase-admin/app';
 import { v4 } from 'uuid'
+
+const LOG_PREFIX = "[GA Data Import]"
 
 export class FirebaseAction extends Hub.Action {
 
@@ -149,6 +152,17 @@ export class FirebaseAction extends Hub.Action {
     form.fields = []
     return form
   }
+}
+
+if (process.env.FIREBASE_PROJECT_ID
+  && process.env.FIREBASE_CLIENT_EMAIL
+  && process.env.FIREBASE_PRIVATE_KEY
+  && process.env.FIREBASE_DATABASE
+  && process.env.FIREBASE_BUCKET
+  ) {
+    Hub.addAction(new FirebaseAction())
+} else {
+    winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)
 }
 
 Hub.addAction(new FirebaseAction())
