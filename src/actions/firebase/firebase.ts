@@ -50,7 +50,7 @@ export class FirebaseAction extends Hub.Action {
     }
     let imageName = await this.uploadImage(request)
     await this.verifyAndSendMessage(request.formParams, imageName)
-    return new Hub.ActionResponse(response)1
+    return new Hub.ActionResponse(response)
   }
 
   async verifyAndSendMessage(params: Hub.ParamMap, imageName: string): Promise<any> {
