@@ -2,7 +2,7 @@ import * as https from "request-promise-native"
 
 import {GaxiosResponse} from "gaxios"
 import { drive_v3, google } from "googleapis"
-import {Credentials, OAuth2Client} from "googleapis/node_modules/google-auth-library"
+import {Credentials, OAuth2Client} from "google-auth-library"
 
 import * as winston from "winston"
 import * as Hub from "../../../hub"
