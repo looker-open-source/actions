@@ -1,6 +1,6 @@
 import * as gaxios from "gaxios"
-import { google } from "googleapis"
 import * as googleAuth from "google-auth-library"
+import { google } from "googleapis"
 import * as Hub from "../../../hub"
 import { sanitizeError } from "./error_utils"
 import { Logger } from "./logger"
