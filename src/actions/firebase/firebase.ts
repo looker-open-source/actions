@@ -27,6 +27,7 @@ export class FirebaseAction extends Hub.Action {
   iconName = "firebase/firebase.png"
   description = "Use firebase to send push notifications to mobile."
   storageBucket = process.env.FIREBASE_BUCKET
+  minimumSupportedLookerVersion = "22.3.0"
   contentType = "image/jpeg"
   notificationOptions = {
     priority: "high",
