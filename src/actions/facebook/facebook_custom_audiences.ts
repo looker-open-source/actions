@@ -24,6 +24,7 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
   readonly usesStreaming = true
   readonly requiredFields = []
   readonly params = []
+  executeInOwnProcess = true
 
   readonly oauthClientId: string
   readonly oauthClientSecret: string
@@ -58,7 +59,7 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
       const accessToken = await this.getAccessTokenFromRequest(hubRequest)
       if (isAlreadyAuthenticated && accessToken) {
         const facebookApi = new FacebookCustomAudiencesApi(accessToken)
-        const actionForm = formBuilder.generateActionForm(hubRequest, facebookApi)
+        const actionForm = await formBuilder.generateActionForm(hubRequest, facebookApi)
         return actionForm
       }
     } catch (err) {

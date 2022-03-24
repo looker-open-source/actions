@@ -14,6 +14,7 @@ const action = new FacebookCustomAudiencesAction(
   testOAuthClientId,
   testOAuthClientSecret,
 )
+action.executeInOwnProcess = false
 
 describe(`${action.constructor.name} class`, () => {
   // Use a sandbox to avoid interaction with other test files

@@ -2,7 +2,7 @@
 
 ## Send data to Facebook Custom Audiences
 
-The Facebook Custom Audiences Action enables you to create audiences based on your first-party data and send them to Facebook Ads Custom Audiences. You authenticate with your Facebook account and then you're able to send one-off or recurring uploads to Facebook Ads.
+The Facebook Custom Audiences Action enables you to create audiences based on your first-party data and send them to Facebook Ads Custom Audiences. You authenticate with your Facebook account and then you're able to send one-off or recurring uploads to a [customer list Custom Audience](https://www.facebook.com/business/help/744354708981227?id=2469097953376494).
 
 ## Enable the action
 
@@ -96,8 +96,7 @@ Selecting a delivery option opens the Scheduler for Explores and Looks. Enter a 
 
 1.  Select the **Facebook Custom Audiences** icon from the **Where should this data go?** section of the Scheduler.
 2.  The first time you deliver to this destination, you must authenticate with your Facebook OAuth credentials. In the **Facebook Custom Audiences** section of the Scheduler, click the **Sign in with Facebook** button.
-3.  In the **Sign in with Facebook OAuth** screen, select your business Facebook account. Check the box next to the permissions you would like to grant the Looker app. Click **Continue** to
-    confirm your choice to grant the requested permissions. If your login is successful, you will see a message to close the browser tab and return to the Scheduler.
+3.  In the **Sign in with Facebook OAuth** screen, select your business Facebook account. Check the box next to the permissions you would like to grant the Looker app. Click **Continue** to confirm your choice to grant the requested permissions. If your login is successful, you will see a message to close the browser tab and return to the Scheduler.
 4.  Back in the **Facebook Custom Audiences** section of the Scheduler, click the **Verify credentials** button.
 5.  Select your business account from the **Choose a business** drop-down. This is the account that your ads account falls under. Typically a business account and not your personal Facebook account.
 6.  Select your ads account from the **Choose a Facebook ad account** drop-down.
@@ -108,9 +107,7 @@ Selecting a delivery option opens the Scheduler for Explores and Looks. Enter a 
     1. If you select **Update existing audience** or **Replace existing audience**, pick which audience you want to append to from the following drop-down.
     2. If you select **Create new audience**, enter values for the name and description.
 
-8.  Determine if you want the data to be hashed prior to delivery. All
-    personal data must be normalized and hashed before uploading to Facebook
-    Ads. If your data is not yet hashed, select **Yes** and Looker will attempt to hash the data according to Facebook Ads requirements. If you select **No**, then the data will be sent as it appears in Looker, which means that the data should already be normalized and hashed within your database.
+8.  Determine if you want the data to be hashed prior to delivery. All personal data must be normalized and hashed before uploading to Facebook Ads. If your data is not yet hashed, select **Yes** and Looker will attempt to hash the data according to Facebook Ads requirements. If you select **No**, then the data will be sent as it appears in Looker, which means that the data should already be normalized and hashed within your database.
 
     > If the data is not hashed correctly, your customer list will not match any audiences in Facebook Ads.
 

@@ -287,8 +287,7 @@ export default class FacebookCustomAudiencesExecutor {
         }
       }
       if (!tagMatched) {
-        winston.debug("info", `Could not match field ${columnLabel}
-        by tags or regex. Dropping it from upload.`)
+        winston.debug("info", `Could not match field ${columnLabel} by tags or regex. Dropping it from upload.`)
       }
     }
     const formattedRow = this.getFormattedRow(row, this.schema)
@@ -399,8 +398,8 @@ OUT
       }
       return transformFunction(formattedRow)
     })
-    return transformedRow.length === 1 ? transformedRow[0] : transformedRow
-    // unwrap an array of one entry, per facebook docs
+    // return array for each row
+    return transformedRow
   }
 
   private normalizeRow(row: any) {
