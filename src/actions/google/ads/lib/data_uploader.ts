@@ -68,7 +68,8 @@ export class GoogleAdsUserListUploader {
       })
     } catch (errorReport) {
       // TODO: the oboe fail() handler sends an errorReport object, but that might not be the only thing we catch
-      this.log("error", "Streaming parse failure:", errorReport.toString())
+      this.log("error", "Streaming parse failure toString:", errorReport.toString())
+      this.log("error", "Streaming parse failure JSON:", JSON.stringify(errorReport))
     }
     await Promise.all(this.batchPromises)
     this.log("info",
@@ -109,7 +110,7 @@ export class GoogleAdsUserListUploader {
 
   private handleRow(row: any) {
     const output = this.transformRow(row)
-    this.rowQueue.push(...output)
+    this.rowQueue.push(output)
   }
 
   private transformRow(row: any) {
@@ -124,7 +125,8 @@ export class GoogleAdsUserListUploader {
       }
       return lodash.set({} as any, outputPath, outputValue)
     })
-    return outputCells.filter(Boolean)
+
+    return { create: { user_identifiers: outputCells.filter(Boolean)}}
   }
 
   // Formatting guidelines: https://support.google.com/google-ads/answer/7476159?hl=en
@@ -141,6 +143,7 @@ export class GoogleAdsUserListUploader {
     const batch = this.rowQueue.splice(0, BATCH_SIZE - 1)
     this.batchQueue.push(batch)
     this.batchPromises.push(this.sendBatch())
+    this.log("debug", `Sent batch number: ${this.numBatches}`)
   }
 
   // The Ads API seems to generate a concurrent modification exception if we have multiple
@@ -150,11 +153,13 @@ export class GoogleAdsUserListUploader {
     if (this.currentRequest !== undefined || this.batchQueue.length === 0) {
       return
     }
-    const currentBatch = this.batchQueue.shift()
-    this.currentRequest = this.adsExecutor.addDataJobOperations(currentBatch)
-    await this.currentRequest
-    this.currentRequest = undefined
-    return this.sendBatch()
+    await this.adsRequest.checkTokens().then(async () => {
+      const currentBatch = this.batchQueue.shift()
+      this.currentRequest = this.adsExecutor.addDataJobOperations(currentBatch)
+      await this.currentRequest
+      this.currentRequest = undefined
+      return this.sendBatch()
+    })
   }
 
 }

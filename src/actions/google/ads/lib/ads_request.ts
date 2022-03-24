@@ -46,7 +46,8 @@ export class GoogleAdsActionRequest {
   }
 
   async checkTokens() {
-    if ( this.userState.tokens.expiry_date == null || this.userState.tokens.expiry_date < Date.now() ) {
+    // adding 5 minutes to expiry_date check to handle refresh edge case
+    if ( this.userState.tokens.expiry_date == null || this.userState.tokens.expiry_date < (Date.now() + 5 * 60000) ) {
       this.log("debug", "Tokens appear expired; attempting refresh.")
 
       const data = await this.actionInstance.oauthHelper.refreshAccessToken(this.userState.tokens)
@@ -62,7 +63,7 @@ export class GoogleAdsActionRequest {
   }
 
   setApiClient() {
-    this.apiClient = new GoogleAdsApiClient(this.accessToken, this.developerToken, this.loginCid)
+    this.apiClient = new GoogleAdsApiClient(this.log, this.accessToken, this.developerToken, this.loginCid)
   }
 
   get accessToken() {

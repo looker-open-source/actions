@@ -34,7 +34,7 @@ There are a couple of ways to contribute actions for Looker:
 
 ## Issues and Requests
 
-Head over to [the issue tracker](https://github.com/looker/actions/issues) to report a bug or requst a feature for our official action hub.
+Head over to [the issue tracker](https://github.com/looker-open-source/actions/issues) to report a bug or requst a feature for our official action hub.
 
 ## On-Premise Deployment
 
