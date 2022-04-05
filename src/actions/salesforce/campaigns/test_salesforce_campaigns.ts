@@ -76,6 +76,10 @@ describe(`${action.constructor.name} class`, () => {
       expect(action.supportedDownloadSettings).to.deep.equal(["push"])
     })
 
+    it("minimumSupportedLookerVersion", () => {
+      expect(action.minimumSupportedLookerVersion).to.deep.equal("22.6.0")
+    })
+
     it("usesStreaming", () => {
       expect(action.usesStreaming).to.be.false
     })
