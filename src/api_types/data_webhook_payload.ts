@@ -6,8 +6,7 @@ import { DataWebhookPayloadScheduledPlan } from './data_webhook_payload_schedule
 export enum DataWebhookPayloadType {
   Cell = 'cell',
   Query = 'query',
-  Dashboard = 'dashboard',
-  None = 'none'
+  Dashboard = 'dashboard'
 }
 
 export interface DataWebhookPayload {
