@@ -7,21 +7,14 @@ import { FirebaseAction } from "./firebase"
 
 const action = new FirebaseAction()
 
-function expectFirebaseMatch(request: Hub.ActionRequest, uploadImageMatch: any, sendMessageMatch: any) {
-
-  const spyUploadImage = sinon.spy(async () => Promise.resolve())
+function expectFirebaseMatch(request: Hub.ActionRequest, sendMessageMatch: any) {
   const spySendMessage = sinon.spy(async () => Promise.resolve())
-
-  const stubClientUploadImage = sinon.stub(action as any, "uploadImage")
-    .callsFake(spyUploadImage)
 
   const stubClientSendMessage = sinon.stub(action as any, "verifyAndSendMessage")
     .callsFake(spySendMessage)
 
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(stubClientUploadImage).to.have.been.calledWithMatch(uploadImageMatch)
     chai.expect(stubClientSendMessage).to.have.been.calledWithMatch(sendMessageMatch)
-    stubClientUploadImage.restore()
     stubClientSendMessage.restore()
   })
 }
@@ -57,14 +50,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-      const sendSpyUploadImage = sinon.spy(async () => Promise.resolve())
-      const stubClientUploadImage = sinon.stub(action as any, "uploadImage")
-        .callsFake(sendSpyUploadImage)
-
       return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Needs a valid title.").then(() => {
-          stubClientUploadImage.restore()
-        })
+        .be.rejectedWith("Needs a valid title.")
     })
 
     it("no errors if there is valid request", () => {
@@ -75,14 +62,8 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-      const sendSpyUploadImage = sinon.spy(async () => Promise.resolve())
-      const stubClientUploadImage = sinon.stub(action as any, "uploadImage")
-        .callsFake(sendSpyUploadImage)
-
       return chai.expect(action.execute(request)).to.eventually
-        .deep.equal(response).then(() => {
-          stubClientUploadImage.restore()
-        })
+        .deep.equal(response)
     })
 
     it("no errors if there is valid deviceId's", () => {
@@ -93,7 +74,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
-      return expectFirebaseMatch(request, request, request.formParams)
+      return expectFirebaseMatch(request, request.formParams)
     })
 
     it("Check right methods being called", () => {
@@ -102,7 +83,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {title: "title", data: alertIdData as any}
       request.attachment = {}
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
-      return expectFirebaseMatch(request, request, request.formParams)
+      return expectFirebaseMatch(request, request.formParams)
     })
   })
 })

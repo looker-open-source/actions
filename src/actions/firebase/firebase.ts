@@ -36,7 +36,7 @@ export class FirebaseAction extends Hub.Action {
     mutableContent: true,
   }
   params = []
-  supportedActionTypes = [Hub.ActionType.None]
+  supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
@@ -52,12 +52,11 @@ export class FirebaseAction extends Hub.Action {
     } else {
       throw "Need valid notification data."
     }
-    const imageName = await this.uploadImage(request)
-    await this.verifyAndSendMessage(request.formParams, imageName)
+    await this.verifyAndSendMessage(request.formParams)
     return new Hub.ActionResponse(response)
   }
 
-  async verifyAndSendMessage(params: Hub.ParamMap, imageName: string): Promise<any> {
+  async verifyAndSendMessage(params: Hub.ParamMap): Promise<any> {
     return new Promise(async (resolve, reject) => {
       const data: any = params.data
       if (!params.title) {
@@ -68,7 +67,6 @@ export class FirebaseAction extends Hub.Action {
       }
       const notification: any = {title: params.title}
       const notificationData: any = data
-      notificationData.imageUrl = imageName
       if (params.timeToLive) {
         this.notificationOptions.timeToLive = parseFloat(params.timeToLive)
       }
