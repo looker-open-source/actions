@@ -67,6 +67,7 @@ export class FirebaseAction extends Hub.Action {
       }
       const notification: any = {title: params.title}
       const notificationData: any = data
+      notificationData.id = v4()
       if (params.timeToLive) {
         this.notificationOptions.timeToLive = parseFloat(params.timeToLive)
       }
