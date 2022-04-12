@@ -52,6 +52,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   usesOauth = true
+  minimumSupportedLookerVersion = "22.6.0"
   // TODO: support All Results vs Results in Table
   // TODO: stream results
 
