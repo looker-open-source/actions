@@ -147,12 +147,6 @@ export class FirebaseAction extends Hub.Action {
       throw "Need valid image data"
     }
   }
-
-  async form() {
-    const form = new Hub.ActionForm()
-    form.fields = []
-    return form
-  }
 }
 
 if (process.env.FIREBASE_PROJECT_ID
