@@ -26,7 +26,6 @@ export class FirebaseAction extends Hub.Action {
   label = "Firebase"
   iconName = "firebase/firebase.png"
   description = "Use firebase to send push notifications to mobile."
-  storageBucket = process.env.FIREBASE_BUCKET
   minimumSupportedLookerVersion = "22.3.0"
   contentType = "image/jpeg"
   notificationOptions = {
@@ -67,12 +66,13 @@ export class FirebaseAction extends Hub.Action {
       }
       const notification: any = {title: params.title}
       const notificationData: any = data
+      const notificationOptions = this.notificationOptions
       notificationData.id = v4()
       if (params.timeToLive) {
-        this.notificationOptions.timeToLive = parseFloat(params.timeToLive)
+        notificationOptions.timeToLive = parseFloat(params.timeToLive)
       }
       if (params.priority) {
-        this.notificationOptions.priority = params.priority
+        notificationOptions.priority = params.priority
       }
       try {
         const userObj = JSON.parse(params.deviceIds ?? "[]") as any[]
@@ -91,7 +91,7 @@ export class FirebaseAction extends Hub.Action {
                 data: notificationData,
               }
               try {
-                await this.sendMessageToDevice(deviceId, payload, this.notificationOptions)
+                await this.sendMessageToDevice(deviceId, payload, notificationOptions)
               } catch (error) {
                 reject(error)
               }
@@ -125,35 +125,12 @@ export class FirebaseAction extends Hub.Action {
       throw error
     })
   }
-
-  async uploadImage(request: Hub.ActionRequest): Promise<any> {
-    if (request.attachment?.dataBuffer) {
-      return new Promise((resolve, reject) => {
-        FirebaseAction.setFirebaseClient()
-        const destFileName = v4()
-        const fileCloud = firebaseAdmin.storage().bucket(this.storageBucket).file(destFileName)
-        fileCloud.save(request.attachment?.dataBuffer!, {
-            metadata: {
-              contentType: this.contentType,
-            },
-          }, (err) => {
-          if (err) {
-            reject(err)
-          }
-          resolve(destFileName)
-        })
-      })
-    } else {
-      throw "Need valid image data"
-    }
-  }
 }
 
 if (process.env.FIREBASE_PROJECT_ID
   && process.env.FIREBASE_CLIENT_EMAIL
   && process.env.FIREBASE_PRIVATE_KEY
   && process.env.FIREBASE_DATABASE
-  && process.env.FIREBASE_BUCKET
   ) {
     Hub.addAction(new FirebaseAction())
 } else {
