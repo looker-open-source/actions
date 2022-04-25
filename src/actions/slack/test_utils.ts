@@ -57,7 +57,7 @@ describe(`slack/utils unit tests`, () => {
         it("returns correct channels", (done) => {
             const slackClient = new WebClient("token")
             // @ts-ignore
-            sinon.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
+            sinon.stub(slackClient.users, "conversations").callsFake((filters: any) => filters.cursor ?
               {
                   ok: true,
                   channels: [
@@ -133,7 +133,7 @@ describe(`slack/utils unit tests`, () => {
         it("returns correct users", (done) => {
             const slackClient = new WebClient("token")
             // @ts-ignore
-            sinon.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
+            sinon.stub(slackClient.users, "conversations").callsFake((filters: any) => filters.cursor ?
                 {
                     ok: true,
                     channels: [
