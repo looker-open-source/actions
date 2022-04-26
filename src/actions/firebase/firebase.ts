@@ -136,5 +136,3 @@ if (process.env.FIREBASE_PROJECT_ID
 } else {
     winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)
 }
-
-Hub.addAction(new FirebaseAction())
