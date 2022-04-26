@@ -16,7 +16,7 @@ const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
         exclude_archived: true,
         limit: API_LIMIT_SIZE,
     }
-    const channelList: any = slack.users.conversations
+    const channelList: any = slack.conversations.list
     const pageLoaded = async (accumulatedChannels: any[], response: any): Promise<any[]> => {
         const mergedChannels = accumulatedChannels.concat(response.channels)
 
