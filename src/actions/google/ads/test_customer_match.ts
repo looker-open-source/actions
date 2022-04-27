@@ -147,7 +147,7 @@ describe(`${action.constructor.name} class`, () => {
           "https://accounts.google.com/o/oauth2/v2/auth" +
           "?access_type=offline" +
           "&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadwords" +
-          "&prompt=consent" +
+          "&prompt=select_account" +
           "&state=not-actually-encrypted-payload-used-for-test" +
           "&response_type=code" +
           "&client_id=test_oauth_client_id" +
