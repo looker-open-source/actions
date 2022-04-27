@@ -18,7 +18,7 @@ export class GoogleAdsActionExecutor {
 
   async createUserList(newListName: string, newListDescription: string) {
     const createListResp = await this.apiClient.createUserList(this.targetCid, newListName, newListDescription,
-      this.mobileAppId, this.uploadKeyType)
+      this.uploadKeyType, this.mobileAppId)
     this.targetUserListRN = createListResp.results[0].resourceName
     this.log("info", "Created user list: ", this.targetUserListRN)
     return

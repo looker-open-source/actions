@@ -1,0 +1,38 @@
+import * as Hub from "../../../hub";
+export default class FacebookCustomAudiencesExecutor {
+    private get batchIsReady();
+    private get numBatches();
+    private actionRequest;
+    private batchPromises;
+    private batchQueue;
+    private currentRequest;
+    private isSchemaDetermined;
+    private matchedHashCombinations;
+    private rowQueue;
+    private schema;
+    private batchIncrementer;
+    private sessionId;
+    private facebookAPI;
+    private shouldHash;
+    private operationType;
+    private adAccountId;
+    private customAudienceId;
+    private customAudienceName;
+    private customAudienceDescription;
+    private fieldMapping;
+    constructor(actionRequest: Hub.ActionRequest, accessToken: string);
+    run(): Promise<Hub.ActionResponse>;
+    private startAsyncParser;
+    private determineSchema;
+    private getFormattedRow;
+    private getEmptyFormattedRow;
+    private getMatchingHashCombinations;
+    private handleRow;
+    private transformRow;
+    private normalizeRow;
+    private createUploadSessionObject;
+    private hash;
+    private normalize;
+    private scheduleBatch;
+    private sendBatch;
+}

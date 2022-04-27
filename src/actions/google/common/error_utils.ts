@@ -13,6 +13,11 @@ export function sanitizeError(err: any) {
     }
   }
 
+  // Remove tokens from data
+  if (err.config && err.config.data && err.config.data.tokens) {
+    err.config.data.tokens = "[REDACTED]"
+  }
+
   // Remove data payload - this is hashed but makes the logs unreadable
   if (err.config && err.config.data && err.config.data.operations) {
     err.config.data.operations = "[TRUNCATED]"
