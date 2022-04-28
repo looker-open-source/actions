@@ -31,7 +31,7 @@ const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
         return mergedChannels
     }
     const paginatedChannels = await pageLoaded([], await channelList(options))
-    const channels = paginatedChannels.filter((c: any) => c.is_member && !c.is_archived)
+    const channels = paginatedChannels.filter((c: any) => !c.is_archived)
     return channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
 }
 

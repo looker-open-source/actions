@@ -212,10 +212,11 @@ describe("SlackClientManager", () => {
                 chai.expect(clientManager.hasAnyClients()).to.equals(true)
             })
             it("getClients works", () => {
-                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").callsFake((token) => new WebClient(`stubbed-${token}`))
+                stubClient = sinon.stub(_SlackClientManager, "makeSlackClient")
+                    .callsFake((token) => new WebClient(token))
                 const clientManager = new SlackClientManager(request)
                 const result = clientManager.getClients()
-                chai.expect(result).to.deep.equal(["stubbed-token1", "stubbed-token2"])
+                chai.expect(result).to.deep.equal([new WebClient("stubbed-token1"), new WebClient("stubbed-token2")])
             })
             it("hasSelectedClient works", () => {
                 stubClient = sinon.stub(_SlackClientManager, "makeSlackClient").returns(new WebClient())
