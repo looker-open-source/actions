@@ -4,7 +4,7 @@ import { v4 } from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
-const LOG_PREFIX = "[GA Data Import]"
+const LOG_PREFIX = "[Firebase]"
 
 export class FirebaseAction extends Hub.Action {
   static firebaseAdmin: firebaseApp.App
