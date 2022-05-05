@@ -4,7 +4,7 @@ import * as winston from "winston"
 
 import * as semver from "semver"
 import * as Hub from "../../hub"
-import {SegmentActionError} from "./segment_error"
+import { SegmentActionError } from "./segment_error"
 
 const segment: any = require("analytics-node")
 
@@ -71,9 +71,9 @@ export class SegmentAction extends Hub.Action {
 
     let hiddenFields: string[] = []
     if (request.scheduledPlan &&
-        request.scheduledPlan.query &&
-        request.scheduledPlan.query.vis_config &&
-        request.scheduledPlan.query.vis_config.hidden_fields) {
+      request.scheduledPlan.query &&
+      request.scheduledPlan.query.vis_config &&
+      request.scheduledPlan.query.vis_config.hidden_fields) {
       hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
     }
 
@@ -108,8 +108,8 @@ export class SegmentAction extends Hub.Action {
           const payload = {
             ...this.prepareSegmentTraitsFromRow(
               row, fieldset, segmentFields!, hiddenFields,
-                segmentCall === SegmentCalls.Track, segmentCall === SegmentCalls.Group),
-            ...{event, context, timestamp},
+              segmentCall === SegmentCalls.Track, segmentCall === SegmentCalls.Group),
+            ...{ event, context, timestamp },
           }
           if (payload.groupId === null) {
             delete payload.groupId
@@ -120,22 +120,22 @@ export class SegmentAction extends Hub.Action {
           try {
             segmentClient[segmentCall](payload)
           } catch (e) {
-            errors.push(e)
+            errors.push(e as Error)
           }
         },
       })
 
       await new Promise<void>(async (resolve, reject) => {
-          segmentClient.flush( (err: any) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve()
-            }
-          })
+        segmentClient.flush((err: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
       })
     } catch (e) {
-      errors.push(e)
+      errors.push(e as Error)
     }
 
     if (errors.length > 0) {
@@ -144,9 +144,9 @@ export class SegmentAction extends Hub.Action {
         msg = "An unknown error occurred while processing the Segment action."
         winston.warn(`Can't format Segment errors: ${util.inspect(errors)}`)
       }
-      return new Hub.ActionResponse({success: false, message: msg})
+      return new Hub.ActionResponse({ success: false, message: msg })
     } else {
-      return new Hub.ActionResponse({success: true})
+      return new Hub.ActionResponse({ success: true })
     }
   }
 
@@ -196,6 +196,10 @@ export class SegmentAction extends Hub.Action {
           if (currentObject.hasOwnProperty(key)) {
             if (key === "value") {
               returnVal[name] = currentObject[key]
+              // Looker Action Hub - Segment Identify Nulls #186583506
+              if (currentObject[key] === null) {
+                pivotValues[fieldName] = null
+              }
               return returnVal
             } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
               const res = filterFunction(currentObject[key], key)
