@@ -47,7 +47,7 @@ export class FirebaseAction extends Hub.Action {
     let data: any = {}
     if (request.formParams.data) {
       data = request.formParams.data
-      if (!data.alertId) {
+      if (!data.alert_id) {
         winston.warn(`${LOG_PREFIX} Need Valid AlertId.`, { webhookId })
         throw "Need Valid AlertId."
       }
@@ -92,7 +92,7 @@ export class FirebaseAction extends Hub.Action {
           for (const device of devices) {
             if (device.device_id && device.user_id) {
               const deviceId = device.device_id.toString()
-              notificationData.userId = device.user_id.toString()
+              notificationData.user_id = device.user_id.toString()
               const payload = {
                 notification,
                 data: notificationData,
