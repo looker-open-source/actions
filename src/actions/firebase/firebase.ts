@@ -42,26 +42,32 @@ export class FirebaseAction extends Hub.Action {
 
   async execute(request: Hub.ActionRequest) {
     const response = new Hub.ActionResponse({success: true})
+    const webhookId = request.webhookId
+    winston.info(`${LOG_PREFIX} Firebase action called.`, { webhookId })
     let data: any = {}
     if (request.formParams.data) {
       data = request.formParams.data
-      if (!data.alertId) {
+      if (!data.alert_id) {
+        winston.warn(`${LOG_PREFIX} Need Valid AlertId.`, { webhookId })
         throw "Need Valid AlertId."
       }
     } else {
+      winston.warn(`${LOG_PREFIX} Need valid notification data.`, { webhookId })
       throw "Need valid notification data."
     }
-    await this.verifyAndSendMessage(request.formParams)
+    await this.verifyAndSendMessage(request.formParams, webhookId)
     return new Hub.ActionResponse(response)
   }
 
-  async verifyAndSendMessage(params: Hub.ParamMap): Promise<any> {
+  async verifyAndSendMessage(params: Hub.ParamMap, webhookId: string | undefined): Promise<any> {
     return new Promise(async (resolve, reject) => {
       const data: any = params.data
       if (!params.title) {
+        winston.warn(`${LOG_PREFIX} Needs a valid title.`, { webhookId })
         reject("Needs a valid title.")
       }
       if (!params.deviceIds) {
+        winston.warn(`${LOG_PREFIX} Device Ids not present.`, { webhookId })
         resolve()
       }
       const notification: any = {title: params.title}
@@ -78,6 +84,7 @@ export class FirebaseAction extends Hub.Action {
         const userObj = JSON.parse(params.deviceIds ?? "[]") as any[]
         const deviceIdObject = params.deviceIds as unknown as any[]
         if (deviceIdObject.length === 0) {
+          winston.warn(`${LOG_PREFIX} Device Id length is 0.`, { webhookId })
           resolve()
         }
         for (const userDevices of userObj) {
@@ -85,39 +92,46 @@ export class FirebaseAction extends Hub.Action {
           for (const device of devices) {
             if (device.device_id && device.user_id) {
               const deviceId = device.device_id.toString()
-              notificationData.userId = device.user_id.toString()
+              notificationData.user_id = device.user_id.toString()
               const payload = {
                 notification,
                 data: notificationData,
               }
               try {
-                await this.sendMessageToDevice(deviceId, payload, notificationOptions)
+                await this.sendMessageToDevice(deviceId, webhookId, payload, notificationOptions)
               } catch (error) {
+                winston.error(`${LOG_PREFIX} Error in sendMessageToDevice. ${error.toString()} `, { webhookId })
                 reject(error)
               }
             }
           }
         }
       } catch (error) {
+        winston.error(`${LOG_PREFIX} Error. ${error.toString()} `, { webhookId })
         reject(error)
       }
       resolve()
     })
-    .catch((error) => {
+    .catch((error: any) => {
+      winston.error(`${LOG_PREFIX} Error. ${error.toString()} `, { webhookId })
       throw error
     })
   }
 
   async sendMessageToDevice(deviceId: string,
+                            webhookId: string | undefined,
                             payload: firebaseAdmin.messaging.MessagingPayload,
-                            options?: firebaseAdmin.messaging.MessagingOptions): Promise<any> {
+                            options?: firebaseAdmin.messaging.MessagingOptions,
+                            ): Promise<any> {
     return new Promise((resolve, reject) => {
       FirebaseAction.setFirebaseClient()
       firebaseAdmin.messaging().sendToDevice(deviceId, payload, options)
-        .then( (_: any) => {
+        .then( (response: any) => {
+          winston.info(`${LOG_PREFIX} notification sent to firebase. ${JSON.stringify(response)}`, { webhookId })
           resolve()
         })
         .catch( (error: any) => {
+          winston.error(`${LOG_PREFIX} notification sending failed to firebase. ${error.toString()} `, { webhookId })
           reject(error.message)
         })
     })
@@ -133,6 +147,7 @@ if (process.env.FIREBASE_PROJECT_ID
   && process.env.FIREBASE_DATABASE
   ) {
     Hub.addAction(new FirebaseAction())
+    winston.warn(`${LOG_PREFIX} Action registered.`)
 } else {
     winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)
 }
