@@ -196,7 +196,7 @@ export class SegmentAction extends Hub.Action {
           if (currentObject.hasOwnProperty(key)) {
             if (key === "value") {
               returnVal[name] = currentObject[key]
-              // Looker Action Hub - Segment Identify Nulls #186583506
+              // Segment Identify Nulls #186583506
               if (currentObject[key] === null) {
                 pivotValues[fieldName] = null
               }

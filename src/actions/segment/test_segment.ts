@@ -13,8 +13,8 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
   const segmentCallSpy = sinon.spy()
   const stubClient = sinon.stub(action as any, "segmentClientFromRequest")
     .callsFake(() => {
-      return {identify: segmentCallSpy, flush: (cb: () => void) => cb()}
-     })
+      return { identify: segmentCallSpy, flush: (cb: () => void) => cb() }
+    })
   const stubAnon = sinon.stub(action as any, "generateAnonymousId").callsFake(() => "stubanon")
 
   const now = new Date()
@@ -30,7 +30,8 @@ function expectSegmentMatch(request: Hub.ActionRequest, match: any) {
     },
     timestamp: now,
   }
-  const merged = {...baseMatch, ...match}
+  const merged = { ...baseMatch, ...match }
+
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
     chai.expect(segmentCallSpy).to.have.been.calledWithExactly(merged)
     stubClient.restore()
@@ -49,10 +50,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-          fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
-          data: [{coolfield: {value: "funvalue"}}],
-        }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolfield", tags: ["user_id"] }] },
+          data: [{ coolfield: { value: "funvalue" } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: "funvalue",
         anonymousId: null,
@@ -65,15 +68,17 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
-        data: [{coolfield: {value: "funvalue"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolfield", tags: ["email"] }] },
+          data: [{ coolfield: { value: "funvalue" } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         anonymousId: "stubanon",
         userId: null,
-        traits: {email: "funvalue"},
-       })
+        traits: { email: "funvalue" },
+      })
     })
 
     it("works with pivoted values", () => {
@@ -82,15 +87,45 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-          fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}],
-                   measures: [{name: "users.count"}]},
-          data: [{"coolfield": {value: "funvalue"}, "users.count": {f: {value: 1}, z: {value: 3}}}],
-        }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [{ name: "coolfield", tags: ["user_id"] }],
+            measures: [{ name: "users.count" }]
+          },
+          data: [{ "coolfield": { value: "funvalue" }, "users.count": { f: { value: 1 }, z: { value: 3 } } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: "funvalue",
         anonymousId: null,
         traits: { "users.count": [{ f: 1 }, { z: 3 }] },
+      })
+    })
+
+    it("works with NULL pivoted values", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        segment_write_key: "mykey",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [{ name: "coolfield", tags: ["user_id"] }, { name: "cool_null_field" }],
+            measures: [{ name: "users.count" }]
+          },
+          data: [{
+            "coolfield": { value: "funvalue" },
+            "users.count": { f: { value: 1 }, z: { value: 3 } },
+            "cool_null_field": { value: null }
+          }],
+        }))
+      }
+      return expectSegmentMatch(request, {
+        userId: "funvalue",
+        anonymousId: null,
+        traits: { "users.count": [{ f: 1 }, { z: 3 }], "cool_null_field": null },
       })
     })
 
@@ -100,13 +135,15 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolemail", tags: ["email"]}, {name: "coolid", tags: ["user_id"]}]},
-        data: [{coolemail: {value: "email@email.email"}, coolid: {value: "id"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolemail", tags: ["email"] }, { name: "coolid", tags: ["user_id"] }] },
+          data: [{ coolemail: { value: "email@email.email" }, coolid: { value: "id" } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: "id",
-        traits: {email: "email@email.email"},
+        traits: { email: "email@email.email" },
         anonymousId: null,
       })
     })
@@ -117,16 +154,20 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [
-          {name: "coolemail", tags: ["email"]},
-          {name: "coolid", tags: ["user_id"]},
-          {name: "coolanonymousid", tags: ["segment_anonymous_id"]}]},
-        data: [{coolemail: {value: "email@email.email"}, coolid: {value: "id"}, coolanonymousid: {value: "anon_id"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [
+              { name: "coolemail", tags: ["email"] },
+              { name: "coolid", tags: ["user_id"] },
+              { name: "coolanonymousid", tags: ["segment_anonymous_id"] }]
+          },
+          data: [{ coolemail: { value: "email@email.email" }, coolid: { value: "id" }, coolanonymousid: { value: "anon_id" } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: "id",
-        traits: {email: "email@email.email"},
+        traits: { email: "email@email.email" },
         anonymousId: "anon_id",
       })
     })
@@ -137,25 +178,64 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [
-          {name: "coolemail", tags: ["email"]},
-          {name: "coolid", tags: ["user_id"]},
-          {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
-          {name: "cooltrait", tags: []},
-        ]},
-        data: [{
-          coolemail: {value: "emailemail"},
-          coolid: {value: "id"},
-          coolanonymousid: {value: "anon_id"},
-          cooltrait: {value: "funtrait"},
-        }],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [
+              { name: "coolemail", tags: ["email"] },
+              { name: "coolid", tags: ["user_id"] },
+              { name: "coolanonymousid", tags: ["segment_anonymous_id"] },
+              { name: "cooltrait", tags: [] },
+            ]
+          },
+          data: [{
+            coolemail: { value: "emailemail" },
+            coolid: { value: "id" },
+            coolanonymousid: { value: "anon_id" },
+            cooltrait: { value: "funtrait" },
+          }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: "id",
         traits: {
           email: "emailemail",
           cooltrait: "funtrait",
+        },
+        anonymousId: "anon_id",
+      })
+    })
+
+    // PUGGA
+    it("works with email, user id and anonymous id and NULL trait", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        segment_write_key: "mykey",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [
+              { name: "coolemail", tags: ["email"] },
+              { name: "coolid", tags: ["user_id"] },
+              { name: "coolanonymousid", tags: ["segment_anonymous_id"] },
+              { name: "cooltrait", tags: [] },
+            ]
+          },
+          data: [{
+            coolemail: { value: "emailemail" },
+            coolid: { value: "id" },
+            coolanonymousid: { value: "anon_id" },
+            cooltrait: { value: null },
+          }],
+        }))
+      }
+      return expectSegmentMatch(request, {
+        userId: "id",
+        traits: {
+          email: "emailemail",
+          cooltrait: null
         },
         anonymousId: "anon_id",
       })
@@ -167,13 +247,17 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [
-          {name: "coolid", tags: ["user_id"]}, {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
-        ]},
-        data: [
-            {coolid: {value: "id"}, coolanonymousid: {value: "anon_id"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [
+              { name: "coolid", tags: ["user_id"] }, { name: "coolanonymousid", tags: ["segment_anonymous_id"] },
+            ]
+          },
+          data: [
+            { coolid: { value: "id" }, coolanonymousid: { value: "anon_id" } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: "id",
         anonymousId: "anon_id",
@@ -186,12 +270,16 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [
-            {name: "coolanonymousid", tags: ["segment_anonymous_id"]},
-        ]},
-        data: [{coolanonymousid: {value: "anon_id"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [
+              { name: "coolanonymousid", tags: ["segment_anonymous_id"] },
+            ]
+          },
+          data: [{ coolanonymousid: { value: "anon_id" } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: "anon_id",
         anonymousId: "anon_id",
@@ -204,19 +292,22 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {
-          dimensions: [
-            {name: "coolfield", tags: ["email"]},
-            {name: "hiddenfield"},
-            {name: "nonhiddenfield"},
-          ]},
-        data: [{
-          coolfield: {value: "funvalue"},
-          hiddenfield: {value: "hiddenvalue"},
-          nonhiddenfield: {value: "nonhiddenvalue"},
-        }],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: {
+            dimensions: [
+              { name: "coolfield", tags: ["email"] },
+              { name: "hiddenfield" },
+              { name: "nonhiddenfield" },
+            ]
+          },
+          data: [{
+            coolfield: { value: "funvalue" },
+            hiddenfield: { value: "hiddenvalue" },
+            nonhiddenfield: { value: "nonhiddenvalue" },
+          }],
+        }))
+      }
       request.scheduledPlan = {
         query: {
           vis_config: {
@@ -242,10 +333,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
-        data: [{coolfield: {value: null}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolfield", tags: ["user_id"] }] },
+          data: [{ coolfield: { value: null } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         userId: null,
         anonymousId: "stubanon",
@@ -258,17 +351,19 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield", tags: ["email"]}]},
-        ran_at: "2017-07-28T02:25:19+00:00",
-        data: [{coolfield: {value: "funvalue"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolfield", tags: ["email"] }] },
+          ran_at: "2017-07-28T02:25:19+00:00",
+          data: [{ coolfield: { value: "funvalue" } }],
+        }))
+      }
       return expectSegmentMatch(request, {
         anonymousId: "stubanon",
         userId: null,
         timestamp: new Date("2017-07-28T02:25:19+00:00"),
-        traits: {email: "funvalue"},
-       })
+        traits: { email: "funvalue" },
+      })
     })
 
     it("errors if the input has no attachment", () => {
@@ -288,9 +383,11 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        data: [{coolfield: {value: "funvalue"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          data: [{ coolfield: { value: "funvalue" } }],
+        }))
+      }
       chai.expect(action.validateAndExecute(request)).to.eventually
         .deep.equal({
           message: "Query requires a field tagged email or user_id or segment_anonymous_id.",
@@ -307,10 +404,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params = {
         segment_write_key: "mykey",
       }
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield", tags: []}]},
-        data: [{coolfield: {value: "funvalue"}}],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolfield", tags: [] }] },
+          data: [{ coolfield: { value: "funvalue" } }],
+        }))
+      }
       chai.expect(action.validateAndExecute(request)).to.eventually
         .deep.equal({
           message: "Query requires a field tagged email or user_id or segment_anonymous_id.",
@@ -324,10 +423,12 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("errors if there is no write key", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
-      request.attachment = {dataBuffer: Buffer.from(JSON.stringify({
-        fields: {dimensions: [{name: "coolfield", tags: ["user_id"]}]},
-        data: [],
-      }))}
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolfield", tags: ["user_id"] }] },
+          data: [],
+        }))
+      }
       return chai.expect(action.validateAndExecute(request)).to.eventually
         .be.rejectedWith(`Required setting "Segment Write Key" not specified in action settings.`)
     })
@@ -349,7 +450,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         .set("User-Agent", "LookerOutgoingWebhook/6.0.0")
         .end((_err, res) => {
           chai.expect(res).to.have.status(200)
-          chai.expect(res.body).to.deep.include({supported_formats: ["json_detail"]})
+          chai.expect(res.body).to.deep.include({ supported_formats: ["json_detail"] })
           stub.restore()
           done()
         })
@@ -363,7 +464,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         .set("User-Agent", "LookerOutgoingWebhook/6.2.0")
         .end((_err, res) => {
           chai.expect(res).to.have.status(200)
-          chai.expect(res.body).to.deep.include({supported_formats: ["json_detail_lite_stream"]})
+          chai.expect(res.body).to.deep.include({ supported_formats: ["json_detail_lite_stream"] })
           stub.restore()
           done()
         })
