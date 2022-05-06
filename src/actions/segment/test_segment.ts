@@ -206,7 +206,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
-    // PUGGA
     it("works with email, user id and anonymous id and NULL trait", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
