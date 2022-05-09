@@ -61,15 +61,15 @@ describe(`slack/utils unit tests`, () => {
               {
                   ok: true,
                   channels: [
-                      {id: "3", name: "C", is_member: true},
-                      {id: "4", name: "D", is_member: true},
+                      {id: "3", name: "C"},
+                      {id: "4", name: "D"},
                   ],
               } :
               {
                   ok: true,
                   channels: [
-                      {id: "1", name: "A", is_member: true},
-                      {id: "2", name: "B", is_member: true},
+                      {id: "1", name: "A"},
+                      {id: "2", name: "B"},
                   ],
                   response_metadata: {
                       next_cursor: "cursor",
@@ -133,7 +133,7 @@ describe(`slack/utils unit tests`, () => {
         it("returns correct users", (done) => {
             const slackClient = new WebClient("token")
             // @ts-ignore
-            sinon.stub(slackClient.users, "conversations").callsFake((filters: any) => filters.cursor ?
+            sinon.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
                 {
                     ok: true,
                     channels: [
