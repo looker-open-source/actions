@@ -121,14 +121,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         dataBuffer: Buffer.from(JSON.stringify({
           fields: {
             dimensions: [{ name: "coolfield", tags: ["user_id"] }, { name: "cool_null_field" }],
-            measures: [{ name: "users.count" }]
+            measures: [{ name: "users.count" }],
           },
           data: [{
             "coolfield": { value: "funvalue" },
             "users.count": { f: { value: 1 }, z: { value: 3 } },
-            "cool_null_field": { value: null }
+            "cool_null_field": { value: null },
           }],
-        }))
+        })),
       }
       return expectSegmentMatch(request, {
         userId: "funvalue",
@@ -220,7 +220,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               { name: "coolid", tags: ["user_id"] },
               { name: "coolanonymousid", tags: ["segment_anonymous_id"] },
               { name: "cooltrait", tags: [] },
-            ]
+            ],
           },
           data: [{
             coolemail: { value: "emailemail" },
@@ -228,13 +228,13 @@ describe(`${action.constructor.name} unit tests`, () => {
             coolanonymousid: { value: "anon_id" },
             cooltrait: { value: null },
           }],
-        }))
+        })),
       }
       return expectSegmentMatch(request, {
         userId: "id",
         traits: {
           email: "emailemail",
-          cooltrait: null
+          cooltrait: null,
         },
         anonymousId: "anon_id",
       })
