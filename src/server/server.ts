@@ -159,6 +159,7 @@ export default class Server implements Hub.RouteBuilder {
     })
 
     this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
+      winston.info("Oauth")
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
       if (isOauthAction(action)) {
