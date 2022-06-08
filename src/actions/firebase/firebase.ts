@@ -70,7 +70,10 @@ export class FirebaseAction extends Hub.Action {
         winston.warn(`${LOG_PREFIX} Device Ids not present.`, { webhookId })
         resolve()
       }
-      const notification: any = {title: params.title}
+      const notification: any = {
+        title: params.title,
+        body : `On ${data.dashboard_name}`,
+      }
       const notificationData: any = data
       const notificationOptions = this.notificationOptions
       notificationData.id = v4()
