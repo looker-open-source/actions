@@ -265,33 +265,36 @@ export class GoogleAdsActionFormBuilder {
     if (!this.loginCid) {
       return
     }
-    this.loginCustomer = await this.apiClient.getCustomer(this.loginCid) as AdsCustomer
+    this.loginCustomer = await this.getCustomer(this.loginCid)
   }
 
   private async maybeSetTargetCustomer() {
     if (!this.targetCid) {
       return
     }
-    this.targetCustomer = await this.apiClient.getCustomer(this.targetCid) as AdsCustomer
+    this.targetCustomer = await this.getCustomer(this.targetCid)
   }
 
   private async getLoginCidOptions() {
     const listCustomersResp = await this.apiClient.listAccessibleCustomers()
     const customerResourceNames = listCustomersResp.resourceNames
     const customers = await Promise.all(customerResourceNames.map(async (rn: string) => {
-      return this.apiClient.getCustomer(rn)
-        // Now is a good place to coalesce the name, before we try to sort the list
-        .then((cust: any) => {
-          if (!cust.descriptiveName) { cust.descriptiveName = "Untitled" }
-          return cust as AdsCustomer
-        })
-        // We expect some errors on this call because the list endpoint returns test accounts that aren't accessible
-        .catch((_) => undefined)
+      const clientCid = rn.replace("customers/", "")
+      return this.getCustomer(clientCid)
     }))
     const filteredCustomers = customers.filter(Boolean) as AdsCustomer[]
     const sortedCustomers = filteredCustomers.sort(this.sortCustomersCompareFn)
     const selectOptions = sortedCustomers.map(this.selectOptionForCustomer)
     return selectOptions
+  }
+
+  private async getCustomer(cId: string) {
+    return await this.apiClient.searchClientCustomers(cId)
+      .then((data: any) => {
+        const cust  = data[0].results.filter((c: any) => c.customerClient.id === cId)[0].customerClient
+        if (!cust.descriptiveName) { cust.descriptiveName = "Untitled" }
+        return cust as AdsCustomer
+      })
   }
 
   private async getTargetCidOptions() {
