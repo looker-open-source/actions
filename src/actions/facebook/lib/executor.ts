@@ -153,8 +153,8 @@ export default class FacebookCustomAudiencesExecutor {
     }
     this.operationType = operationType
 
-    if (!actionRequest.formParams.choose_business || !actionRequest.formParams.choose_ad_account) {
-      throw new Error("Cannot execute action without business id or ad account id.")
+    if (!actionRequest.formParams.choose_ad_account) {
+      throw new Error("Cannot execute action without ad account id.")
     }
     if (!actionRequest.formParams.choose_custom_audience && (
       operationType === "update_audience" || operationType === "replace_audience"
