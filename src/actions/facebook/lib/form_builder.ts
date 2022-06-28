@@ -5,33 +5,13 @@ import FacebookCustomAudiencesApi from "./api"
 export default class FacebookFormBuilder {
 
     async generateActionForm(actionRequest: Hub.ActionRequest, facebookApi: FacebookCustomAudiencesApi) {
-      let businesses: {name: string, id: string}[] = []
       let adAccounts: {name: string, id: string}[] = []
       let customAudiences: {name: string, id: string}[] = []
 
-      businesses = await facebookApi.getBusinessAccountIds()
-
-      if (actionRequest.formParams.choose_business === "reset") {
-        actionRequest.formParams = {}
-      }
+      adAccounts = await facebookApi.getAdAccounts()
 
       const form = new Hub.ActionForm()
       form.fields = [{
-        label: "Choose a business",
-        name: "choose_business",
-        description: "You can start over by choosing \"Start over\" from this list.",
-        required: true,
-        interactive: true,
-        type: "select" as "select",
-        options: [
-          {name: "reset", label: "Start over"},
-          ...(await this.generateOptionsFromNamesAndIds(businesses)),
-        ],
-      }]
-      if (actionRequest.formParams.choose_business) {
-        adAccounts = await facebookApi.getAdAccountsForBusiness(actionRequest.formParams.choose_business)
-
-        form.fields.push({
           label: "Choose a Facebook ad account",
           name: "choose_ad_account",
           required: true,
@@ -40,8 +20,7 @@ export default class FacebookFormBuilder {
           options: [
             ...(await this.generateOptionsFromNamesAndIds(adAccounts)),
           ],
-        })
-      }
+        }]
       if (actionRequest.formParams.choose_ad_account) {
         form.fields.push({
           label: "Would you like to create a new audience, update existing, or replace existing?",
@@ -93,8 +72,7 @@ export default class FacebookFormBuilder {
         if (!actionRequest.formParams.choose_ad_account) {
           throw new Error("Cannot obtain audience list without an ad account selected")
         }
-        customAudiences = await facebookApi.getCustomAudiences(
-        actionRequest.formParams.choose_ad_account)
+        customAudiences = await facebookApi.getCustomAudiences(actionRequest.formParams.choose_ad_account)
 
         const audienceActionType = (
           actionRequest.formParams.choose_create_update_replace === "update_audience") ?
