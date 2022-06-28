@@ -29,7 +29,7 @@ export async function findAction(id: string, opts?: {lookerVersion?: string | nu
   const all = await allActions(opts)
   const matching = all.filter((i) => i.name === id)
   if (matching.length === 0) {
-    throw "No action found."
+    throw `No action found with name ${id}.`
   }
   return matching[0]
 }
