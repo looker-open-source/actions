@@ -2,7 +2,7 @@ import * as gaxios from "gaxios"
 import * as winston from "winston"
 import {formatFullDate, isNullOrUndefined, sanitizeError, sortCompare} from "./util"
 
-export const API_VERSION = "v12.0"
+export const API_VERSION = "v14.0"
 export const API_BASE_URL = `https://graph.facebook.com/${API_VERSION}/`
 export const CUSTOMER_LIST_SOURCE_TYPES = {
     // Used by Facebook for unknown purposes.
@@ -77,37 +77,30 @@ export default class FacebookCustomAudiencesApi {
         this.accessToken = accessToken
     }
 
+    async pagingResults(url: string): Promise<any> {
+        let data: any = []
+        let hasNext = true
+
+        while (hasNext) {
+            const response = await this.apiCall("GET", url)
+            data = [...data, ...response.data]
+            if (!response.paging || !response.paging.next) {
+                hasNext = false
+            } else {
+                url = response.paging.next
+                .replace(API_BASE_URL, "")
+                .replace(/access_token=.+?&/, "")
+            }
+        }
+        return data
+    }
+
     async me(): Promise<any> {
         return this.apiCall("GET", "me")
     }
 
-    /*Sample response:
-    {
-        "businesses": {
-            "data": [
-            {
-                "id": "496949287383810",
-                "name": "Cool Guys Moving LLC"
-            },
-            {
-                "id": "104000277081747",
-                "name": "Western Analytics"
-            }
-            ],
-        }
-        "paging": ...
-        "id": "106332305032035"
-    }*/
-    async getBusinessAccountIds(): Promise<{name: string, id: string}[]> {
-        const response = await this.apiCall("GET", "me?fields=businesses")
-        const namesAndIds = response.businesses.data.map((businessMetadata: any) =>
-        ({ name: businessMetadata.name, id: businessMetadata.id }))
-        return namesAndIds
-    }
-
     /*
         Sample response:
-
         {
             "data": [
                 {
@@ -116,33 +109,48 @@ export default class FacebookCustomAudiencesApi {
                 "id": "act_114108701688636"
                 }
             ],
-            "paging": {}
+            "paging": {
+                "cursors": {
+                    "before": "abcdef123",
+                    "after": "abcdef456"
+                },
+                "previous": "https://graph.facebook.com...&before=abcdef123",
+                "next": "https://graph.facebook.com...&after=abcdef456"
+            }
         }
     */
-    async getAdAccountsForBusiness(businessId: string): Promise<{name: string, id: string}[]> {
-        const addAcountsForBusinessUrl = `${businessId}/owned_ad_accounts?fields=name,account_id`
-        const response = await this.apiCall("GET", addAcountsForBusinessUrl)
-        const namesAndIds = response.data.map((adAccountMetadata: any) =>
-        ({ name: adAccountMetadata.name, id: adAccountMetadata.account_id }))
+    async getAdAccounts(): Promise<{name: string, id: string}[]> {
+        const addAcountsUrl = `me/adaccounts?fields=name,account_id`
+        const data = await this.pagingResults(addAcountsUrl)
+        const namesAndIds = data
+            .map((adAccountMetadata: any) => ({ name: adAccountMetadata.name, id: adAccountMetadata.account_id }))
+            .sort(sortCompare)
         return namesAndIds
     }
 
     /*
         Sample response:
         {
-        "data": [
-            {
-            "name": "My new Custom Audience",
-            "id": "23837492450850533"
+            "data": [
+                {
+                "name": "My new Custom Audience",
+                "id": "23837492450850533"
+                }
+            ],
+            "paging": {
+                "cursors": {
+                    "before": "abcdef123",
+                    "after": "abcdef456"
+                },
+                "previous": "https://graph.facebook.com...&before=abcdef123",
+                "next": "https://graph.facebook.com...&after=abcdef456"
             }
-        ],
-        "paging":...
         }
     */
     async getCustomAudiences(adAccountId: string): Promise<{name: string, id: string}[]> {
         const customAudienceUrl = `act_${adAccountId}/customaudiences?fields=name`
-        const response = await this.apiCall("GET", customAudienceUrl)
-        const namesAndIds = response.data
+        const data = await this.pagingResults(customAudienceUrl)
+        const namesAndIds = data
             .map((customAudienceMetadata: any) =>
             ({name: customAudienceMetadata.name, id: customAudienceMetadata.id}))
             .sort(sortCompare)
