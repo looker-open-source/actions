@@ -14,12 +14,6 @@ export class GoogleAdsApiClient {
         return this.apiCall(method, path)
     }
 
-    async getCustomer(resourceNameOrId: string) {
-      const method = "GET"
-      const path = resourceNameOrId.startsWith("customers/") ? resourceNameOrId : `customers/${resourceNameOrId}`
-      return this.apiCall(method, path)
-    }
-
     async searchOpenUserLists(clientCid: string, uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO") {
       const method = "POST"
       const path = `customers/${clientCid}/googleAds:searchStream`
@@ -41,7 +35,7 @@ export class GoogleAdsApiClient {
       const path = `customers/${clientCid}/googleAds:searchStream`
       const body = {
         query:
-          "SELECT\
+          `SELECT\
             customer_client.client_customer\
             , customer_client.hidden\
             , customer_client.id\
@@ -50,7 +44,9 @@ export class GoogleAdsApiClient {
             , customer_client.test_account\
             , customer_client.descriptive_name\
             , customer_client.manager\
-          FROM customer_client",
+            , customer_client.status\
+          FROM customer_client\
+          WHERE customer_client.status NOT IN ('CANCELED', 'SUSPENDED')`,
       }
       return this.apiCall(method, path, body)
     }
@@ -133,7 +129,7 @@ export class GoogleAdsApiClient {
         url,
         data,
         headers,
-        baseURL: "https://googleads.googleapis.com/v9/",
+        baseURL: "https://googleads.googleapis.com/v11/",
       })
 
       if (process.env.ACTION_HUB_DEBUG) {

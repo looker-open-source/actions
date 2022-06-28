@@ -43,7 +43,7 @@ export class FirebaseAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
     const response = new Hub.ActionResponse({success: true})
     const webhookId = request.webhookId
-    winston.info(`${LOG_PREFIX} Firebase action called.`, { webhookId })
+    winston.info(`${LOG_PREFIX} Firebase action (v 16.06.2022) called.`, { webhookId })
     let data: any = {}
     if (request.formParams.data) {
       data = request.formParams.data
@@ -70,7 +70,10 @@ export class FirebaseAction extends Hub.Action {
         winston.warn(`${LOG_PREFIX} Device Ids not present.`, { webhookId })
         resolve()
       }
-      const notification: any = {title: params.title}
+      const notification: any = {
+        title: params.title,
+        body : `On ${data.dashboard_name}`,
+      }
       const notificationData: any = data
       const notificationOptions = this.notificationOptions
       notificationData.id = v4()
