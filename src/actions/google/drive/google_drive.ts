@@ -56,7 +56,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
-
+    
     if (request.params.state_json) {
       try {
         const stateJson = JSON.parse(request.params.state_json)

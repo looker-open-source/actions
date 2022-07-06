@@ -1,7 +1,6 @@
 import * as semver from "semver"
 
 import { Action } from "./action"
-
 export const actions: Action[] = []
 
 export function addAction(action: Action) {
