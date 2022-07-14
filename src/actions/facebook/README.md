@@ -115,7 +115,6 @@ Selecting a delivery option opens the Scheduler for Explores and Looks. Enter a 
     > Note: Looker will need access to a minimum of 1 business account
 
 1.  Back in the **Facebook Custom Audiences** section of the Scheduler, click the **Verify credentials** button.
-1.  Select your business account from the **Choose a business** drop-down. This is the account that your ads account falls under. Typically a business account and not your personal Facebook account.
 1.  Select your ads account from the **Choose a Facebook ad account** drop-down.
 1.  Choose whether to create a new audience, append to an existing audience, or replace an existing audience. Creating a new audience or updating resets your ads to the "learning" stage. Replacing does not.
 

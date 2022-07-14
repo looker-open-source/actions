@@ -22,6 +22,6 @@ export declare class FirebaseAction extends Hub.Action {
     supportedFormattings: Hub.ActionFormatting[];
     supportedVisualizationFormattings: Hub.ActionVisualizationFormatting[];
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
-    verifyAndSendMessage(params: Hub.ParamMap): Promise<any>;
-    sendMessageToDevice(deviceId: string, payload: firebaseAdmin.messaging.MessagingPayload, options?: firebaseAdmin.messaging.MessagingOptions): Promise<any>;
+    verifyAndSendMessage(params: Hub.ParamMap, webhookId: string | undefined): Promise<any>;
+    sendMessageToDevice(deviceId: string, webhookId: string | undefined, payload: firebaseAdmin.messaging.MessagingPayload, options?: firebaseAdmin.messaging.MessagingOptions): Promise<any>;
 }

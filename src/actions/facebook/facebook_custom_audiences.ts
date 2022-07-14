@@ -182,4 +182,6 @@ if (process.env.FACEBOOK_CLIENT_ID
       process.env.FACEBOOK_CLIENT_SECRET,
     )
     Hub.addAction(fcma)
+} else {
+  winston.warn(`[Facebook Custom Audiences] Action not registered because required environment variables are missing.`)
 }
