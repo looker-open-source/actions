@@ -117,7 +117,8 @@
     "**/axios": "^0.21.4",
     "**/google-auth-library": "^7.14.0",
     "**/pac-resolver": "^5.0.0",
-    "**/mem": "^4.0.0"
+    "**/mem": "^4.0.0",
+    "**/formidable": "^3.2.4"
   },
   "devDependencies": {
     "@types/chai": "^4.2.12",
