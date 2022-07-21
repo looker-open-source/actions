@@ -105,6 +105,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
         const parents = request.formParams.folder ? [request.formParams.folder] : undefined
 
+        filename = this.sanitizeFilename(filename)
         const options: any = {
             q: `name = '${filename}' and '${parents}' in parents and trashed=false`,
             fields: "files",
@@ -293,6 +294,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         }).catch((e: any) => {
             throw e
         })
+    }
+
+    sanitizeFilename(filename: string) {
+        return filename.split("'").join("\'")
     }
 
     async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,

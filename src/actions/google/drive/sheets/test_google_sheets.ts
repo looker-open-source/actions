@@ -396,6 +396,13 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    describe("sanitizeFilename", () => {
+      it("will sanitize apostrophe in filename", () => {
+        const filename = "Barbara'sFile.csv"
+        chai.expect(action.sanitizeFilename(filename)).to.equal("Barbara\'sFile.csv")
+      })
+    })
+
     describe("flush", () => {
       it("will retry if a 429 code is received", (done) => {
         const retrySpy = sinon.spy()
