@@ -55,7 +55,7 @@
     "@types/twilio": "^2.11.0",
     "@types/uuid": "^3.4.9",
     "@types/winston": "^2.4.4",
-    "airtable": "^0.7.2",
+    "airtable": "^0.11.4",
     "analytics-node": "^3.3.0",
     "async-mutex": "^0.1.4",
     "aws-sdk": "^2.732.0",
