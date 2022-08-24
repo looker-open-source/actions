@@ -280,7 +280,7 @@ export class GoogleAdsActionFormBuilder {
     const customerResourceNames = listCustomersResp.resourceNames
     const customers = await Promise.all(customerResourceNames.map(async (rn: string) => {
       const clientCid = rn.replace("customers/", "")
-      return this.getCustomer(clientCid)
+      return this.getCustomer(clientCid).catch(() =>  undefined) // ignore any auth errors from draft accounts
     }))
     const filteredCustomers = customers.filter(Boolean) as AdsCustomer[]
     const sortedCustomers = filteredCustomers.sort(this.sortCustomersCompareFn)
