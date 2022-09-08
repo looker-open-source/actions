@@ -60,7 +60,9 @@ export class JiraAction extends Hub.OAuthAction {
         resp.success = true
       } catch (e) {
         resp.success = false
-        resp.message = e.message
+        if (e instanceof Error) {
+          resp.message = e.message
+        }
       }
     } else {
       resp.success = false
@@ -96,9 +98,9 @@ export class JiraAction extends Hub.OAuthAction {
           }, {
             name: "10004",
             label: "Bug",
-          }]          
-          projectOptions.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
-          issueTypesOptions.sort((a, b) => ((a.name > b.name) ? -1 : 1 ))
+          }]
+          projectOptions.sort((a, b) => ((a.label < b.label) ? -1 : 1))
+          issueTypesOptions.sort((a, b) => ((a.name > b.name) ? -1 : 1))
 
           const form = new Hub.ActionForm()
           form.fields = [{
@@ -133,7 +135,7 @@ export class JiraAction extends Hub.OAuthAction {
           }]
           return form
         }
-      } catch (e) { winston.warn(`Log in fail ${JSON.stringify(e)}`) }
+      } catch (e) { winston.warn('Log in fail') }
     }
     return this.loginForm(request)
   }
@@ -154,7 +156,6 @@ export class JiraAction extends Hub.OAuthAction {
     const client = await this.jiraClient(redirectUri)
     const tokens = await client.getToken(urlParams.code)
 
-    winston.info(`oauthFetchInfo tokens: ${JSON.stringify(tokens)}`)
     const payload = JSON.parse(plaintext)
     await https.post({
       url: payload.stateurl,
