@@ -31,6 +31,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "adf-builder": "^3.3.0",
     "@google-cloud/storage": "^1.5.2",
     "@hubspot/api-client": "^2.0.1",
     "@sendgrid/helpers": "7.2.0",
@@ -55,7 +56,7 @@
     "@types/twilio": "^2.11.0",
     "@types/uuid": "^3.4.9",
     "@types/winston": "^2.4.4",
-    "airtable": "^0.11.4",
+    "airtable": "^0.7.2",
     "analytics-node": "^3.3.0",
     "async-mutex": "^0.1.4",
     "aws-sdk": "^2.732.0",
@@ -70,6 +71,8 @@
     "dropbox": "^2.5.13",
     "express": "^4.17.1",
     "express-winston": "^2.6.0",
+    "firebase-admin": "^10.0.0",
+    "generate-api-key": "^1.0.0",
     "googleapis": "^59.0.0",
     "hipchatter": "^1.0.0",
     "i18n-iso-countries": "^7.1.0",
@@ -96,7 +99,6 @@
     "typescript": "^3.9.7",
     "uuid": "^3.4.0",
     "winston": "^2.4.5",
-    "firebase-admin": "^10.0.0",
     "yarn": "^1.22.18"
   },
   "typings": "lib/index",
