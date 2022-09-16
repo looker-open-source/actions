@@ -60,6 +60,10 @@ export class JiraAction extends Hub.OAuthAction {
       issuetype: {
         id: request.formParams.issueType!,
       },
+      // epicName: request.formParams.epicName, TODO: get custom fieldname for a given epicName field 
+      parent: { 
+        key: request.formParams.parentIssue 
+      },
     }
 
     const stateJson = JSON.parse(request.params.state_json)
@@ -102,11 +106,9 @@ export class JiraAction extends Hub.OAuthAction {
           let issueTypesOptions = projectOptions[0].issueTypes
           if (request.formParams && request.formParams.project) {
             const selectedProject = projectOptions.find((p: any) => request.formParams.project === p.name)
-            
             if (selectedProject) {
               issueTypesOptions = selectedProject.issueTypes
             }
-            
           }
 
           const form = new Hub.ActionForm()
@@ -119,12 +121,12 @@ export class JiraAction extends Hub.OAuthAction {
             required: true,
             interactive: true,
           }, {
-            default: issueTypesOptions[0].name,
             label: "Issue Type",
             name: "issueType",
             type: "select",
             options: issueTypesOptions,
             required: true,
+            interactive: true,
           }, {
             label: "Summary",
             name: "summary",
@@ -141,6 +143,32 @@ export class JiraAction extends Hub.OAuthAction {
             type: "string",
             required: false,
           }]
+
+          if (request.formParams && request.formParams.project && request.formParams.issueType) {
+            const selectedIssueType = request.formParams.issueType
+            if (selectedIssueType === '10003') {
+              // this is a sub-task and it needs an associated parent task
+              const parentIssues = await client.getParentIssues(request.formParams.project)
+              const parentIssueOptions: IssueType[] = parentIssues.issues.map((pi: any) => {
+                return { name: pi.key, label: `${pi.key} ${pi.fields.summary}` }
+              })
+              form.fields.push({
+                label: "Parent Issue",
+                name: "parentIssue",
+                type: "select",
+                options: parentIssueOptions,
+                required: true,
+              })
+            } else if (selectedIssueType === '10000') {
+              // this is an epic and it needs a name 
+              form.fields.push({
+                label: "Epic Name",
+                name: "epicName",
+                type: "string",
+                required: true,
+              })
+            }
+          }
           return form
         }
       } catch (e) { winston.warn('Log in fail') }

@@ -21,7 +21,11 @@ interface JiraIssue {
   url?: string
   issuetype: {
     id: string,
-  }
+  },
+  parent: {
+    key?: string,
+  },
+  // epicName?: string
 }
 
 export class JiraClient {
@@ -131,6 +135,30 @@ export class JiraClient {
     })
   }
 
+  async getParentIssues(projectId: string) {
+    if (!this.tokens) {
+      throw "unauthenticated"
+    }
+    const baseUrl = await this.baseUrl()
+    const bodyData = {
+        jql: `project = ${projectId} and Type IN standardIssueTypes() ORDER BY updated DESC`,
+        fields: [
+          'summary',
+          'id',
+          'key'
+        ],
+        startAt: 0
+    }
+    return https.post({
+      url: `${baseUrl}/search`,
+      headers: {
+        Authorization: `Bearer ${this.tokens.access_token}`,
+      },
+      body: bodyData,
+      json: true,
+    })
+  }
+
   async getIssueTypes() {
     if (!this.tokens) {
       throw "unauthenticated"
@@ -166,6 +194,8 @@ export class JiraClient {
           id: issue.issuetype.id,
         },
         summary: issue.summary,
+        parent: issue.parent,
+        // epicName: issue.epicName,
         description,
       },
     }
