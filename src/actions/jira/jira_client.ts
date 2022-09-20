@@ -25,7 +25,7 @@ interface JiraIssue {
   parent: {
     key?: string,
   },
-  // epicName?: string
+  epicName?: string
 }
 
 export class JiraClient {
@@ -159,13 +159,13 @@ export class JiraClient {
     })
   }
 
-  async getIssueTypes() {
+  async getFields() {
     if (!this.tokens) {
       throw "unauthenticated"
     }
     const baseUrl = await this.baseUrl()
     return https.get({
-      url: `${baseUrl}/issuetype`,
+      url: `${baseUrl}/field`,
       headers: {
         Authorization: `Bearer ${this.tokens.access_token}`,
       },
@@ -184,6 +184,14 @@ export class JiraClient {
     if (issue.url) {
       description.paragraph().link("View data in Looker here.", issue.url)
     }
+    let customFields = {}
+    if (issue.epicName) {
+      const fields = await this.getFields()
+      const epicNameFieldKey = fields.find((f: any) => 'EPIC NAME' === f.name.toUpperCase())?.key
+      if (epicNameFieldKey) {
+        customFields = { [epicNameFieldKey] : issue.epicName }  
+      }
+    }
 
     const body = {
       fields: {
@@ -195,8 +203,8 @@ export class JiraClient {
         },
         summary: issue.summary,
         parent: issue.parent,
-        // epicName: issue.epicName,
         description,
+        ...customFields,
       },
     }
 

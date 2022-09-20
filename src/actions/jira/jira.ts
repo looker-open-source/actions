@@ -60,7 +60,7 @@ export class JiraAction extends Hub.OAuthAction {
       issuetype: {
         id: request.formParams.issueType!,
       },
-      // epicName: request.formParams.epicName, TODO: get custom fieldname for a given epicName field 
+      epicName: request.formParams.epicName,
       parent: { 
         key: request.formParams.parentIssue 
       },
