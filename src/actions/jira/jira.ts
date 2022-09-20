@@ -28,7 +28,6 @@ export class JiraAction extends Hub.OAuthAction {
   minimumSupportedLookerVersion = "6.8.0"
 
   async execute(request: Hub.ActionRequest) {
-
     if (!request.attachment || !request.attachment.dataBuffer) {
       throw "Couldn't get data from attachment."
     }
@@ -92,7 +91,11 @@ export class JiraAction extends Hub.OAuthAction {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
-          const client = await this.jiraClient(stateJson.redirect, stateJson.tokens)
+          let tokens = stateJson.tokens
+          if (stateJson.tokens.refresh_token && Object.keys(request.formParams).length === 0) {
+            tokens = await JiraClient.getRefreshToken(stateJson.tokens.refresh_token, stateJson.redirect)
+          }
+          const client = await this.jiraClient(stateJson.redirect, tokens)
           const projects = await client.getProjects()
           const projectOptions: ProjectOption[] = projects.map((p: any) => {
             const issueTypes:  IssueType[] = p.issueTypes.map((i: any) => {
@@ -112,6 +115,9 @@ export class JiraAction extends Hub.OAuthAction {
           }
 
           const form = new Hub.ActionForm()
+          const newState = JSON.stringify({ tokens : tokens, redirect : stateJson.redirect })
+          form.state = new Hub.ActionState()
+          form.state.data = newState
           form.fields = [{
             default: projectOptions[0].name,
             label: "Project",

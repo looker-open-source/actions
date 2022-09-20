@@ -98,12 +98,12 @@ export class JiraClient {
       json: true,
     }).promise()
     if (tokens.refresh_token) {
-      tokens = await this.getRefreshToken(tokens.refresh_token)
+      tokens = await JiraClient.getRefreshToken(tokens.refresh_token, this.redirectUri)
     }
     return tokens
   }
 
-  async getRefreshToken(refresh: string) {
+  static async getRefreshToken(refresh: string, redirectUri: string) {
     const response: Credentials = await https.post({
       url: "https://auth.atlassian.com/oauth/token",
       headers: {
@@ -114,7 +114,7 @@ export class JiraClient {
         refresh_token: refresh,
         client_id: process.env.JIRA_CLIENT_ID,
         client_secret: process.env.JIRA_CLIENT_SECRET,
-        redirect_uri: this.redirectUri,
+        redirect_uri: redirectUri,
       },
       json: true,
     }).promise()
