@@ -8,7 +8,6 @@ import { JiraAction } from "./jira"
 
 const action = new JiraAction()
 
-
 function expectJiraNewIssueMatch(request: Hub.ActionRequest, match: any) {
   const addAttachmentToIssueSpy = sinon.spy(async () => 1)
   const newIssueSpy = sinon.spy(async () => 1)
@@ -16,7 +15,7 @@ function expectJiraNewIssueMatch(request: Hub.ActionRequest, match: any) {
     .callsFake(() => {
       return {
         addAttachmentToIssue: addAttachmentToIssueSpy,
-        newIssue: newIssueSpy
+        newIssue: newIssueSpy,
       }
   })
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
@@ -49,8 +48,8 @@ describe(`${action.constructor.name} unit tests`, () => {
         description: "mydescription",
         issueType: "10",
       }
-      request.params = { 
-        state_json: "{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}"
+      request.params = {
+        state_json: "{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectJiraNewIssueMatch(request, {
@@ -77,31 +76,31 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("has form with correct projects and issues", (done) => {
       const projects = [{
-                  id: "1", 
+                  id: "1",
                   name: "A",
                   issueTypes: [
                     {id: "1", name: "Bug"},
-                    {id: "2", name: "Request"}
+                    {id: "2", name: "Request"},
                   ],
                 },
                 {
-                  id: "2", 
+                  id: "2",
                   name: "B",
                   issueTypes: [
                     {id: "1", name: "Bug"},
                   ],
-                }
+                },
               ]
 
       const stubClient = sinon.stub(action as any, "jiraClient")
         .callsFake(() => {
           return {
-            getProjects: () => projects
+            getProjects: () => projects,
           }
         })
       const request = new Hub.ActionRequest()
-      request.params = { 
-        state_json: "{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}"
+      request.params = {
+        state_json: "{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}",
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -134,17 +133,17 @@ describe(`${action.constructor.name} unit tests`, () => {
           label: "Filename",
           name: "filename",
           type: "string",
-          required: false
+          required: false,
         }],
         state: {
-          data: "{\"tokens\":\"tokens\",\"redirect\":\"redirect\"}"
+          data: "{\"tokens\":\"tokens\",\"redirect\":\"redirect\"}",
         },
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
     it("show login form when auth fails", (done) => {
       const request = new Hub.ActionRequest()
-      request.params = { 
+      request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
       }
       const form = action.validateAndFetchForm(request)
@@ -155,7 +154,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                   label: "Log in",
                   description: "In order to create an Issue, you will need to log in" +
                     " to your Jira account.",
-                  oauth_url: "undefined/actions/jira_create_issue/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0"
+                  oauth_url: "undefined/actions/jira_create_issue/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0",
                 }],
       }).and.notify(done)
     })
