@@ -44,23 +44,23 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("sends correct jira new issue", () => {
       const request = new Hub.ActionRequest()
       request.formParams = {
-        project: '1',
-        summary: 'mysummary',
-        description: 'mydescription',
-        issueType: '10',
+        project: "1",
+        summary: "mysummary",
+        description: "mydescription",
+        issueType: "10",
       }
       request.params = { 
-        state_json: '{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}'
+        state_json: "{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}"
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectJiraNewIssueMatch(request, {
         project: {
-          id: '1',
+          id: "1",
         },
-        summary: 'mysummary',
-        description: 'mydescription',
+        summary: "mysummary",
+        description: "mydescription",
         issuetype: {
-          id: '10',
+          id: "10",
         },
         epicName: undefined,
         parent: { key: undefined },
@@ -101,12 +101,12 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
       const request = new Hub.ActionRequest()
       request.params = { 
-        state_json: '{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}'
+        state_json: "{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}"
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          default: '1',
+          default: "1",
           label: "Project",
           name: "project",
           options: [{name: "1", label: "A"}, {name: "2", label: "B"}],
@@ -131,13 +131,13 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "textarea",
           required: false,
         }, {
-          label: 'Filename',
-          name: 'filename',
-          type: 'string',
+          label: "Filename",
+          name: "filename",
+          type: "string",
           required: false
         }],
         state: {
-          data: '{"tokens":"tokens","redirect":"redirect"}'
+          data: "{\"tokens\":\"tokens\",\"redirect\":\"redirect\"}"
         },
       }).and.notify(stubClient.restore).and.notify(done)
     })

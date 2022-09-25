@@ -32,7 +32,7 @@ export class JiraAction extends Hub.OAuthAction {
       throw "Couldn't get data from attachment."
     }
     const buffer = request.attachment.dataBuffer
-    const filename = request.formParams.filename || request.suggestedFilename()!
+    const filename = request.formParams.filename || request.suggestedFilename()
 
     const resp = new Hub.ActionResponse()
 
@@ -61,7 +61,7 @@ export class JiraAction extends Hub.OAuthAction {
       },
       epicName: request.formParams.epicName,
       parent: {
-        key: request.formParams.parentIssue
+        key: request.formParams.parentIssue,
       },
     }
 
@@ -98,11 +98,11 @@ export class JiraAction extends Hub.OAuthAction {
           const client = await this.jiraClient(stateJson.redirect, tokens)
           const projects = await client.getProjects()
           const projectOptions: ProjectOption[] = projects.map((p: any) => {
-            const issueTypes:  IssueType[] = p.issueTypes.map((i: any) => {
+            const issueTypes: IssueType[] = p.issueTypes.map((i: any) => {
               return { name: i.id, label: i.name }
             })
             issueTypes.sort((a, b) => ((a.name > b.name) ? -1 : 1))
-            return { name: p.id, label: p.name, issueTypes: issueTypes }
+            return { name: p.id, label: p.name, issueTypes }
           })
           projectOptions.sort((a, b) => ((a.label < b.label) ? -1 : 1))
 
@@ -115,7 +115,7 @@ export class JiraAction extends Hub.OAuthAction {
           }
 
           const form = new Hub.ActionForm()
-          const newState = JSON.stringify({ tokens : tokens, redirect : stateJson.redirect })
+          const newState = JSON.stringify({ tokens, redirect : stateJson.redirect })
           form.state = new Hub.ActionState()
           form.state.data = newState
           form.fields = [{
@@ -152,7 +152,7 @@ export class JiraAction extends Hub.OAuthAction {
 
           if (request.formParams && request.formParams.project && request.formParams.issueType) {
             const selectedIssueType = request.formParams.issueType
-            if (selectedIssueType === '10003') {
+            if (selectedIssueType === "10003") {
               // this is a sub-task and it needs an associated parent task
               const parentIssues = await client.getParentIssues(request.formParams.project)
               const parentIssueOptions: IssueType[] = parentIssues.issues.map((pi: any) => {
@@ -165,8 +165,8 @@ export class JiraAction extends Hub.OAuthAction {
                 options: parentIssueOptions,
                 required: true,
               })
-            } else if (selectedIssueType === '10000') {
-              // this is an epic and it needs a name 
+            } else if (selectedIssueType === "10000") {
+              // this is an epic and it needs a name
               form.fields.push({
                 label: "Epic Name",
                 name: "epicName",
@@ -177,7 +177,7 @@ export class JiraAction extends Hub.OAuthAction {
           }
           return form
         }
-      } catch (e) { winston.warn('Log in fail') }
+      } catch (e) { winston.warn("Log in fail") }
     }
     return this.loginForm(request)
   }
