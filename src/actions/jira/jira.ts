@@ -107,7 +107,7 @@ export class JiraAction extends Hub.OAuthAction {
           projectOptions.sort((a, b) => ((a.label < b.label) ? -1 : 1))
 
           let issueTypesOptions = projectOptions[0].issueTypes
-          if (request.formParams && request.formParams.project) {
+          if (request.formParams.project) {
             const selectedProject = projectOptions.find((p: any) => request.formParams.project === p.name)
             if (selectedProject) {
               issueTypesOptions = selectedProject.issueTypes
@@ -150,7 +150,7 @@ export class JiraAction extends Hub.OAuthAction {
             required: false,
           }]
 
-          if (request.formParams && request.formParams.project && request.formParams.issueType) {
+          if (request.formParams.project && request.formParams.issueType) {
             const selectedIssueType = request.formParams.issueType
             if (selectedIssueType === "10003") {
               // this is a sub-task and it needs an associated parent task
