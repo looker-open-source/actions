@@ -1,3 +1,4 @@
+import * as b64 from "base64-url"
 import * as chai from "chai"
 import * as sinon from "sinon"
 
@@ -7,50 +8,62 @@ import { JiraAction } from "./jira"
 
 const action = new JiraAction()
 
+
 function expectJiraNewIssueMatch(request: Hub.ActionRequest, match: any) {
-
-  const addNewIssueSpy = sinon.spy(async () => 1)
-  const addAttachmentonIssueSpy = sinon.spy(async () => 10)
-
-  const stubClient = sinon.stub(action as any, "jiraClientFromRequest")
+  const addAttachmentToIssueSpy = sinon.spy(async () => 1)
+  const newIssueSpy = sinon.spy(async () => 1)
+  const stubClient = sinon.stub(action as any, "jiraClient")
     .callsFake(() => {
       return {
-        addNewIssue: addNewIssueSpy,
-        addAttachmentOnIssue: addAttachmentonIssueSpy,
+        addAttachmentToIssue: addAttachmentToIssueSpy,
+        newIssue: newIssueSpy
       }
-    })
-
+  })
   return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
-    chai.expect(addNewIssueSpy).to.have.been.calledWithMatch(match)
+    chai.expect(newIssueSpy).to.have.been.calledWithMatch(match)
     stubClient.restore()
   })
+
 }
 
 describe(`${action.constructor.name} unit tests`, () => {
+
+  let encryptStub: any
+  let decryptStub: any
+  beforeEach(() => {
+    encryptStub = sinon.stub(Hub.ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
+    decryptStub = sinon.stub(Hub.ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+  })
+  afterEach(() => {
+    encryptStub.restore()
+    decryptStub.restore()
+  })
 
   describe("action", () => {
 
     it("sends correct jira new issue", () => {
       const request = new Hub.ActionRequest()
-      request.scheduledPlan = {url: "looker_url"}
       request.formParams = {
-        project: "1",
-        summary: "mysummary",
-        description: "mydescription",
-        issueType: "10",
+        project: '1',
+        summary: 'mysummary',
+        description: 'mydescription',
+        issueType: '10',
+      }
+      request.params = { 
+        state_json: '{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}'
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectJiraNewIssueMatch(request, {
-        fields: {
-          project: {
-            id: "1",
-          },
-          summary: "mysummary",
-          description: "mydescription" + "\nLooker URL: looker_url",
-          issuetype: {
-            id: "10",
-          },
+        project: {
+          id: '1',
         },
+        summary: 'mysummary',
+        description: 'mydescription',
+        issuetype: {
+          id: '10',
+        },
+        epicName: undefined,
+        parent: { key: undefined },
       })
     })
 
@@ -63,32 +76,50 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("has form with correct projects and issues", (done) => {
-      const stubClient = sinon.stub(action as any, "jiraClientFromRequest")
+      const projects = [{
+                  id: "1", 
+                  name: "A",
+                  issueTypes: [
+                    {id: "1", name: "Bug"},
+                    {id: "2", name: "Request"}
+                  ],
+                },
+                {
+                  id: "2", 
+                  name: "B",
+                  issueTypes: [
+                    {id: "1", name: "Bug"},
+                  ],
+                }
+              ]
+
+      const stubClient = sinon.stub(action as any, "jiraClient")
         .callsFake(() => {
           return {
-            listProjects: () => [
-              {id: "1", name: "A"},
-              {id: "2", name: "B"}],
-            listIssueTypes: () => [
-              {id: "1", name: "Bug", description: "x"},
-              {id: "2", name: "Request"}],
+            getProjects: () => projects
           }
         })
       const request = new Hub.ActionRequest()
-      request.params = {
-        address: "foo",
-        username: "foo",
-        password: "foo",
+      request.params = { 
+        state_json: '{\"tokens\": \"tokens\", \"redirect\": \"redirect\"}'
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
-          default: "1",
+          default: '1',
           label: "Project",
           name: "project",
           options: [{name: "1", label: "A"}, {name: "2", label: "B"}],
           type: "select",
           required: true,
+          interactive: true,
+        }, {
+          label: "Issue Type",
+          name: "issueType",
+          type: "select",
+          options: [{label: "Request", name: "2"}, {name: "1", label: "Bug"}],
+          required: true,
+          interactive: true,
         }, {
           label: "Summary",
           name: "summary",
@@ -98,34 +129,35 @@ describe(`${action.constructor.name} unit tests`, () => {
           label: "Description",
           name: "description",
           type: "textarea",
-          required: true,
+          required: false,
         }, {
-          default: "1",
-          label: "Issue Type",
-          name: "issueType",
-          type: "select",
-          options: [{name: "1", label: "Bug"}],
-          required: true,
+          label: 'Filename',
+          name: 'filename',
+          type: 'string',
+          required: false
         }],
+        state: {
+          data: '{"tokens":"tokens","redirect":"redirect"}'
+        },
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
-    it("properly surfaces client errors", (done) => {
-      const stubClient = sinon.stub(action as any, "jiraClientFromRequest")
-        .callsFake(() => {
-          throw "hahaha i failed"
-        })
+    it("show login form when auth fails", (done) => {
       const request = new Hub.ActionRequest()
-      request.params = {
-        address: "foo",
-        username: "foo",
-        password: "foo",
+      request.params = { 
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
-        error: "hahaha i failed",
-        fields: [],
-      }).and.notify(stubClient.restore).and.notify(done)
+        fields: [{
+                  name: "login",
+                  type: "oauth_link",
+                  label: "Log in",
+                  description: "In order to create an Issue, you will need to log in" +
+                    " to your Jira account.",
+                  oauth_url: "undefined/actions/jira_create_issue/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0"
+                }],
+      }).and.notify(done)
     })
   })
 
