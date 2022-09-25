@@ -29,6 +29,24 @@ interface JiraIssue {
 }
 
 export class JiraClient {
+
+  static async getRefreshToken(refresh: string, redirectUri: string) {
+    const response: Credentials = await https.post({
+      url: "https://auth.atlassian.com/oauth/token",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: {
+        grant_type: "refresh_token",
+        refresh_token: refresh,
+        client_id: process.env.JIRA_CLIENT_ID,
+        client_secret: process.env.JIRA_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+      },
+      json: true,
+    }).promise()
+    return response
+  }
   apiVersion: string
   redirectUri: string
   tokens?: Credentials
@@ -103,24 +121,6 @@ export class JiraClient {
     return tokens
   }
 
-  static async getRefreshToken(refresh: string, redirectUri: string) {
-    const response: Credentials = await https.post({
-      url: "https://auth.atlassian.com/oauth/token",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: {
-        grant_type: "refresh_token",
-        refresh_token: refresh,
-        client_id: process.env.JIRA_CLIENT_ID,
-        client_secret: process.env.JIRA_CLIENT_SECRET,
-        redirect_uri: redirectUri,
-      },
-      json: true,
-    }).promise()
-    return response
-  }
-
   async getProjects() {
     if (!this.tokens) {
       throw "unauthenticated"
@@ -143,11 +143,11 @@ export class JiraClient {
     const bodyData = {
         jql: `project = ${projectId} and Type IN standardIssueTypes() ORDER BY updated DESC`,
         fields: [
-          'summary',
-          'id',
-          'key'
+          "summary",
+          "id",
+          "key",
         ],
-        startAt: 0
+        startAt: 0,
     }
     return https.post({
       url: `${baseUrl}/search`,
@@ -187,9 +187,9 @@ export class JiraClient {
     let customFields = {}
     if (issue.epicName) {
       const fields = await this.getFields()
-      const epicNameFieldKey = fields.find((f: any) => 'EPIC NAME' === f.name.toUpperCase())?.key
+      const epicNameFieldKey = fields.find((f: any) => "EPIC NAME" === f.name.toUpperCase())?.key
       if (epicNameFieldKey) {
-        customFields = { [epicNameFieldKey] : issue.epicName }  
+        customFields = { [epicNameFieldKey] : issue.epicName }
       }
     }
 

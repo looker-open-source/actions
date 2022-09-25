@@ -122,7 +122,7 @@ export class JiraAction extends Hub.OAuthAction {
             default: projectOptions[0].name,
             label: "Project",
             name: "project",
-            options: projectOptions.map((p: any) => { return { name: p.name, label: p.label } }),
+            options: projectOptions.map((p: any) => ({ name: p.name, label: p.label })),
             type: "select",
             required: true,
             interactive: true,
