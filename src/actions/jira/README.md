@@ -16,18 +16,26 @@ This action will create a JIRA Issue referencing data from a Look. You will firs
 1. Create a JIRA account or use the account you want your action hub tickets to be associated with.
 2. Navigate to the Atlassian developer console https://developer.atlassian.com/console/myapps/
 3. Click the create button to create an “OAUTH 2.0 Integration” 
-[OAUTH 2.0 Integration](./readmeImages/oAuthStep3.png)
+![OAUTH 2.0 Integration](./readmeImages/oAuthStep3.png)
 4. Name your app and agree to the terms
-[Name your app](./readmeImages/oAuthStep4.png)
+![Name your app](./readmeImages/oAuthStep4.png)
 5. Click on the “Distribution” tab then the “Edit” button. Then make sure your app’s “Distribution Status” are set to “Not Sharing”. Save your changes.
+![Not sharing](./readmeImages/oAuthStep5.png)
 6. Click on the “Permissions” tab. 
+![Permissions](./readmeImages/oAuthStep6.png)
 7. Click “Add” or “Configure” for “User Identity API”. Click “Edit Scopes” and select “View active user profile”
+![User Identity API](./readmeImages/oAuthStep7.png)
 8. Click “Add” or “Configure” for “Jira API”. Click “Edit Scopes” and select “View Jira issue data”, “View user profiles”, and “Create and manage issues”
+![JIRA API](./readmeImages/oAuthStep8.png)
 9. Click “Add” or “Configure” for “Personal data reporting API”. Click “Edit Scopes” and select “Personal data reporting API”
+![Personal data reporting API](./readmeImages/oAuthStep9.png)
 10. Click the “Authorization” tab. Click “Add” or “Configure” for “OAuth 2.0 (3LO)”
-11. Enter your callback url for your action hub. ie. https://your_https_web_hosted_address.com/actions/jira_create_issue/oauth_redirect
+![Auth tab](./readmeImages/oAuthStep10.png)
+11. Enter your callback url for your action hub. ie. `https://your_https_web_hosted_address.com/actions/jira_create_issue/oauth_redirect`
 12. Make sure all changes have been saved. Then click on the “Settings” tab and scroll to “Authentication Details”. Here you have your app’s client id and secret.
 13. Copy and paste the client id and secret into the .env file in your local action hub repo.
-`JIRA_CLIENT_ID=client id`
-`JIRA_CLIENT_SECRET=secret`
+```
+JIRA_CLIENT_ID=client id
+JIRA_CLIENT_SECRET=secret
+```
 
