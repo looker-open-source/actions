@@ -10,6 +10,10 @@
       "sourceMap": false,
       "strict": true,
       "target": "ES6",
+      "lib": [
+        "ES2015",
+        "esnext.array"
+      ],
       "plugins": [
         {
           "name": "tslint-language-service",

@@ -4,6 +4,7 @@ import * as querystring from "querystring"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
 import { REDIRECT_URL, Tokens } from "../campaigns/salesforce_campaigns"
+import { URL } from 'url'
 
 export class SalesforceOauthHelper {
   readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
