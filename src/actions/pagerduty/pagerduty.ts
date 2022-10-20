@@ -5,8 +5,8 @@ import * as winston from "winston"
 
 export class PagerDutyAction extends Hub.Action {
   name = "pagerduty"
-  label = process.env.ACTION_HUB_LABEL == "Tapad Stg Action Hub" ? "PagerDuty - Test" : "PagerDuty"
-  iconName = process.env.ACTION_HUB_LABEL == "Tapad Stg Action Hub" ? "pagerduty/pd_icon_test.png" : "pagerduty/pd_icon.png"
+  label = "PagerDuty"
+  iconName = "pagerduty/pd_icon.png"
   description = `PagerDuty (${process.env.ACTION_HUB_LABEL})`
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
   requiredFields = []
