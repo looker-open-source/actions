@@ -111,7 +111,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
 
     // first try to match fields by tag
     fields.filter((f) =>
-        f.tags && f.tags.some((t: string) =>
+        f.tags && f.tags.some((t: string) =>          
           TAGS.map((tag) => {
             if (tag === t) {
               mapper.push({
@@ -164,7 +164,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       if (stateJson.access_token && stateJson.refresh_token) {
         tokens = stateJson
       } else {
-        tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson)
+        tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson, request.params.salesforce_domain!)
       }
 
       // passing back connection object to handle access token refresh and update state
@@ -209,7 +209,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
         if (stateJson.access_token && stateJson.refresh_token) {
           tokens = stateJson
         } else {
-          tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson)
+          tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson, request.params.salesforce_domain!)
           form.state = new Hub.ActionState()
           form.state.data = JSON.stringify(tokens)
         }
@@ -237,7 +237,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
 // Client ID is Salesforce Consumer Key
 // Client Secret is Salesforce Consumer Secret
 // Max results is max number of objects to fetch. Used in the form builder to get existing campaigns (default is 10,000)
-// Chunk size is the number of sObject sent per single request (limit is 200 records)
+// Chunk size is the number of sObject sent per single request (limit is 10,000 records)
 if (process.env.SALESFORCE_CLIENT_ID && process.env.SALESFORCE_CLIENT_SECRET
   && process.env.SALESFORCE_MAX_RESULTS && process.env.SALESFORCE_CHUNK_SIZE) {
 
@@ -245,7 +245,7 @@ if (process.env.SALESFORCE_CLIENT_ID && process.env.SALESFORCE_CLIENT_SECRET
   const maxResults = Number.isInteger(envMaxResults) ? envMaxResults : 10000
 
   const envChunkSize = parseInt(process.env.SALESFORCE_CHUNK_SIZE + "", 10)
-  const chunkSize = Number.isInteger(envChunkSize) ? envChunkSize : 200
+  const chunkSize = Number.isInteger(envChunkSize) ? envChunkSize : 5000
 
   const sfdcCampaigns = new SalesforceCampaignsAction(
     process.env.SALESFORCE_CLIENT_ID,

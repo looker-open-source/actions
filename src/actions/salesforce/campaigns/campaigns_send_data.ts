@@ -65,38 +65,46 @@ export class SalesforceCampaignsSendData {
     // flatten array of arrays into one big list
     const memberList = ([] as CampaignMember[]).concat.apply([], memberListColumns)
     const memberCount = memberList.length
-    const memberGrouped = this.chunk(memberList, this.chunkSize)
-
-    // POST request with sObject Collections to execute multiple records in a single request
-    // https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta
-    // /api_rest/resources_composite_sobjects_collections_create.htm
-
-    // The entire request (up to 200 records per chunk) counts as a single API call toward API limits.
-    // This resource is available in API v42.0+ and later (released Spring 2018)
-
-    // For Salesforce Professional and Enterprise, each organization receives a total
-    // of 1k API calls per-user in a 24-hour period
-    // https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta
-    // /salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_api.htm
-
-    // bottom limit = 1,000 requests * 200 members = 200,000 members in 24h period per user
-
-    // jsforce uses function overloading for the create function, which causes issues resolving the
-    // function signature as the compiler picks the first definition in declaration order, which is
-    // a single record. Hence the need to use the 'any' type below
-    const records: any = await Promise.all(
-      memberGrouped.map(async (m) => {
-        return await sfdcConn.sobject("CampaignMember").create(m)
-      }),
-    )
-
-    const cleanErrors = this.cleanErrors(records, memberGrouped)
+    const records = await this.bulkInsert(memberList, sfdcConn, this.chunkSize)
+    const cleanErrors = this.cleanErrors(records)
     const summary = `Errors with ${cleanErrors.length} out of ${memberCount} members`
     const errorSummary = `${summary}. ${JSON.stringify(cleanErrors)}`
     winston.debug(errorSummary)
-
     const message = cleanErrors.length > 0 ? errorSummary : ""
     return { message, sfdcConn }
+  }
+
+  async bulkInsert(items: CampaignMember[], sfdcConn: jsforce.Connection, chunkSize: number) {
+    const bulkJob = sfdcConn.bulk.createJob("CampaignMember", "insert")
+    const chunks: any = []
+    while (items.length > 0) {
+      chunks.push(items.splice(0, chunkSize))
+    }
+    return new Promise((resolve, reject) => {
+      let completedBatches = 0
+      const chunkCount = chunks.length
+      const batchResults: any  = []
+      chunks.map((chunk: any) => {
+          const batch = bulkJob.createBatch()
+          batch.execute(chunk)
+          batch.on("error", (batchError) => {
+            const rejectReason = 'Error loading data in salesforce, batchInfo: ' + batchError
+            winston.error(rejectReason)
+            reject(rejectReason)
+          })
+          batch.on("queue", (batchInfo) => {
+            winston.debug('queue, batchInfo:', batchInfo)
+            batch.poll(1000, 200000)
+          })
+          batch.on("response", (rets) => {
+            batchResults.push(rets)
+            completedBatches++
+            if (completedBatches === chunkCount) {
+              resolve(batchResults)
+            }
+          })
+        }) 
+    })
   }
 
   chunk(items: CampaignMember[], size: number) {
@@ -107,34 +115,26 @@ export class SalesforceCampaignsSendData {
     return chunks
   }
 
-  getSfdcMemberId(record: CampaignMember) {
-    const memberType =  Object.keys(record).filter((key) => !["CampaignId", "Status"].includes(key))[0] as MemberType
-    return record[memberType]
-  }
-
   // filters results to only errors and returns simplified error object:
   // [
   //   { abc1: ["Already a campaign member."] },
   //   { abc2: ["Attempted to add an entity 'abc2' to a campaign 'xyz' more than once.", "Some other error message"] },
   //   ...
   // ]
-  cleanErrors(records: any, memberGrouped: CampaignMember[][]) {
+  cleanErrors(records: any) {
     const memberErrors: MemberErrors[] = []
-
-    records.map((chunk: jsforce.RecordResult[], chunkIndex: number) => {
-      chunk.map((result, index) => {
-        !result.success
-          ? memberErrors.push({
-              memberId: this.getSfdcMemberId(memberGrouped[chunkIndex][index])!,
-              errors: result,
-            })
-          : null
+    records.map((chunk: any, chunkIndex: number) => {
+      chunk.map((result: any, resultIndex: number) => {
+        if (!result.success) {
+          memberErrors.push({
+            memberId: result.id !== null ? result.id : chunkIndex.toString() + "." + resultIndex.toString() ,
+            errors: result.errors.join(', '),
+          })
+        }
       })
     })
-
     const cleanErrors = memberErrors.map((me) => {
-      const memberMessage = me.errors.errors.map((e: any) => e.message)
-      return { [me.memberId]: memberMessage }
+      return { [me.memberId]: me.errors }
     })
     return cleanErrors
   }
