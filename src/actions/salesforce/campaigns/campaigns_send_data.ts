@@ -16,8 +16,6 @@ interface MemberErrors {
   errors: jsforce.ErrorResult
 }
 
-type MemberType = "ContactId" | "LeadId"
-
 export class SalesforceCampaignsSendData {
   readonly oauthCreds: { oauthClientId: string; oauthClientSecret: string }
   readonly chunkSize: number
