@@ -142,7 +142,7 @@ export class SalesforceOauthHelper {
       loginUrl,
     })
 
-    const sfdcConn = new jsforce.Connection({ ...oauth2, instanceUrl: loginUrl, })
+    const sfdcConn = new jsforce.Connection({ ...oauth2, instanceUrl: loginUrl })
 
     await sfdcConn.authorize(stateJson.code).catch((e) => {
       winston.error(e.toString())

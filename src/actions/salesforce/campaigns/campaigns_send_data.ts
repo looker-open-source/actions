@@ -103,7 +103,7 @@ export class SalesforceCampaignsSendData {
               resolve(batchResults)
             }
           })
-        }) 
+        })
     })
   }
 
