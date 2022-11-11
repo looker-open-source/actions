@@ -111,7 +111,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
 
     // first try to match fields by tag
     fields.filter((f) =>
-        f.tags && f.tags.some((t: string) =>          
+        f.tags && f.tags.some((t: string) =>
           TAGS.map((tag) => {
             if (tag === t) {
               mapper.push({

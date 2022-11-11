@@ -88,12 +88,12 @@ export class SalesforceCampaignsSendData {
           const batch = bulkJob.createBatch()
           batch.execute(chunk)
           batch.on("error", (batchError) => {
-            const rejectReason = 'Error loading data in salesforce, batchInfo: ' + batchError
+            const rejectReason = "Error loading data in salesforce, batchInfo: " + batchError
             winston.error(rejectReason)
             reject(rejectReason)
           })
           batch.on("queue", (batchInfo) => {
-            winston.debug('queue, batchInfo:', batchInfo)
+            winston.debug("queue, batchInfo:", batchInfo)
             batch.poll(1000, 200000)
           })
           batch.on("response", (rets) => {
@@ -128,7 +128,7 @@ export class SalesforceCampaignsSendData {
         if (!result.success) {
           memberErrors.push({
             memberId: result.id !== null ? result.id : chunkIndex.toString() + "." + resultIndex.toString() ,
-            errors: result.errors.join(', '),
+            errors: result.errors.join(", "),
           })
         }
       })
