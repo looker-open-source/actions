@@ -1,6 +1,6 @@
-import * as Pq from "p-queue";
+import PQueue from "p-queue";
 export declare abstract class ProcessQueue {
-    queue: Pq;
+    queue: PQueue;
     constructor();
     abstract run(data: string): Promise<string>;
 }

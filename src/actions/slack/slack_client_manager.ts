@@ -1,4 +1,4 @@
-import {WebClient} from "@slack/client"
+import {WebClient} from "@slack/web-api"
 import * as semver from "semver"
 import * as winston from "winston"
 import * as Hub from "../../hub"

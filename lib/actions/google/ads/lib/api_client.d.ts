@@ -6,7 +6,6 @@ export declare class GoogleAdsApiClient {
     readonly loginCid?: string | undefined;
     constructor(log: Logger, accessToken: string, developerToken: string, loginCid?: string | undefined);
     listAccessibleCustomers(): Promise<any>;
-    getCustomer(resourceNameOrId: string): Promise<any>;
     searchOpenUserLists(clientCid: string, uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO"): Promise<any>;
     searchClientCustomers(clientCid: string): Promise<any>;
     createUserList(targetCid: string, newListName: string, newListDescription: string, uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO", mobileAppId?: string): Promise<any>;

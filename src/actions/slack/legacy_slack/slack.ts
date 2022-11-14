@@ -1,6 +1,6 @@
 import * as Hub from "../../../hub"
 
-import { WebClient } from "@slack/client"
+import { WebClient } from "@slack/web-api"
 import _ = require("lodash")
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
 

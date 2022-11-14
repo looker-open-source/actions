@@ -1,4 +1,4 @@
-export declare const API_VERSION = "v12.0";
+export declare const API_VERSION = "v14.0";
 export declare const API_BASE_URL: string;
 export declare const CUSTOMER_LIST_SOURCE_TYPES: {
     USER_PROVIDED_ONLY: string;
@@ -36,12 +36,9 @@ export declare const validFacebookHashCombinations: [(f: UserFields) => string, 
 export default class FacebookCustomAudiencesApi {
     readonly accessToken: string;
     constructor(accessToken: string);
+    pagingResults(url: string): Promise<any>;
     me(): Promise<any>;
-    getBusinessAccountIds(): Promise<{
-        name: string;
-        id: string;
-    }[]>;
-    getAdAccountsForBusiness(businessId: string): Promise<{
+    getAdAccounts(): Promise<{
         name: string;
         id: string;
     }[]>;

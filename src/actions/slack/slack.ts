@@ -1,4 +1,4 @@
-import {WebClient} from "@slack/client"
+import {WebClient} from "@slack/web-api"
 import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
 import _ = require("lodash")
 import * as winston from "winston"

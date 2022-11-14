@@ -35,7 +35,7 @@
     "@hubspot/api-client": "^2.0.1",
     "@sendgrid/helpers": "7.2.0",
     "@sendgrid/mail": "7.2.2",
-    "@slack/client": "^5.0.1",
+    "@slack/web-api": "^6.8.0",
     "@types/base64-url": "^2.2.0",
     "@types/body-parser": "^1.19.0",
     "@types/dotenv": "^4.0.1",
@@ -101,7 +101,7 @@
   },
   "typings": "lib/index",
   "engines": {
-    "node": "14.18.0",
+    "node": "18.12.1",
     "yarn": ">=1.19.1"
   },
   "resolutions": {

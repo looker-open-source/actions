@@ -1,4 +1,4 @@
-import { WebClient } from "@slack/client";
+import { WebClient } from "@slack/web-api";
 import * as Hub from "../../hub";
 export declare const PLACEHOLDER_WORKSPACE = "any";
 export declare const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.3.0";

@@ -1,5 +1,6 @@
-import {ChatPostMessageArguments, FilesUploadArguments, WebClient} from "@slack/client"
+import {ChatPostMessageArguments, FilesUploadArguments, WebClient} from "@slack/web-api"
 import * as chai from "chai"
+import * as gaxios from "gaxios"
 import * as sinon from "sinon"
 
 import concatStream = require("concat-stream")
@@ -13,24 +14,45 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
 
     const slackClient = new WebClient("someToken")
     const expectedBuffer = optionsMatch.file as Buffer
+    const fileId = "1234ABCDX"
     delete optionsMatch.file
+    const uploadUrlSpy = sinon.spy(async (_: any) => {
+        return {
+                upload_url: "https://fake-url.com",
+                file_id: fileId,
+        }
+    })
 
-    const filesUploadSpy = sinon.spy(async (params: any) => {
-        params.media.body.pipe(concatStream((buffer) => {
+    const uploadSpy = sinon.spy(async (params: any) => {
+        params.data.pipe(concatStream((buffer) => {
             chai.expect(buffer.toString()).to.equal(expectedBuffer.toString())
         }))
         return { promise: async () => Promise.resolve() }
     })
 
-    const stubClient = sinon.stub(slackClient.files, "upload")
-        .callsFake(filesUploadSpy)
+    const finalizeSpy = sinon.spy(async (params: any) => {
+        chai.expect(params.files[0].id).to.equal(fileId)
+        chai.expect(params.files[0].title).to.equal(optionsMatch.filename)
+        chai.expect(params.channel_id).to.equal(optionsMatch.channels)
+        chai.expect(params.initial_comment).to.equal(optionsMatch.initial_comment)
+        chai.expect(params.initial_comment).to.equal("NOT A MATCH")
+        return {}
+    })
+
+    const stubClientURL = sinon.stub(slackClient.files, "getUploadURLExternal").callsFake(uploadUrlSpy)
+    const stubUpload = sinon.stub(gaxios, "request").callsFake(uploadSpy)
+    const stubFinalize = sinon.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeSpy)
 
     const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
         .callsFake(() => stubFileName)
 
     return chai.expect(handleExecute(request, slackClient)).to.be.fulfilled.then(() => {
-        chai.expect(filesUploadSpy).to.have.been.calledWithMatch(optionsMatch)
-        stubClient.restore()
+        chai.expect(uploadUrlSpy).to.have.been.called
+        chai.expect(uploadSpy).to.have.been.called
+        chai.expect(finalizeSpy).to.have.been.called
+        stubClientURL.restore()
+        stubUpload.restore()
+        stubFinalize.restore()
         stubSuggestedFilename.restore()
     })
 }
@@ -294,7 +316,7 @@ describe(`slack/utils unit tests`, () => {
                 type: "CHANNEL_NOT_FOUND",
                 message: "Could not find channel mychannel",
             }))
-            sinon.stub(slackClient.files, "upload").callsFake(filesUploadSpy)
+            sinon.stub(slackClient.files, "getUploadURLExternal").callsFake(filesUploadSpy)
 
             chai.expect(handleExecute(request, slackClient)).to.eventually.deep.equal({
                 success: false,
