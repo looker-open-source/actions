@@ -73,7 +73,7 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("supportedDownloadSettings", () => {
-      expect(action.supportedDownloadSettings).to.deep.equal(["push"])
+      expect(action.supportedDownloadSettings).to.deep.equal(["url"])
     })
 
     it("minimumSupportedLookerVersion", () => {
