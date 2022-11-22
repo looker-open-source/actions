@@ -81,7 +81,7 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("usesStreaming", () => {
-      expect(action.usesStreaming).to.be.false
+      expect(action.usesStreaming).to.be.true
     })
 
     it("requiredFields", () => {
