@@ -52,7 +52,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   supportedActionTypes = [Hub.ActionType.Query]
   requiredFields = [{ any_tag: TAGS }]
   supportedFormats = [Hub.ActionFormat.JsonDetailLiteStream]
-  supportedDownloadSettings = [Hub.ActionDownloadSettings.Push]
+  supportedDownloadSettings = [Hub.ActionDownloadSettings.Url]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   usesOauth = true
