@@ -1,10 +1,10 @@
-import * as winston from "winston"
 import * as oboe from "oboe"
 import { Readable } from "stream"
+import * as winston from "winston"
+import * as Hub from "../../../hub"
+import { Tokens } from "../campaigns/salesforce_campaigns"
 import { SalesforceOauthHelper } from "../common/oauth_helper"
 import { SalesforceCampaignsSendData } from "./campaigns_send_data"
-import { Tokens } from "../campaigns/salesforce_campaigns"
-import * as Hub from "../../../hub"
 
 const BATCH_SIZE = 10 * 1000
 
@@ -18,33 +18,6 @@ interface MemberIds extends Mapper {
 }
 
 export class SalesforceCampaignDataUploader {
-  readonly log = winston.log
-  readonly sfdcOauthHelper: SalesforceOauthHelper
-  readonly sfdcCampaignsSendData: SalesforceCampaignsSendData
-  readonly hubRequest: Hub.ActionRequest
-  readonly FIELD_MAPPING = [
-    { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: new RegExp("contact id", "i") },
-    { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: new RegExp("lead id", "i") },
-  ]
-  readonly TAGS = this.FIELD_MAPPING.map((fm) => fm.tag)
-  
-  private batchPromises: Promise<void>[] = []
-  private batchQueue: any[] = []
-  private currentRequest: string = "done"
-  private rowQueue: any[] = []
-  private fields: any[] = []
-  private mapper: Mapper[] = []
-  tokens: Tokens
-  sfInsertMessage: string
-  
-  
-  constructor(oauthClientId: string, oauthClientSecret: string, chunkSize: number, hubRequest: Hub.ActionRequest, tokens: Tokens) {
-    this.sfdcOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
-    this.sfdcCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret, chunkSize)
-    this.hubRequest = hubRequest
-    this.tokens = tokens
-    this.sfInsertMessage = ""
-  }
 
   private get batchIsReady() {
     return this.rowQueue.length >= BATCH_SIZE
@@ -60,6 +33,32 @@ export class SalesforceCampaignDataUploader {
 
   get updatedMessage() {
     return this.sfInsertMessage
+  }
+  readonly log = winston.log
+  readonly sfdcOauthHelper: SalesforceOauthHelper
+  readonly sfdcCampaignsSendData: SalesforceCampaignsSendData
+  readonly hubRequest: Hub.ActionRequest
+  readonly FIELD_MAPPING = [
+    { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: new RegExp("contact id", "i") },
+    { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: new RegExp("lead id", "i") },
+  ]
+  readonly TAGS = this.FIELD_MAPPING.map((fm) => fm.tag)
+  tokens: Tokens
+  sfInsertMessage: string
+
+  private batchPromises: Promise<void>[] = []
+  private batchQueue: any[] = []
+  private currentRequest = "done"
+  private rowQueue: any[] = []
+  private fields: any[] = []
+  private mapper: Mapper[] = []
+
+  constructor(oauthClientId: string, oauthClientSecret: string, chunkSize: number, hubRequest: Hub.ActionRequest, tokens: Tokens) {
+    this.sfdcOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
+    this.sfdcCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret, chunkSize)
+    this.hubRequest = hubRequest
+    this.tokens = tokens
+    this.sfInsertMessage = ""
   }
 
   async run() {
@@ -80,7 +79,7 @@ export class SalesforceCampaignDataUploader {
       `Streaming upload complete. Sent ${this.numBatches} batches (batch size = ${BATCH_SIZE})`,
     )
   }
- 
+
   private async startAsyncParser(downloadStream: Readable) {
     return new Promise<void>((resolve, reject) => {
       oboe(downloadStream)
@@ -100,7 +99,7 @@ export class SalesforceCampaignDataUploader {
   private handleRow(row: any) {
     const output = this.transformRow(row)
     if (output) {
-      this.rowQueue.push(output)  
+      this.rowQueue.push(output)
     }
   }
 
@@ -202,7 +201,7 @@ export class SalesforceCampaignDataUploader {
 
   private async sendBatch(): Promise<void> {
     if (this.currentRequest !== "done" || this.batchQueue.length === 0) {
-      return 
+      return
     }
     const tokensResponse = await this.checkTokens()
     if (tokensResponse) {
