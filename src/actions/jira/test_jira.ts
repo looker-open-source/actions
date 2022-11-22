@@ -154,7 +154,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                   label: "Log in",
                   description: "In order to create an Issue, you will need to log in" +
                     " to your Jira account.",
-                  oauth_url: "undefined/actions/jira_create_issue/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0",
+                  oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/jira_create_issue/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
                 }],
       }).and.notify(done)
     })
