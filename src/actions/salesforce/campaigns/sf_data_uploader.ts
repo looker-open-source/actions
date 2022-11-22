@@ -155,7 +155,7 @@ export class SalesforceCampaignDataUploader {
     if (Array.isArray(row)) {
       this.mapper.forEach((m) => {
         const dataArray = row.map((row: any) => row[m.fieldname].value)
-        if (dataArray && dataArray.length > 0) {
+        if (dataArray.length > 0) {
           memberIds.push({
             ...m,
             data: dataArray,
@@ -163,7 +163,7 @@ export class SalesforceCampaignDataUploader {
         }
       })
     }
-    if (!memberIds || memberIds.length === 0) {
+    if (memberIds.length === 0) {
       return null
     }
     return memberIds
