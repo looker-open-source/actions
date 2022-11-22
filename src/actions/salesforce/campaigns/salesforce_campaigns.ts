@@ -117,7 +117,9 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       }
 
       winston.info("Beginning salesforce data upload.")
-      const dataUploader = new SalesforceCampaignDataUploader(this.oauthClientId, this.oauthClientSecret, this.chunkSize, request, tokens)
+      const dataUploader = new SalesforceCampaignDataUploader(
+        this.oauthClientId, this.oauthClientSecret, this.chunkSize, request, tokens,
+      )
       await dataUploader.run()
       winston.info("Execution complete")
       const message = dataUploader.updatedMessage

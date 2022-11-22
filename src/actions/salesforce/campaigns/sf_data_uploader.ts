@@ -53,7 +53,9 @@ export class SalesforceCampaignDataUploader {
   private fields: any[] = []
   private mapper: Mapper[] = []
 
-  constructor(oauthClientId: string, oauthClientSecret: string, chunkSize: number, hubRequest: Hub.ActionRequest, tokens: Tokens) {
+  constructor(
+    oauthClientId: string, oauthClientSecret: string, chunkSize: number, hubRequest: Hub.ActionRequest, tokens: Tokens,
+  ) {
     this.sfdcOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
     this.sfdcCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret, chunkSize)
     this.hubRequest = hubRequest
@@ -139,9 +141,12 @@ export class SalesforceCampaignDataUploader {
           }
         })
     }
-    winston.debug(`${this.mapper.length} fields matched: ${JSON.stringify(this.mapper)}`)
+    const mapperLength = this.mapper.length
+    winston.debug(`${mapperLength} fields matched: ${JSON.stringify(this.mapper)}`)
     if (this.mapper.length === 0) {
-      const fieldMapping = this.FIELD_MAPPING.map((fm: any) => { fm.fallbackRegex = fm.fallbackRegex.toString(); return fm })
+      const fieldMapping = this.FIELD_MAPPING.map((fm: any) => {
+        fm.fallbackRegex = fm.fallbackRegex.toString(); return fm
+      })
       throw `Query requires at least 1 field with a tag or regex match: ${JSON.stringify(fieldMapping)}`
     }
   }
@@ -154,7 +159,7 @@ export class SalesforceCampaignDataUploader {
     const memberIds: MemberIds[] = []
     if (Array.isArray(row)) {
       this.mapper.forEach((m) => {
-        const dataArray = row.map((row: any) => row[m.fieldname].value)
+        const dataArray = row.map((r: any) => r[m.fieldname].value)
         if (dataArray.length > 0) {
           memberIds.push({
             ...m,
@@ -207,7 +212,9 @@ export class SalesforceCampaignDataUploader {
     if (tokensResponse) {
       const currentBatch = this.batchQueue.shift().flat(1)
       this.currentRequest = "in progress"
-      const { message, sfdcConn } = await this.sfdcCampaignsSendData.sendData(this.hubRequest, currentBatch, this.tokens)
+      const { message, sfdcConn } = await this.sfdcCampaignsSendData.sendData(
+        this.hubRequest, currentBatch, this.tokens,
+      )
       this.tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
       this.sfInsertMessage.concat(message)
       this.currentRequest = "done"
