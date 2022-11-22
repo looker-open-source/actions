@@ -130,7 +130,7 @@ export class SalesforceOauthHelper {
     }
   }
 
-  async getAccessTokensFromAuthCode(stateJson: any, loginUrl: string) {
+  async getAccessTokensFromAuthCode(stateJson: any) {
     if (!stateJson.code || !stateJson.redirect) {
       throw new Error("Request state is missing code and redirect")
     }
@@ -139,10 +139,9 @@ export class SalesforceOauthHelper {
       clientId: this.oauthCreds.oauthClientId,
       clientSecret: this.oauthCreds.oauthClientSecret,
       redirectUri: stateJson.redirect,
-      loginUrl,
     })
 
-    const sfdcConn = new jsforce.Connection({ ...oauth2, instanceUrl: loginUrl })
+    const sfdcConn = new jsforce.Connection({ oauth2 })
 
     await sfdcConn.authorize(stateJson.code).catch((e) => {
       winston.error(e.toString())

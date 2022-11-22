@@ -3,6 +3,7 @@ import * as Hub from "../../../hub"
 import { SalesforceOauthHelper } from "../common/oauth_helper"
 import { SalesforceCampaignsFormBuilder } from "./campaigns_form_builder"
 import { SalesforceCampaignsSendData } from "./campaigns_send_data"
+import { SalesforceCampaignDataUploader } from "./sf_data_uploader"
 
 export const REDIRECT_URL = `${process.env.ACTION_HUB_BASE_URL}/actions/salesforce_campaigns/oauth_redirect`
 export const FIELD_MAPPING = [
@@ -29,6 +30,9 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   readonly sfdcOauthHelper: SalesforceOauthHelper
   readonly sfdcCampaignsFormBuilder: SalesforceCampaignsFormBuilder
   readonly sfdcCampaignsSendData: SalesforceCampaignsSendData
+  readonly oauthClientId: string
+  readonly oauthClientSecret: string
+  readonly chunkSize: number
 
   name = "salesforce_campaigns"
   label = "Salesforce Campaigns"
@@ -52,6 +56,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   usesOauth = true
+  usesStreaming = true
   minimumSupportedLookerVersion = "22.6.0"
   // TODO: support All Results vs Results in Table
   // TODO: stream results
@@ -63,6 +68,9 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     this.sfdcOauthHelper = new SalesforceOauthHelper(oauthClientId, oauthClientSecret)
     this.sfdcCampaignsFormBuilder = new SalesforceCampaignsFormBuilder(oauthClientId, oauthClientSecret, maxResults)
     this.sfdcCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret, chunkSize)
+    this.oauthClientId = oauthClientId
+    this.oauthClientSecret = oauthClientSecret
+    this.chunkSize = chunkSize
   }
 
   /******** OAuth Endpoints ********/
@@ -86,7 +94,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   /******** Action Endpoints ********/
 
   async execute(request: Hub.ActionRequest) {
-    if (!(request.attachment && request.attachment.dataJSON)) {
+    if (!request.attachment) {
       throw "No attached json."
     }
 
@@ -94,92 +102,34 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       throw "Missing Salesforce campaign name."
     }
 
-    const dataJSON = request.attachment.dataJSON
-    if (!dataJSON.fields || !dataJSON.data) {
-      throw "Request payload is an invalid format."
-    }
-
     if (!request.params.state_json) {
       throw "Request is missing state_json."
     }
 
-    const fields: any[] = [].concat(
-      ...Object.keys(dataJSON.fields).map((k) => dataJSON.fields[k]),
-    )
-
-    const mapper: Mapper[] = []
-
-    // first try to match fields by tag
-    fields.filter((f) =>
-        f.tags && f.tags.some((t: string) =>
-          TAGS.map((tag) => {
-            if (tag === t) {
-              mapper.push({
-                fieldname: f.name,
-                sfdcMemberType: FIELD_MAPPING.filter((fm) => fm.tag === t)[0].sfdcMemberType,
-              })
-            }
-          }),
-        ),
-    )
-
-    if (mapper.length < fields.length) {
-      winston.debug(`${mapper.length} out of ${fields.length} fields matched with tags, attemping regex`)
-
-      fields.filter((f) => !mapper.map((m) => m.fieldname).includes(f.name))
-        .map((f) => {
-          for (const fm of FIELD_MAPPING) {
-            winston.debug(`testing ${fm.fallbackRegex} against ${f.label}`)
-            if (fm.fallbackRegex.test(f.label)) {
-              mapper.push({
-                fieldname: f.name,
-                sfdcMemberType: fm.sfdcMemberType,
-              })
-              break
-            }
-          }
-        })
-    }
-
-    winston.debug(`${mapper.length} fields matched: ${JSON.stringify(mapper)}`)
-    if (mapper.length === 0) {
-      const fieldMapping = FIELD_MAPPING.map((fm: any) => { fm.fallbackRegex = fm.fallbackRegex.toString(); return fm })
-      const e = `Query requires at least 1 field with a tag or regex match: ${JSON.stringify(fieldMapping)}`
-      return new Hub.ActionResponse({ success: false, message: e })
-    }
-
-    const memberIds: MemberIds[] = []
-    mapper.forEach((m) => {
-      memberIds.push({
-        ...m,
-        data: dataJSON.data.map((row: any) => row[m.fieldname].value),
-      })
-    })
-
     let response: any = {}
     let tokens: Tokens
-
     try {
       const stateJson = JSON.parse(request.params.state_json)
       if (stateJson.access_token && stateJson.refresh_token) {
         tokens = stateJson
       } else {
-        tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson, request.params.salesforce_domain!)
+        tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson)
       }
 
-      // passing back connection object to handle access token refresh and update state
-      const { message, sfdcConn } = await this.sfdcCampaignsSendData.sendData(request, memberIds, tokens)
-
+      winston.info("Beginning salesforce data upload.")
+      const dataUploader = new SalesforceCampaignDataUploader(this.oauthClientId, this.oauthClientSecret, this.chunkSize, request, tokens)
+      await dataUploader.run()
+      winston.info("Execution complete")
+      const message = dataUploader.updatedMessage
       // return a fail status to surface salesforce API errors in the response message
       // message will only be visible in Looker if we send a fail status
       if (request.formParams.surface_sfdc_errors === "yes") {
         response.success = message.length === 0
       }
-
       response.message = message
-      tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
       response.state = new Hub.ActionState()
-      response.state.data = JSON.stringify(tokens)
+      // getting updated token if there was a refresh during streaming
+      response.state.data = JSON.stringify(dataUploader.updatedTokens)
     } catch (e) {
       response = { success: false, message: e.message }
     }
@@ -209,7 +159,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
         if (stateJson.access_token && stateJson.refresh_token) {
           tokens = stateJson
         } else {
-          tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson, request.params.salesforce_domain!)
+          tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson)
           form.state = new Hub.ActionState()
           form.state.data = JSON.stringify(tokens)
         }
