@@ -2,7 +2,7 @@ import * as oboe from "oboe"
 import { Readable } from "stream"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
-import { Tokens } from "../campaigns/salesforce_campaigns"
+import { Tokens, FIELD_MAPPING, TAGS } from "../campaigns/salesforce_campaigns"
 import { SalesforceOauthHelper } from "../common/oauth_helper"
 import { SalesforceCampaignsSendData } from "./campaigns_send_data"
 
@@ -38,11 +38,6 @@ export class SalesforceCampaignDataUploader {
   readonly sfdcOauthHelper: SalesforceOauthHelper
   readonly sfdcCampaignsSendData: SalesforceCampaignsSendData
   readonly hubRequest: Hub.ActionRequest
-  readonly FIELD_MAPPING = [
-    { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: new RegExp("contact id", "i") },
-    { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: new RegExp("lead id", "i") },
-  ]
-  readonly TAGS = this.FIELD_MAPPING.map((fm) => fm.tag)
   tokens: Tokens
   sfResponseMessage: string = ""
 
@@ -114,11 +109,11 @@ export class SalesforceCampaignDataUploader {
   private setMapperFromFields() {
     this.fields.filter((f) =>
         f.tags && f.tags.some((t: string) =>
-          this.TAGS.map((tag) => {
+          TAGS.map((tag) => {
             if (tag === t) {
               this.mapper.push({
                 fieldname: f.name,
-                sfdcMemberType: this.FIELD_MAPPING.filter((fm) => fm.tag === t)[0].sfdcMemberType,
+                sfdcMemberType: FIELD_MAPPING.filter((fm) => fm.tag === t)[0].sfdcMemberType,
               })
             }
           }),
@@ -128,7 +123,7 @@ export class SalesforceCampaignDataUploader {
       this.log("debug", `${this.mapper.length} out of ${this.fields.length} fields matched with tags, attemping regex`)
       this.fields.filter((f) => !this.mapper.map((m) => m.fieldname).includes(f.name))
         .map((f) => {
-          for (const fm of this.FIELD_MAPPING) {
+          for (const fm of FIELD_MAPPING) {
             this.log("debug", `testing ${fm.fallbackRegex} against ${f.label}`)
             if (fm.fallbackRegex.test(f.label)) {
               this.mapper.push({
@@ -143,7 +138,7 @@ export class SalesforceCampaignDataUploader {
     const mapperLength = this.mapper.length
     winston.debug(`${mapperLength} fields matched: ${JSON.stringify(this.mapper)}`)
     if (this.mapper.length === 0) {
-      const fieldMapping = this.FIELD_MAPPING.map((fm: any) => {
+      const fieldMapping = FIELD_MAPPING.map((fm: any) => {
         fm.fallbackRegex = fm.fallbackRegex.toString(); return fm
       })
       throw `Query requires at least 1 field with a tag or regex match: ${JSON.stringify(fieldMapping)}`
@@ -214,7 +209,7 @@ export class SalesforceCampaignDataUploader {
       const { message, sfdcConn } = await this.sfdcCampaignsSendData.sendData(
         this.hubRequest, currentBatch, this.tokens,
       )
-      this.tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
+       this.tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
       this.sfResponseMessage = this.sfResponseMessage.concat(message)
       this.currentRequest = "done"
       return this.sendBatch()

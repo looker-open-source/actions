@@ -10,20 +10,11 @@ export const FIELD_MAPPING = [
   { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: new RegExp("contact id", "i") },
   { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: new RegExp("lead id", "i") },
 ]
-const TAGS = FIELD_MAPPING.map((fm) => fm.tag)
+export const TAGS = FIELD_MAPPING.map((fm) => fm.tag)
 
 export interface Tokens {
   access_token?: string
   refresh_token?: string
-}
-
-export interface Mapper {
-  fieldname: string
-  sfdcMemberType: string
-}
-
-export interface MemberIds extends Mapper {
-  data: string[]
 }
 
 export class SalesforceCampaignsAction extends Hub.OAuthAction {
