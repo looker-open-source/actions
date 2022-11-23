@@ -72,7 +72,6 @@
     "express": "^4.17.1",
     "express-winston": "^2.6.0",
     "firebase-admin": "^10.0.0",
-    "generate-api-key": "^1.0.0",
     "googleapis": "^59.0.0",
     "hipchatter": "^1.0.0",
     "i18n-iso-countries": "^7.1.0",

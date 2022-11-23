@@ -31,8 +31,8 @@ export class SalesforceCampaignDataUploader {
     return this.tokens
   }
 
-  get updatedMessage() {
-    return this.sfInsertMessage
+  get message() : string {
+    return this.sfResponseMessage
   }
   readonly log = winston.log
   readonly sfdcOauthHelper: SalesforceOauthHelper
@@ -44,7 +44,7 @@ export class SalesforceCampaignDataUploader {
   ]
   readonly TAGS = this.FIELD_MAPPING.map((fm) => fm.tag)
   tokens: Tokens
-  sfInsertMessage: string
+  sfResponseMessage: string = ""
 
   private batchPromises: Promise<void>[] = []
   private batchQueue: any[] = []
@@ -60,7 +60,6 @@ export class SalesforceCampaignDataUploader {
     this.sfdcCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret, chunkSize)
     this.hubRequest = hubRequest
     this.tokens = tokens
-    this.sfInsertMessage = ""
   }
 
   async run() {
@@ -216,7 +215,7 @@ export class SalesforceCampaignDataUploader {
         this.hubRequest, currentBatch, this.tokens,
       )
       this.tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
-      this.sfInsertMessage.concat(message)
+      this.sfResponseMessage = this.sfResponseMessage.concat(message)
       this.currentRequest = "done"
       return this.sendBatch()
     }

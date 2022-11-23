@@ -122,7 +122,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       )
       await dataUploader.run()
       winston.info("Execution complete")
-      const message = dataUploader.updatedMessage
+      const message = dataUploader.message
       // return a fail status to surface salesforce API errors in the response message
       // message will only be visible in Looker if we send a fail status
       if (request.formParams.surface_sfdc_errors === "yes") {
