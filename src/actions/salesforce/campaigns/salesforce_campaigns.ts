@@ -17,6 +17,15 @@ export interface Tokens {
   refresh_token?: string
 }
 
+export interface Mapper {
+  fieldname: string
+  sfdcMemberType: string
+}
+
+export interface MemberIds extends Mapper {
+  data: string[]
+}
+
 export class SalesforceCampaignsAction extends Hub.OAuthAction {
   readonly sfdcOauthHelper: SalesforceOauthHelper
   readonly sfdcCampaignsFormBuilder: SalesforceCampaignsFormBuilder

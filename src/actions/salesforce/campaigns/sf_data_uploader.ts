@@ -2,20 +2,11 @@ import * as oboe from "oboe"
 import { Readable } from "stream"
 import * as winston from "winston"
 import * as Hub from "../../../hub"
-import { Tokens, FIELD_MAPPING, TAGS } from "../campaigns/salesforce_campaigns"
+import { FIELD_MAPPING, Mapper, MemberIds, TAGS, Tokens } from "../campaigns/salesforce_campaigns"
 import { SalesforceOauthHelper } from "../common/oauth_helper"
 import { SalesforceCampaignsSendData } from "./campaigns_send_data"
 
 const BATCH_SIZE = 10 * 1000
-
-interface Mapper {
-  fieldname: string
-  sfdcMemberType: string
-}
-
-interface MemberIds extends Mapper {
-  data: string[]
-}
 
 export class SalesforceCampaignDataUploader {
 
@@ -31,7 +22,7 @@ export class SalesforceCampaignDataUploader {
     return this.tokens
   }
 
-  get message() : string {
+  get message(): string {
     return this.sfResponseMessage
   }
   readonly log = winston.log
@@ -39,7 +30,7 @@ export class SalesforceCampaignDataUploader {
   readonly sfdcCampaignsSendData: SalesforceCampaignsSendData
   readonly hubRequest: Hub.ActionRequest
   tokens: Tokens
-  sfResponseMessage: string = ""
+  sfResponseMessage = ""
 
   private batchPromises: Promise<void>[] = []
   private batchQueue: any[] = []
@@ -209,7 +200,7 @@ export class SalesforceCampaignDataUploader {
       const { message, sfdcConn } = await this.sfdcCampaignsSendData.sendData(
         this.hubRequest, currentBatch, this.tokens,
       )
-       this.tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
+      this.tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
       this.sfResponseMessage = this.sfResponseMessage.concat(message)
       this.currentRequest = "done"
       return this.sendBatch()
