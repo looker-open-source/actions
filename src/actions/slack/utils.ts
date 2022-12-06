@@ -1,5 +1,4 @@
 import {WebClient} from "@slack/web-api"
-import * as gaxios from "gaxios"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {ActionFormField} from "../../hub"
@@ -17,7 +16,6 @@ const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
         exclude_archived: true,
         limit: API_LIMIT_SIZE,
     }
-    const channelList: any = slack.users.conversations
     const pageLoaded = async (accumulatedChannels: any[], response: any): Promise<any[]> => {
         const mergedChannels = accumulatedChannels.concat(response.channels)
 
@@ -27,11 +25,12 @@ const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
             response.response_metadata.next_cursor !== "") {
             const pageOptions = { ...options }
             pageOptions.cursor = response.response_metadata.next_cursor
-            return pageLoaded(mergedChannels, await channelList(pageOptions))
+            return pageLoaded(mergedChannels, await slack.users.conversations(pageOptions))
         }
         return mergedChannels
     }
-    const paginatedChannels = await pageLoaded([], await channelList(options))
+    const channelsInit = await slack.users.conversations(options)
+    const paginatedChannels = await pageLoaded([], channelsInit)
     const channels = paginatedChannels.filter((c: any) => !c.is_archived)
     return channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
 }
@@ -109,23 +108,10 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
         if (!request.empty()) {
             await request.stream(async (readable) => {
                 // Slack API Upload flow. Get an Upload URL from slack
-                const res = await slack.files.getUploadURLExternal()
-                const upload_url = res.upload_url
-
-                // Upload file to Slack
-                await gaxios.request({
-                    method: "POST",
-                    url: upload_url,
-                    data: readable,
-                })
-
-                // Finalize upload and give metadata for channel, title and comment for the file to be posted.
-                await slack.files.completeUploadExternal({
-                    files: [{
-                        id: res.file_id ? res.file_id : "",
-                        title: fileName,
-                    }],
-                    channel_id: request.formParams.channel,
+                await slack.files.uploadV2({
+                    file: readable,
+                    filename: fileName,
+                    channels: request.formParams.channel,
                     initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
                 })
             })
