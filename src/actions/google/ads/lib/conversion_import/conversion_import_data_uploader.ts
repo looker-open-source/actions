@@ -91,13 +91,7 @@ export class GoogleAdsConversionImportUploader {
   }
 
   private handleRow(row: any) {
-    this.log("info",
-      `handleRow before transform thomas - ${JSON.stringify(row)} )`,
-    )
     const output = this.transformRow(row)
-    this.log("info",
-      `handleRow thomas - ${JSON.stringify(output)} )`,
-    )
     this.rowQueue.push(output)
   }
 
@@ -105,9 +99,6 @@ export class GoogleAdsConversionImportUploader {
 
   private transformRow(row: any) {
     const schemaMapping = Object.entries(this.schema)
-    this.log("info",
-      `transformRow thomas schema Mapping - ${JSON.stringify(schemaMapping)} )`,
-    )
     const outputCells: OutputCells = {};
     schemaMapping.forEach(([columnLabel, outputPath]) => {
       const outputValue = row[columnLabel];
@@ -116,10 +107,6 @@ export class GoogleAdsConversionImportUploader {
       }
       outputCells[outputPath as keyof OutputCells] =  outputValue;
     })
-    this.log("info",
-      `transformRow thomas outputcells - ${JSON.stringify(outputCells)} )`,
-    )
-
     return outputCells;
   }
 
@@ -128,9 +115,6 @@ export class GoogleAdsConversionImportUploader {
       return
     }
     const batch = this.rowQueue.splice(0, BATCH_SIZE - 1)
-    this.log("info",
-      `schedule Batch thomas  - ${JSON.stringify(batch)} )`,
-    )
     this.batchQueue.push(batch)
     this.batchPromises.push(this.sendBatch())
     this.log("debug", `Sent batch number: ${this.numBatches}`)
@@ -145,9 +129,6 @@ export class GoogleAdsConversionImportUploader {
     }
     await this.adsRequest.checkTokens().then(async () => {
       const currentBatch = this.batchQueue.shift()
-      this.log("info",
-        `sendBatch thomas  - ${JSON.stringify(currentBatch)} )`,
-      )
       this.currentRequest = this.adsExecutor.importOfflineConversion(currentBatch)
       await this.currentRequest
       this.currentRequest = undefined

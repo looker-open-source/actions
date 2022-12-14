@@ -95,13 +95,9 @@ export class GoogleAdsConversionImport
   async form(hubReq: Hub.ActionRequest) {
     const wrappedResp = new WrappedResponse(Hub.ActionForm)
     const log = this.makeLogger(hubReq.webhookId)
-    log("debug", "THOMAS - Start form()")
-    log("debug", "")
     try {
       const adsWorker = await GoogleAdsConversionImportActionRequest.fromHub(hubReq, this, log)
-      log("debug", "THOMAS - before makeForm()")
       wrappedResp.form = await adsWorker.makeForm()
-      log("debug", "THOMAS - after makeForm()")
       return wrappedResp.returnSuccess(adsWorker.userState)
       // Use this code if you need to force a state reset and redo oauth login
       // wrappedResp.form = await this.oauthHelper.makeLoginForm(hubReq)
@@ -112,7 +108,6 @@ export class GoogleAdsConversionImport
       const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
       // Token errors that we can detect ahead of time
       if (err instanceof MissingAuthError) {
-        log("debug", "Thomas - Caught MissingAuthError; returning login form. " + err.toString())
         return loginForm
       }
       log("error", "Form error toString:", err.toString())
