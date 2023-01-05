@@ -42,10 +42,20 @@ export class SalesforceCampaignsSendData {
         } else {
           campaignId = newCampaign.id
         }
-
         break
       case "append":
-        campaignId = request.formParams.campaign_name!
+        await sfdcConn
+          .sobject("Campaign")
+          .retrieve(request.formParams.campaign_name!, (error, account) => {
+              if (error) {
+                throw new Error(
+                  `Campaign retrieve error: ${JSON.stringify(error)}`,
+                )
+              } else {
+                campaignId = account.Id!
+              }
+            },
+          )
         break
       // case "replace": // TODO build out replace
     }
@@ -79,9 +89,9 @@ export class SalesforceCampaignsSendData {
       chunks.push(items.splice(0, chunkSize))
     }
     return new Promise((resolve, reject) => {
-      let completedBatches = 0
+      let completedChunks = 0
       const chunkCount = chunks.length
-      const batchResults: any  = []
+      const chunkResults: any  = []
       chunks.map((chunk: any) => {
           const batch = bulkJob.createBatch()
           batch.execute(chunk)
@@ -95,22 +105,15 @@ export class SalesforceCampaignsSendData {
             batch.poll(1000, 200000)
           })
           batch.on("response", (rets) => {
-            batchResults.push(rets)
-            completedBatches++
-            if (completedBatches === chunkCount) {
-              resolve(batchResults)
+            chunkResults.push(rets)
+            completedChunks++
+            winston.debug(`Completed chunk number ${completedChunks} out of  ${chunkCount} chunks`)
+            if (completedChunks === chunkCount) {
+              resolve(chunkResults)
             }
           })
         })
     })
-  }
-
-  chunk(items: CampaignMember[], size: number) {
-    const chunks = []
-    while (items.length > 0) {
-      chunks.push(items.splice(0, size))
-    }
-    return chunks
   }
 
   // filters results to only errors and returns simplified error object:

@@ -7,8 +7,8 @@ import { SalesforceCampaignDataUploader } from "./sf_data_uploader"
 
 export const REDIRECT_URL = `${process.env.ACTION_HUB_BASE_URL}/actions/salesforce_campaigns/oauth_redirect`
 export const FIELD_MAPPING = [
-  { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: new RegExp("contact id", "i") },
-  { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: new RegExp("lead id", "i") },
+  { sfdcMemberType: "ContactId", tag: "sfdc_contact_id", fallbackRegex: /contact id/i },
+  { sfdcMemberType: "LeadId", tag: "sfdc_lead_id", fallbackRegex: /lead id/i },
 ]
 export const TAGS = FIELD_MAPPING.map((fm) => fm.tag)
 
@@ -57,9 +57,8 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   usesOauth = true
   usesStreaming = true
+  executeInOwnProcess = true
   minimumSupportedLookerVersion = "22.6.0"
-  // TODO: support All Results vs Results in Table
-  // TODO: stream results
 
   /******** Constructor & Helpers ********/
 

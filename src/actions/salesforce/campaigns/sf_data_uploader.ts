@@ -36,8 +36,8 @@ export class SalesforceCampaignDataUploader {
   private batchQueue: any[] = []
   private currentRequest = "done"
   private rowQueue: any[] = []
-  private fields: any[] = []
   private mapper: Mapper[] = []
+  private isMapperDetermined = false
 
   constructor(
     oauthClientId: string, oauthClientSecret: string, chunkSize: number, hubRequest: Hub.ActionRequest, tokens: Tokens,
@@ -46,6 +46,7 @@ export class SalesforceCampaignDataUploader {
     this.sfdcCampaignsSendData = new SalesforceCampaignsSendData(oauthClientId, oauthClientSecret, chunkSize)
     this.hubRequest = hubRequest
     this.tokens = tokens
+    this.mapper = []
   }
 
   async run() {
@@ -60,6 +61,7 @@ export class SalesforceCampaignDataUploader {
       // TODO: the oboe fail() handler sends an errorReport object, but that might not be the only thing we catch
       this.log("error", "Streaming parse failure toString:", errorReport.toString())
       this.log("error", "Streaming parse failure JSON:", JSON.stringify(errorReport))
+      return
     }
     await Promise.all(this.batchPromises)
     this.log("info",
@@ -70,10 +72,33 @@ export class SalesforceCampaignDataUploader {
   private async startAsyncParser(downloadStream: Readable) {
     return new Promise<void>((resolve, reject) => {
       oboe(downloadStream)
-        .node("!.*", (row: any) => {
+        .node({"!.fields": (fieldData: any) => {
+          // we only pull fields data once in a separate listener. purely to determine the mapper
+          this.log("debug", "Received stream data. Determining mapper from LookML field tags and regex.")
+
+          if (!this.isMapperDetermined) {
+            let combinedFields = [...fieldData.dimensions,
+                                  ...fieldData.measures,
+                                  ...fieldData.table_calculations]
+            combinedFields = combinedFields.reduce((aggregator, field) => {
+              aggregator[field.name] = {
+                label: field.label,
+                tags: field.tags,
+              }
+              return aggregator
+            }, {})
+            try {
+              this.setMapperFromFields(combinedFields)
+            } catch (error) {
+              reject(error) // cleanly fail without crashing action hub
+            }
+          }
+          return oboe.drop
+        }, "!.*" : (row: any) => {
           this.handleRow(row)
           this.scheduleBatch()
           return oboe.drop
+        },
         })
         .done(() => {
           this.scheduleBatch(true)
@@ -90,57 +115,55 @@ export class SalesforceCampaignDataUploader {
     }
   }
 
-  private setFieldsAndMapperFromRow(row: any) {
-    this.fields = [].concat(
-      ...Object.keys(row).map((k) => row[k]),
-    )
-    this.setMapperFromFields()
-  }
-
-  private setMapperFromFields() {
-    this.fields.filter((f) =>
-        f.tags && f.tags.some((t: string) =>
-          TAGS.map((tag) => {
-            if (tag === t) {
-              this.mapper.push({
-                fieldname: f.name,
-                sfdcMemberType: FIELD_MAPPING.filter((fm) => fm.tag === t)[0].sfdcMemberType,
-              })
-            }
-          }),
-        ),
-    )
-    if (this.mapper.length < this.fields.length) {
-      this.log("debug", `${this.mapper.length} out of ${this.fields.length} fields matched with tags, attemping regex`)
-      this.fields.filter((f) => !this.mapper.map((m) => m.fieldname).includes(f.name))
-        .map((f) => {
-          for (const fm of FIELD_MAPPING) {
-            this.log("debug", `testing ${fm.fallbackRegex} against ${f.label}`)
-            if (fm.fallbackRegex.test(f.label)) {
-              this.mapper.push({
-                fieldname: f.name,
-                sfdcMemberType: fm.sfdcMemberType,
-              })
-              break
-            }
+  private  setMapperFromFields(combinedFields: any) {
+    for (const fieldname of Object.keys(combinedFields)) {
+      let matched = false
+      const field = combinedFields[fieldname]
+      if (field.tags && field.tags.length > 0) {
+        for (const fieldTag of field.tags) {
+          if (TAGS.filter((tag) => tag === fieldTag).length === 1) {
+            const sfdcMemberType = FIELD_MAPPING.filter((fm) => fm.tag === fieldTag)[0].sfdcMemberType
+            this.mapper.push({
+              fieldname,
+              sfdcMemberType,
+            })
+            this.log("debug", `matched '${fieldname}' to '${sfdcMemberType}' with tag '${fieldTag}'`)
+            matched = true
+            break
           }
-        })
+        }
+      }
+      if (matched) { continue }
+      for (const fm of FIELD_MAPPING) {
+        if ( field.label.match(fm.fallbackRegex) ) {
+          this.mapper.push({
+            fieldname,
+            sfdcMemberType: fm.sfdcMemberType,
+          })
+          this.log("debug", `matched '${fieldname}' to '${fm.sfdcMemberType}' with regex on label '${field.label}'`)
+          matched = true
+          break
+        }
+      }
+      if (matched) { continue }
+      this.log("debug", `no match for field '${fieldname}'`)
     }
-    const mapperLength = this.mapper.length
-    winston.debug(`${mapperLength} fields matched: ${JSON.stringify(this.mapper)}`)
-    if (this.mapper.length === 0) {
+
+    this.log("debug", `${this.mapper.length} fields matched: ${JSON.stringify(this.mapper)}`)
+    if (this.mapper.length !== 0) {
+      this.isMapperDetermined = true
+    } else {
       const fieldMapping = FIELD_MAPPING.map((fm: any) => {
-        fm.fallbackRegex = fm.fallbackRegex.toString(); return fm
+        fm.fallbackRegex = fm.fallbackRegex.toString()
+        return fm
       })
-      throw `Query requires at least 1 field with a tag or regex match: ${JSON.stringify(fieldMapping)}`
+      const message = `Query requires at least 1 field with a tag or regex match: ${JSON.stringify(fieldMapping)}`
+      this.sfResponseMessage = message
+      throw message
     }
   }
 
   private transformRow(row: any) {
-    if (row.dimensions && row.measures) {
-      this.setFieldsAndMapperFromRow(row.dimensions)
-      return null
-    }
     const memberIds: MemberIds[] = []
     if (Array.isArray(row)) {
       this.mapper.forEach((m) => {
@@ -160,6 +183,9 @@ export class SalesforceCampaignDataUploader {
   }
 
   private scheduleBatch(force = false) {
+    if ( !this.isMapperDetermined ) {
+      return
+    }
     if ( !this.batchIsReady && !force ) {
       return
     }
@@ -184,7 +210,7 @@ export class SalesforceCampaignDataUploader {
       this.tokens = tokens
       return true
     } catch (error) {
-      winston.error("Could not get tokens or failed to update with refresh token.")
+      this.log("error", "Could not get tokens or failed to update with refresh token.")
       return false
     }
   }

@@ -20,6 +20,7 @@ const validLookerData = {
 }
 
 const action = new SalesforceCampaignsAction(testOAuthClientId, testOAuthClientSecret, testMaxResults, testChunkSize)
+action.executeInOwnProcess = false
 
 describe(`${action.constructor.name} class`, () => {
   // Use a sandbox to avoid interaction with other test files
