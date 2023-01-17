@@ -109,6 +109,7 @@
     "**/extend": "^3.0.2",
     "**/qs": "^6.9.0",
     "**/just-extend": "^4.0.2",
+    "**/jsonwebtoken": "^9.0.0",
     "**/request": "https://github.com/request/request/archive/392db7d127536ff296fb06492db9430790a32d6c.tar.gz",
     "**/lodash": "^4.17.20",
     "**/netmask": "^2.0.1",
