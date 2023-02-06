@@ -20,6 +20,7 @@ const validLookerData = {
 }
 
 const action = new SalesforceCampaignsAction(testOAuthClientId, testOAuthClientSecret, testMaxResults, testChunkSize)
+action.executeInOwnProcess = false
 
 describe(`${action.constructor.name} class`, () => {
   // Use a sandbox to avoid interaction with other test files
@@ -73,7 +74,7 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("supportedDownloadSettings", () => {
-      expect(action.supportedDownloadSettings).to.deep.equal(["push"])
+      expect(action.supportedDownloadSettings).to.deep.equal(["url"])
     })
 
     it("minimumSupportedLookerVersion", () => {
@@ -81,7 +82,7 @@ describe(`${action.constructor.name} class`, () => {
     })
 
     it("usesStreaming", () => {
-      expect(action.usesStreaming).to.be.false
+      expect(action.usesStreaming).to.be.true
     })
 
     it("requiredFields", () => {

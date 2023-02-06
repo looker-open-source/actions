@@ -66,5 +66,4 @@ If you want to switch the connected Salesforce instance, or, disconnect the Look
 
 ## Limitations
 
-- This action is limited to a maximum of 5k rows. The functionality to send all results is currently being worked on
 - Each Salesforce Edition has a limit to the number of API calls allowed in a 24-hour period. Refer to the [Salesforce API Request Limits and Alloctions](https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_api.htm) documentation to learn your instance's API limits. This Action leverages POST requests with [sObject Collections](https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm) to execute multiple records (200 records per API call) in a single request.
