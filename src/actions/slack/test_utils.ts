@@ -329,7 +329,6 @@ describe(`slack/utils unit tests`, () => {
             const stubUpload = sinon.stub(gaxios, "request").callsFake(filesUploadFailSpy)
             const stubFinalize = sinon.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeFailSpy)
 
-
             chai.expect(handleExecute(request, slackClient)).to.eventually.deep.equal({
                 success: false,
                 message: "Could not find channel mychannel",

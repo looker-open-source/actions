@@ -1,8 +1,8 @@
 import * as Hub from "../../../hub"
 
 import {LogLevel, WebClient} from "@slack/web-api"
+import _ = require("lodash")
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
-import _ = require("lodash");
 
 export class SlackAttachmentAction extends Hub.Action {
 
