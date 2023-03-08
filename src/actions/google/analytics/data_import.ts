@@ -115,7 +115,7 @@ export class GoogleAnalyticsDataImportAction
       // All is well if we made it this far
       log("info", "Execution completed successfully.")
       return wrappedResp.returnSuccess()
-    } catch (err) {
+    } catch (err: any) {
       this.sanitizeError(err)
       log("error", "Execution error:", err.toString())
       log("error", "Exeuction errror JSON:", JSON.stringify(err))
@@ -137,7 +137,7 @@ export class GoogleAnalyticsDataImportAction
       // wrappedResp.form = await this.oauthHelper.makeLoginForm(hubReq)
       // wrappedResp.resetState()
       // return wrappedResp.returnSuccess()
-    } catch (err) {
+    } catch (err: any) {
       this.sanitizeError(err)
       const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
       if (err instanceof MissingAuthError) {

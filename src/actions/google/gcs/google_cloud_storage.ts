@@ -71,7 +71,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
         })
       })
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({success: false, message: e.message})
     }
 
@@ -85,7 +85,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
     try {
       results = await gcs.getBuckets()
-    } catch (e) {
+    } catch (e: any) {
       form.error = `An error occurred while fetching the bucket list.
 
       Your Google Cloud Storage credentials may be incorrect.

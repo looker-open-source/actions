@@ -1,1 +1,1 @@
-export declare type Logger = (level: string, ...rest: any[]) => void;
+export type Logger = (level: string, ...rest: any[]) => void;

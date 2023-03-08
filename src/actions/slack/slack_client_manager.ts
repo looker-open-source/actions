@@ -33,7 +33,7 @@ export class SlackClientManager {
             if (supportMultiWs) {
                 try {
                     json = JSON.parse(stateJson)
-                } catch (e) {
+                } catch (e: any) {
                     winston.warn("Received malform JSON for supported multi tenant version. Proceeding as str.")
                 }
             }

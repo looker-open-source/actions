@@ -55,7 +55,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     await this.sendData(filename, request, drive)
                     resp.success = true
                 }
-            } catch (e) {
+            } catch (e: any) {
                 winston.error(`Failed execute for Google Sheets.`, {webhookId: request.webhookId})
                 resp.success = false
                 resp.message = e.message
@@ -248,7 +248,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         }
                     })
                     readable.pipe(csvparser)
-                } catch (e) {
+                } catch (e: any) {
                     winston.error("Error thrown: " + e.toString(), {webhookId: request.webhookId})
                     reject(e.toString())
                 }
@@ -321,7 +321,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             await this.delay((3 ** retryCount) * 1000)
             try {
                 return await sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer})
-            } catch (e) {
+            } catch (e: any) {
                 retrySuccess = false
                 if (e.code === 429) {
                     winston.warn(`Retry number ${retryCount} failed`)

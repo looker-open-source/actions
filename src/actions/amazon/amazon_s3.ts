@@ -60,7 +60,7 @@ export class AmazonS3Action extends Hub.Action {
         return s3.upload(params).promise()
       })
       return new Hub.ActionResponse({ success: true })
-    } catch (err) {
+    } catch (err: any) {
       return new Hub.ActionResponse({ success: false, message: err.message })
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "looker-action-hub",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "",
   "main": "lib/index",
   "scripts": {
@@ -41,7 +41,7 @@
     "@types/dotenv": "^4.0.1",
     "@types/express": "^4.17.7",
     "@types/jsforce": "^1.9.33",
-    "@types/node": "^14.0.27",
+    "@types/node": "^18.11.11",
     "@types/nodemailer": "^4.6.8",
     "@types/normalize-url": "3.3.0",
     "@types/oboe": "^2.0.29",
@@ -93,7 +93,7 @@
     "ts-node": "^6.2.0",
     "tslint-language-service": "^0.9.9",
     "twilio": "^3.48.2",
-    "typescript": "^3.9.7",
+    "typescript": "^4.9.3",
     "uuid": "^3.4.0",
     "winston": "^2.4.5",
     "firebase-admin": "^10.0.0",

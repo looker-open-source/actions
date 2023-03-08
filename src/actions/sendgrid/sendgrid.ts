@@ -54,7 +54,7 @@ export class SendGridAction extends Hub.Action {
     let response
     try {
       await this.sendEmail(request, msg)
-    } catch (e) {
+    } catch (e: any) {
       response = {success: false, message: e.message}
     }
     return new Hub.ActionResponse(response)

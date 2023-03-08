@@ -41,7 +41,7 @@ export abstract class WebhookAction extends Hub.Action {
         return req.post({ uri: providedUrl, body: readable } ).promise()
       })
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({ success: false, message: e.message })
     }
   }

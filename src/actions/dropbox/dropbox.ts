@@ -153,7 +153,7 @@ export class DropboxAction extends Hub.OAuthAction {
     try {
       await drop.filesListFolder({path: ""})
       return true
-    } catch (err) {
+    } catch (err: any) {
       winston.error((err as DropboxTypes.Error<DropboxTypes.files.ListFolderError>).error.toString())
       return false
     }

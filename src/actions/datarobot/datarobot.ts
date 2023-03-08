@@ -53,7 +53,7 @@ export class DataRobotAction extends Hub.Action {
     try {
       await httpRequest.post(options).promise()
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({ success: false, message: e.message })
     }
   }
@@ -88,7 +88,7 @@ export class DataRobotAction extends Hub.Action {
           type: "string",
         },
       ]
-    } catch (e) {
+    } catch (e: any) {
       form.error = this.prettyDataRobotError(e)
     }
 
@@ -114,7 +114,7 @@ export class DataRobotAction extends Hub.Action {
         },
         json: true,
       }).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error("Invalid token")
     }
   }

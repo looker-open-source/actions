@@ -81,7 +81,7 @@ export class SFTPAction extends Hub.Action {
         password: request.formParams.password,
         port: +(parsedUrl.port ? parsedUrl.port : 22),
       })
-    } catch (e) {
+    } catch (e: any) {
       throw e
     }
     return client

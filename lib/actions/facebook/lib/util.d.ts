@@ -8,4 +8,4 @@ export declare function getDayOfMonth(date: string | number): string;
 export declare function getYear(date: string | number): string;
 export declare function formatFullDate(dayOfMonth: string, month: string, year: string): string;
 export declare function isNullOrUndefined(a: any): true | undefined;
-export declare function sortCompare(a: any, b: any): 1 | 0 | -1;
+export declare function sortCompare(a: any, b: any): 0 | 1 | -1;

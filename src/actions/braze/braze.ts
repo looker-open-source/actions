@@ -174,7 +174,7 @@ export class BrazeAction extends Hub.Action {
           })
         rows = []
       }
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({success: false, message: e.message })
     }
     return new Hub.ActionResponse({success: true, message: "ok"})

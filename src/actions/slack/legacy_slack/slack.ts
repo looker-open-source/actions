@@ -1,8 +1,8 @@
 import * as Hub from "../../../hub"
 
-import { WebClient } from "@slack/web-api"
-import _ = require("lodash")
+import {LogLevel, WebClient} from "@slack/web-api"
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
+import _ = require("lodash");
 
 export class SlackAttachmentAction extends Hub.Action {
 
@@ -34,7 +34,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
 
     try {
       form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), channelType)
-    } catch (e) {
+    } catch (e: any) {
       form.error = displayError[e.message] || e
     }
 
@@ -42,7 +42,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
-    return new WebClient(request.params.slack_api_token!)
+    return new WebClient(request.params.slack_api_token!, {logLevel: LogLevel.DEBUG})
   }
 
 }

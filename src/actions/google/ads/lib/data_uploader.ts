@@ -66,7 +66,7 @@ export class GoogleAdsUserListUploader {
       await this.adsRequest.streamingDownload(async (downloadStream: Readable) => {
         return this.startAsyncParser(downloadStream)
       })
-    } catch (errorReport) {
+    } catch (errorReport: any) {
       // TODO: the oboe fail() handler sends an errorReport object, but that might not be the only thing we catch
       this.log("error", "Streaming parse failure toString:", errorReport.toString())
       this.log("error", "Streaming parse failure JSON:", JSON.stringify(errorReport))

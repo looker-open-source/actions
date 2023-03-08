@@ -180,7 +180,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
       response.state = new Hub.ActionState()
       response.state.data = JSON.stringify(tokens)
-    } catch (e) {
+    } catch (e: any) {
       response = { success: false, message: e.message }
     }
     return new Hub.ActionResponse(response)
@@ -223,7 +223,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
         form.state.data = JSON.stringify(tokens)
 
         return form
-      } catch (e) {
+      } catch (e: any) {
         winston.debug(e.toString())
       }
     }

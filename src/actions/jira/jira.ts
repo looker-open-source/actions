@@ -59,7 +59,7 @@ export class JiraAction extends Hub.Action {
     let response
     try {
       await jira.addNewIssue(issue)
-    } catch (e) {
+    } catch (e: any) {
       response = {success: false, message: e.message}
     }
     return new Hub.ActionResponse(response)
@@ -107,7 +107,7 @@ export class JiraAction extends Hub.Action {
           }),
         required: true,
       }]
-    } catch (e) {
+    } catch (e: any) {
       form.error = e
     }
     return form

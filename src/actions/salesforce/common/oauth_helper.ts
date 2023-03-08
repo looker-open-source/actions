@@ -25,7 +25,7 @@ export class SalesforceOauthHelper {
     try {
       const actionCrypto = new Hub.ActionCrypto()
       encryptedPayload = await actionCrypto.encrypt(payloadString)
-    } catch (e) {
+    } catch (e: any) {
       winston.error("Payload encryption error:" + e.toString())
       throw e
     }
@@ -115,7 +115,7 @@ export class SalesforceOauthHelper {
         url: payload.stateUrl,
         data: { code: urlParams.code, redirect: redirectUri },
       })
-    } catch (e) {
+    } catch (e: any) {
       // We have seen weird behavior where Looker correctly updates the state, but returns a nonsense status code
       if (
         e instanceof gaxios.GaxiosError &&

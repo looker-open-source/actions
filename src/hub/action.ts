@@ -141,7 +141,7 @@ export abstract class Action {
   async validateAndFetchForm(request: ActionRequest) {
     try {
       this.throwForMissingRequiredParameters(request)
-    } catch (e) {
+    } catch (e: any) {
       const errorForm = new ActionForm()
       errorForm.error = e
       return errorForm

@@ -31,5 +31,5 @@ interface ActionFormFieldOAuth extends ActionFormFieldBase {
     type: "oauth_link" | "oauth_link_google";
     oauth_url: string;
 }
-export declare type ActionFormField = ActionFormFieldString | ActionFormFieldSelect | ActionFormFieldOAuth | ActionFormFieldMessage;
+export type ActionFormField = ActionFormFieldString | ActionFormFieldSelect | ActionFormFieldOAuth | ActionFormFieldMessage;
 export {};

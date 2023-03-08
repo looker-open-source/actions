@@ -11,5 +11,5 @@ export abstract class ProcessQueue {
         this.queue = new PQueue({concurrency})
     }
 
-    abstract async run(data: string): Promise<string>
+    abstract run(data: string): Promise<string>
 }
