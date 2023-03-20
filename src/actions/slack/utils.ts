@@ -114,13 +114,11 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                     readable.on("readable", () => {
                         let buff = readable.read()
                         while (buff) {
-                            winston.error("Reading!")
                             buffs.push(buff)
                             buff = readable.read()
                         }
                     })
                     readable.on("end", async () => {
-                        winston.error("End!")
                         const buffer = Buffer.concat(buffs)
 
                         const res = await slack.files.getUploadURLExternal({

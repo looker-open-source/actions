@@ -1,6 +1,6 @@
 import * as Hub from "../../../hub"
 
-import {LogLevel, WebClient} from "@slack/web-api"
+import {WebClient} from "@slack/web-api"
 import _ = require("lodash")
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
 
@@ -42,7 +42,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
   }
 
   private slackClientFromRequest(request: Hub.ActionRequest) {
-    return new WebClient(request.params.slack_api_token!, {logLevel: LogLevel.DEBUG})
+    return new WebClient(request.params.slack_api_token!)
   }
 
 }
