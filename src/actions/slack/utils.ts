@@ -1,4 +1,5 @@
-import {WebClient} from "@slack/client"
+import {WebClient} from "@slack/web-api"
+import * as gaxios from "gaxios"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {ActionFormField} from "../../hub"
@@ -16,7 +17,6 @@ const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
         exclude_archived: true,
         limit: API_LIMIT_SIZE,
     }
-    const channelList: any = slack.users.conversations
     const pageLoaded = async (accumulatedChannels: any[], response: any): Promise<any[]> => {
         const mergedChannels = accumulatedChannels.concat(response.channels)
 
@@ -26,11 +26,12 @@ const _usableChannels = async (slack: WebClient): Promise<Channel[]> => {
             response.response_metadata.next_cursor !== "") {
             const pageOptions = { ...options }
             pageOptions.cursor = response.response_metadata.next_cursor
-            return pageLoaded(mergedChannels, await channelList(pageOptions))
+            return pageLoaded(mergedChannels, await slack.conversations.list(pageOptions))
         }
         return mergedChannels
     }
-    const paginatedChannels = await pageLoaded([], await channelList(options))
+    const channelsInit = await slack.conversations.list(options)
+    const paginatedChannels = await pageLoaded([], channelsInit)
     const channels = paginatedChannels.filter((c: any) => !c.is_archived)
     return channels.map((channel: any) => ({id: channel.id, label: `#${channel.name}`}))
 }
@@ -106,12 +107,46 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
     let response = new Hub.ActionResponse({success: true})
     try {
         if (!request.empty()) {
+            const buffs: any[] = []
             await request.stream(async (readable) => {
-                await slack.files.upload({
-                    file: readable,
-                    filename: fileName,
-                    channels: request.formParams.channel,
-                    initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
+                // Slack API Upload flow. Get an Upload URL from slack
+                await new Promise<void>((resolve, reject) => {
+                    readable.on("readable", () => {
+                        let buff = readable.read()
+                        while (buff) {
+                            buffs.push(buff)
+                            buff = readable.read()
+                        }
+                    })
+                    readable.on("end", async () => {
+                        const buffer = Buffer.concat(buffs)
+
+                        const res = await slack.files.getUploadURLExternal({
+                            filename: fileName,
+                            length: buffer.byteLength,
+                        })
+                        const upload_url = res.upload_url
+
+                        // Upload file to Slack
+                        await gaxios.request({
+                            method: "POST",
+                            url: upload_url,
+                            data: buffer,
+                        })
+
+                        // Finalize upload and give metadata for channel, title and comment for the file to be posted.
+                        await slack.files.completeUploadExternal({
+                            files: [{
+                                id: res.file_id ? res.file_id : "",
+                            }],
+                            channel_id: request.formParams.channel,
+                            initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
+                        }).catch((e: any) => {
+                            reject(e)
+                        })
+                        resolve()
+                })
+
                 })
             })
         } else {
@@ -121,7 +156,8 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                 text: request.formParams.initial_comment ? request.formParams.initial_comment : "",
             })
         }
-    } catch (e) {
+    } catch (e: any) {
+        winston.info(`Error: ${e.message}`)
         response = new Hub.ActionResponse({success: false, message: e.message})
     }
     return response

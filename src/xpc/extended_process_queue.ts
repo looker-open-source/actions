@@ -21,7 +21,7 @@ export class ExtendedProcessQueue extends ProcessQueue {
   async child_runner(child: spawn.ChildProcess,
                      data: string,
                      webhookId: string,
-                     lookerResponseResolve: (value?: string | PromiseLike<string> | undefined) => void,
+                     lookerResponseResolve: (value: string | PromiseLike<string>) => void,
                      lookerResponseReject: (reason?: any) => void) {
     return new Promise<void>((processResolve, processReject) => {
       const timeout = setTimeout(

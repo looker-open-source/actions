@@ -1,7 +1,7 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
-import {WebClient} from "@slack/client"
+import {WebClient} from "@slack/web-api"
 import * as Hub from "../../hub"
 import * as _SlackClientManager from "./slack_client_manager"
 import {PLACEHOLDER_WORKSPACE, SlackClientManager} from "./slack_client_manager"

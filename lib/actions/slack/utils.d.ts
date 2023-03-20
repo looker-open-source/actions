@@ -1,4 +1,4 @@
-import { WebClient } from "@slack/client";
+import { WebClient } from "@slack/web-api";
 import * as Hub from "../../hub";
 import { ActionFormField } from "../../hub";
 export declare const API_LIMIT_SIZE = 1000;

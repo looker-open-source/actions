@@ -43,7 +43,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       try {
         await this.sendData(filename, request, drive)
         resp.success = true
-      } catch (e) {
+      } catch (e: any) {
         resp.success = false
         resp.message = e.message
       }
@@ -131,7 +131,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
           return form
         }
-      } catch (e) {
+      } catch (e: any) {
         winston.warn("Log in fail")
       }
     }

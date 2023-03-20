@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v1
         with:
-          node-version: 14.18.0
+          node-version: 18.12.1
 
       - name: Install dependencies
         run: |

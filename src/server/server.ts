@@ -179,7 +179,7 @@ export default class Server implements Hub.RouteBuilder {
               this.oauthRedirectUrl(action))
           res.statusCode = 200
           res.send(`<html><script>window.close()</script>><body>You may now close this tab.</body></html>`)
-        } catch (e) {
+        } catch (e: any) {
           this.logPromiseFail(req, res, e)
           res.statusCode = 400
         }
@@ -255,7 +255,7 @@ export default class Server implements Hub.RouteBuilder {
 
       try {
         await fn(req, res)
-      } catch (e) {
+      } catch (e: any) {
         this.logError(req, res, "Error on request")
         if (typeof(e) === "string") {
           if (!res.headersSent) {

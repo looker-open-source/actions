@@ -90,7 +90,7 @@ export class TeamsAction extends Hub.Action {
       if (result !== 1) {
         throw new Error(result)
       }
-    } catch (e) {
+    } catch (e: any) {
       response = { success: false, message: e.message }
       winston.error(e.message)
     }

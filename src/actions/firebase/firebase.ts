@@ -60,7 +60,7 @@ export class FirebaseAction extends Hub.Action {
   }
 
   async verifyAndSendMessage(params: Hub.ParamMap, webhookId: string | undefined): Promise<any> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise<void>(async (resolve, reject) => {
       const data: any = params.data
       if (!params.title) {
         winston.warn(`${LOG_PREFIX} Needs a valid title.`, { webhookId })
@@ -102,14 +102,14 @@ export class FirebaseAction extends Hub.Action {
               }
               try {
                 await this.sendMessageToDevice(deviceId, webhookId, payload, notificationOptions)
-              } catch (error) {
+              } catch (error: any) {
                 winston.error(`${LOG_PREFIX} Error in sendMessageToDevice. ${error.toString()} `, { webhookId })
                 reject(error)
               }
             }
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         winston.error(`${LOG_PREFIX} Error. ${error.toString()} `, { webhookId })
         reject(error)
       }
@@ -126,7 +126,7 @@ export class FirebaseAction extends Hub.Action {
                             payload: firebaseAdmin.messaging.MessagingPayload,
                             options?: firebaseAdmin.messaging.MessagingOptions,
                             ): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       FirebaseAction.setFirebaseClient()
       firebaseAdmin.messaging().sendToDevice(deviceId, payload, options)
         .then( (response: any) => {

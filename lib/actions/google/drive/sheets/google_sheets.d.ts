@@ -20,6 +20,7 @@ export declare class GoogleSheetsAction extends GoogleDriveAction {
     sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet): Promise<void | import("gaxios").GaxiosResponse<drive_v3.Schema$File>>;
     clearSheet(spreadsheetId: string, sheet: Sheet, sheetId: number): GaxiosPromise<sheets_v4.Schema$ClearValuesResponse>;
     resize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
+    sanitizeFilename(filename: string): string;
     flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string, webhookId: string): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
     flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
     protected delay(time: number): Promise<void>;

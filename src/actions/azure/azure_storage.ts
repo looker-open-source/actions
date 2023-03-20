@@ -52,7 +52,7 @@ export class AzureStorageAction extends Hub.Action {
         })
       })
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({success: false, message: e.message})
     }
   }
@@ -97,7 +97,7 @@ export class AzureStorageAction extends Hub.Action {
   private azureClientFromRequest(request: Hub.ActionRequest) {
     try {
       return azure.createBlobService(request.params.account!, request.params.accessKey!)
-    } catch (err) {
+    } catch (err: any) {
       if (err && err.toString().includes("base64")) {
         throw "The provided Account Key is not a valid base64 string"
       }

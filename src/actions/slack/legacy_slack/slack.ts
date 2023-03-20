@@ -1,6 +1,6 @@
 import * as Hub from "../../../hub"
 
-import { WebClient } from "@slack/client"
+import {WebClient} from "@slack/web-api"
 import _ = require("lodash")
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
 
@@ -34,7 +34,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
 
     try {
       form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), channelType)
-    } catch (e) {
+    } catch (e: any) {
       form.error = displayError[e.message] || e
     }
 

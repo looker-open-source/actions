@@ -128,7 +128,7 @@ export default class FacebookFormBuilder {
       try {
         const actionCrypto = new Hub.ActionCrypto()
         encryptedPayload = await actionCrypto.encrypt(payloadString)
-      } catch (e) {
+      } catch (e: any) {
         winston.error("Payload encryption error:", e.toString())
         throw e
       }
