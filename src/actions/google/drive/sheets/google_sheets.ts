@@ -77,7 +77,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 name: "overwrite",
                 options: [{name: "yes", label: "Yes"}, {
                     name: "no",
-                    label: "No"
+                    label: "No",
                 }],
                 default: "yes",
                 required: true,

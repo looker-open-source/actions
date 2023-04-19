@@ -102,10 +102,13 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
         throw "Missing channel."
     }
 
+    const webhookId = request.webhookId
     const fileName = request.formParams.filename  ? request.completeFilename() : request.suggestedFilename()
 
     let response = new Hub.ActionResponse({success: true})
     try {
+        const isUserToken = request.formParams.channel.startsWith("U")
+        const forceV1Upload = process.env.FORCE_V1_UPLOAD
         if (!request.empty()) {
             const buffs: any[] = []
             await request.stream(async (readable) => {
@@ -120,37 +123,50 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                     })
                     readable.on("end", async () => {
                         const buffer = Buffer.concat(buffs)
+                        const comment = request.formParams.initial_comment ? request.formParams.initial_comment : ""
+                        winston.info(`Attempting to send ${buffer.byteLength} bytes to Slack`, {webhookId})
 
-                        const res = await slack.files.getUploadURLExternal({
-                            filename: fileName,
-                            length: buffer.byteLength,
-                        })
-                        const upload_url = res.upload_url
+                        if (isUserToken || forceV1Upload) {
+                            winston.info(`V1 Upload of file`, {webhookId})
+                            await slack.files.upload({
+                                file: buffer,
+                                filename: fileName,
+                                channels: request.formParams.channel,
+                                initial_comment: comment,
+                            })
+                        } else {
+                            winston.info(`V2 Upload of file`, {webhookId})
+                            const res = await slack.files.getUploadURLExternal({
+                                filename: fileName,
+                                length: buffer.byteLength,
+                            })
+                            const upload_url = res.upload_url
 
-                        // Upload file to Slack
-                        await gaxios.request({
-                            method: "POST",
-                            url: upload_url,
-                            data: buffer,
-                        })
+                            // Upload file to Slack
+                            await gaxios.request({
+                                method: "POST",
+                                url: upload_url,
+                                data: buffer,
+                            })
 
-                        // Finalize upload and give metadata for channel, title and comment for the file to be posted.
-                        await slack.files.completeUploadExternal({
-                            files: [{
-                                id: res.file_id ? res.file_id : "",
-                            }],
-                            channel_id: request.formParams.channel,
-                            initial_comment: request.formParams.initial_comment ? request.formParams.initial_comment : "",
-                        }).catch((e: any) => {
-                            reject(e)
-                        })
+                            // Finalize upload and give metadata for channel, title and
+                            // comment for the file to be posted.
+                            await slack.files.completeUploadExternal({
+                                files: [{
+                                    id: res.file_id ? res.file_id : "",
+                                }],
+                                channel_id: request.formParams.channel,
+                                initial_comment: comment,
+                            }).catch((e: any) => {
+                                reject(e)
+                            })
+                        }
                         resolve()
-                })
-
+                    })
                 })
             })
         } else {
-            winston.info("No data to upload. Sending message instead")
+            winston.info("No data to upload. Sending message instead", {webhookId})
             await slack.chat.postMessage({
                 channel: request.formParams.channel,
                 text: request.formParams.initial_comment ? request.formParams.initial_comment : "",
