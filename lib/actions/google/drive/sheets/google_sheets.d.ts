@@ -2,9 +2,9 @@ import * as Hub from "../../../../hub";
 import { Credentials } from "google-auth-library";
 import { drive_v3, sheets_v4 } from "googleapis";
 import { GaxiosPromise } from "googleapis-common";
+import { GoogleDriveAction } from "../google_drive";
 import Drive = drive_v3.Drive;
 import Sheet = sheets_v4.Sheets;
-import { GoogleDriveAction } from "../google_drive";
 export declare class GoogleSheetsAction extends GoogleDriveAction {
     name: string;
     label: string;
@@ -21,6 +21,7 @@ export declare class GoogleSheetsAction extends GoogleDriveAction {
     clearSheet(spreadsheetId: string, sheet: Sheet, sheetId: number): GaxiosPromise<sheets_v4.Schema$ClearValuesResponse>;
     resize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
     sanitizeFilename(filename: string): string;
+    retriableSpreadsheetGet(spreadsheetId: string, sheet: Sheet, attempt: number, webhookId: string): Promise<any>;
     flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string, webhookId: string): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
     flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
     protected delay(time: number): Promise<void>;
