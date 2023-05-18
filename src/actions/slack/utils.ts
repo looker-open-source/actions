@@ -126,6 +126,9 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                         const comment = request.formParams.initial_comment ? request.formParams.initial_comment : ""
                         winston.info(`Attempting to send ${buffer.byteLength} bytes to Slack`, {webhookId})
 
+                        // Unfortunately UploadV2 does not provide a way to upload files
+                        // to user tokens which are common in Looker schedules
+                        // (UXXXXXXX)
                         if (isUserToken || forceV1Upload) {
                             winston.info(`V1 Upload of file`, {webhookId})
                             await slack.files.upload({
@@ -156,10 +159,20 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                                     id: res.file_id ? res.file_id : "",
                                 }],
                                 channel_id: request.formParams.channel,
-                                initial_comment: comment,
                             }).catch((e: any) => {
                                 reject(e)
                             })
+                            // Workaround for regression in V2 upload, the initial
+                            // comment does not support markdown formatting, breaking
+                            // customer links
+                            if (comment !== "") {
+                                await slack.chat.postMessage({
+                                    channel: request.formParams.channel!,
+                                    text: comment,
+                                }).catch((e: any) => {
+                                    reject(e)
+                                })
+                            }
                         }
                         resolve()
                     })
