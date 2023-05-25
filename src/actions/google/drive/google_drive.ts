@@ -203,6 +203,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
      }
 
      return request.stream(async (readable) => {
+       winston.info("Creating new file in Drive", {webhookId: request.webhookId})
        const driveParams: drive_v3.Params$Resource$Files$Create = {
          requestBody: fileMetadata,
          media: {
@@ -215,8 +216,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
          driveParams.supportsAllDrives = true
        }
 
-       return drive.files.create(driveParams).catch((e) => {
-         winston.debug(JSON.stringify(e.errors))
+       return drive.files.create(driveParams).catch((e: any) => {
+         winston.error(e.toString(), {webhookId: request.webhookId})
          throw e
        })
      })

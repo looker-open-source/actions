@@ -56,9 +56,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     resp.success = true
                 }
             } catch (e: any) {
-                winston.error(`Failed execute for Google Sheets.`, {webhookId: request.webhookId})
+                winston.error(`Failed execute for Google Sheets. Error: ${e.toString()}`,
+                    {webhookId: request.webhookId})
                 resp.success = false
-                resp.message = e.message
+                resp.message = e.toString()
             }
         } else {
             resp.success = false
@@ -124,11 +125,13 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         }
 
         const files = await drive.files.list(options).catch((e: any) => {
-            winston.error(`Error listing drives. Error ${e.toString()}`)
+            winston.error(`Error listing drives. Error ${e.toString()}`,
+                {webhookId: request.webhookId})
             throw e
         })
         if (files.data.files === undefined || files.data.files.length === 0) {
-            winston.info(`New file: ${filename}`)
+            winston.info(`New file: ${filename}`,
+                {webhookId: request.webhookId})
             return this.sendData(filename, request, drive)
         }
         if (files.data.files[0].id === undefined) {
@@ -138,7 +141,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         const sheets = await this.retriableSpreadsheetGet(spreadsheetId, sheet,
             0, request.webhookId!).catch((e: any) => {
-                winston.error(`Error retrieving spreadsheet. Error ${e.toString()}`)
+                winston.error(`Error retrieving spreadsheet. Error ${e.toString()}`,
+                    {webhookId: request.webhookId})
                 throw e
             })
         if (!sheets.data.sheets ||
@@ -207,6 +211,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     maxRows = maxPossibleRows
                                 }
                                 this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
+                                    winston.error(e.toString(), {webhookId: request.webhookId})
                                     throw e
                                 })
                             }
