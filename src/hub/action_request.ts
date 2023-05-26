@@ -252,6 +252,10 @@ export class ActionRequest {
     })
 
     const results = await Promise.all([returnPromise, streamPromise])
+        .catch((err: any) => {
+          winston.error(`Error caught awaiting for results. Error: ${err.toString()}`, this.logInfo)
+          throw err
+        })
     return results[0]
   }
 
