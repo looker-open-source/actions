@@ -3,11 +3,11 @@ import * as Hub from "../../hub";
 export declare const PLACEHOLDER_WORKSPACE = "any";
 export declare const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.3.0";
 export declare const isSupportMultiWorkspaces: (request: Hub.ActionRequest) => boolean | "" | null;
-export declare const makeSlackClient: (token: string) => WebClient;
+export declare const makeSlackClient: (token: string, disableRetries?: boolean) => WebClient;
 export declare class SlackClientManager {
     private selectedInstallId;
     private clients;
-    constructor(request: Hub.ActionRequest);
+    constructor(request: Hub.ActionRequest, disableRetries?: boolean);
     hasAnyClients: () => boolean;
     getClients: () => WebClient[];
     hasSelectedClient: () => boolean;
