@@ -24,7 +24,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
   usesStreaming = false
 
   async execute(request: Hub.ActionRequest) {
-    return await handleExecute(request, this.slackClientFromRequest(request))
+    return await handleExecute(request, this.slackClientFromRequest(request, true))
   }
 
   async form(request: Hub.ActionRequest) {
@@ -41,8 +41,12 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
     return form
   }
 
-  private slackClientFromRequest(request: Hub.ActionRequest) {
-    return new WebClient(request.params.slack_api_token!)
+  private slackClientFromRequest(request: Hub.ActionRequest, disableRetries = false) {
+    if (disableRetries) {
+      return new WebClient(request.params.slack_api_token!, {retryConfig: {retries: 0}})
+    } else {
+      return new WebClient(request.params.slack_api_token!)
+    }
   }
 
 }
