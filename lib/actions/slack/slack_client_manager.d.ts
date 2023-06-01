@@ -7,7 +7,7 @@ export declare const makeSlackClient: (token: string, disableRetries?: boolean) 
 export declare class SlackClientManager {
     private selectedInstallId;
     private clients;
-    constructor(request: Hub.ActionRequest, isForm?: boolean);
+    constructor(request: Hub.ActionRequest, disableRetries?: boolean);
     hasAnyClients: () => boolean;
     getClients: () => WebClient[];
     hasSelectedClient: () => boolean;

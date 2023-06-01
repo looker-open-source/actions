@@ -27,7 +27,7 @@ export class SlackClientManager {
     private selectedInstallId: string | undefined
     private clients: { [key: string]: WebClient }
 
-    constructor(request: Hub.ActionRequest, isForm = false) {
+    constructor(request: Hub.ActionRequest, disableRetries = false) {
         const stateJson = request.params.state_json
 
         if (!stateJson) {
@@ -48,7 +48,7 @@ export class SlackClientManager {
                     .reduce((accumulator, stateJsonItem) => {
                         const ws = stateJsonItem.install_id
                         if (stateJsonItem.token) {
-                            accumulator[ws] = makeSlackClient(stateJsonItem.token, isForm)
+                            accumulator[ws] = makeSlackClient(stateJsonItem.token, disableRetries)
                         }
                         return accumulator
                     }, {} as { [key: string]: WebClient })
@@ -65,7 +65,7 @@ export class SlackClientManager {
                 }
             } else {
                 this.selectedInstallId = PLACEHOLDER_WORKSPACE
-                this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson, isForm)}
+                this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson, disableRetries)}
             }
         }
     }
