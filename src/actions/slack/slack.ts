@@ -35,7 +35,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   usesStreaming = true
 
   async execute(request: Hub.ActionRequest) {
-    const clientManager = new SlackClientManager(request, false)
+    const clientManager = new SlackClientManager(request, true)
     const selectedClient = clientManager.getSelectedClient()
     if (!selectedClient) {
       return new Hub.ActionResponse({success: false, message: AUTH_MESSAGE})
@@ -45,7 +45,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
-    const clientManager = new SlackClientManager(request, true)
+    const clientManager = new SlackClientManager(request, false)
     if (!clientManager.hasAnyClients()) {
       return this.loginForm(request)
     }
