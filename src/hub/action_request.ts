@@ -222,8 +222,6 @@ export class ActionRequest {
           .on("error", (err) => {
             winston.error(`[stream] PassThrough stream error`, {
               ...this.logInfo,
-              error: err,
-              stack: err.stack,
             })
             reject(err)
           })
