@@ -261,6 +261,23 @@ export class GoogleDriveAction extends Hub.OAuthAction {
      }
    }
 
+  sanitizeGaxiosError(err: any) {
+    const configObjs = []
+    if (err.config) {
+      configObjs.push(err.config)
+    }
+    if (err.response && err.response.config) {
+      configObjs.push(err.response.config)
+    }
+    for (const config of configObjs) {
+      for (const prop of ["data", "body"]) {
+        if (config[prop]) {
+          config[prop] = "[REDACTED]"
+        }
+      }
+    }
+  }
+
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
     const client = this.oauth2Client(redirect)
     const {tokens} = await client.getToken(code)
