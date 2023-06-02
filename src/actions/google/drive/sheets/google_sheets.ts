@@ -56,7 +56,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     resp.success = true
                 }
             } catch (e: any) {
-                winston.error(`Failed execute for Google Sheets. Error: ${e.toString()}`,
+                winston.debug(`Failed execute for Google Sheets. Error: ${e.toString()}`,
                     {webhookId: request.webhookId})
                 resp.success = false
                 resp.message = e.toString()
@@ -125,12 +125,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         }
 
         const files = await drive.files.list(options).catch((e: any) => {
-            winston.error(`Error listing drives. Error ${e.toString()}`,
+            winston.debug(`Error listing drives. Error ${e.toString()}`,
                 {webhookId: request.webhookId})
             throw e
         })
         if (files.data.files === undefined || files.data.files.length === 0) {
-            winston.info(`New file: ${filename}`,
+            winston.debug(`New file: ${filename}`,
                 {webhookId: request.webhookId})
             return this.sendData(filename, request, drive)
         }
@@ -141,7 +141,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         const sheets = await this.retriableSpreadsheetGet(spreadsheetId, sheet,
             0, request.webhookId!).catch((e: any) => {
-                winston.error(`Error retrieving spreadsheet. Error ${e.toString()}`,
+                winston.debug(`Error retrieving spreadsheet. Error ${e.toString()}`,
                     {webhookId: request.webhookId})
                 throw e
             })
@@ -211,12 +211,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     maxRows = maxPossibleRows
                                 }
                                 this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
-                                    winston.error(e.toString(), {webhookId: request.webhookId})
+                                    winston.debug(e.toString(), {webhookId: request.webhookId})
                                     throw e
                                 })
                             }
                             this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
-                                winston.error(e, {webhookId: request.webhookId})
+                                winston.debug(e, {webhookId: request.webhookId})
                                 throw e
                             })
                         }
@@ -237,7 +237,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     maxRows = maxPossibleRows
                                 }
                                 this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
-                                    winston.error(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
+                                    winston.debug(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
                                     throw e
                                 })
                             }
@@ -252,7 +252,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             })
                         }
                     }).on("error", (e: any) => {
-                        winston.error(e, {webhookId: request.webhookId})
+                        winston.debug(e, {webhookId: request.webhookId})
                         reject(e)
                     }).on("close", () => {
                         if (!finished) {
@@ -263,7 +263,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     })
                     readable.pipe(csvparser)
                 } catch (e: any) {
-                    winston.error("Error thrown: " + e.toString(), {webhookId: request.webhookId})
+                    winston.debug("Error thrown: " + e.toString(), {webhookId: request.webhookId})
                     reject(e.toString())
                 }
             })
@@ -317,7 +317,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     async retriableSpreadsheetGet(spreadsheetId: string, sheet: Sheet,
                                   attempt: number, webhookId: string): Promise<any> {
         return await sheet.spreadsheets.get({spreadsheetId}).catch(async (e: any) => {
-            winston.info(`SpreadsheetG error: ${e}`, {webhookId})
+            winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
                 winston.warn("Queueing retry", {webhookId})
                 await this.delay((3 ** (attempt + 1)) * 1000)
@@ -331,7 +331,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     async flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,
                 sheet: Sheet, spreadsheetId: string, webhookId: string) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch(async (e: any) => {
-            winston.info(`Flush error: ${e}`, {webhookId})
+            winston.debug(`Flush error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
                 winston.warn("Queueing retry", {webhookId})
                 return this.flushRetry(buffer, sheet, spreadsheetId)
@@ -352,7 +352,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             } catch (e: any) {
                 retrySuccess = false
                 if (e.code === 429) {
-                    winston.warn(`Retry number ${retryCount} failed`)
+                    winston.debug(`Retry number ${retryCount} failed`)
                     winston.info(e)
                 } else {
                     throw e
