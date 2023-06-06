@@ -8,6 +8,7 @@ import {isSupportMultiWorkspaces, MULTI_WORKSPACE_SUPPORTED_VERSION} from "./sla
 import * as utils from "./utils"
 
 const action = new SlackAction()
+action.executeInOwnProcess = false
 
 // @ts-ignore
 const stubSlackClient = (fn: () => void) => sinon.stub(SlackClientManager, "makeSlackClient").callsFake(fn)

@@ -22,6 +22,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
     sensitive: true,
   }]
   usesStreaming = false
+  executeInOwnProcess = true
 
   async execute(request: Hub.ActionRequest) {
     return await handleExecute(request, this.slackClientFromRequest(request, true))

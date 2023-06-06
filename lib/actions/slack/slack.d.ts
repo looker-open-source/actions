@@ -17,6 +17,7 @@ export declare class SlackAction extends Hub.DelegateOAuthAction {
     }[];
     minimumSupportedLookerVersion: string;
     usesStreaming: boolean;
+    executeInOwnProcess: boolean;
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
     loginForm(request: Hub.ActionRequest, form?: Hub.ActionForm): Promise<Hub.ActionForm>;
