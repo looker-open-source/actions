@@ -157,6 +157,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                             await slack.files.completeUploadExternal({
                                 files: [{
                                     id: res.file_id ? res.file_id : "",
+                                    title: fileName,
                                 }],
                                 channel_id: request.formParams.channel,
                             }).catch((e: any) => {
