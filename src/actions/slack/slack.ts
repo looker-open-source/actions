@@ -33,6 +33,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   }]
   minimumSupportedLookerVersion = "6.23.0"
   usesStreaming = true
+  executeInOwnProcess = true
 
   async execute(request: Hub.ActionRequest) {
     const clientManager = new SlackClientManager(request, true)

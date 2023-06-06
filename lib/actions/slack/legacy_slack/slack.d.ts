@@ -14,6 +14,7 @@ export declare class SlackAttachmentAction extends Hub.Action {
         sensitive: boolean;
     }[];
     usesStreaming: boolean;
+    executeInOwnProcess: boolean;
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
     private slackClientFromRequest;
