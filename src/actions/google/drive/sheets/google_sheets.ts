@@ -57,7 +57,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 }
             } catch (e: any) {
                 this.sanitizeGaxiosError(e)
-                winston.debug(`Failed execute for Google Sheets. Error: ${e.toString()}`,
+                winston.error(`Failed execute for Google Sheets. Error: ${e.toString()}`,
                     {webhookId: request.webhookId})
                 resp.success = false
                 resp.message = e.toString()
@@ -174,7 +174,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     await this.clearSheet(spreadsheetId, sheet, sheetId)
                     csvparser.on("data", (line: any) => {
                         if (rowCount > maxPossibleRows) {
-                            throw `Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`
+                            reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`)
                         }
                         const rowIndex: number = rowCount++
                         // Sanitize line data and properly encapsulate string formatting for CSV lines
