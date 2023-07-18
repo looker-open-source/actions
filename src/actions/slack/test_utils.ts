@@ -350,6 +350,24 @@ describe(`slack/utils unit tests`, () => {
             })
         })
 
+        it("uses V1 if channel is a User token with a W prefix", () => {
+            const request = new Hub.ActionRequest()
+            request.type = Hub.ActionType.Query
+            request.formParams = {
+                channel: "W12345",
+                initial_comment: "mycomment",
+            }
+            request.attachment = {
+                dataBuffer: Buffer.from("1,2,3,4", "utf8"),
+                fileExtension: "csv",
+            }
+            return expectSlackMatchV1(request, {
+                channels: request.formParams.channel,
+                initial_comment: request.formParams.initial_comment,
+                file: Buffer.from("1,2,3,4", "utf8"),
+            })
+        })
+
         it("returns failure on slack files.upload error", (done) => {
             const request = new Hub.ActionRequest()
             const fileId = "1234ABCDX"
