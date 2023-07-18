@@ -107,7 +107,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
 
     let response = new Hub.ActionResponse({success: true})
     try {
-        const isUserToken = request.formParams.channel.startsWith("U")
+        const isUserToken = request.formParams.channel.startsWith("U") || request.formParams.channel.startsWith("W")
         const forceV1Upload = process.env.FORCE_V1_UPLOAD
         if (!request.empty()) {
             const buffs: any[] = []
