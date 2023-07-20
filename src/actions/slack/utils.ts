@@ -61,40 +61,59 @@ const usableDMs = async (slack: WebClient): Promise<Channel[]> => {
 }
 
 export const getDisplayedFormFields = async (slack: WebClient, channelType: string): Promise<ActionFormField[]> => {
-    let channels
+    let channels: Channel[] = []
+    let manualId = false
     if (channelType === "channels") {
         channels = await _usableChannels(slack)
-    } else {
+    } else if (channelType === "users") {
         channels = await usableDMs(slack)
+    } else {
+        manualId = true
     }
-    channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
-    return [
+    const response: ActionFormField[] = [
         {
             description: "Type of destination to fetch",
             label: "Channel Type",
             name: "channelType",
             options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
             type: "select",
-            default: "channels",
             interactive: true,
         },
-        {
-            description: "Name of the Slack channel you would like to post to.",
+    ]
+    // If this is the first load then let the user add a manual ID to send to Slack
+    if (manualId) {
+        response.push({
+            description: "Slack channel id",
             label: "Share In",
+            name: "channel",
+            type: "string",
+        })
+    // If the user selected channels or users, send a sorted list of channels
+    } else {
+        channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
+        response.push({
+            description: "Name of the Slack channel you would like to post to.",
+                label: "Share In",
             name: "channel",
             options: channels.map((channel) => ({ name: channel.id, label: channel.label })),
             required: true,
             type: "select",
-        }, {
-            label: "Comment",
-            type: "string",
-            name: "initial_comment",
-        }, {
-            label: "Filename",
-            name: "filename",
-            type: "string",
-        },
-    ]
+        })
+    }
+
+    // Always allow comment and filename
+    response.push({
+        label: "Comment",
+        type: "string",
+        name: "initial_comment",
+    })
+    response.push({
+        label: "Filename",
+        name: "filename",
+        type: "string",
+    })
+
+    return response
 }
 
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
