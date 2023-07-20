@@ -75,7 +75,12 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
             description: "Type of destination to fetch",
             label: "Channel Type",
             name: "channelType",
-            options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
+            options: [
+                {name: "manual", label: "Manual Channel ID"},
+                {name: "channels", label: "Channels"},
+                {name: "users", label: "Users"},
+            ],
+            default: "manual",
             type: "select",
             interactive: true,
         },
@@ -83,8 +88,8 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
     // If this is the first load then let the user add a manual ID to send to Slack
     if (manualId) {
         response.push({
-            description: "Slack channel id",
-            label: "Share In",
+            description: "Slack channel or user id",
+            label: "Channel or User ID",
             name: "channel",
             type: "string",
         })
@@ -93,7 +98,7 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
         channels.sort((a, b) => ((a.label < b.label) ? -1 : 1 ))
         response.push({
             description: "Name of the Slack channel you would like to post to.",
-                label: "Share In",
+            label: "Share In",
             name: "channel",
             options: channels.map((channel) => ({ name: channel.id, label: channel.label })),
             required: true,
