@@ -29,7 +29,7 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    const channelType = request.formParams.channelType || "manual"
+    const channelType = request.formParams.channelType ? request.formParams.channelType : "manual"
     try {
       form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), channelType)
     } catch (e: any) {

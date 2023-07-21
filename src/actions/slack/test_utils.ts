@@ -138,9 +138,13 @@ describe(`slack/utils unit tests`, () => {
                     description: "Type of destination to fetch",
                     label: "Channel Type",
                     name: "channelType",
-                    options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
+                    options: [
+                        {name: "manual", label: "Manual Channel ID"},
+                        {name: "channels", label: "Channels"},
+                        {name: "users", label: "Users"},
+                    ],
                     type: "select",
-                    default: "channels",
+                    default: "manual",
                     interactive: true,
                 },
                 {
@@ -214,9 +218,13 @@ describe(`slack/utils unit tests`, () => {
                     description: "Type of destination to fetch",
                     label: "Channel Type",
                     name: "channelType",
-                    options: [{name: "channels", label: "Channels"}, {name: "users", label: "Users"}],
+                    options: [
+                        {name: "manual", label: "Manual Channel ID"},
+                        {name: "channels", label: "Channels"},
+                        {name: "users", label: "Users"},
+                    ],
                     type: "select",
-                    default: "channels",
+                    default: "manual",
                     interactive: true,
                 },
                 {
@@ -230,6 +238,40 @@ describe(`slack/utils unit tests`, () => {
                         {name: "10", label: "@Z"}],
                     required: true,
                     type: "select",
+                }, {
+                    label: "Comment",
+                    type: "string",
+                    name: "initial_comment",
+                }, {
+                    label: "Filename",
+                    name: "filename",
+                    type: "string",
+                },
+            ]).and.notify(done)
+        })
+
+        it("returns correct users", (done) => {
+            const slackClient = new WebClient("token")
+            const result = getDisplayedFormFields(slackClient, "manual")
+            chai.expect(result).to.eventually.deep.equal([
+                {
+                    description: "Type of destination to fetch",
+                    label: "Channel Type",
+                    name: "channelType",
+                    options: [
+                        {name: "manual", label: "Manual Channel ID"},
+                        {name: "channels", label: "Channels"},
+                        {name: "users", label: "Users"},
+                    ],
+                    type: "select",
+                    default: "manual",
+                    interactive: true,
+                },
+                {
+                    description: "Slack channel or user id",
+                    label: "Channel or User ID",
+                    name: "channel",
+                    type: "string",
                 }, {
                     label: "Comment",
                     type: "string",
