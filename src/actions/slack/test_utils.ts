@@ -250,7 +250,7 @@ describe(`slack/utils unit tests`, () => {
             ]).and.notify(done)
         })
 
-        it("returns correct users", (done) => {
+        it("returns form with manual enabled", (done) => {
             const slackClient = new WebClient("token")
             const result = getDisplayedFormFields(slackClient, "manual")
             chai.expect(result).to.eventually.deep.equal([
