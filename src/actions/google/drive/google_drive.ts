@@ -140,7 +140,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
               options: [{label: "Fetch Folders", name: "fetch"}],
             })
             form.fields.push({
-              label: "Folder Name Contains",
+              label: "Folder Name Search",
               name: "search",
               type: "string",
               required: true,
