@@ -537,6 +537,7 @@ describe(`${action.constructor.name} unit tests`, () => {
             },
           })
         const request = new Hub.ActionRequest()
+        request.formParams = {search: "word"}
         request.params = {
           state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
           state_json: JSON.stringify({tokens: "access", redirect: "url"}),
