@@ -1,4 +1,4 @@
-import {WebClient} from "@slack/client"
+import {WebClient} from "@slack/web-api"
 import * as semver from "semver"
 import * as winston from "winston"
 import * as Hub from "../../hub"
@@ -15,13 +15,19 @@ export const MULTI_WORKSPACE_SUPPORTED_VERSION = "7.3.0"
 export const isSupportMultiWorkspaces = (request: Hub.ActionRequest) =>
     request.lookerVersion && semver.gte(request.lookerVersion, MULTI_WORKSPACE_SUPPORTED_VERSION)
 
-export const makeSlackClient = (token: string): WebClient => new WebClient(token)
+export const makeSlackClient = (token: string, disableRetries = false): WebClient => {
+    if (disableRetries) {
+        return new WebClient(token, {retryConfig: {retries: 0}})
+    } else {
+        return new WebClient(token)
+    }
+}
 
 export class SlackClientManager {
     private selectedInstallId: string | undefined
     private clients: { [key: string]: WebClient }
 
-    constructor(request: Hub.ActionRequest) {
+    constructor(request: Hub.ActionRequest, disableRetries = false) {
         const stateJson = request.params.state_json
 
         if (!stateJson) {
@@ -33,7 +39,7 @@ export class SlackClientManager {
             if (supportMultiWs) {
                 try {
                     json = JSON.parse(stateJson)
-                } catch (e) {
+                } catch (e: any) {
                     winston.warn("Received malform JSON for supported multi tenant version. Proceeding as str.")
                 }
             }
@@ -42,7 +48,7 @@ export class SlackClientManager {
                     .reduce((accumulator, stateJsonItem) => {
                         const ws = stateJsonItem.install_id
                         if (stateJsonItem.token) {
-                            accumulator[ws] = makeSlackClient(stateJsonItem.token)
+                            accumulator[ws] = makeSlackClient(stateJsonItem.token, disableRetries)
                         }
                         return accumulator
                     }, {} as { [key: string]: WebClient })
@@ -59,7 +65,7 @@ export class SlackClientManager {
                 }
             } else {
                 this.selectedInstallId = PLACEHOLDER_WORKSPACE
-                this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson)}
+                this.clients = {[PLACEHOLDER_WORKSPACE]: makeSlackClient(stateJson, disableRetries)}
             }
         }
     }

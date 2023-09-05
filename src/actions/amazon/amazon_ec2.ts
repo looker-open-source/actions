@@ -70,7 +70,7 @@ export class AmazonEC2Action extends Hub.Action {
     let response
     try {
       await ec2.stopInstances(params).promise()
-    } catch (e) {
+    } catch (e: any) {
       response = {success: false, message: e.message}
     }
     return new Hub.ActionResponse(response)

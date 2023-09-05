@@ -167,6 +167,20 @@ describe(`${action.constructor.name} unit tests`, () => {
           name: "filename",
           type: "string",
           required: true,
+        }, {
+          label: "Append timestamp",
+          name: "includeTimestamp",
+          description: "Append timestamp to end of file name. Should be set to 'Yes' if the file will be sent repeatedly",
+          required: true,
+          default: "no",
+          type: "select",
+          options: [{
+            name: "yes",
+            label: "Yes",
+          }, {
+            name: "no",
+            label: "No",
+          }],
         }],
       }).and.notify(stubClient.restore).and.notify(done)
     })
@@ -184,6 +198,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("correctly handles redirect from authorization server", (done) => {
+      // @ts-ignore
       const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
       const result = action.oauthFetchInfo({code: "code",
         state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
@@ -191,6 +206,30 @@ describe(`${action.constructor.name} unit tests`, () => {
         "redirect")
       chai.expect(result)
         .and.notify(stubReq.restore).and.notify(done)
+    })
+  })
+
+  describe("dropboxFilename", () => {
+    it("returns basic filename if includeTimeStamp flag is not set", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {filename: stubFileName, directory: stubDirectory}
+      const result = action.dropboxFilename(request)
+      chai.expect(result).equal(stubFileName)
+    })
+
+    it("returns basic filename if includeTimeStamp flag is no", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {filename: stubFileName, directory: stubDirectory, includeTimestamp: "no"}
+      const result = action.dropboxFilename(request)
+      chai.expect(result).equal(stubFileName)
+    })
+
+    it("returns filename with timestamp if includeTimeStamp flag is yes", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {filename: stubFileName, directory: stubDirectory, includeTimestamp: "yes"}
+      const result = action.dropboxFilename(request)
+      chai.expect(result).to.include(stubFileName)
+      chai.expect(result).not.equal(stubFileName)
     })
   })
 })

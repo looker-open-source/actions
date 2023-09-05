@@ -245,6 +245,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("correctly handles redirect from authorization server", (done) => {
       const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({tokens: "token"})
+      // @ts-ignore
       const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
       const result = action.oauthFetchInfo({code: "code",
         state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
@@ -253,6 +254,32 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(result)
         .and.notify(stubAccessToken.restore)
         .and.notify(stubReq.restore).and.notify(done)
+    })
+  })
+
+  describe("mimeType", () => {
+    it("identifies attachment mimeTypes", () => {
+      const request = new Hub.ActionRequest()
+      request.attachment = {mime: "application/zip;base64"}
+      request.formParams = {format: "foobar"}
+      chai.expect(action.getMimeType(request)).to.equal("application/zip;base64")
+      request.attachment = {mime: "application/pdf;base64"}
+      chai.expect(action.getMimeType(request)).to.equal("application/pdf;base64")
+      request.attachment = {mime: "image/png;base64"}
+      chai.expect(action.getMimeType(request)).to.equal("image/png;base64")
+    })
+
+    it("identifies mimeType for streamed actions", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {format: "csv"}
+      chai.expect(action.getMimeType(request)).to.equal("text/csv")
+      request.formParams = {format: "json"}
+      chai.expect(action.getMimeType(request)).to.equal("application/json")
+    })
+
+    it("returns undefined if no format is given", () => {
+      const request = new Hub.ActionRequest()
+      chai.expect(action.getMimeType(request)).to.equal(undefined)
     })
   })
 })

@@ -19,7 +19,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     let stubUploadToS3: sinon.SinonStub
     let stubChunkToS3: sinon.SinonStub
     let stubProjectFile: sinon.SinonStub
-    const now = new Date()
+    const now = new Date().getTime()
     afterEach(() => {
       stubHttpPost.restore()
       stubStartProject.restore()
@@ -139,7 +139,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       stubPoller = sinon.stub(action as any, "startPoller")
       stubStartProject = sinon.stub(action as any, "startProject")
       stubUploadToS3 = sinon.stub(action as any, "uploadToS3")
-      sinon.stub(Date, "now").returns(now)
+      const stubDate = sinon.stub(Date, "now").returns(now)
       const augerURL = "https://app.auger.ai/api/v1"
       const rawName = "looker_file"
       const fileName = `${rawName}_${Date.now()}`
@@ -174,7 +174,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
 
       return chai.expect(action.execute(request))
-        .to.be.fulfilled
+        .to.be.fulfilled.and.notify(stubDate.restore)
         .then(() => {
           chai.expect(stubPoller, "stubPoller").to.have.been.called
           chai.expect(stubUploadToS3, "stubUploadToS3").to.have.been.calledWithMatch(records, url)
@@ -199,29 +199,59 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.params.api_token = "token"
       const form = action.validateAndFetchForm(request)
 
-      chai.expect(form).to.eventually.deep.equal({
+      return chai.expect(form).to.eventually.deep.equal({
         fields: [
           {
-            name: "model_type",
-            label: "Model Type",
-            type: "select",
-            default: "classification",
+            description: "The Auger project to use.",
+            label: "Project Name",
+            name: "project_name",
             required: true,
-            options: [
-              { name: "classification", label: "Classification" },
-              { name: "regression", label: "Regression" },
-            ],
+            type: "string",
           },
           {
-            name: "project_name",
-            label: "Project Name",
-            type: "text",
+            default: "classification",
+            label: "Model Type",
+            name: "model_type",
+            options: [
+              {
+                label: "Classification",
+                name: "classification",
+              },
+              {
+                label: "Regression",
+                name: "regression",
+              },
+            ],
             required: true,
+            type: "select",
+          },
+          {
+            default: "100",
+            description: "How many trials to run for training.",
+            label: "Trials to run",
+            name: "max_n_trials",
+            required: false,
+            type: "string",
+          },
+          {
+            default: "false",
+            label: "Train after data transfer",
+            name: "train_data",
+            options: [
+              {
+                label: "True",
+                name: "true",
+              },
+              {
+                label: "False",
+                name: "false",
+              },
+            ],
+            required: false,
+            type: "select",
           },
         ],
-      })
-
-      stubGet.restore()
+      }).and.notify(stubGet.restore)
     })
 
   })

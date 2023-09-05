@@ -151,7 +151,7 @@ export class TrainingJobPoller {
       const response = await transaction.sagemaker.createModel(params).promise()
       winston.debug("createModel response", response)
       this.sendCreateModelSuccessEmail(transaction, response).catch(logRejection)
-    } catch (err) {
+    } catch (err: any) {
       this.sendCreateModelFailureEmail(transaction, err).catch(logRejection)
     }
   }

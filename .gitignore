@@ -56,10 +56,11 @@ typings/
 
 # dotenv environment variables file
 .env
-status.json
-lib
 
-# For IdeaStorm
+# Common editors etc
 .idea/
-
+.vscode/
 .DS_Store
+
+# ActionHub specifics
+status.json

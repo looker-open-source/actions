@@ -1,7 +1,7 @@
 import * as https from "request-promise-native"
 
 import {GaxiosResponse} from "gaxios"
-import { Credentials } from "google-auth-library"
+import {Credentials, OAuth2Client} from "google-auth-library"
 import { drive_v3, google } from "googleapis"
 
 import * as winston from "winston"
@@ -43,7 +43,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       try {
         await this.sendData(filename, request, drive)
         resp.success = true
-      } catch (e) {
+      } catch (e: any) {
         resp.success = false
         resp.message = e.message
       }
@@ -131,7 +131,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
           return form
         }
-      } catch (e) {
+      } catch (e: any) {
         winston.warn("Log in fail")
       }
     }
@@ -186,7 +186,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     return false
   }
 
-  oauth2Client(redirectUri: string | undefined) {
+  oauth2Client(redirectUri: string | undefined): OAuth2Client {
     return new google.auth.OAuth2(
       process.env.GOOGLE_DRIVE_CLIENT_ID,
       process.env.GOOGLE_DRIVE_CLIENT_SECRET,
@@ -195,13 +195,15 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
    async sendData(filename: string, request: Hub.ActionRequest, drive: Drive) {
+     const mimeType = this.getMimeType(request)
      const fileMetadata: drive_v3.Schema$File = {
        name: filename,
-       mimeType: this.mimeType,
+       mimeType,
        parents: request.formParams.folder ? [request.formParams.folder] : undefined,
      }
 
      return request.stream(async (readable) => {
+       winston.info("Creating new file in Drive", {webhookId: request.webhookId})
        const driveParams: drive_v3.Params$Resource$Files$Create = {
          requestBody: fileMetadata,
          media: {
@@ -214,8 +216,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
          driveParams.supportsAllDrives = true
        }
 
-       return drive.files.create(driveParams).catch((e) => {
-         winston.debug(JSON.stringify(e.errors))
+       return drive.files.create(driveParams).catch((e: any) => {
+         winston.error(e.toString(), {webhookId: request.webhookId})
          throw e
        })
      })
@@ -233,6 +235,48 @@ export class GoogleDriveAction extends Hub.OAuthAction {
      }
      return driveList
    }
+
+   getMimeType(request: Hub.ActionRequest) {
+     if (this.mimeType) {return this.mimeType}
+     if (request.attachment && request.attachment.mime) {return request.attachment.mime}
+     switch (request.formParams.format) {
+       case "csv":
+         return "text/csv"
+       case "xlsx":
+         return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+       case "inline_json":
+         return "application/json"
+       case "json":
+         return "application/json"
+       case "json_label":
+         return "application/json"
+       case "json_detail":
+         return "application/json"
+       case "html":
+         return "text/html"
+       case "txt":
+         return "text/plain"
+       default:
+         return undefined
+     }
+   }
+
+  sanitizeGaxiosError(err: any) {
+    const configObjs = []
+    if (err.config) {
+      configObjs.push(err.config)
+    }
+    if (err.response && err.response.config) {
+      configObjs.push(err.response.config)
+    }
+    for (const config of configObjs) {
+      for (const prop of ["data", "body"]) {
+        if (config[prop]) {
+          config[prop] = "[REDACTED]"
+        }
+      }
+    }
+  }
 
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
     const client = this.oauth2Client(redirect)

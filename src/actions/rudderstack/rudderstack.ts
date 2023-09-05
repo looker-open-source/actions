@@ -4,7 +4,7 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {RudderActionError} from "./rudderstack_error"
-const rudder: any = require("@rudderstack/rudder-sdk-node")
+import Analytics from "@rudderstack/rudder-sdk-node";
 
 interface RudderFields {
   idFieldNames: string[],
@@ -132,7 +132,7 @@ export class RudderAction extends Hub.Action {
               totalRequestsCompleted = totalRequestsCompleted + 1
               winston.debug(`[Rudder] totalRequestsCompletedOnEvents :  ${totalRequestsCompleted}`)
             }*/)
-          } catch (e) {
+          } catch (e: any) {
             errors.push(e)
           }
         },
@@ -153,7 +153,7 @@ export class RudderAction extends Hub.Action {
 
       winston.debug(`[Rudder] totalrows : ${totalRows}`)
       winston.debug(`[Rudder] totalRequestsCompletedAfterRowsCompleted : ${totalRequestsCompleted}`)
-    } catch (e) {
+    } catch (e: any) {
       winston.error(`[Rudder] error in Rudder action execution : ${e}`)
       errors.push(e)
     }
@@ -221,7 +221,7 @@ export class RudderAction extends Hub.Action {
               return returnVal
             } else if (rudderFields.idFieldNames.indexOf(key) === -1) {
               const res = filterFunction(currentObject[key], key)
-              if (res !== {}) {
+              if (Object.keys(res).length > 0) {
                 pivotValues[fieldName].push(res)
               }
             }
@@ -292,7 +292,9 @@ export class RudderAction extends Hub.Action {
   }
 
   protected rudderClientFromRequest(request: Hub.ActionRequest) {
-    return new rudder(request.params.rudder_write_key,  request.params.rudder_server_url)
+    return new Analytics(request.params.rudder_write_key as string,  {
+      dataPlaneUrl: request.params.rudder_server_url as string,
+    });
   }
 
   protected generateAnonymousId() {

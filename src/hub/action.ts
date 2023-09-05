@@ -123,13 +123,16 @@ export abstract class Action {
       request.actionId = this.name
       winston.info(`Execute Action Enqueued. Queue length: ${queue.queue.size}`, {webhookId: request.webhookId})
       return new Promise<ActionResponse>((resolve, reject) => {
-        queue.run(JSON.stringify(request)).then((response: string) => {
+        queue.run(JSON.stringify(request)).then((response: any) => {
           const actionResponse = new ActionResponse()
           Object.assign(actionResponse, response)
           resolve(actionResponse)
         }).catch((err) => {
-          winston.error(JSON.stringify(err))
-          reject(err)
+          winston.error(`${JSON.stringify(err)}`, {webhookId: request.webhookId})
+          const response = new ActionResponse()
+          response.success = false
+          response.message = JSON.stringify(err)
+          reject(response)
         })
       })
     } else {
@@ -141,7 +144,7 @@ export abstract class Action {
   async validateAndFetchForm(request: ActionRequest) {
     try {
       this.throwForMissingRequiredParameters(request)
-    } catch (e) {
+    } catch (e: any) {
       const errorForm = new ActionForm()
       errorForm.error = e
       return errorForm

@@ -56,7 +56,7 @@ export class TwilioAction extends Hub.Action {
     let response
     try {
       await client.messages.create(message)
-    } catch (e) {
+    } catch (e: any) {
       response = {success: false, message: e.message}
     }
     return new Hub.ActionResponse(response)

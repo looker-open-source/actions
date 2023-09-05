@@ -2,6 +2,8 @@ import * as Hub from "../../../hub"
 
 const storage = require("@google-cloud/storage")
 
+const FILE_EXTENSION = new RegExp(/(.*)\.(.*)$/)
+
 export class GoogleCloudStorageAction extends Hub.Action {
 
   name = "google_cloud_storage"
@@ -39,7 +41,17 @@ export class GoogleCloudStorageAction extends Hub.Action {
       throw "Need Google Cloud Storage bucket."
     }
 
-    const filename = request.formParams.filename || request.suggestedFilename()
+    let filename = request.formParams.filename || request.suggestedFilename()
+
+    // If the overwrite formParam exists and it is "no" - ensure a timestamp is appended
+    if (request.formParams.overwrite && request.formParams.overwrite === "no") {
+      const captures = filename.match(FILE_EXTENSION)
+      if (captures && captures.length > 1) {
+        filename = captures[1] + `_${Date.now()}.` + captures[2]
+      } else {
+        filename += `_${Date.now()}`
+      }
+    }
 
     if (!filename) {
       throw new Error("Couldn't determine filename.")
@@ -59,7 +71,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
         })
       })
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({success: false, message: e.message})
     }
 
@@ -73,7 +85,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
     try {
       results = await gcs.getBuckets()
-    } catch (e) {
+    } catch (e: any) {
       form.error = `An error occurred while fetching the bucket list.
 
       Your Google Cloud Storage credentials may be incorrect.
@@ -82,7 +94,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
       return form
     }
 
-    if (!(results && results[0])) {
+    if (!(results && results[0] && results[0][0])) {
       form.error = "No buckets in account."
       return form
     }
@@ -102,6 +114,13 @@ export class GoogleCloudStorageAction extends Hub.Action {
       label: "Filename",
       name: "filename",
       type: "string",
+    }, {
+      label: "Overwrite",
+      name: "overwrite",
+      options: [{label: "Yes", name: "yes"}, {label: "No", name: "no"}],
+      default: "yes",
+      description: "If Overwrite is enabled, will use the title or filename and overwrite existing data." +
+        " If disabled, a date time will be appended to the name to make the file unique.",
     }]
 
     return form

@@ -1,11 +1,12 @@
 import * as express from "express"
 import * as oboe from "oboe"
 import * as httpRequest from "request"
-import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
 import { formatToFileExtension, truncateString } from "./utils"
+
+const sanitizeFilename = require("sanitize-filename")
 
 import {
   DataWebhookPayload,
@@ -36,7 +37,7 @@ export interface ParamMap {
 
 export interface ActionAttachment {
   dataBuffer?: Buffer
-  encoding?: string
+  encoding?: BufferEncoding
   dataJSON?: any
   mime?: string
   fileExtension?: string
@@ -150,8 +151,8 @@ export class ActionRequest {
   lookerVersion: string | null = null
 
   empty(): boolean {
-    const url = !!this.scheduledPlan && !this.scheduledPlan.downloadUrl
-    const buffer = !!this.attachment && !this.attachment.dataBuffer
+    const url = !this.scheduledPlan || !this.scheduledPlan.downloadUrl
+    const buffer = !this.attachment || !this.attachment.dataBuffer
     return url && buffer
   }
 
@@ -221,8 +222,6 @@ export class ActionRequest {
           .on("error", (err) => {
             winston.error(`[stream] PassThrough stream error`, {
               ...this.logInfo,
-              error: err,
-              stack: err.stack,
             })
             reject(err)
           })
@@ -237,7 +236,9 @@ export class ActionRequest {
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
           winston.info(`Using "fake" streaming because request contained attachment data.`, this.logInfo)
-          stream.end(this.attachment.dataBuffer)
+          winston.info(`DataBuffer: ${this.attachment.dataBuffer.length}`)
+          stream.write(this.attachment.dataBuffer)
+          stream.end()
           resolve()
         } else {
           stream.end()
@@ -249,6 +250,10 @@ export class ActionRequest {
     })
 
     const results = await Promise.all([returnPromise, streamPromise])
+        .catch((err: any) => {
+          winston.error(`Error caught awaiting for results. Error: ${err.toString()}`, this.logInfo)
+          throw err
+        })
     return results[0]
   }
 
@@ -366,6 +371,21 @@ export class ActionRequest {
     return sanitizeFilename(`looker_file_${Date.now()}`)
   }
 
+  /** Returns filename with whitespace removed and the file extension included
+   */
+  completeFilename() {
+    if (this.attachment && this.formParams.filename) {
+      if (this.formParams.filename.endsWith(this.attachment.fileExtension!)) {
+        return this.formParams.filename.trim().replace(/\s/g, "_")
+      } else if (this.formParams.filename.indexOf(".") !== -1) {
+        return this.suggestedFilename()
+      } else {
+        return `${this.formParams.filename.trim().replace(/\s/g, "_")}.${this.attachment.fileExtension}`
+      }
+    }
+    return this.formParams.filename
+  }
+
   /** creates a truncated message with a max number of lines and max number of characters with Title, Url,
    * and truncated Body of payload
    * @param {number} maxLines - maximum number of lines to truncate message
@@ -415,7 +435,7 @@ export class ActionRequest {
       try {
         callback(node)
         return oboe.drop
-      } catch (e) {
+      } catch (e: any) {
         winston.info(`safeOboe callback produced an error, aborting stream`, logInfo)
         this.abort()
         stream.destroy()
