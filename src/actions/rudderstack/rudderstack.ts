@@ -4,7 +4,7 @@ import * as uuid from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {RudderActionError} from "./rudderstack_error"
-import Analytics from "@rudderstack/rudder-sdk-node";
+const Analytics = require("@rudderstack/rudder-sdk-node")
 
 interface RudderFields {
   idFieldNames: string[],
