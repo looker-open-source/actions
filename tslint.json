@@ -1,0 +1,37 @@
+{
+    "extends": [
+        "tslint:recommended"
+    ],
+    "jsRules": {},
+    "rules": {
+      "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore"],
+      "object-literal-sort-keys": false,
+      "no-var-requires": false,
+      "no-string-throw": false,
+      "no-inferrable-types": true,
+      "promise-function-async": true,
+      "no-unnecessary-type-assertion": true,
+      "await-promise": true,
+      "no-floating-promises": true,
+      "no-inferred-empty-object-type": true,
+      "strict-type-predicates": true,
+      "strict-boolean-expressions": [true, "allow-undefined-union", "allow-null-union", "allow-mix", "allow-string"],
+      "triple-equals": [true, "allow-null-check"],
+      "use-default-type-parameter": true,
+      "deprecation": true,
+      "return-undefined": true,
+      "no-unused-expression": false,
+      "interface-name": [
+        true,
+        "never-prefix"
+      ],
+      "array-type": [true, "array"],
+      "no-for-in-array": true,
+      "member-access": [true, "no-public"],
+      "semicolon": [true, "never"]
+    },
+    "linterOptions": {
+      "exclude": ["src/api_types/**/*"]
+    },
+    "rulesDirectory": []
+}
