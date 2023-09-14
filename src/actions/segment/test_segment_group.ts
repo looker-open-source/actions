@@ -54,7 +54,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }))}
       return expectSegmentMatch(request, {
         groupId: "funvalue",
-        anonymousId: "stubanon",
+        anonymousId: null,
         userId: null,
       })
     })
@@ -142,7 +142,30 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectSegmentMatch(request, {
         groupId: "funvalue",
         userId: null,
-        anonymousId: "stubanon",
+        anonymousId: null,
+      })
+    })
+
+    it("works with 0 dimension value", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        segment_write_key: "mykey",
+      }
+      request.attachment = {
+        dataBuffer: Buffer.from(JSON.stringify({
+          fields: { dimensions: [{ name: "coolfield", tags: ["segment_group_id"] }, { name: "zerofield" }] },
+          data: [{ coolfield: { value: "funvalue" }, zerofield: { value: 0 } }],
+        })),
+      }
+
+      return expectSegmentMatch(request, {
+        groupId: "funvalue",
+        anonymousId: null,
+        userId: null,
+        traits: {
+          zerofield: 0,
+        },
       })
     })
 

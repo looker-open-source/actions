@@ -86,7 +86,7 @@ export class MparticleTransaction {
           }
         },
       })
-    } catch (e) {
+    } catch (e: any) {
       if (e === "Each row must specify at least 1 identity tag.") { throw e }
       this.errors.push(e)
     }
@@ -101,7 +101,7 @@ export class MparticleTransaction {
       } else {
         return new Hub.ActionResponse({ success: false, message: this.errors[0] })
       }
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({ success: false, message: e.message })
     }
   }

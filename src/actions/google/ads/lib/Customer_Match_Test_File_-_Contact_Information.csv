@@ -1,0 +1,52 @@
+# Instructions:
+# This file provides example data for you to verify your formatting and hashing functions before uploading Customer Match data to Google, through Google Ads UI or API.
+# For each scenario, we have added a common mistake, the correctly formatted version, and its hash.
+#
+# How to use:
+# Pass our sample examples through your formatting and hashing process and compare the resulting value and hash with the expected output.
+# For example, if you upload phone numbers, run '1-222-333-4444' through your formatting function and compare your formatted output with the expected output in the 3rd column.
+# If they are equal, run the output through your hashing function and compare the hashed output with the expected output in the 4th column.
+#
+# Troubleshooting:
+# If your hashed result does not match any of the examples, we would like to know what the error is. Please contact your Google Ads sales representative or the support center and share feedback.
+#
+# Field Specific Guidelines:
+# Please reference this help center article for field specific requirements: https://support.google.com/google-ads/answer/7475964
+#
+# User info type, Unformatted user info, Formatted user info, Hashed formatted user info
+Email,JohnDoe@gmail.com,johndoe@gmail.com,06a240d11cc201676da976f7b49341181fd180da37cbe40a77432c0a366c80c3
+Email,JohnDoe@mail.google.com,johndoe@mail.google.com,a084198ba2c146072038e180a8a5421a6648449904860e315a6f1edbe36f70a9
+Email,   johndoe@gmail.com  ,johndoe@gmail.com,06a240d11cc201676da976f7b49341181fd180da37cbe40a77432c0a366c80c3
+Phone,12223334444,+12223334444,52383c27bcb71a04576627c34ebb6ac1dab2c7850f91db91a1745ce8d8479e97
+Phone,1 222 333 4444,+12223334444,52383c27bcb71a04576627c34ebb6ac1dab2c7850f91db91a1745ce8d8479e97
+Phone,1-222-333-4444,+12223334444,52383c27bcb71a04576627c34ebb6ac1dab2c7850f91db91a1745ce8d8479e97
+Phone,1 (222) 333 4444,+12223334444,52383c27bcb71a04576627c34ebb6ac1dab2c7850f91db91a1745ce8d8479e97
+Phone,1-(222)-333-4444,+12223334444,52383c27bcb71a04576627c34ebb6ac1dab2c7850f91db91a1745ce8d8479e97
+Phone,  +12223334444  ,+12223334444,52383c27bcb71a04576627c34ebb6ac1dab2c7850f91db91a1745ce8d8479e97
+First Name,JANE,jane,81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2
+First Name,JÁNE,jáne,8c6c92a9ceaf908a860cf850c50df46482e38edda0667e646fe1eb5f6c378034
+First Name,Ms. Jane,jane,81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2
+First Name,Mrs. Jane,jane,81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2
+First Name,Mr. Jane,jane,81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2
+First Name,Dr. Jane,jane,81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2
+First Name,  jane  ,jane,81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2
+First Name,  Dr. Jane  ,jane,81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2
+Last Name,DOE,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,DOÉ,doé,4cbdb8bbad7dacb6c9629497fcbd068d38d95c90916b4c7253d7925757922a7c
+Last Name,Doe Jr.,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe Sr.,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe 2nd,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe II,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe III,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe IV,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe CPA,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe MD,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,Doe PhD,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,  doe  ,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Last Name,  Doe Jr.  ,doe,799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f
+Country,US,us,us
+Country,United States,us,us
+Country,  us  ,us,us
+Zip,wc2h 8lg,wc2h8lg,wc2h8lg
+Zip,WC2H8LG,wc2h8lg,wc2h8lg
+Zip,  wc2h8lg  ,wc2h8lg,wc2h8lg

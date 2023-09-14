@@ -79,7 +79,7 @@ export class AugerTrainAction extends Hub.Action {
 
       try {
         await this.startProject(transaction)
-      } catch (e) {
+      } catch (e: any) {
         if (e.name === "StatusCodeError") {
           winston.debug("project already started")
         } else {
@@ -89,7 +89,7 @@ export class AugerTrainAction extends Hub.Action {
       this.startPoller(transaction)
 
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({ success: false, message: e.message })
     }
   }
@@ -146,7 +146,7 @@ export class AugerTrainAction extends Hub.Action {
           ],
         },
       ]
-    } catch (e) {
+    } catch (e: any) {
       form.error = this.prettyAugerError(e)
     }
 
@@ -160,7 +160,7 @@ export class AugerTrainAction extends Hub.Action {
         qs: {token},
         json: true,
       }).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error("Invalid token")
     }
   }
@@ -178,7 +178,7 @@ export class AugerTrainAction extends Hub.Action {
         resolveWithFullResponse: true,
       }
       return httpRequest.put(options).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`project file url failed ${e}`)
     }
   }
@@ -283,7 +283,7 @@ export class AugerTrainAction extends Hub.Action {
         resolveWithFullResponse: true,
       }
       return httpRequest.put(signedOptions).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`project file not created ${e}`)
     }
   }
@@ -303,7 +303,7 @@ export class AugerTrainAction extends Hub.Action {
         resolveWithFullResponse: true,
       }
       return httpRequest(options).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`project not started ${e}`)
     }
   }
@@ -344,7 +344,7 @@ export class AugerTrainAction extends Hub.Action {
         },
       }
       return httpRequest.post(projOptions).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`project file not created: ${e}`)
     }
   }
@@ -363,7 +363,7 @@ export class AugerTrainAction extends Hub.Action {
         resolveWithFullResponse: true,
       }
       return httpRequest.post(options).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`experiment start failed: ${e}`)
     }
 
@@ -377,7 +377,7 @@ export class AugerTrainAction extends Hub.Action {
         resolveWithFullResponse: true,
       }
       return httpRequest.get(options).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`project file fetched: ${e}`)
     }
   }
@@ -390,7 +390,7 @@ export class AugerTrainAction extends Hub.Action {
         resolveWithFullResponse: true,
       }
       return httpRequest.get(projOptions).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`project file not created: ${e}`)
     }
   }
@@ -410,7 +410,7 @@ export class AugerTrainAction extends Hub.Action {
         resolveWithFullResponse: true,
       }
       return httpRequest.post(options).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(`experiment start failed: ${e}`)
     }
 

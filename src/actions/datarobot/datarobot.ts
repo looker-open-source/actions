@@ -1,7 +1,7 @@
 import * as normalizeUrl from "normalize-url"
 import * as httpRequest from "request-promise-native"
-import * as url from "url"
 
+import { URL } from "url"
 import * as Hub from "../../hub"
 
 export class DataRobotAction extends Hub.Action {
@@ -53,7 +53,7 @@ export class DataRobotAction extends Hub.Action {
     try {
       await httpRequest.post(options).promise()
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({ success: false, message: e.message })
     }
   }
@@ -88,7 +88,7 @@ export class DataRobotAction extends Hub.Action {
           type: "string",
         },
       ]
-    } catch (e) {
+    } catch (e: any) {
       form.error = this.prettyDataRobotError(e)
     }
 
@@ -97,7 +97,7 @@ export class DataRobotAction extends Hub.Action {
 
   private getDataRobotApiUrl() {
     if (this.dataRobotUrl) {
-      return url.resolve(this.dataRobotUrl, "/api/v2")
+      return new URL("/api/v2", this.dataRobotUrl)
     }
 
     return "https://app.datarobot.com/api/v2"
@@ -114,7 +114,7 @@ export class DataRobotAction extends Hub.Action {
         },
         json: true,
       }).promise()
-    } catch (e) {
+    } catch (e: any) {
       throw new Error("Invalid token")
     }
   }

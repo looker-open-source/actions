@@ -25,10 +25,10 @@ export class AESTransitCrypto implements CryptoProvider {
     encDataKey = b64.escape(encDataKey)
 
     let keysize = ("000" + encDataKey.length)
-    keysize = keysize.substr(keysize.length - 3)
+    keysize = keysize.substring(keysize.length - 3)
     const encdodediv = b64.escape(iv.toString("base64"))
     let ivSize = ("000" + encdodediv.length)
-    ivSize = ivSize.substr(ivSize.length - 3)
+    ivSize = ivSize.substring(ivSize.length - 3)
 
     /*
     * Url Safe Encryption Payload

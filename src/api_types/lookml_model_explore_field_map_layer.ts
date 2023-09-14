@@ -8,6 +8,8 @@ export enum LookmlModelExploreFieldMapLayerFormat {
 export interface LookmlModelExploreFieldMapLayer {
   /** URL to the map layer resource. */
   url: string
+  /** Name of the map layer, as defined in LookML. */
+  name: string
   /** Specifies the name of the TopoJSON object that the map layer references. If not specified, use the first object.. */
   feature_key: string | null
   /** Selects which property from the TopoJSON data to plot against. TopoJSON supports arbitrary metadata for each region. When null, the first matching property should be used. */

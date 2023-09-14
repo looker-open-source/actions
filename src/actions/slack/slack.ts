@@ -1,4 +1,5 @@
-import {WebClient} from "@slack/client"
+import {WebClient} from "@slack/web-api"
+import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
 import * as winston from "winston"
 import * as Hub from "../../hub"
 import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
@@ -31,9 +32,10 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   }]
   minimumSupportedLookerVersion = "6.23.0"
   usesStreaming = true
+  executeInOwnProcess = true
 
   async execute(request: Hub.ActionRequest) {
-    const clientManager = new SlackClientManager(request)
+    const clientManager = new SlackClientManager(request, true)
     const selectedClient = clientManager.getSelectedClient()
     if (!selectedClient) {
       return new Hub.ActionResponse({success: false, message: AUTH_MESSAGE})
@@ -43,7 +45,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
-    const clientManager = new SlackClientManager(request)
+    const clientManager = new SlackClientManager(request, false)
     if (!clientManager.hasAnyClients()) {
       return this.loginForm(request)
     }
@@ -72,7 +74,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
           interactive: true,
           type: "select",
         })
-      } catch (e) {
+      } catch (e: any) {
         winston.error("Failed to fetch workspace: " + e.message)
       }
     }
@@ -81,9 +83,11 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       return this.loginForm(request, form)
     }
 
+    const channelType = request.formParams.channelType ? request.formParams.channelType : "manual"
+
     try {
-      form.fields = form.fields.concat(await getDisplayedFormFields(client, false))
-    } catch (e) {
+      form.fields = form.fields.concat(await getDisplayedFormFields(client, channelType))
+    } catch (e: any) {
       return this.loginForm(request, form)
     }
 
@@ -129,7 +133,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
           value: valFn(resp),
         })
       })
-    } catch (e) {
+    } catch (e: any) {
       form.error = displayError[e.message] || e
     }
     return form
@@ -138,7 +142,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   async authTest(clients: WebClient[]) {
     const resp = await Promise.all(
         clients
-            .map(async (client) => client.auth.test() as Promise<AuthTestResult | Error>)
+            .map(async (client) => client.auth.test() as Promise<WebAPICallResult | Error>)
             .map(async (p) => p.catch((e) => e)),
     )
 

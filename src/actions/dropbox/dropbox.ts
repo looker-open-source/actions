@@ -18,7 +18,7 @@ export class DropboxAction extends Hub.OAuthAction {
     params = []
 
   async execute(request: Hub.ActionRequest) {
-    const filename = request.formParams.filename
+    const filename = this.dropboxFilename(request)
     const directory = request.formParams.directory
     const ext = request.attachment!.fileExtension
 
@@ -81,6 +81,20 @@ export class DropboxAction extends Hub.OAuthAction {
         name: "filename",
         type: "string",
         required: true,
+      }, {
+        label: "Append timestamp",
+        name: "includeTimestamp",
+        description: "Append timestamp to end of file name. Should be set to 'Yes' if the file will be sent repeatedly",
+        required: true,
+        default: "no",
+        type: "select",
+        options: [{
+          name: "yes",
+          label: "Yes",
+        }, {
+          name: "no",
+          label: "No",
+        }],
       }]
       if (accessToken !== "") {
         const newState = JSON.stringify({access_token: accessToken})
@@ -139,9 +153,17 @@ export class DropboxAction extends Hub.OAuthAction {
     try {
       await drop.filesListFolder({path: ""})
       return true
-    } catch (err) {
+    } catch (err: any) {
       winston.error((err as DropboxTypes.Error<DropboxTypes.files.ListFolderError>).error.toString())
       return false
+    }
+  }
+
+  dropboxFilename(request: Hub.ActionRequest) {
+    if (request.formParams.filename && request.formParams.includeTimestamp === "yes") {
+      return request.formParams.filename + Date.now()
+    } else {
+      return request.formParams.filename
     }
   }
 

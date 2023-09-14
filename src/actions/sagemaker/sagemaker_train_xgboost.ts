@@ -16,7 +16,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
   name = "amazon_sagemaker_train_xgboost"
   label = "Amazon SageMaker Train: Xgboost"
   iconName = "sagemaker/sagemaker_train.png"
-  description = "Start a traingin job on Amazon SageMaker, using the Xgboost algorithm."
+  description = "Start a training job on Amazon SageMaker, using the Xgboost algorithm."
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.Csv]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
@@ -216,7 +216,7 @@ export class SageMakerTrainXgboostAction extends Hub.Action {
       // return success response
       return new Hub.ActionResponse({ success: true })
 
-    } catch (err) {
+    } catch (err: any) {
       return new Hub.ActionResponse({ success: false, message: JSON.stringify(err) })
     }
   }

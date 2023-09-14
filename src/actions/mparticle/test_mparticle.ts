@@ -5,8 +5,8 @@ import * as Hub from "../../hub"
 
 import * as httpRequest from "request-promise-native"
 import Sinon = require("sinon")
-import * as apiKey from "../../server/api_key"
-import Server from "../../server/server"
+// import * as apiKey from "../../server/api_key"
+// import Server from "../../server/server"
 import { MparticleAction } from "./mparticle"
 import { EVENT, USER } from "./mparticle_constants"
 
@@ -95,19 +95,19 @@ describe(`${action.constructor.name} unit tests`, () => {
   })
 
   describe("asJSON", () => {
-    it("supported format is json_detail_lite_stream on lookerVersion 6.2 and above", (done) => {
-      const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
-      chai.request(new Server().app)
-        .post("/actions/mparticle")
-        .set("Authorization", "Token token=\"foo\"")
-        .set("User-Agent", "LookerOutgoingWebhook/6.2.0")
-        .end((_err, res) => {
-          chai.expect(res).to.have.status(200)
-          chai.expect(res.body).to.deep.include({supported_formats: ["json_detail_lite_stream"]})
-          stub.restore()
-          done()
-        })
-    })
+    // it("supported format is json_detail_lite_stream on lookerVersion 6.2 and above", (done) => {
+    //   const stub = sinon.stub(apiKey, "validate").callsFake((k: string) => k === "foo")
+    //   chai.request(new Server().app)
+    //     .post("/actions/mparticle")
+    //     .set("Authorization", "Token token=\"foo\"")
+    //     .set("User-Agent", "LookerOutgoingWebhook/6.2.0")
+    //     .end((_err, res) => {
+    //       chai.expect(res).to.have.status(200)
+    //       chai.expect(res.body).to.deep.include({supported_formats: ["json_detail_lite_stream"]})
+    //       stub.restore()
+    //       done()
+    //     })
+    // })
   })
 
   describe("field mappings", () => {

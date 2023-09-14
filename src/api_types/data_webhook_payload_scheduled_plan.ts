@@ -22,7 +22,7 @@ export interface DataWebhookPayloadScheduledPlan {
   query: Query | null
   /** A boolean representing whether this schedule payload has customized the filter values compared to the underlying content item. */
   filters_differ_from_look: boolean
-  /** A string to be included in scheduled integrations if this scheduled plan is a download query */
+  /** If this scheduled plan is from an integration that has included "url" in its supported_download_settings, this field contains a temporary URL that can be used to fetch the query results. The temporary URL will expire 3600 seconds after the time the schedule was run. The temporary URL will expire after one use. */
   download_url: string | null
 }
 

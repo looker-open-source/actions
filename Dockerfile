@@ -1,5 +1,4 @@
-FROM node:12.13.0
-RUN npm install -g -s --no-progress yarn@1.9.4
+FROM node:18.12.1
 
 RUN mkdir -p /code
 WORKDIR /code
@@ -7,6 +6,7 @@ WORKDIR /code
 COPY . /code
 
 RUN yarn install --production && yarn cache clean
+RUN yarn build
 
 CMD ["yarn","start"]
 

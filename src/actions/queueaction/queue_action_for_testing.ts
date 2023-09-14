@@ -12,7 +12,7 @@ export class QueueTestAction extends Hub.Action {
         try {
             const result = JSON.parse(request.attachment!.dataBuffer!.toString())
             return new Hub.ActionResponse({success: result.success})
-        } catch (e) {
+        } catch (e: any) {
             return new Hub.ActionResponse({success: false, message: "Nope"})
         }
     }
