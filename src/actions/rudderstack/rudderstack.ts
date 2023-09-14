@@ -34,7 +34,7 @@ export class RudderAction extends Hub.Action {
 
   name = "rudder_event"
   label = "Rudder Identify"
-  iconName = "rudderstack/rudderstack.png"
+  iconName = "rudderstack/rudderstack.svg"
   description = "Add traits via identify to your Rudder users."
   params = [
     {
@@ -82,6 +82,7 @@ export class RudderAction extends Hub.Action {
       hiddenFields = request.scheduledPlan.query.vis_config.hidden_fields
     }
 
+    
     let rudderFields: RudderFields | undefined
     let fieldset: Hub.Field[] = []
     const errors: Error[] = []
@@ -292,6 +293,8 @@ export class RudderAction extends Hub.Action {
   }
 
   protected rudderClientFromRequest(request: Hub.ActionRequest) {
+    winston.debug(`[Rudder] rudder_write_key : ${request.params.rudder_write_key}`)
+    winston.debug(`[Rudder] rudder_server_url : ${request.params.rudder_server_url}`)
     return new Analytics(request.params.rudder_write_key as string,  {
       dataPlaneUrl: request.params.rudder_server_url as string,
     });
