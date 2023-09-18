@@ -127,7 +127,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         const files = await drive.files.list(options).catch((e: any) => {
             this.sanitizeGaxiosError(e)
-            winston.debug(`Error listing drives. Error ${e.toString()}`,
+            winston.error(`Error listing drives. Error ${e.toString()}`,
                 {webhookId: request.webhookId})
             throw e
         })
@@ -144,7 +144,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const sheets = await this.retriableSpreadsheetGet(spreadsheetId, sheet,
             0, request.webhookId!).catch((e: any) => {
                 this.sanitizeGaxiosError(e)
-                winston.debug(`Error retrieving spreadsheet. Error ${e.toString()}`,
+                winston.error(`Error retrieving spreadsheet. Error ${e.toString()}`,
                     {webhookId: request.webhookId})
                 throw e
             })
@@ -215,13 +215,13 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 }
                                 this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
                                     this.sanitizeGaxiosError(e)
-                                    winston.debug(e.toString(), {webhookId: request.webhookId})
+                                    winston.error(e.toString(), {webhookId: request.webhookId})
                                     throw e
                                 })
                             }
                             this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
                                 this.sanitizeGaxiosError(e)
-                                winston.debug(e, {webhookId: request.webhookId})
+                                winston.error(e, {webhookId: request.webhookId})
                                 throw e
                             })
                         }
@@ -243,7 +243,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                 }
                                 this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
                                     this.sanitizeGaxiosError(e)
-                                    winston.debug(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
+                                    winston.error(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
                                     throw e
                                 })
                             }
@@ -325,7 +325,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                   attempt: number, webhookId: string): Promise<any> {
         return await sheet.spreadsheets.get({spreadsheetId}).catch(async (e: any) => {
             this.sanitizeGaxiosError(e)
-            winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
+            winston.error(`SpreadsheetG error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
                 winston.warn("Queueing retry", {webhookId})
                 await this.delay((3 ** (attempt + 1)) * 1000)
@@ -340,7 +340,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 sheet: Sheet, spreadsheetId: string, webhookId: string) {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch(async (e: any) => {
             this.sanitizeGaxiosError(e)
-            winston.debug(`Flush error: ${e}`, {webhookId})
+            winston.error(`Flush error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
                 winston.warn("Queueing retry", {webhookId})
                 return this.flushRetry(buffer, sheet, spreadsheetId)
@@ -362,7 +362,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 this.sanitizeGaxiosError(e)
                 retrySuccess = false
                 if (e.code === 429) {
-                    winston.debug(`Retry number ${retryCount} failed`)
+                    winston.error(`Retry number ${retryCount} failed`)
                     winston.debug(e)
                 } else {
                     throw e
