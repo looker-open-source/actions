@@ -67,7 +67,7 @@
     "datauri": "^1.0.5",
     "do-wrapper": "^3.25.4",
     "dotenv": "^5.0.1",
-    "dropbox": "^2.5.13",
+    "dropbox": "^3.0.0",
     "express": "^4.17.17",
     "express-winston": "^4.2.0",
     "googleapis": "^59.0.0",
