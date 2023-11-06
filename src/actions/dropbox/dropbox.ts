@@ -1,6 +1,6 @@
+import { Dropbox } from "dropbox"
 import * as querystring from "querystring"
 import * as https from "request-promise-native"
-import { Dropbox } from "dropbox"
 import {URL} from "url"
 
 import * as winston from "winston"
