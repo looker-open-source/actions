@@ -1,4 +1,4 @@
-import { Dropbox } from 'dropbox'
+import { Dropbox } from "dropbox";
 import * as Hub from "../../hub";
 export declare class DropboxAction extends Hub.OAuthAction {
     name: string;
