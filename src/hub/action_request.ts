@@ -60,6 +60,8 @@ export interface ActionScheduledPlan {
   filtersDifferFromLook?: boolean
   /** A string to be included in scheduled integrations if this scheduled plan is a download query */
   downloadUrl?: string | null
+  /** A string to be included in scheduled integrations if this scheduled plan is an async action */
+  asyncCallbackUrl?: string | null
 }
 
 export class ActionRequest {
@@ -126,6 +128,7 @@ export class ActionRequest {
         type: json.scheduled_plan.type,
         url: json.scheduled_plan.url,
         downloadUrl: json.scheduled_plan.download_url,
+        asyncCallbackUrl: json.scheduled_plan.async_callback_url,
       }
     }
 
