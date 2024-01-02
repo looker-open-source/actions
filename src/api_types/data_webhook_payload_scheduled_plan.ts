@@ -24,6 +24,8 @@ export interface DataWebhookPayloadScheduledPlan {
   filters_differ_from_look: boolean
   /** If this scheduled plan is from an integration that has included "url" in its supported_download_settings, this field contains a temporary URL that can be used to fetch the query results. The temporary URL will expire 3600 seconds after the time the schedule was run. The temporary URL will expire after one use. */
   download_url: string | null
+  /** If this scheduled plan is from an async action this field contains the callback URL that we use to tell helltool that the action has been completed succesfully.*/
+  async_callback_url: string | null
 }
 
 export interface RequestDataWebhookPayloadScheduledPlan {

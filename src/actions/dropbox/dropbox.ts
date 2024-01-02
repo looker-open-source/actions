@@ -1,8 +1,8 @@
+import { Dropbox } from "dropbox"
 import * as querystring from "querystring"
 import * as https from "request-promise-native"
 import {URL} from "url"
 
-import Dropbox = require("dropbox")
 import * as winston from "winston"
 import * as Hub from "../../hub"
 
