@@ -34,6 +34,7 @@ jobs:
       #     npm run lint:fix
 
       - name: Upload Coverage Reports to Codecov
+        if: always()
         uses: codecov/codecov-action@v3.1.4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -45,3 +46,9 @@ jobs:
           sed -i 's+home/runner/work/rudder-looker-actions/rudder-looker-actions+/github/workspace+g' coverage/lcov.info
           # sed -i 's+/home/runner/work/rudder-auth/rudder-auth+/github/workspace+g' reports/eslint.json
 
+      # - name: SonarCloud Scan
+      #   if: always()
+      #   uses: SonarSource/sonarcloud-github-action@v2.0.0
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PAT }}
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
