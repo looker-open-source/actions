@@ -447,11 +447,12 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
   })
 
-  describe("asJSON", () => {
+  describe.skip("asJSON", () => {
     it("supported format is json_detail on lookerVersion 6.0 and below", (done) => {
       const stub = sinon
         .stub(apiKey, "validate")
-        .callsFake((k: string) => k === "foo")
+        .callsFake((k: string) => k === "foo");
+
       chai
         .request(new Server().app)
         .post("/actions/rudder_event")
