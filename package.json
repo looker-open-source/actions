@@ -84,7 +84,7 @@
     "jsonwebtoken": "^9.0.0",
     "license-check": "^1.1.5",
     "mailchimp": "^1.2.1",
-    "node-marketo-rest": "^0.7.8",
+    "node-marketo-rest": "^0.11.0",
     "nodemailer": "^6.6.1",
     "nodemon": "^1.19.4",
     "normalize-url": "4.0.0",
