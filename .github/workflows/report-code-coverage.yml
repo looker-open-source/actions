@@ -1,4 +1,4 @@
-name: Report Code Coverage
+name: Test and Report Code Coverage
 on:
   workflow_call:
   pull_request:
