@@ -1,6 +1,6 @@
 {
   "name": "looker-action-hub",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "",
   "main": "lib/index",
   "scripts": {
@@ -12,6 +12,7 @@
     "debug": "./node_modules/.bin/nodemon --exec node --inspect --trace-warnings -r ./node_modules/ts-node/register -- ./src/boot.ts",
     "debug-trace": "./node_modules/.bin/nodemon --exec node --inspect --trace-sync-io -r ./node_modules/ts-node/register -- ./src/boot.ts",
     "test-dev": "./node_modules/.bin/nodemon --exec \"yarn test || true\"",
+    "test-coverage": "nyc --reporter=lcov npm run test-ts && npx codecov",
     "test": "NODE_OPTIONS=\"--trace-warnings\" yarn test-ts --trace-warnings && ./node_modules/.bin/tsc --noEmit && yarn lint",
     "test-ts": "./node_modules/.bin/mocha --exit -r ./node_modules/ts-node/register test/**/test.ts",
     "lint": "./node_modules/.bin/tslint -c tslint.json 'src/**/*.ts' 'bin/**/*.ts' 'test/**/*.ts' -p tsconfig.json",
@@ -87,8 +88,9 @@
     "nodemailer": "^6.6.1",
     "nodemon": "^1.19.4",
     "normalize-url": "4.0.0",
+    "nyc": "^15.1.0",
     "oboe": "^2.1.5",
-    "pac-resolver": "^5.0.0",
+    "pac-resolver": "^7.0.0",
     "qs": "^6.9.0",
     "queue": "^4.5.1",
     "raven": "^2.6.4",
