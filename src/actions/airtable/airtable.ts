@@ -94,7 +94,7 @@ export class AirtableAction extends Hub.OAuthAction {
     const form = new Hub.ActionForm()
     try {
       const response = await this.checkBaseList(request)
-      if (response === undefined) {
+      if (response === null) {
         // @ts-ignore
         throw "Error with checking baselist"
       }
@@ -169,7 +169,7 @@ export class AirtableAction extends Hub.OAuthAction {
         url: payload.stateurl,
         method: "POST",
         body: JSON.stringify({tokens: {
-            refresh_token: data.refresh_token || "chuckle",
+            refresh_token: data.refresh_token,
             access_token: data.access_token,
           }, redirect: redirectUri}),
       }).catch((_err) => { winston.error(_err.toString()) })
@@ -181,7 +181,7 @@ export class AirtableAction extends Hub.OAuthAction {
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
 
-    const clientId = process.env.AIRTABLE_CLIENT_ID || "must exist"
+    const clientId = process.env.AIRTABLE_CLIENT_ID ?  process.env.AIRTABLE_CLIENT_ID : "must exist"
 
     const actionCrypto = new Hub.ActionCrypto()
     const plaintext = await actionCrypto.decrypt(encryptedState).catch((err: string) => {
