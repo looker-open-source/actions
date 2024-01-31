@@ -10,7 +10,7 @@ import * as ExtendedProcessQueue from "../xpc/extended_process_queue"
 import * as apiKey from "./api_key"
 const expressWinston = require("express-winston")
 const uparse = require("url")
-const blocked = require("blocked-at")
+//const blocked = require("blocked-at")
 
 const TOKEN_REGEX = new RegExp(/[T|t]oken token="(.*)"/)
 const statusJsonPath = path.resolve(`${__dirname}/../../status.json`)
@@ -38,9 +38,9 @@ export default class Server implements Hub.RouteBuilder {
       }).install()
     }
 
-    blocked((time: number, stack: string[]) => {
-      winston.warn(`Event loop blocked for ${time}ms, operation started here:\n${stack.join("\n")}`)
-    }, {threshold: 100})
+    // blocked((time: number, stack: string[]) => {
+    //   winston.warn(`Event loop blocked for ${time}ms, operation started here:\n${stack.join("\n")}`)
+    // }, {threshold: 100})
 
     if (!process.env.ACTION_HUB_BASE_URL) {
       throw new Error("No ACTION_HUB_BASE_URL environment variable set.")
