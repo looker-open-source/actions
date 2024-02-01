@@ -1,26 +1,25 @@
 import * as Hub from "../../hub"
 
+import * as crypto from "crypto"
+import * as gaxios from "gaxios"
+import * as qs from "qs"
+import * as winston from "winston"
+
 const airtable: any = require("airtable")
 
-export class AirtableAction extends Hub.Action {
+export class AirtableAction extends Hub.OAuthAction {
 
   name = "airtable"
   label = "Airtable"
   iconName = "airtable/airtable.png"
   description = "Add records to an Airtable table."
-  params = [
-    {
-      description: "API key for Airtable from https://airtable.com/account.",
-      label: "Airtable API Key",
-      name: "airtable_api_key",
-      required: true,
-      sensitive: true,
-    },
-  ]
+  params = []
   supportedActionTypes = [Hub.ActionType.Query]
   supportedFormats = [Hub.ActionFormat.JsonDetail]
   supportedFormattings = [Hub.ActionFormatting.Unformatted]
   supportedVisualizationFormattings = [Hub.ActionVisualizationFormatting.Noapply]
+
+  SCOPE = "data.records:write schema.bases:read schema.bases:write"
 
   async execute(request: Hub.ActionRequest) {
     if (!(request.attachment && request.attachment.dataJSON)) {
@@ -51,7 +50,7 @@ export class AirtableAction extends Hub.Action {
 
     let response
     try {
-      const airtableClient = this.airtableClientFromRequest(request)
+      const airtableClient = await this.airtableClientFromRequest(request)
       const base = airtableClient.base(request.formParams.base)
       const table = base(request.formParams.table)
 
@@ -72,26 +71,184 @@ export class AirtableAction extends Hub.Action {
     return new Hub.ActionResponse(response)
   }
 
-  async form() {
+  async checkBaseList(request: Hub.ActionRequest) {
+    if (request.params.state_json) {
+      const stateJson = JSON.parse(request.params.state_json)
+      const response = await this.refreshTokens(stateJson.tokens.refresh_token)
+      return gaxios.request({
+        method: "GET",
+        url: "https://api.airtable.com/v0/meta/bases",
+        headers: {
+          Authorization: `Bearer ${(response.data as any).access_token}`,
+        },
+      }).catch((_err) => {
+        throw "Error listing bases, oauth credentials most likely expired."
+      })
+    } else {
+      return null
+    }
+  }
+
+  async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    form.fields = [{
-      label: "Airtable Base",
-      name: "base",
-      required: true,
-      type: "string",
-    }, {
-      label: "Airtable Table",
-      name: "table",
-      required: true,
-      type: "string",
-    }]
+    try {
+      const response = await this.checkBaseList(request)
+      if (response === null) {
+        // @ts-ignore
+        throw "Error with checking baselist"
+      }
+      form.fields = [{
+        label: "Airtable Base",
+        name: "base",
+        required: true,
+        type: "string",
+      }, {
+        label: "Airtable Table",
+        name: "table",
+        required: true,
+        type: "string",
+      }]
+    } catch (e) {
+      // prevents others from impersonating you
+      const codeVerifier = crypto.randomBytes(96).toString("base64url") // 128 characters
+
+      const actionCrypto = new Hub.ActionCrypto()
+      const jsonString = JSON.stringify({stateurl: request.params.state_url, verifier: codeVerifier})
+      const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
+        winston.error("Encryption not correctly configured")
+        throw err
+      })
+
+      form.fields = [{
+        label: "Login",
+        name: "oauth",
+        type: "oauth_link",
+        oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
+      }]
+    }
     return form
   }
 
-  private airtableClientFromRequest(request: Hub.ActionRequest) {
-    return new airtable({apiKey: request.params.airtable_api_key})
+  async oauthCheck(_request: Hub.ActionRequest) {
+    return false
+  }
+
+  async oauthFetchInfo(urlParams: { [p: string]: string }, redirectUri: string) {
+    const actionCrypto = new Hub.ActionCrypto()
+    const plaintext = await actionCrypto.decrypt(urlParams.state).catch((err: string) => {
+      winston.error("Encryption not correctly configured" + err)
+      throw err
+    })
+    const payload = JSON.parse(plaintext)
+
+    const dataString = qs.stringify({
+      clientId: process.env.AIRTABLE_CLIENT_ID,
+      grant_type: "authorization_code",
+      code_verifier: payload.verifier,
+      redirect_uri: redirectUri,
+      code: urlParams.code,
+    })
+    const encodedCreds = Buffer.from(`${process.env.AIRTABLE_CLIENT_ID}:${process.env.AIRTABLE_CLIENT_SECRET}`)
+        .toString("base64")
+    const response = await gaxios.request({
+      method: "POST",
+      url: "https://www.airtable.com/oauth2/v1/token",
+      headers: {
+        "Authorization": `Basic ${encodedCreds}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      data: dataString,
+    })
+    // Pass back context to Looker
+    if (response.status === 200) {
+      const data: any = response.data
+      await gaxios.request({
+        url: payload.stateurl,
+        method: "POST",
+        body: JSON.stringify({tokens: {
+            refresh_token: data.refresh_token,
+            access_token: data.access_token,
+          }, redirect: redirectUri}),
+      }).catch((_err) => { winston.error(_err.toString()) })
+    } else {
+      winston.warn("Oauth for Airtable unsuccessful")
+      throw "OAuth did not work"
+    }
+  }
+
+  async oauthUrl(redirectUri: string, encryptedState: string) {
+
+    const clientId = process.env.AIRTABLE_CLIENT_ID ?  process.env.AIRTABLE_CLIENT_ID : "must exist"
+
+    const actionCrypto = new Hub.ActionCrypto()
+    const plaintext = await actionCrypto.decrypt(encryptedState).catch((err: string) => {
+      winston.error("Encryption not correctly configured" + err)
+      throw err
+    })
+    const payload = JSON.parse(plaintext)
+
+    // prevents others from impersonating you
+    const codeVerifier = payload.verifier// 128 characters
+    const codeChallengeMethod = "S256"
+    const codeChallenge = crypto
+        .createHash("sha256")
+        .update(codeVerifier) // hash the code verifier with the sha256 algorithm
+        .digest("base64") // base64 encode, needs to be transformed to base64url
+        .replace(/=/g, "") // remove =
+        .replace(/\+/g, "-") // replace + with -
+        .replace(/\//g, "_") // replace / with _ now base64url encoded
+    // build the authorization URL
+    const authorizationUrl = new URL(`https://www.airtable.com/oauth2/v1/authorize`)
+    authorizationUrl.searchParams.set("code_challenge", codeChallenge)
+    authorizationUrl.searchParams.set("code_challenge_method", codeChallengeMethod)
+    authorizationUrl.searchParams.set("state", encryptedState)
+    authorizationUrl.searchParams.set("client_id", clientId)
+    authorizationUrl.searchParams.set("redirect_uri", redirectUri)
+    authorizationUrl.searchParams.set("response_type", "code")
+    // your OAuth integration register with these scopes in the management page
+    authorizationUrl.searchParams.set("scope", this.SCOPE)
+
+    return authorizationUrl.toString()
+  }
+
+  private async airtableClientFromRequest(request: Hub.ActionRequest) {
+    if (request.params.state_json) {
+      const stateJson = JSON.parse(request.params.state_json)
+      const response = await this.refreshTokens(stateJson.tokens.refresh_token)
+      return new airtable({apiKey: (response.data as any).access_token})
+    } else {
+      winston.info("No state json", {webhookId: request.webhookId})
+      return null
+    }
+  }
+
+  private async refreshTokens(refreshToken: string) {
+    try {
+      const dataString = qs.stringify({
+        client_id: process.env.AIRTABLE_CLIENT_ID,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      })
+
+      const encodedCreds = Buffer.from(`${process.env.AIRTABLE_CLIENT_ID}:${process.env.AIRTABLE_CLIENT_SECRET}`)
+          .toString("base64")
+      return await gaxios.request({
+        method: "POST",
+        url: "https://www.airtable.com/oauth2/v1/token",
+        headers: {
+          "Authorization": `Basic ${encodedCreds}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        data: dataString,
+      })
+    } catch (e) {
+      winston.warn("Error with Airtable Access Token Refresh")
+      return {data: {}}
+    }
   }
 
 }
 
-Hub.addAction(new AirtableAction())
+if (process.env.AIRTABLE_CLIENT_ID && process.env.AIRTABLE_CLIENT_SECRET) {
+  Hub.addAction(new AirtableAction())
+}
