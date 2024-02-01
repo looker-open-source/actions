@@ -217,6 +217,7 @@ export class AirtableAction extends Hub.OAuthAction {
       const response = await this.refreshTokens(stateJson.tokens.refresh_token)
       return new airtable({apiKey: (response.data as any).access_token})
     } else {
+      winston.info("No state json", {webhookId: request.webhookId})
       return null
     }
   }
