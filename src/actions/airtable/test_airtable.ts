@@ -3,6 +3,9 @@ import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
 
+import * as b64 from "base64-url"
+import * as gaxios from "gaxios"
+import {ActionCrypto} from "../../hub"
 import { AirtableAction } from "./airtable"
 
 const action = new AirtableAction()
@@ -34,6 +37,21 @@ function expectWebhookMatch(
 }
 
 describe(`${action.constructor.name} unit tests`, () => {
+  let encryptStub: any
+  let decryptStub: any
+  let gaxiosStub: any
+
+  beforeEach(() => {
+    encryptStub = sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
+    decryptStub = sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+    gaxiosStub =  sinon.stub(gaxios, "request")
+  })
+
+  afterEach(() => {
+    encryptStub.restore()
+    decryptStub.restore()
+    gaxiosStub.restore()
+  })
 
   describe("action", () => {
 
@@ -151,7 +169,9 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("has form with base and table param", (done) => {
       const request = new Hub.ActionRequest()
-      request.params = { airtable_api_key: "foo" }
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"token\"}}"
+      gaxiosStub.resolves({data: {access_token: "test"}} as any)
+
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
