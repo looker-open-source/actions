@@ -81,9 +81,8 @@ export class AirtableAction extends Hub.OAuthAction {
         headers: {
           Authorization: `Bearer ${(response.data as any).access_token}`,
         },
-      }).catch((err) => {
-        winston.error(JSON.stringify(err))
-        throw "Error listing bases, oauth probably bad."
+      }).catch((_err) => {
+        throw "Error listing bases, oauth credentials most likely expired."
       })
     } else {
       return null
@@ -98,7 +97,6 @@ export class AirtableAction extends Hub.OAuthAction {
         // @ts-ignore
         throw "Error with checking baselist"
       }
-      winston.info(JSON.stringify(response))
       form.fields = [{
         label: "Airtable Base",
         name: "base",
@@ -161,7 +159,6 @@ export class AirtableAction extends Hub.OAuthAction {
       },
       data: dataString,
     })
-    JSON.stringify(response.data)
     // Pass back context to Looker
     if (response.status === 200) {
       const data: any = response.data
