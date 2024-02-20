@@ -42,6 +42,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             if (!filename) {
                 resp.success = false
                 resp.message = "Error creating filename"
+                winston.error("Error creating file name")
                 return resp
             } else if (!filename.match(/\.csv$/)) {
                 filename = filename.concat(".csv")

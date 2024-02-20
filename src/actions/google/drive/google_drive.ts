@@ -38,6 +38,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       if (!filename) {
         resp.success = false
         resp.message = "Error creating filename"
+        winston.error("Error creating filename")
         return resp
       }
       try {
@@ -46,6 +47,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       } catch (e: any) {
         resp.success = false
         resp.message = e.message
+        winston.error("Error while sending data " + e.message)
       }
     } else {
       resp.success = false
@@ -132,7 +134,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           return form
         }
       } catch (e: any) {
-        winston.warn("Log in fail")
+        winston.error("Can not sign in to Google", {webhookId: request.webhookId} )
       }
     }
     return this.loginForm(request)
@@ -309,6 +311,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         " once to your Google account.",
       oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
     })
+    winston.debug(`Login form, OAuthURL${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`)
     return form
   }
 }
