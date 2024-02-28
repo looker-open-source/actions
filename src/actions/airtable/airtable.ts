@@ -55,7 +55,7 @@ export class AirtableAction extends Hub.OAuthAction {
       let accessToken
       if (request.params.state_json) {
         const stateJson = JSON.parse(request.params.state_json)
-        const refreshResponse = await this.refreshTokens(stateJson.params.state_json)
+        const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
         accessToken = (refreshResponse as any).data.access_token
         // Every single access_token invalidates previous refresh_token. Need to
         // update state on EVERY request
