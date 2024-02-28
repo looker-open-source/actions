@@ -153,6 +153,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         success: false,
         message: "Could not find table Contacts123 in application app",
         refreshQuery: false,
+        state: {},
         validationErrors: [],
       }).then(() => {
         stubPost.restore()
@@ -170,7 +171,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("has form with base and table param", (done) => {
       const request = new Hub.ActionRequest()
       request.params.state_json = "{\"tokens\": {\"refresh_token\": \"token\"}}"
-      gaxiosStub.resolves({data: {access_token: "test"}} as any)
+      gaxiosStub.resolves({data: {access_token: "test", refresh_token: "lol"}} as any)
 
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -185,6 +186,9 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
           type: "string",
         }],
+        state: {
+          data: "{\"tokens\":{\"refresh_token\":\"lol\",\"access_token\":\"test\"}}",
+        },
       }).and.notify(done)
     })
   })
