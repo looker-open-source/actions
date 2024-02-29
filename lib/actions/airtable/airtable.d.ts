@@ -12,7 +12,7 @@ export declare class AirtableAction extends Hub.OAuthAction {
     supportedVisualizationFormattings: Hub.ActionVisualizationFormatting[];
     SCOPE: string;
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
-    checkBaseList(request: Hub.ActionRequest): Promise<gaxios.GaxiosResponse<unknown> | null>;
+    checkBaseList(token: string): Promise<gaxios.GaxiosResponse<unknown>>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
     oauthCheck(_request: Hub.ActionRequest): Promise<boolean>;
     oauthFetchInfo(urlParams: {

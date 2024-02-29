@@ -4,6 +4,7 @@ import * as crypto from "crypto"
 import * as gaxios from "gaxios"
 import * as qs from "qs"
 import * as winston from "winston"
+import {ActionResponse, ActionState} from "../../hub"
 
 const airtable: any = require("airtable")
 
@@ -48,9 +49,24 @@ export class AirtableAction extends Hub.OAuthAction {
       return record
     })
 
-    let response
+    const response = new ActionResponse({success: true})
+    const state = new ActionState()
     try {
-      const airtableClient = await this.airtableClientFromRequest(request)
+      let accessToken
+      if (request.params.state_json) {
+        const stateJson = JSON.parse(request.params.state_json)
+        const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
+        accessToken = (refreshResponse as any).data.access_token
+        // Every single access_token invalidates previous refresh_token. Need to
+        // update state on EVERY request
+        state.data = JSON.stringify({
+          tokens: {
+            refresh_token: (refreshResponse as any).data.refresh_token,
+            access_token: accessToken,
+          },
+        })
+      }
+      const airtableClient = await this.airtableClientFromRequest(accessToken)
       const base = airtableClient.base(request.formParams.base)
       const table = base(request.formParams.table)
 
@@ -66,37 +82,42 @@ export class AirtableAction extends Hub.OAuthAction {
         })
       }))
     } catch (e: any) {
-      response = { success: false, message: e.message }
+      response.success = false
+      response.message = e.message
     }
+    response.state = state
     return new Hub.ActionResponse(response)
   }
 
-  async checkBaseList(request: Hub.ActionRequest) {
-    if (request.params.state_json) {
-      const stateJson = JSON.parse(request.params.state_json)
-      const response = await this.refreshTokens(stateJson.tokens.refresh_token)
-      return gaxios.request({
-        method: "GET",
-        url: "https://api.airtable.com/v0/meta/bases",
-        headers: {
-          Authorization: `Bearer ${(response.data as any).access_token}`,
-        },
-      }).catch((_err) => {
-        throw "Error listing bases, oauth credentials most likely expired."
-      })
-    } else {
-      return null
-    }
+  async checkBaseList(token: string) {
+    return gaxios.request({
+      method: "GET",
+      url: "https://api.airtable.com/v0/meta/bases",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).catch((_err) => {
+      throw "Error listing bases, oauth credentials most likely expired."
+    })
   }
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     try {
-      const response = await this.checkBaseList(request)
-      if (response === null) {
-        // @ts-ignore
-        throw "Error with checking baselist"
+      let accessToken
+      if (request.params.state_json) {
+        const stateJson = JSON.parse(request.params.state_json)
+        const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
+        accessToken = (refreshResponse as any).data.access_token
+        // Every single access_token invalidates previous refresh_token. Need to
+        // update state on EVERY request
+        form.state = new ActionState()
+        form.state.data = JSON.stringify({tokens: {
+            refresh_token: (refreshResponse as any).data.refresh_token,
+            access_token: accessToken,
+          }})
       }
+      await this.checkBaseList(accessToken)
       form.fields = [{
         label: "Airtable Base",
         name: "base",
@@ -211,15 +232,8 @@ export class AirtableAction extends Hub.OAuthAction {
     return authorizationUrl.toString()
   }
 
-  private async airtableClientFromRequest(request: Hub.ActionRequest) {
-    if (request.params.state_json) {
-      const stateJson = JSON.parse(request.params.state_json)
-      const response = await this.refreshTokens(stateJson.tokens.refresh_token)
-      return new airtable({apiKey: (response.data as any).access_token})
-    } else {
-      winston.info("No state json", {webhookId: request.webhookId})
-      return null
-    }
+  private async airtableClientFromRequest(token: string) {
+    return new airtable({apiKey: token})
   }
 
   private async refreshTokens(refreshToken: string) {
