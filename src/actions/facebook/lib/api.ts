@@ -2,7 +2,7 @@ import * as gaxios from "gaxios"
 import * as winston from "winston"
 import {formatFullDate, isNullOrUndefined, sanitizeError, sortCompare} from "./util"
 
-export const API_VERSION = "v16.0"
+export const API_VERSION = "v17.0"
 export const API_BASE_URL = `https://graph.facebook.com/${API_VERSION}/`
 export const CUSTOMER_LIST_SOURCE_TYPES = {
     // Used by Facebook for unknown purposes.
