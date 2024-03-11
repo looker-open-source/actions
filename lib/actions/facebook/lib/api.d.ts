@@ -1,4 +1,4 @@
-export declare const API_VERSION = "v16.0";
+export declare const API_VERSION = "v19.0";
 export declare const API_BASE_URL: string;
 export declare const CUSTOMER_LIST_SOURCE_TYPES: {
     USER_PROVIDED_ONLY: string;
