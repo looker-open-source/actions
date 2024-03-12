@@ -3927,9 +3927,9 @@ join-component@^1.1.0:
   integrity sha1-uEF7dQZho5K+4sJTfGiyqdSXfNU=
 
 jose@^2.0.5:
-  version "2.0.5"
-  resolved "https://registry.yarnpkg.com/jose/-/jose-2.0.5.tgz#29746a18d9fff7dcf9d5d2a6f62cb0c7cd27abd3"
-  integrity sha512-BAiDNeDKTMgk4tvD0BbxJ8xHEHBZgpeRZ1zGPPsitSyMgjoMWiLGYAE7H7NpP5h0lPppQajQs871E8NHUrzVPA==
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/jose/-/jose-2.0.7.tgz#3aabbaec70bff313c108b9406498a163737b16ba"
+  integrity sha512-5hFWIigKqC+e/lRyQhfnirrAqUdIPMB7SJRqflJaO29dW7q5DFvH1XCSTmv6PQ6pb++0k6MJlLRoS0Wv4s38Wg==
   dependencies:
     "@panva/asn1.js" "^1.0.0"
 
