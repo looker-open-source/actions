@@ -8,6 +8,8 @@ export class GoogleAdsActionExecutor {
   readonly targetCid = this.adsRequest.targetCid
   readonly mobileAppId = this.adsRequest.mobileAppId
   readonly uploadKeyType = this.adsRequest.uploadKeyType
+  readonly consentAdUserData = this.adsRequest.consentAdUserData
+  readonly consentAdPersonalization = this.adsRequest.consentAdPersonalization
   offlineUserDataJobResourceName: string
   targetUserListRN: string
 
@@ -25,7 +27,12 @@ export class GoogleAdsActionExecutor {
   }
 
   async createDataJob() {
-    const createJobResp = await this.apiClient.createDataJob(this.targetCid, this.targetUserListRN)
+    const createJobResp = await this.apiClient.createDataJob(
+      this.targetCid,
+      this.targetUserListRN,
+      this.consentAdUserData,
+      this.consentAdPersonalization,
+    )
     this.offlineUserDataJobResourceName = createJobResp.resourceName
     this.log("info", "Created data job:", this.offlineUserDataJobResourceName)
     return createJobResp

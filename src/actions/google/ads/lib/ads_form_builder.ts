@@ -67,17 +67,25 @@ export class GoogleAdsActionFormBuilder {
 
     // 3) Branch 1: Show the fields for creating a new list (name & desc), plus hashing, and we're done
     if (this.isCreate) {
-      form.fields.push(this.newListNameField())
-      form.fields.push(this.newListDescriptionField())
-      form.fields.push(this.doHashingFormField())
+      form.fields = [
+        ...form.fields,
+        this.newListNameField(),
+        this.newListDescriptionField(),
+        this.doHashingFormField(),
+        ...this.consentSetting(),
+      ]
       return form
     }
 
     // 4) Branch 2: Select an existing list, but we need to check that there is at least one to choose...
     const userListOptions = await this.getUserListOptions()
     if (userListOptions.length) {
-      form.fields.push(this.targetListField(userListOptions))
-      form.fields.push(this.doHashingFormField())
+      form.fields = [
+        ...form.fields,
+        this.targetListField(userListOptions),
+        this.doHashingFormField(),
+        ...this.consentSetting(),
+      ]
     } else {
       form.fields.push(this.noAvailableListsField())
     }
@@ -259,6 +267,35 @@ export class GoogleAdsActionFormBuilder {
       default: "yes",
       required: true,
     }
+  }
+
+  consentSetting() {
+    return [
+      {
+        name: "consentAdUserData",
+        label: "Step 5) The consent setting for consent for ad user data",
+        type: "select" as "select",
+        options: [
+          {name: "UNSPECIFIED", label: "Unspecified"},
+          {name: "GRANTED", label: "Granted"},
+          {name: "DENIED", label: "Denied"},
+        ],
+        default: "UNSPECIFIED",
+        required: true,
+      },
+      {
+        name: "consentAdPersonalization",
+        label: "The consent setting for consent for ad personalization",
+        type: "select" as "select",
+        options: [
+          {name: "UNSPECIFIED", label: "Unspecified"},
+          {name: "GRANTED", label: "Granted"},
+          {name: "DENIED", label: "Denied"},
+        ],
+        default: "UNSPECIFIED",
+        required: true,
+      },
+    ]
   }
 
   private async maybeSetLoginCustomer() {

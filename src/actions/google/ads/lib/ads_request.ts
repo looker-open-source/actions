@@ -90,6 +90,14 @@ export class GoogleAdsActionRequest {
     return this.isMobileDevice ? "MOBILE_ADVERTISING_ID" : "CONTACT_INFO"
   }
 
+  get consentAdUserData() {
+    return this.formParams.consentAdUserData
+  }
+
+  get consentAdPersonalization() {
+    return this.formParams.consentAdPersonalization
+  }
+
   get developerToken() {
     return this.actionInstance.developerToken
   }
