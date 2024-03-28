@@ -5,13 +5,30 @@ export interface ValidationError {
   message: string
 }
 
-export class ActionResponse {
+export interface ErrorDetail {
+  /* error code associated with the error */
+  http_code?: number
+  /* A one word description of what happened */
+  reason: string
+  /* Error message that was thrown */
+  message: string
+  /* Detailed description of error written by us */
+  detail: string
+  /* one of the three services it could have erred in */
+  locationType: string
+  /* where in the service the failure occurred, which action was running when it erred */
+  location: string
+  /* url to help page listing the errors and giving detailed information about each */
+  help: string
+}
 
+export class ActionResponse {
   message?: string
   refreshQuery = false
   success = true
   validationErrors: ValidationError[] = []
   state?: ActionState
+  errorDetail?: ErrorDetail
 
   constructor(
     fields?: {
@@ -19,6 +36,7 @@ export class ActionResponse {
         refreshQuery?: boolean,
         success?: boolean,
         validationErrors?: ValidationError[],
+        errorDetail?: ErrorDetail,
     }) {
     if (fields) {
       Object.assign(this, fields)
@@ -39,6 +57,7 @@ export class ActionResponse {
         success: this.success,
         validation_errors: errs,
         state: this.state,
+        errorDetail: this.errorDetail,
       },
     }
   }
