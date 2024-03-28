@@ -28,6 +28,7 @@ describe("ActionResponse validation", () => {
     const response = new ActionResponse({success: false})
     const jsonResponse = response.asJson()
     chai.expect(jsonResponse.looker).to.not.be.null
+    chai.expect(jsonResponse.looker.success).to.equal(false)
     chai.expect(jsonResponse.looker.errors).to.be.undefined
   })
 })
