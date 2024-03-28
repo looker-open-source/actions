@@ -5,13 +5,27 @@ export interface ValidationError {
   message: string
 }
 
-export class ActionResponse {
+export interface Errors {
+  /* error code associated with the error */
+  http_code: number
+  /* The enum version of the http_code */
+  status_code: string
+  /* Detailed description of error written by us, this should give the reason it happened and a plausible fix, and specify who is at fault */
+  message: string
+  /* where in the service the failure occurred, which action was running when it erred */
+  location: string
+  /* url to help page listing the errors and giving detailed information about each */
+  documentation_url: string
+}
 
+export class ActionResponse {
   message?: string
   refreshQuery = false
   success = true
   validationErrors: ValidationError[] = []
   state?: ActionState
+  errors?: Errors[]
+  webhookId?: string
 
   constructor(
     fields?: {
@@ -19,6 +33,8 @@ export class ActionResponse {
         refreshQuery?: boolean,
         success?: boolean,
         validationErrors?: ValidationError[],
+        errors?: Errors[],
+        webhookId?: string,
     }) {
     if (fields) {
       Object.assign(this, fields)
@@ -39,6 +55,8 @@ export class ActionResponse {
         success: this.success,
         validation_errors: errs,
         state: this.state,
+        errors: this.errors,
+        webhookId: this.webhookId,
       },
     }
   }
