@@ -5,7 +5,7 @@ export interface ValidationError {
   message: string
 }
 
-export interface Errors {
+export interface Error {
   /* error code associated with the error */
   http_code: number
   /* The enum version of the http_code */
@@ -24,7 +24,7 @@ export class ActionResponse {
   success = true
   validationErrors: ValidationError[] = []
   state?: ActionState
-  errors?: Errors[]
+  errors?: Error[]
   webhookId?: string
 
   constructor(
@@ -33,7 +33,7 @@ export class ActionResponse {
         refreshQuery?: boolean,
         success?: boolean,
         validationErrors?: ValidationError[],
-        errors?: Errors[],
+        errors?: Error[],
         webhookId?: string,
     }) {
     if (fields) {

@@ -1,6 +1,6 @@
 import * as chai from "chai"
 
-import type { Errors } from "../lib/hub/action_response"
+import type { Error } from "../lib/hub/action_response"
 import { ActionResponse} from "../src/hub"
 
 describe("ActionResponse validation", () => {
@@ -12,7 +12,7 @@ describe("ActionResponse validation", () => {
   })
 
   it("must populate errors object if provided", () => {
-    const errors: Errors = {
+    const errors: Error = {
       http_code: 500,
       status_code: "TEST_FAIL",
       message: "testing failure message",
