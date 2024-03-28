@@ -1,7 +1,7 @@
 import * as chai from "chai"
 
-import { ActionResponse} from "../src/hub"
 import type { Errors } from "../lib/hub/action_response"
+import { ActionResponse} from "../src/hub"
 
 describe("ActionResponse validation", () => {
   it("json must have a top level looker: key", (done) => {
@@ -17,7 +17,7 @@ describe("ActionResponse validation", () => {
       status_code: "TEST_FAIL",
       message: "testing failure message",
       location: "actions/test_action_response",
-      documentation_url: "http://test/documentation"
+      documentation_url: "http://test/documentation",
     }
     const response = new ActionResponse({success: false, errors: [errors]})
     const jsonResponse = response.asJson()

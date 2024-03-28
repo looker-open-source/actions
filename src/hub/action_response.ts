@@ -10,7 +10,7 @@ export interface Errors {
   http_code: number
   /* The enum version of the http_code */
   status_code: string
-  /* Detailed description of error written by us, this should give the reason it happened and a plausible fix, and specify who is at fault */
+  /* Detailed description of error written */
   message: string
   /* where in the service the failure occurred, which action was running when it erred */
   location: string
