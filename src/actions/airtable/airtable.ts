@@ -256,7 +256,8 @@ export class AirtableAction extends Hub.OAuthAction {
         data: dataString,
       })
     } catch (e) {
-      winston.warn("Error with Airtable Access Token Refresh")
+      // @ts-ignore
+      winston.warn(`Error with Airtable Access Token Refresh: ${e.message}`)
       return {data: {}}
     }
   }
