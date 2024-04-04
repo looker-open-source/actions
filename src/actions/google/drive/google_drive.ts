@@ -131,21 +131,21 @@ export class GoogleDriveAction extends Hub.OAuthAction {
               type: "string",
               required: true,
             })
-          } else {
-            form.fields.push({
-              label: "Fetch Folders",
-              name: "fetch",
-              type: "select",
-              required: true,
-              options: [{label: "Fetch Folders", name: "fetch"}],
-            })
-            form.fields.push({
-              label: "Folder Name Search",
-              name: "search",
-              type: "string",
-              required: true,
-            })
           }
+          form.fields.push({
+            label: "Fetch Folders",
+            description: "After entering text to search below, select \"Fetch Folders\"",
+            name: "fetch",
+            type: "select",
+            required: true,
+            options: [{label: "Fetch Folders", name: "fetch"}],
+          })
+          form.fields.push({
+            label: "Folder Name Search",
+            name: "search",
+            type: "string",
+            required: true,
+          })
           form.state = new Hub.ActionState()
           form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
           return form
