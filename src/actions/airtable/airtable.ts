@@ -256,7 +256,11 @@ export class AirtableAction extends Hub.OAuthAction {
         data: dataString,
       })
     } catch (e) {
-      winston.warn("Error with Airtable Access Token Refresh")
+      let errorMessage = `Error with Airtable Access Token Refresh`
+      if (e instanceof gaxios.GaxiosError) {
+        errorMessage = errorMessage + ` returning http code ${e.code}`
+      }
+      winston.warn(errorMessage)
       return {data: {}}
     }
   }
