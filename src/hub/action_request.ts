@@ -187,10 +187,10 @@ export class ActionRequest {
       if (url) {
         winston.info(`[stream] beginning stream via download url`, this.logInfo)
         try {
-          fetch(url).then((response) => {
+          fetch(url).then((response: any) => {
             if (response.ok) {
               response.body.pipe(stream)
-                  .on("error", (err) => {
+                  .on("error", (err: any) => {
                     winston.error(`[stream] PassThrough stream error`, this.logInfo)
                     reject(err)
                   })
@@ -206,7 +206,7 @@ export class ActionRequest {
               winston.warn(responseText, this.logInfo)
               reject(responseText)
             }
-          }).catch((err) => {
+          }).catch((err: any) => {
             const responseText = `There was a problem in the fetch request Error Code: ${err.toString()}`
             winston.warn(responseText, this.logInfo)
             reject(responseText)
