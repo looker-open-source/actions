@@ -1,6 +1,6 @@
 import * as express from "express"
+import fetch from "node-fetch"
 import * as oboe from "oboe"
-import * as httpRequest from "request"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
@@ -180,62 +180,43 @@ export class ActionRequest {
 
     const stream = new PassThrough()
     const returnPromise = callback(stream)
-    const timeout = process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT ?
-        parseInt(process.env.ACTION_HUB_STREAM_REQUEST_TIMEOUT, 10)
-      :
-        13 * 60 * 1000
 
     const url = this.scheduledPlan && this.scheduledPlan.downloadUrl
 
     const streamPromise = new Promise<void>((resolve, reject) => {
       if (url) {
         winston.info(`[stream] beginning stream via download url`, this.logInfo)
-        let hasResolved = false
-        httpRequest
-          .get(url, {timeout})
-          .on("error", (err) => {
-            if (hasResolved && (err as any).code === "ECONNRESET") {
-              winston.info(`[stream] ignoring ECONNRESET that occured after streaming finished`, this.logInfo)
+        try {
+          fetch(url).then((response) => {
+            if (response.ok) {
+              response.body.pipe(stream)
+                  .on("error", (err) => {
+                    winston.error(`[stream] PassThrough stream error`, {
+                      ...this.logInfo,
+                    })
+                    reject(err)
+                  })
+                  .on("finish", () => {
+                    winston.info(`[stream] PassThrough stream finished`, this.logInfo)
+                    resolve()
+                  })
+                  .on("close", () => {
+                    winston.info(`[stream] PassThrough stream closed`, this.logInfo)
+                  })
             } else {
-              winston.error(`[stream] request stream error`, {
-                ...this.logInfo,
-                error: err.message,
-                stack: err.stack,
-              })
-              reject(err)
+              const responseText = `There was a problem in the streaming callback Error Code: ${response.status}`
+              winston.warn(responseText, this.logInfo)
+              reject(responseText)
             }
+          }).catch((err) => {
+            const responseText = `There was a problem in the fetch request Error Code: ${err.toString()}`
+            winston.warn(responseText, this.logInfo)
+            reject(responseText)
           })
-          .on("finish", () => {
-            winston.info(`[stream] streaming via download url finished`, this.logInfo)
-          })
-          .on("socket", (socket) => {
-            winston.info(`[stream] setting keepalive on socket`, this.logInfo)
-            socket.setKeepAlive(true)
-          })
-          .on("abort", () => {
-            winston.info(`[stream] streaming via download url aborted`, this.logInfo)
-          })
-          .on("response", () => {
-            winston.info(`[stream] got response from download url`, this.logInfo)
-          })
-          .on("close", () => {
-            winston.info(`[stream] request stream closed`, this.logInfo)
-          })
-          .pipe(stream)
-          .on("error", (err) => {
-            winston.error(`[stream] PassThrough stream error`, {
-              ...this.logInfo,
-            })
-            reject(err)
-          })
-          .on("finish", () => {
-            winston.info(`[stream] PassThrough stream finished`, this.logInfo)
-            resolve()
-            hasResolved = true
-          })
-          .on("close", () => {
-            winston.info(`[stream] PassThrough stream closed`, this.logInfo)
-          })
+        } catch (e) {
+          winston.warn(`Erorr connecting to callback url`, this.logInfo)
+          reject(e)
+        }
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
           winston.info(`Using "fake" streaming because request contained attachment data.`, this.logInfo)
