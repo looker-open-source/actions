@@ -224,6 +224,18 @@ describe(`${action.constructor.name} unit tests`, () => {
           name: "filename",
           type: "string",
           required: true,
+        }, {
+          label: "Fetch Folders",
+          description: "After entering text to search below, select \"Fetch Folders\"",
+          name: "fetch",
+          type: "select",
+          required: true,
+          options: [{label: "Fetch Folders", name: "fetch"}],
+        }, {
+          label: "Folder Name Search",
+          name: "search",
+          type: "string",
+          required: true,
         }],
         state: {
           data: JSON.stringify({tokens: "access", redirect: "url"}),
@@ -277,6 +289,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "select",
         }, {
           label: "Fetch Folders",
+          description: "After entering text to search below, select \"Fetch Folders\"",
           name: "fetch",
           type: "select",
           required: true,

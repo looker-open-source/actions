@@ -567,6 +567,18 @@ describe(`${action.constructor.name} unit tests`, () => {
             type: "string",
             required: true,
           }, {
+            label: "Fetch Folders",
+            description: "After entering text to search below, select \"Fetch Folders\"",
+            name: "fetch",
+            type: "select",
+            required: true,
+            options: [{label: "Fetch Folders", name: "fetch"}],
+          }, {
+            label: "Folder Name Search",
+            name: "search",
+            type: "string",
+            required: true,
+          }, {
             default: "yes",
             description: "Should this action attempt to overwrite an existing file",
             label: "Overwrite Existing Files",
