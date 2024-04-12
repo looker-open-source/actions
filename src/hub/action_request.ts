@@ -191,9 +191,7 @@ export class ActionRequest {
             if (response.ok) {
               response.body.pipe(stream)
                   .on("error", (err) => {
-                    winston.error(`[stream] PassThrough stream error`, {
-                      ...this.logInfo,
-                    })
+                    winston.error(`[stream] PassThrough stream error`, this.logInfo)
                     reject(err)
                   })
                   .on("finish", () => {
@@ -214,7 +212,7 @@ export class ActionRequest {
             reject(responseText)
           })
         } catch (e) {
-          winston.warn(`Erorr connecting to callback url`, this.logInfo)
+          winston.warn(`Error connecting to callback url`, this.logInfo)
           reject(e)
         }
       } else {
