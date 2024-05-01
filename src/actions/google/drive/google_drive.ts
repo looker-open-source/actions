@@ -138,6 +138,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             name: "fetch",
             type: "select",
             required: true,
+            interactive: true,
             options: [{label: "Fetch Folders", name: "fetch"}],
           })
           form.fields.push({
