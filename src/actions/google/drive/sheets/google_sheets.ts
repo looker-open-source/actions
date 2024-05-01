@@ -36,6 +36,14 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
+            if (request.params.domain_allowlist &&
+                !await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)) {
+                winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+                resp.success = false
+                resp.state = new Hub.ActionState()
+                resp.state.data = "reset"
+                return resp
+            }
             const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
             let filename = request.formParams.filename || request.suggestedFilename()
@@ -97,6 +105,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/userinfo.email",
         ]
 
         const url = oauth2Client.generateAuthUrl({
