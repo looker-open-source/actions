@@ -3,28 +3,21 @@ export interface ValidationError {
     field: string;
     message: string;
 }
-
 export interface Error {
-    /* error code associated with the error */
-    http_code: number
-    /* The enum version of the http_code */
-    status_code: string
-    /* Detailed description of error written by us, this should give the reason it happened and a plausible fix, and specify who is at fault */
-    message: string
-    /* where in the service the failure occurred, which action was running when it erred */
-    location: string
-    /* url to help page listing the errors and giving detailed information about each */
-    documentation_url: string
-  }
-
+    http_code: number;
+    status_code: string;
+    message: string;
+    location: string;
+    documentation_url: string;
+}
 export declare class ActionResponse {
     message?: string;
     refreshQuery: boolean;
     success: boolean;
     validationErrors: ValidationError[];
     state?: ActionState;
-    errors: Error[];
-    webhookId: string;
+    errors?: Error[];
+    webhookId?: string;
     constructor(fields?: {
         message?: string;
         refreshQuery?: boolean;
