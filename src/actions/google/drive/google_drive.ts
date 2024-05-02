@@ -94,12 +94,16 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           })
 
           if (request.formParams.search !== undefined) {
+            let query = `mimeType='application/vnd.google-apps.folder' and trashed=false`
+            if (request.formParams.search !== "") {
+              query = query + `and name contains ${request.formParams.search}`
+            }
             // drive.files.list() options
             const options: any = {
               fields: "files(id,name,parents),nextPageToken",
               orderBy: "recency desc",
               pageSize: 1000,
-              q: `mimeType='application/vnd.google-apps.folder' and trashed=false and name contains ${request.formParams.search}`,
+              q: query,
               spaces: "drive",
             }
             if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
@@ -125,7 +129,13 @@ export class GoogleDriveAction extends Hub.OAuthAction {
               return mergedFiles
             }
 
-            const paginatedFiles = await pagedFileList([], await drive.files.list(options))
+            const paginatedFiles = await pagedFileList([], await drive.files.list(options).catch((reason) => {
+              if (reason.status !== 401 || reason.status !== 403) {
+                winston.info("No folders found", {webhookId: request.webhookId})
+                // Easier to mock out the response as any.
+                return Promise.resolve({data: {files: []}} as any)
+              }
+            }))
             const folders = paginatedFiles.filter((folder) => (
                     !(folder.id === undefined) && !(folder.name === undefined)))
                 .map((folder) => ({name: folder.id!, label: folder.name!}))
@@ -147,12 +157,14 @@ export class GoogleDriveAction extends Hub.OAuthAction {
               required: true,
             })
           }
+          // Fetch forms is to provide searching.
           form.fields.push({
             label: "Fetch Folders",
             description: "After entering text to search below, select \"Fetch Folders\"",
             name: "fetch",
             type: "select",
             required: true,
+            interactive: true,
             options: [{label: "Fetch Folders", name: "fetch"}],
           })
           form.fields.push({
