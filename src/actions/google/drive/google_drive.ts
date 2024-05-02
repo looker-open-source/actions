@@ -79,7 +79,6 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           })
 
           if (request.formParams.search !== undefined) {
-            winston.info(`search for ${request.formParams.search}`)
             let query = `mimeType='application/vnd.google-apps.folder' and trashed=false`
             if (request.formParams.search !== "") {
               query = query + `and name contains ${request.formParams.search}`
@@ -117,7 +116,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
             const paginatedFiles = await pagedFileList([], await drive.files.list(options).catch((reason) => {
               if (reason.status !== 401 || reason.status !== 403) {
-                winston.info("whoops nothing here")
+                winston.info("No folders found", {webhookId: request.webhookId})
                 // Easier to mock out the response as any.
                 return Promise.resolve({data: {files: []}} as any)
               }
