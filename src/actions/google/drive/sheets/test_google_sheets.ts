@@ -571,6 +571,7 @@ describe(`${action.constructor.name} unit tests`, () => {
             description: "After entering text to search below, select \"Fetch Folders\"",
             name: "fetch",
             type: "select",
+            interactive: true,
             required: true,
             options: [{label: "Fetch Folders", name: "fetch"}],
           }, {
