@@ -66,7 +66,7 @@ export class SendGridAction extends Hub.Action {
       response.success = true
     } catch (e: any) {
       response.success = false
-      response.message = `Error: ${e}`
+      response.message = `Error: ${e.message}`
 
       if (e.response) {
         winston.error(`Failed execute for sendgrid with status code: ${e.response.status}`)
