@@ -45,11 +45,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           refreshQuery: false,
           success: false,
           message: "Error: invalid email address",
-<<<<<<< HEAD
-          validationErrors: []
-=======
           validationErrors: [],
->>>>>>> 7d69a39 (Adds error messages to response object for sendgrid action.)
         })
     })
 
@@ -64,11 +60,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           refreshQuery: false,
           success: false,
           message: "Error: could not retrieve data from attachment, or attachment does not exist",
-<<<<<<< HEAD
-          validationErrors: []
-=======
           validationErrors: [],
->>>>>>> 7d69a39 (Adds error messages to response object for sendgrid action.)
         })
     })
 
