@@ -41,7 +41,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
       return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Needs a valid email address.")
+        .deep.equal({
+          refreshQuery: false,
+          success: false,
+          message: "Error: invalid email address",
+          validationErrors: []
+        })
     })
 
     it("errors if the input has no attachment", () => {
@@ -51,7 +56,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       }
 
       return chai.expect(action.execute(request)).to.eventually
-        .be.rejectedWith("Couldn't get data from attachment")
+        .deep.equal({
+          refreshQuery: false,
+          success: false,
+          message: "Error: could not retrieve data from attachment, or attachment does not exist",
+          validationErrors: []
+        })
     })
 
     it("sends right body to filename and address", () => {
