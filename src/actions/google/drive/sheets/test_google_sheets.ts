@@ -573,7 +573,7 @@ describe(`${action.constructor.name} unit tests`, () => {
             type: "select",
             interactive: true,
             required: true,
-            options: [{label: "Fetch Folders", name: "fetch"}],
+            options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
           }, {
             label: "Folder Name Search",
             name: "search",

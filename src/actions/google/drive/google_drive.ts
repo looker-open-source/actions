@@ -79,10 +79,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           })
 
           if (request.formParams.search !== undefined) {
-            let query = `mimeType='application/vnd.google-apps.folder' and trashed=false`
-            if (request.formParams.search !== "") {
-              query = query + `and name contains ${request.formParams.search}`
-            }
+            const query = this.generateQuery(request.formParams.search)
             // drive.files.list() options
             const options: any = {
               fields: "files(id,name,parents),nextPageToken",
@@ -120,6 +117,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
                 // Easier to mock out the response as any.
                 return Promise.resolve({data: {files: []}} as any)
               }
+              winston.info(`status fetch: ${reason.status}, cannot fetch folders`, {webhookId: request.webhookId})
             }))
             const folders = paginatedFiles.filter((folder) => (
                     !(folder.id === undefined) && !(folder.name === undefined)))
@@ -150,7 +148,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             type: "select",
             required: true,
             interactive: true,
-            options: [{label: "Fetch Folders", name: "fetch"}],
+            // Need two values to be able to have two values in Looker frontend to refetch
+            options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
           })
           form.fields.push({
             label: "Folder Name Search",
@@ -168,6 +167,14 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       }
     }
     return this.loginForm(request)
+  }
+
+  generateQuery(search: string) {
+    let query = `mimeType='application/vnd.google-apps.folder' and trashed=false`
+    if (search !== "") {
+      query = query + ` and name contains '${search}'`
+    }
+    return query
   }
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
