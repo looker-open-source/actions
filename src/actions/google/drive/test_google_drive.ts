@@ -110,6 +110,16 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(action.hasForm).equals(true)
     })
 
+    it("generates a query with search string", () => {
+      const q = action.generateQuery("test")
+      chai.expect(q).equals(`mimeType='application/vnd.google-apps.folder' and trashed=false and name contains 'test'`)
+    })
+
+    it("generates a query without search string", () => {
+      const q = action.generateQuery("")
+      chai.expect(q).equals(`mimeType='application/vnd.google-apps.folder' and trashed=false`)
+    })
+
     it("returns an oauth form on bad login", (done) => {
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
@@ -231,7 +241,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "select",
           interactive: true,
           required: true,
-          options: [{label: "Fetch Folders", name: "fetch"}],
+          options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
         }, {
           label: "Folder Name Search",
           name: "search",
@@ -295,7 +305,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "select",
           interactive: true,
           required: true,
-          options: [{label: "Fetch Folders", name: "fetch"}],
+          options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
         }, {
           label: "Folder Name Search",
           name: "search",
