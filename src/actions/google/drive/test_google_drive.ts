@@ -110,6 +110,16 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(action.hasForm).equals(true)
     })
 
+    it("generates a query with search string", () => {
+      const q = action.generateQuery("test")
+      chai.expect(q).equals(`mimeType='application/vnd.google-apps.folder' and trashed=false and name contains 'test'`)
+    })
+
+    it("generates a query without search string", () => {
+      const q = action.generateQuery("")
+      chai.expect(q).equals(`mimeType='application/vnd.google-apps.folder' and trashed=false`)
+    })
+
     it("returns an oauth form on bad login", (done) => {
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
@@ -166,6 +176,84 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
+    it("returns correct fields on oauth success with search", (done) => {
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [
+                    {
+                      id: "fake_id",
+                      name: "fake_name",
+                    },
+                  ],
+                },
+              }),
+            },
+            drives: {
+              list: async () => Promise.resolve({
+                data: {
+                  drives: [
+                    {
+                      id: "fake_drive",
+                      name: "fake_drive_label",
+                    },
+                  ],
+                },
+              }),
+            },
+          })
+      const request = new Hub.ActionRequest()
+      request.formParams = {search: "word"}
+      request.params = {
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
+      }
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          description: "Google Drive where your file will be saved",
+          label: "Select Drive to save file",
+          name: "drive",
+          options: [{name: "mydrive", label: "My Drive"}, {name: "fake_drive", label: "fake_drive_label"}],
+          default: "mydrive",
+          interactive: true,
+          required: true,
+          type: "select",
+        }, {
+          description: "Google Drive folder where your file will be saved",
+          label: "Select folder to save file",
+          name: "folder",
+          options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
+          default: "root",
+          required: true,
+          type: "select",
+        }, {
+          label: "Enter a name",
+          name: "filename",
+          type: "string",
+          required: true,
+        }, {
+          label: "Fetch Folders",
+          description: "After entering text to search below, select \"Fetch Folders\"",
+          name: "fetch",
+          type: "select",
+          interactive: true,
+          required: true,
+          options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
+        }, {
+          label: "Folder Name Search",
+          name: "search",
+          type: "string",
+          required: true,
+        }],
+        state: {
+          data: JSON.stringify({tokens: "access", redirect: "url"}),
+        },
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
     it("returns correct fields on oauth success", (done) => {
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
@@ -211,16 +299,16 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
           type: "select",
         }, {
-          description: "Google Drive folder where your file will be saved",
-          label: "Select folder to save file",
-          name: "folder",
-          options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
-          default: "root",
-          required: true,
+          label: "Fetch Folders",
+          description: "After entering text to search below, select \"Fetch Folders\"",
+          name: "fetch",
           type: "select",
+          interactive: true,
+          required: true,
+          options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
         }, {
-          label: "Enter a name",
-          name: "filename",
+          label: "Folder Name Search",
+          name: "search",
           type: "string",
           required: true,
         }],
