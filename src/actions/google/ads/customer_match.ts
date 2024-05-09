@@ -119,7 +119,7 @@ export class GoogleAdsCustomerMatch
         wrappedResp.errorPrefix = `Error loading target account with request: ${err.response.request.responseURL}. `
         + `${err.response.data[0].error.details[0].errors[0].message}`
         + ` Please retry loading the form again with the correct login account. `
-        log('error', `Error loading target account with request: ${err.response.request.responseURL}. `
+        log("error", `Error loading target account with request: ${err.response.request.responseURL}. `
         + `${err.response.data[0].error.details[0].errors[0].message}`)
         return wrappedResp.returnError(err)
       }
@@ -129,12 +129,12 @@ export class GoogleAdsCustomerMatch
         loginForm.fields[0].label =
           `Received error code ${err.code} from the API, so your credentials have been discarded.`
           + " Please reauthenticate and try again."
-        log('error', `Received error code ${err.code} from the API, credentials have been discarded.`)  
+        log("error", `Received error code ${err.code} from the API, credentials have been discarded.`)
         return loginForm
       }
       // All other errors
       wrappedResp.errorPrefix = "Form generation error: "
-      log('error', `Form generation error, code: ${err.code}.`) 
+      log("error", `Form generation error, code: ${err.code}.`)
       return wrappedResp.returnError(err)
     }
   }
