@@ -127,23 +127,27 @@ export class GoogleAdsActionRequest {
   async execute() {
     // 0) Do execution specific validations
     if (!this.loginCid) {
-      winston.warn(`Login account id is missing, webhookID=${this.webhookId}`)
+      winston.warn("Login account id is missing", {webhookId: this.webhookId})
       throw new MissingRequiredParamsError("Login account id is missing")
     }
     if (!["create", "append"].includes(this.createOrAppend)) {
       winston.warn(
-        `createOrAppend must be either 'create' or 'append' (got '${this.formParams.createOrAppend}'), webhookID=${this.webhookId}`,
+        "createOrAppend must be either 'create' or 'append' (got '${this.formParams.createOrAppend}')",
+        {webhookId: this.webhookId},
       )
       throw new MissingRequiredParamsError(
         `createOrAppend must be either 'create' or 'append' (got '${this.formParams.createOrAppend}')`,
       )
     }
     if (this.isMobileDevice && !this.mobileAppId) {
-      winston.warn(`Mobile application id is missing, webhookID=${this.webhookId}`)
+      winston.warn("Mobile application id is missing", {webhookId: this.webhookId})
       throw new MissingRequiredParamsError("Mobile application id is missing")
     }
     if (!["yes", "no"].includes(this.formParams.doHashing)) {
-      winston.warn(`Hashing must be either 'yes' or 'no' (got '${this.formParams.doHashing}'), webhookID=${this.webhookId}`)
+      winston.warn(
+        "Hashing must be either 'yes' or 'no' (got '${this.formParams.doHashing}')",
+        {webhookId: this.webhookId},
+      )
       throw new MissingRequiredParamsError(`Hashing must be either 'yes' or 'no' (got '${this.formParams.doHashing}')`)
     }
 
@@ -176,7 +180,7 @@ export class GoogleAdsActionRequest {
     // 2) Create a data job for the user list
     await executor.createDataJob()
     if (!executor.offlineUserDataJobResourceName) {
-      winston.error(`Failed sanity check for offlineUserDataJobResourceName, webhookID=${this.webhookId}`)
+      winston.error("Failed sanity check for offlineUserDataJobResourceName", {webhookId: this.webhookId})
       throw new MissingRequiredParamsError("Failed sanity check for offlineUserDataJobResourceName.")
     }
 
