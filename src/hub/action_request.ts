@@ -196,18 +196,18 @@ export class ActionRequest {
                   })
                   .on("finish", () => {
                     winston.info(`[stream] PassThrough stream finished`, this.logInfo)
-                    resolve()
                   })
                   .on("close", () => {
                     winston.info(`[stream] PassThrough stream closed`, this.logInfo)
+                    resolve()
                   })
             } else {
-              const responseText = `There was a problem in the streaming callback Error Code: ${response.status}`
+              const responseText = `[stream] There was a problem in the callback HTTPS Status Code: ${response.status}`
               winston.warn(responseText, this.logInfo)
               reject(responseText)
             }
           }).catch((err: any) => {
-            const responseText = `There was a problem in the fetch request Error Code: ${err.toString()}`
+            const responseText = `[stream] There was a problem in the fetch request: ${err.toString()}`
             winston.warn(responseText, this.logInfo)
             reject(responseText)
           })
