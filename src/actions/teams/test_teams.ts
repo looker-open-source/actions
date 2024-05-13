@@ -115,7 +115,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const resp = await action.execute(request)
       chai.expect(resp).to.be.deep.equal({
         success: false,
-        message: "error",
+        message: "Teams Error: error",
         refreshQuery: false,
         validationErrors: [],
       })
@@ -156,7 +156,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const resp = await action.execute(request)
       chai.expect(resp).to.be.deep.equal({
         success: false,
-        message: "error",
+        message: "Teams Error: error",
         refreshQuery: false,
         validationErrors: [],
       })
