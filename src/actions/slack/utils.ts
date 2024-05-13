@@ -211,7 +211,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
             })
         }
     } catch (e: any) {
-        winston.info(`Error: ${e.message}`)
+        winston.info(`Slack App Error: ${e.message}`)
         response = new Hub.ActionResponse({success: false, message: e.message})
     }
     return response
