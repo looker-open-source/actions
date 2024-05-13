@@ -40,7 +40,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
 
     if (!request.formParams.bucket) {
-      winston.error("Need Google Cloud Storage bucket.", {webhookId: request.webhookId})
+      winston.error(`${LOG_PREFIX} Need Google Cloud Storage bucket.`, {webhookId: request.webhookId})
       throw "Need Google Cloud Storage bucket."
     }
 
