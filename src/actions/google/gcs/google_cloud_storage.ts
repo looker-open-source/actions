@@ -1,8 +1,10 @@
+import * as winston from "winston"
 import * as Hub from "../../../hub"
 
 const storage = require("@google-cloud/storage")
 
 const FILE_EXTENSION = new RegExp(/(.*)\.(.*)$/)
+const LOG_PREFIX = "[Google Cloud Storage]"
 
 export class GoogleCloudStorageAction extends Hub.Action {
 
@@ -38,6 +40,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
   async execute(request: Hub.ActionRequest) {
 
     if (!request.formParams.bucket) {
+      winston.error(`${LOG_PREFIX} Need Google Cloud Storage bucket.`, {webhookId: request.webhookId})
       throw "Need Google Cloud Storage bucket."
     }
 
@@ -54,6 +57,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
     }
 
     if (!filename) {
+      winston.error(`${LOG_PREFIX} Couldn't determine filename.`, {webhookId: request.webhookId})
       throw new Error("Couldn't determine filename.")
     }
 
@@ -72,6 +76,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e: any) {
+      winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId: request.webhookId})
       return new Hub.ActionResponse({success: false, message: e.message})
     }
 
@@ -91,11 +96,16 @@ export class GoogleCloudStorageAction extends Hub.Action {
       Your Google Cloud Storage credentials may be incorrect.
 
       Google SDK Error: "${e.message}"`
+      winston.error(
+        `${LOG_PREFIX} An error occurred while fetching the bucket list. Google SDK Error: ${e.message} `,
+        {webhookId: request.webhookId},
+      )
       return form
     }
 
     if (!(results && results[0] && results[0][0])) {
       form.error = "No buckets in account."
+      winston.error(`${LOG_PREFIX} No buckets in account`, {webhookId: request.webhookId})
       return form
     }
 
