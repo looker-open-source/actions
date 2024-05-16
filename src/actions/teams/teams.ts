@@ -19,16 +19,16 @@ export class TeamsAction extends Hub.Action {
     let response = { success: true, message: "success" }
 
     if (!req.formParams.webhookUrl) {
-      throw new Error("Need a webhookUrl")
+      throw new Error("Teams Error: Need a webhookUrl")
     }
     if (!req.formParams.title) {
-      throw new Error("Need a title")
+      throw new Error("Teams Error: Need a title")
     }
     if (!req.formParams.isAttached) {
-      throw new Error("Need a attach flag")
+      throw new Error("Teams Error: Need a attach flag")
     }
     if (!req.scheduledPlan) {
-      throw new Error("Couldn't get data from scheduledPlan")
+      throw new Error("Teams Error: Couldn't get data from scheduledPlan")
     }
 
     const webhookUrl = req.formParams.webhookUrl
@@ -88,11 +88,11 @@ export class TeamsAction extends Hub.Action {
     try {
       const result = await httpRequest.post(option).promise()
       if (result !== 1) {
-        throw new Error(result)
+        throw new Error(`Teams Error: ${result}`)
       }
     } catch (e: any) {
       response = { success: false, message: e.message }
-      winston.error(e.message)
+      winston.error(`Teams Error: ${e.message}`)
     }
     return new Hub.ActionResponse(response)
   }
