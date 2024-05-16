@@ -1,6 +1,6 @@
 {
   "name": "looker-action-hub",
-  "version": "1.4.3",
+  "version": "1.4.6",
   "description": "",
   "main": "lib/index",
   "scripts": {
