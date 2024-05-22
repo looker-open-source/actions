@@ -10,6 +10,8 @@ import FacebookCustomAudiencesExecutor from "./lib/executor"
 import FacebookFormBuilder from "./lib/form_builder"
 import {sanitizeError} from "./lib/util"
 
+const LOG_PREFIX = "[Facebook Custom Audiences]"
+
 export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
 
   readonly name = "facebook_custom_audiences"
@@ -45,6 +47,7 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
       response.state.data = "reset"
       response.success = false
       response.message = "Failed to execute Facebook Custom Audiences due to missing authentication credentials. No data sent to Facebook. Please try again or contact support"
+      winston.error(`${LOG_PREFIX} Failed to execute Facebook Custom Audiences due to missing authentication credentials.`, {webhookId: hubRequest.webhookId})
       return response
     }
     const executor = new FacebookCustomAudiencesExecutor(hubRequest, accessToken)
@@ -64,7 +67,7 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
       }
     } catch (err: any) {
       sanitizeError(err)
-      winston.error(err)
+      winston.error(`${LOG_PREFIX} ${err}`, {webhookId: hubRequest.webhookId})
     }
 
     // Return the login form to start over if anything goes wrong during authentication or form construction
@@ -91,7 +94,7 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
       const actionCrypto = new Hub.ActionCrypto()
       plaintext = await actionCrypto.decrypt(urlParams.state)
     } catch (err: any) {
-      winston.error("Encryption not correctly configured: " + err.toString())
+      winston.error(`${LOG_PREFIX} Encryption not correctly configured: ${err.toString()}`)
       throw err
     }
 
@@ -118,9 +121,9 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
       sanitizeError(err)
       // We have seen weird behavior where Looker correctly updates the state, but returns a nonsense status code
       if (err instanceof gaxios.GaxiosError && err.response !== undefined && err.response.status < 100) {
-        winston.debug("Ignoring state update response with response code <100")
+        winston.debug(`${LOG_PREFIX} Ignoring state update response with response code <100`)
       } else {
-        winston.error("Error sending user state to Looker:" + (err && err.toString()))
+        winston.error(`${LOG_PREFIX} Error sending user state to Looker: ${(err && err.toString())}`)
         throw err
       }
     }
@@ -143,20 +146,28 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
     try {
       const accessToken = await this.getAccessTokenFromRequest(request)
       if (!accessToken) {
-        winston.error("Failed oauthCheck because access token was missing or malformed")
+        winston.error(
+          `${LOG_PREFIX} Failed oauthCheck because access token was missing or malformed`,
+          {webhookId: request.webhookId},
+        )
         return false
       }
       const userDataRequestUri = `https://graph.facebook.com/${API_VERSION}/me?access_token=${accessToken}`
       const userDataResponse = await gaxios.request<any>({method: "GET", url: userDataRequestUri})
       if (userDataResponse.data.error && userDataResponse.data.error.message) {
-        winston.debug("Failed oauthCheck because access token was expired or due to an error: " +
-          userDataResponse.data.error.message)
+        winston.debug(
+          `${LOG_PREFIX} Failed oauthCheck because access token was expired or due to an error: ${userDataResponse.data.error.message}`,
+          {webhookId: request.webhookId},
+        )
         return false
       }
       return true
     } catch (err: any) {
       sanitizeError(err)
-      winston.debug("Failed oauthCheck because access token was expired or due to an error: " + err)
+      winston.debug(
+        `${LOG_PREFIX} Failed oauthCheck because access token was expired or due to an error: ${err}`,
+        {webhookId: request.webhookId},
+      )
       return false
     }
   }
@@ -166,7 +177,7 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
       const params: any = request.params
       return JSON.parse(params.state_json).tokens.longLivedToken
     } catch (e: any) {
-      winston.error("Failed to parse state for access token.")
+      winston.error(`${LOG_PREFIX} Failed to parse state for access token.`, {webhookId: request.webhookId})
       return null
     }
   }
@@ -183,5 +194,5 @@ if (process.env.FACEBOOK_CLIENT_ID
     )
     Hub.addAction(fcma)
 } else {
-  winston.warn(`[Facebook Custom Audiences] Action not registered because required environment variables are missing.`)
+  winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)
 }

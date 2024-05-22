@@ -2,6 +2,8 @@ import * as winston from "winston"
 import * as Hub from "../../../hub"
 import FacebookCustomAudiencesApi from "./api"
 
+const LOG_PREFIX = "[Facebook Custom Audiences]"
+
 export default class FacebookFormBuilder {
 
     async generateActionForm(actionRequest: Hub.ActionRequest, facebookApi: FacebookCustomAudiencesApi) {
@@ -70,6 +72,10 @@ export default class FacebookFormBuilder {
       } else if (actionRequest.formParams.choose_create_update_replace === "update_audience" ||
                 actionRequest.formParams.choose_create_update_replace === "replace_audience") {
         if (!actionRequest.formParams.choose_ad_account) {
+          winston.error(
+            `${LOG_PREFIX} Cannot obtain audience list without an ad account selected`,
+            {webhookId: actionRequest.webhookId},
+          )
           throw new Error("Cannot obtain audience list without an ad account selected")
         }
         customAudiences = await facebookApi.getCustomAudiences(actionRequest.formParams.choose_ad_account)
@@ -129,7 +135,7 @@ export default class FacebookFormBuilder {
         const actionCrypto = new Hub.ActionCrypto()
         encryptedPayload = await actionCrypto.encrypt(payloadString)
       } catch (e: any) {
-        winston.error("Payload encryption error:", e.toString())
+        winston.error(`${LOG_PREFIX} Payload encryption error: ${e.toString()}`, {webhookId: actionRequest.webhookId})
         throw e
       }
 
@@ -138,7 +144,7 @@ export default class FacebookFormBuilder {
       const startAuthUrl =
         `${process.env.ACTION_HUB_BASE_URL}/actions/facebook_custom_audiences/oauth?state=${encryptedPayload}`
 
-      winston.debug("login form has startAuthUrl=", startAuthUrl)
+      winston.debug(`${LOG_PREFIX} login form has startAuthUrl= ${startAuthUrl}`, {webhookId: actionRequest.webhookId})
 
       const form = new Hub.ActionForm()
       form.state = new Hub.ActionState()

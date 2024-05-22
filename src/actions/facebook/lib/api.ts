@@ -2,6 +2,8 @@ import * as gaxios from "gaxios"
 import * as winston from "winston"
 import {formatFullDate, isNullOrUndefined, sanitizeError, sortCompare} from "./util"
 
+const LOG_PREFIX = "[Facebook Custom Audiences]"
+
 export const API_VERSION = "v19.0"
 export const API_BASE_URL = `https://graph.facebook.com/${API_VERSION}/`
 export const CUSTOMER_LIST_SOURCE_TYPES = {
@@ -210,14 +212,12 @@ export default class FacebookCustomAudiencesApi {
                 err.response.data.error && err.response.data.error.message) {
                 // Note: these can still leak access tokens if facebook replies with:
                 // "400 bad request, here's what you sent me!". keep the logging at debug level
-                winston.debug("Facebook error message was: " + err.response.data.error.message)
-                winston.debug("Facebook user friendly message title was: " +
-                err.response.data.error.error_user_title)
-                winston.debug("Facebook user friendly message was: " +
-                err.response.data.error.error_user_msg)
+                winston.debug(`${LOG_PREFIX} Facebook error message was: ${err.response.data.error.message}`)
+                winston.debug(`${LOG_PREFIX} Facebook user friendly message title was: ${err.response.data.error.error_user_title}`)
+                winston.debug(`${LOG_PREFIX} Facebook user friendly message was: ${err.response.data.error.error_user_msg}`)
             }
             // Note that the access token is intentionally omitted from this log
-            winston.error(`Error in network request ${method} ${url}` +
+            winston.error(`${LOG_PREFIX} Error in network request ${method} ${url}` +
             ` with parameters: ${typeof data === "object" && JSON.stringify(data)}.`)
         })
 
