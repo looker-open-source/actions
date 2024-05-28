@@ -69,5 +69,5 @@ export const HTTP_ERROR = {
     status: "GATEWAY_TIMEOUT",
     code: 504,
     description: "Server is acting as a gateway and cannot get a response in time.",
-  }
+  },
 }
