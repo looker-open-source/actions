@@ -16,14 +16,14 @@ export declare class ActionResponse {
     success: boolean;
     validationErrors: ValidationError[];
     state?: ActionState;
-    errors?: Error[];
+    error?: Error;
     webhookId?: string;
     constructor(fields?: {
         message?: string;
         refreshQuery?: boolean;
         success?: boolean;
         validationErrors?: ValidationError[];
-        errors?: Error[];
+        error?: Error;
         webhookId?: string;
     });
     asJson(): any;

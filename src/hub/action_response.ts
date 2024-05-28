@@ -24,7 +24,7 @@ export class ActionResponse {
   success = true
   validationErrors: ValidationError[] = []
   state?: ActionState
-  errors?: Error[]
+  error?: Error
   webhookId?: string
 
   constructor(
@@ -33,7 +33,7 @@ export class ActionResponse {
         refreshQuery?: boolean,
         success?: boolean,
         validationErrors?: ValidationError[],
-        errors?: Error[],
+        error?: Error,
         webhookId?: string,
     }) {
     if (fields) {
@@ -55,7 +55,7 @@ export class ActionResponse {
         success: this.success,
         validation_errors: errs,
         state: this.state,
-        errors: this.errors,
+        error: this.error,
         webhookId: this.webhookId,
       },
     }
