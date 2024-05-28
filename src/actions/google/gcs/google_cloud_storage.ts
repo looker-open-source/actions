@@ -119,7 +119,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
       response.message = error.message
       response.webhookId = request.webhookId
 
-      winston.error(`${LOG_PREFIX} ${e.message} ${e}`, {error, webhookId: request.webhookId})
+      winston.error(`${error.message}`, {error, webhookId: request.webhookId})
       return response
     }
 
