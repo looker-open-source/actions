@@ -19,7 +19,7 @@ describe("ActionResponse validation", () => {
       location: "actions/test_action_response",
       documentation_url: "http://test/documentation",
     }
-    const response = new ActionResponse({success: false, error: error})
+    const response = new ActionResponse({success: false, error})
     const jsonResponse = response.asJson()
     chai.expect(jsonResponse.looker.error).to.equal(error)
   })
