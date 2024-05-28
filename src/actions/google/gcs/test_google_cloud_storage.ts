@@ -63,7 +63,20 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment.dataBuffer = Buffer.from("1,2,3,4", "utf8")
 
       return chai.expect(action.validateAndExecute(request)).to.eventually
-        .be.rejectedWith("Need Google Cloud Storage bucket.")
+        .deep.equal({
+          refreshQuery: false,
+          success: false,
+          error: {
+            documentation_url: "TODO",
+            http_code: 400,
+            location: "ActionContainer",
+            message: "Server cannot process request due to client request error. [Google Cloud Storage] needs a GCS bucket specified.",
+            status_code: "BAD_REQUEST",
+          },
+          message: "Server cannot process request due to client request error. [Google Cloud Storage] needs a GCS bucket specified.",
+          validationErrors: [],
+          webhookId: undefined,
+        })
     })
 
     it("errors if the input has no attachment", () => {
