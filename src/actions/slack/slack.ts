@@ -12,6 +12,7 @@ interface AuthTestResult {
 }
 
 const AUTH_MESSAGE = "You must connect to a Slack workspace first."
+const LOG_PREFIX = "[SLACK]"
 
 export class SlackAction extends Hub.DelegateOAuthAction {
 
@@ -75,7 +76,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
           type: "select",
         })
       } catch (e: any) {
-        winston.error("Failed to fetch workspace: " + e.message)
+        winston.error(`${LOG_PREFIX} Failed to fetch workspace: ${e.message}`, {webhookId: request.webhookId})
       }
     }
 
@@ -88,6 +89,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     try {
       form.fields = form.fields.concat(await getDisplayedFormFields(client, channelType))
     } catch (e: any) {
+      winston.error(`${LOG_PREFIX} Displaying Form Fields: ${e.message}`, {webhookId: request.webhookId})
       return this.loginForm(request, form)
     }
 
@@ -106,6 +108,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
         oauth_url: oauthUrl,
       })
     } else {
+      winston.error(`${LOG_PREFIX} Illegal State: state_url is empty.`, {webhookId: request.webhookId})
       form.error = "Illegal State: state_url is empty."
     }
     return form
@@ -117,6 +120,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     const clientManager = new SlackClientManager(request)
     if (!clientManager.hasAnyClients()) {
       form.error = AUTH_MESSAGE
+      winston.error(`${LOG_PREFIX} ${AUTH_MESSAGE}`, {webhookId: request.webhookId})
       return form
     }
     try {
@@ -135,6 +139,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       })
     } catch (e: any) {
       form.error = displayError[e.message] || e
+      winston.error(`${LOG_PREFIX} ${form.error}`, {webhookId: request.webhookId})
     }
     return form
   }
@@ -148,6 +153,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
 
     const result = resp.filter((r) => !(r instanceof Error))
     if (resp.length > 0 && result.length === 0) {
+      winston.error(`${LOG_PREFIX} Auth test: ${resp[0]}`)
       throw resp[0]
     }
     return result
