@@ -26,6 +26,8 @@ export declare class GoogleAdsActionRequest {
     get isMobileDevice(): boolean;
     get mobileAppId(): any;
     get uploadKeyType(): "MOBILE_ADVERTISING_ID" | "CONTACT_INFO";
+    get consentAdUserData(): any;
+    get consentAdPersonalization(): any;
     get developerToken(): string;
     get doHashingBool(): boolean;
     get isCreate(): boolean;
