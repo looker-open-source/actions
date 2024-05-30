@@ -37,11 +37,14 @@ export class GoogleAdsActionRequest {
     readonly actionInstance: GoogleAdsCustomerMatch,
     readonly log: Logger,
   ) {
-    
+
     const state = safeParseJson(`${hubRequest.params.state_json}`)
 
     if (!state || !state.tokens || !state.tokens.access_token || !state.tokens.refresh_token || !state.redirect) {
-      winston.warn(`${LOG_PREFIX} User state was missing or did not contain oauth tokens & redirect`, {webhookId: hubRequest.webhookId})
+      winston.warn(
+        `${LOG_PREFIX} User state was missing or did not contain oauth tokens & redirect`,
+        {webhookId: hubRequest.webhookId},
+      )
       throw new MissingAuthError("User state was missing or did not contain oauth tokens & redirect")
     }
 
