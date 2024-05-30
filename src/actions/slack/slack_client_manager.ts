@@ -5,6 +5,8 @@ import * as Hub from "../../hub"
 
 export const PLACEHOLDER_WORKSPACE = "any"
 
+const LOG_PREFIX = "[SLACK]"
+
 interface WorkspaceAwareStateJson {
     install_id: string,
     token: string
@@ -40,7 +42,7 @@ export class SlackClientManager {
                 try {
                     json = JSON.parse(stateJson)
                 } catch (e: any) {
-                    winston.warn("Received malform JSON for supported multi tenant version. Proceeding as str.")
+                    winston.warn(`${LOG_PREFIX} Received malform JSON for supported multi tenant version. Proceeding as str.`)
                 }
             }
             if (supportMultiWs && Array.isArray(json)) {

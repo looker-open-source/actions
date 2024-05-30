@@ -6,6 +6,8 @@ import {ActionFormField} from "../../hub"
 
 export const API_LIMIT_SIZE = 1000
 
+const LOG_PREFIX = "[SLACK]"
+
 interface Channel {
     id: string,
     label: string,
@@ -123,6 +125,7 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
 
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
     if (!request.formParams.channel) {
+        winston.error(`${LOG_PREFIX} Missing channel`, {webhookId: request.webhookId})
         throw "Missing channel."
     }
 
@@ -148,13 +151,16 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                     readable.on("end", async () => {
                         const buffer = Buffer.concat(buffs)
                         const comment = request.formParams.initial_comment ? request.formParams.initial_comment : ""
-                        winston.info(`Attempting to send ${buffer.byteLength} bytes to Slack`, {webhookId})
+                        winston.info(
+                            `${LOG_PREFIX} Attempting to send ${buffer.byteLength} bytes to Slack`,
+                            {webhookId},
+                        )
 
                         // Unfortunately UploadV2 does not provide a way to upload files
                         // to user tokens which are common in Looker schedules
                         // (UXXXXXXX)
                         if (isUserToken || forceV1Upload) {
-                            winston.info(`V1 Upload of file`, {webhookId})
+                            winston.info(`${LOG_PREFIX} V1 Upload of file`, {webhookId})
                             await slack.files.upload({
                                 file: buffer,
                                 filename: fileName,
@@ -162,7 +168,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                                 initial_comment: comment,
                             })
                         } else {
-                            winston.info(`V2 Upload of file`, {webhookId})
+                            winston.info(`${LOG_PREFIX} V2 Upload of file`, {webhookId})
                             const res = await slack.files.getUploadURLExternal({
                                 filename: fileName,
                                 length: buffer.byteLength,
@@ -185,6 +191,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                                 }],
                                 channel_id: request.formParams.channel,
                             }).catch((e: any) => {
+                                winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
                                 reject(e)
                             })
                             // Workaround for regression in V2 upload, the initial
@@ -195,6 +202,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                                     channel: request.formParams.channel!,
                                     text: comment,
                                 }).catch((e: any) => {
+                                    winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
                                     reject(e)
                                 })
                             }
@@ -204,14 +212,14 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                 })
             })
         } else {
-            winston.info("No data to upload. Sending message instead", {webhookId})
+            winston.info(`${LOG_PREFIX} No data to upload. Sending message instead`, {webhookId})
             await slack.chat.postMessage({
                 channel: request.formParams.channel,
                 text: request.formParams.initial_comment ? request.formParams.initial_comment : "",
             })
         }
     } catch (e: any) {
-        winston.info(`Slack App Error: ${e.message}`)
+        winston.error(`${LOG_PREFIX} Slack App Error: ${e.message}`)
         response = new Hub.ActionResponse({success: false, message: e.message})
     }
     return response
