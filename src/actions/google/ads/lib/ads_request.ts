@@ -37,11 +37,6 @@ export class GoogleAdsActionRequest {
     readonly actionInstance: GoogleAdsCustomerMatch,
     readonly log: Logger,
   ) {
-
-    if (!hubRequest.params.state_json) {
-      winston.warn(`${LOG_PREFIX} Request is missing state_json.`, {webhookId: hubRequest.webhookId})
-      throw "Request is missing state_json."
-    }
     
     const state = safeParseJson(`${hubRequest.params.state_json}`)
 
