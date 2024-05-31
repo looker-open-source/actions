@@ -15,6 +15,8 @@ interface AdsUserState {
   redirect: string
 }
 
+const LOG_PREFIX = "[G Ads Customer Match]"
+
 export class GoogleAdsActionRequest {
 
   static async fromHub(hubRequest: Hub.ActionRequest, action: GoogleAdsCustomerMatch, logger: Logger) {
@@ -35,10 +37,14 @@ export class GoogleAdsActionRequest {
     readonly actionInstance: GoogleAdsCustomerMatch,
     readonly log: Logger,
   ) {
-    const state = safeParseJson(hubRequest.params.state_json)
+
+    const state = safeParseJson(`${hubRequest.params.state_json}`)
 
     if (!state || !state.tokens || !state.tokens.access_token || !state.tokens.refresh_token || !state.redirect) {
-      winston.warn("User state was missing or did not contain oauth tokens & redirect")
+      winston.warn(
+        `${LOG_PREFIX} User state was missing or did not contain oauth tokens & redirect`,
+        {webhookId: hubRequest.webhookId},
+      )
       throw new MissingAuthError("User state was missing or did not contain oauth tokens & redirect")
     }
 
@@ -50,19 +56,19 @@ export class GoogleAdsActionRequest {
   async checkTokens() {
     // adding 5 minutes to expiry_date check to handle refresh edge case
     if ( this.userState.tokens.expiry_date == null || this.userState.tokens.expiry_date < (Date.now() + 5 * 60000) ) {
-      winston.debug("Tokens appear expired; attempting refresh.")
+      winston.warn(`${LOG_PREFIX} Tokens appear expired; attempting refresh.`)
       this.log("debug", "Tokens appear expired; attempting refresh.")
 
       const data = await this.actionInstance.oauthHelper.refreshAccessToken(this.userState.tokens)
 
       if (!data || !data.access_token || !data.expiry_date) {
-        winston.error("Could not refresh tokens")
+        winston.error(`${LOG_PREFIX} Could not refresh tokens`)
         throw new MissingAuthError("Could not refresh tokens")
       }
 
       this.userState.tokens.access_token = data.access_token
       this.userState.tokens.expiry_date  = data.expiry_date
-      winston.debug("Set new tokens")
+      winston.debug(`${LOG_PREFIX} Set new tokens`)
       this.log("debug", "Set new tokens")
     }
   }
@@ -127,12 +133,12 @@ export class GoogleAdsActionRequest {
   async execute() {
     // 0) Do execution specific validations
     if (!this.loginCid) {
-      winston.warn("Login account id is missing", {webhookId: this.webhookId})
+      winston.warn(`${LOG_PREFIX} Login account id is missing`, {webhookId: this.webhookId})
       throw new MissingRequiredParamsError("Login account id is missing")
     }
     if (!["create", "append"].includes(this.createOrAppend)) {
       winston.warn(
-        "createOrAppend must be either 'create' or 'append' (got '${this.formParams.createOrAppend}')",
+        `${LOG_PREFIX} createOrAppend must be either 'create' or 'append' (got '${this.formParams.createOrAppend}')`,
         {webhookId: this.webhookId},
       )
       throw new MissingRequiredParamsError(
@@ -140,12 +146,12 @@ export class GoogleAdsActionRequest {
       )
     }
     if (this.isMobileDevice && !this.mobileAppId) {
-      winston.warn("Mobile application id is missing", {webhookId: this.webhookId})
+      winston.warn(`${LOG_PREFIX} Mobile application id is missing`, {webhookId: this.webhookId})
       throw new MissingRequiredParamsError("Mobile application id is missing")
     }
     if (!["yes", "no"].includes(this.formParams.doHashing)) {
       winston.warn(
-        "Hashing must be either 'yes' or 'no' (got '${this.formParams.doHashing}')",
+        `${LOG_PREFIX} Hashing must be either 'yes' or 'no' (got '${this.formParams.doHashing}')`,
         {webhookId: this.webhookId},
       )
       throw new MissingRequiredParamsError(`Hashing must be either 'yes' or 'no' (got '${this.formParams.doHashing}')`)
@@ -161,7 +167,7 @@ export class GoogleAdsActionRequest {
     if (this.isCreate) {
       const {newListName, newListDescription} = this.formParams
       if (!newListName) {
-        winston.warn("Name for new list is missing")
+        winston.warn(`${LOG_PREFIX} Name for new list is missing`)
         throw new MissingRequiredParamsError("Name for new list is missing")
       }
       const timestamp = new Date().toISOString().substring(0, 19).replace("T", " ")
@@ -169,18 +175,18 @@ export class GoogleAdsActionRequest {
       await executor.createUserList(newListNameWithTimestamp, newListDescription)
     } else {
       if (!executor.targetUserListRN) {
-        winston.warn("List resource name is missing or could not be created")
+        winston.warn(`${LOG_PREFIX} List resource name is missing or could not be created`)
         throw new MissingRequiredParamsError("List resource name is missing or could not be created")
       }
       // TODO: fetch given list to make sure it is still accessible
-      winston.info("Using existing user list:", executor.targetUserListRN)
+      winston.info(`${LOG_PREFIX} Using existing user list: ${executor.targetUserListRN}`)
       this.log("info", "Using existing user list:", executor.targetUserListRN)
     }
 
     // 2) Create a data job for the user list
     await executor.createDataJob()
     if (!executor.offlineUserDataJobResourceName) {
-      winston.error("Failed sanity check for offlineUserDataJobResourceName", {webhookId: this.webhookId})
+      winston.error(`${LOG_PREFIX} Failed sanity check for offlineUserDataJobResourceName`, {webhookId: this.webhookId})
       throw new MissingRequiredParamsError("Failed sanity check for offlineUserDataJobResourceName.")
     }
 
