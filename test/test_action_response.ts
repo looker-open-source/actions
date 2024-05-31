@@ -11,17 +11,17 @@ describe("ActionResponse validation", () => {
     done()
   })
 
-  it("must populate errors object if provided", () => {
-    const errors: Error = {
+  it("must populate error object if provided", () => {
+    const error: Error = {
       http_code: 500,
       status_code: "TEST_FAIL",
       message: "testing failure message",
       location: "actions/test_action_response",
       documentation_url: "http://test/documentation",
     }
-    const response = new ActionResponse({success: false, errors: [errors]})
+    const response = new ActionResponse({success: false, error})
     const jsonResponse = response.asJson()
-    chai.expect(jsonResponse.looker.errors[0]).to.equal(errors)
+    chai.expect(jsonResponse.looker.error).to.equal(error)
   })
 
   it("must be a valid response if errors object is not provided", () => {
@@ -29,6 +29,6 @@ describe("ActionResponse validation", () => {
     const jsonResponse = response.asJson()
     chai.expect(jsonResponse.looker).to.not.be.null
     chai.expect(jsonResponse.looker.success).to.equal(false)
-    chai.expect(jsonResponse.looker.errors).to.be.undefined
+    chai.expect(jsonResponse.looker.error).to.be.undefined
   })
 })
