@@ -128,7 +128,7 @@ export class FirebaseAction extends Hub.Action {
                             ): Promise<any> {
     return new Promise<void>((resolve, reject) => {
       FirebaseAction.setFirebaseClient()
-      firebaseAdmin.messaging().sendToDevice(deviceId, payload, options)
+      firebaseAdmin.messaging().send({ ...options, data: payload.data, token: deviceId})
         .then( (response: any) => {
           winston.info(`${LOG_PREFIX} notification sent to firebase. ${JSON.stringify(response)}`, { webhookId })
           resolve()
