@@ -70,3 +70,8 @@ export declare const HTTP_ERROR: {
         description: string;
     };
 };
+export interface HttpErrorInfo {
+    status: string;
+    code: number;
+    description: string;
+}

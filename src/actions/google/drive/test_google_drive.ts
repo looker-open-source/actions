@@ -88,6 +88,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({tokens: "code", redirect: "url"}),
       }
+      request.webhookId = "webhookId"
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
           files: {
@@ -98,10 +99,37 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(resp).to.eventually.deep.equal({
         success: false,
         message: undefined,
-        // state: {data: "reset"},
         refreshQuery: false,
         validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 500,
+          location: "ActionContainer",
+          message: "Internal server error. Error while sending data undefined",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("filename missing in request", () => {
+      const request = new TestActionRequest()
+      request.webhookId = "webhookId"
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually
+          .deep.equal({
+        message: "Server cannot process request due to client request error. Error creating filename from request",
+        refreshQuery: false,
+        success: false,
+        error: {
+          http_code: 400,
+          status_code: "BAD_REQUEST",
+          message: "Server cannot process request due to client request error. Error creating filename from request",
+          location: "ActionContainer",
+          documentation_url: "TODO",
+        },
+        webhookId: "webhookId",
+      })
     })
   })
 
@@ -371,3 +399,9 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
   })
 })
+
+class TestActionRequest extends Hub.ActionRequest {
+  suggestedFileName() {
+    return null
+  }
+}
