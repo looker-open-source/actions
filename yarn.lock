@@ -3096,7 +3096,7 @@ glogg@^1.0.0:
   dependencies:
     sparkles "^1.0.0"
 
-google-auth-library@^1.3.1, google-auth-library@^6.0.0, google-auth-library@^7.0.0, google-auth-library@^7.14.0:
+google-auth-library@7.14.1, google-auth-library@^1.3.1, google-auth-library@^6.0.0, google-auth-library@^7.0.0, google-auth-library@^7.14.0:
   version "7.14.1"
   resolved "https://registry.yarnpkg.com/google-auth-library/-/google-auth-library-7.14.1.tgz#e3483034162f24cc71b95c8a55a210008826213c"
   integrity sha512-5Rk7iLNDFhFeBYc3s8l1CqzbEBcdhwR193RlD4vSNFajIcINKI8W8P0JLmBpwymHqqWbX34pJDQu39cSy/6RsA==

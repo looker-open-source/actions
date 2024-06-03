@@ -1,3 +1,4 @@
+import {HttpErrorInfo} from "../error_types/http_errors"
 import {ActionState} from "./action_state"
 
 export interface ValidationError {
@@ -16,6 +17,17 @@ export interface Error {
   location: string
   /* url to help page listing the errors and giving detailed information about each */
   documentation_url: string
+}
+
+export function errorWith(errorInfo: HttpErrorInfo, message: string) {
+  const error: Error = {
+    http_code: errorInfo.code,
+    status_code: errorInfo.status,
+    message: `${errorInfo.description} ${message}`,
+    location: "ActionContainer",
+    documentation_url: "TODO",
+  }
+  return error
 }
 
 export class ActionResponse {

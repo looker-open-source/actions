@@ -71,3 +71,12 @@ export const HTTP_ERROR = {
     description: "Server is acting as a gateway and cannot get a response in time.",
   },
 }
+
+export interface HttpErrorInfo {
+  /* Status name */
+  status: string,
+  /* Http status code to be returned */
+  code: number,
+  /* Generic description of the issue */
+  description: string,
+}

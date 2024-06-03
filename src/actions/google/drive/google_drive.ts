@@ -5,7 +5,9 @@ import {Credentials, OAuth2Client} from "google-auth-library"
 import { drive_v3, google } from "googleapis"
 
 import * as winston from "winston"
+import { HTTP_ERROR } from "../../../error_types/http_errors"
 import * as Hub from "../../../hub"
+import { Error, errorWith } from "../../../hub/action_response"
 import Drive = drive_v3.Drive
 
 export class GoogleDriveAction extends Hub.OAuthAction {
@@ -51,18 +53,33 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
       const filename = request.formParams.filename || request.suggestedFilename()
       if (!filename) {
+        const error: Error = {
+          http_code: HTTP_ERROR.bad_request.code,
+          status_code: HTTP_ERROR.bad_request.status,
+          message: `${HTTP_ERROR.bad_request.description} Error creating filename from request`,
+          location: "ActionContainer",
+          documentation_url: "TODO",
+        }
         resp.success = false
-        resp.message = "Error creating filename"
-        winston.error("Error creating filename")
+        resp.error = error
+        resp.message = error.message
+        resp.webhookId = request.webhookId
+        winston.error(`${error.message}`, {error, webhookId: request.webhookId})
         return resp
       }
       try {
         await this.sendData(filename, request, drive)
         resp.success = true
       } catch (e: any) {
+        const error: Error = errorWith(
+            HTTP_ERROR.internal,
+            "Error while sending data " + e.message,
+        )
         resp.success = false
+        resp.error = error
         resp.message = e.message
-        winston.error("Error while sending data " + e.message)
+        resp.webhookId = request.webhookId
+        winston.error(`${error.message}`, {error, webhookId: request.webhookId})
       }
     } else {
       resp.success = false
