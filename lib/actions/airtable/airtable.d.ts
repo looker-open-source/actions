@@ -21,4 +21,5 @@ export declare class AirtableAction extends Hub.OAuthAction {
     oauthUrl(redirectUri: string, encryptedState: string): Promise<string>;
     private airtableClientFromRequest;
     private refreshTokens;
+    private executeAirtable;
 }

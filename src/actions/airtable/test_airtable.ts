@@ -15,6 +15,7 @@ function expectWebhookMatch(
   base: any,
   table: any,
   match: any,
+  resp: any,
 ) {
   const createSpy = sinon.spy((params: any, callback: (err: any, data: any) => void) => {
     callback(null, `successfully sent ${params}`)
@@ -28,11 +29,12 @@ function expectWebhookMatch(
     }))
 
   const execute = action.execute(request)
-  return chai.expect(execute).to.be.fulfilled.then(() => {
+  return chai.expect(execute).to.be.fulfilled.then((result) => {
+    stubPost.restore()
     chai.expect(baseSpy).to.have.been.calledWith(base)
     chai.expect(tableSpy).to.have.been.calledWith(table)
     chai.expect(createSpy).to.have.been.calledWith(match)
-    stubPost.restore()
+    chai.expect(result).to.deep.equal(resp)
   })
 }
 
@@ -108,6 +110,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("sends right body", () => {
       const request = new Hub.ActionRequest()
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"lol\",\"access_token\":\"test\"}}"
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -123,11 +126,21 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectWebhookMatch(request,
         request.formParams.base,
         request.formParams.table,
-        {"coolview.coolfield": "funvalue"})
+        {"coolview.coolfield": "funvalue"},
+          {
+            refreshQuery: false,
+            state: {
+              data: "{\"tokens\":{\"refresh_token\":\"lol\",\"access_token\":\"test\"}}",
+            },
+            success: true,
+            validationErrors: [],
+          },
+      )
     })
 
     it("sends right body with label_short if present", () => {
       const request = new Hub.ActionRequest()
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"lol\",\"access_token\":\"test\"}}"
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -146,7 +159,16 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectWebhookMatch(request,
         request.formParams.base,
         request.formParams.table,
-        {"cool field": "funvalue"})
+        {"cool field": "funvalue"},
+          {
+            refreshQuery: false,
+            state: {
+              data: "{\"tokens\":{\"refresh_token\":\"lol\",\"access_token\":\"test\"}}",
+            },
+            success: true,
+            validationErrors: [],
+          },
+      )
     })
 
     it("returns failure on airtable create error", () => {
@@ -196,6 +218,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         base: "mybase",
         table: "mytable",
       }
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"lol\",\"access_token\":\"test\"}}"
       request.attachment = {dataJSON: {
           fields: {
             dimensions: [
@@ -207,7 +230,16 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectWebhookMatch(request,
           request.formParams.base,
           request.formParams.table,
-          {"coolview.coolfield": "funvalue"})
+          {"coolview.coolfield": "funvalue"},
+          {
+            refreshQuery: false,
+            state: {
+              data: "{\"tokens\":{\"refresh_token\":\"lol\",\"access_token\":\"test\"}}",
+            },
+            success: true,
+            validationErrors: [],
+          },
+      )
     })
 
   })
