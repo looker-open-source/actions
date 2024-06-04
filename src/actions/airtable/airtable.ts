@@ -55,8 +55,13 @@ export class AirtableAction extends Hub.OAuthAction {
       let accessToken
       if (request.params.state_json) {
         const stateJson = JSON.parse(request.params.state_json)
-        accessToken = stateJson.data.access_token
-        state.data = request.params.state_json
+        accessToken = stateJson.tokens.access_token
+        state.data = JSON.stringify({
+          tokens: {
+            refresh_token: stateJson.tokens.refresh_token,
+            access_token: accessToken,
+          },
+        })
       }
 
       try {
