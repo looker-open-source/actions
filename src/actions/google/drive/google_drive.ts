@@ -56,14 +56,19 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         await this.sendData(filename, request, drive)
         resp.success = true
       } catch (e: any) {
-        const error: Error = errorWith(
+        let error: Error = errorWith(
             HTTP_ERROR.internal,
             "Error while sending data " + e.message,
         )
+
+        if (e.code && e.reason) {
+          error = {...error, http_code: e.code, message: `${HTTP_ERROR.internal.description} ${e.reason}`}
+        }
+
         resp.success = false
-        resp.error = error
         resp.message = e.message
         resp.webhookId = request.webhookId
+        resp.error = error
         winston.error(`${error.message}`, {error, webhookId: request.webhookId})
       }
     } else {

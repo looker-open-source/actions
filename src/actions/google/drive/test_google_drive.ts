@@ -112,6 +112,43 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
+    it("sets state to reset if error in create contains code and reason", (done) => {
+      const request = new Hub.ActionRequest()
+      const dataBuffer = Buffer.from("Hello")
+      request.type = Hub.ActionType.Query
+      request.attachment = {dataBuffer, fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, folder: stubFolder}
+      request.params = {
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({tokens: "code", redirect: "url"}),
+      }
+      request.webhookId = "webhookId"
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              create: async () => Promise.reject({
+                code: 1234,
+                reason: "testReason",
+              }),
+            },
+          })
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually.deep.equal({
+        success: false,
+        message: undefined,
+        refreshQuery: false,
+        validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 1234,
+          location: "ActionContainer",
+          message: "Internal server error. testReason",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
     it("filename missing in request", () => {
       const request = new TestActionRequest()
       request.webhookId = "webhookId"

@@ -1,5 +1,5 @@
+import { HttpErrorInfo } from "../error_types/http_errors";
 import { ActionState } from "./action_state";
-import { HttpErrorInfo } from '../error_types/http_errors';
 export interface ValidationError {
     field: string;
     message: string;
