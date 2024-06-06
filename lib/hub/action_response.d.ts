@@ -1,3 +1,4 @@
+import { HttpErrorInfo } from "../error_types/http_errors";
 import { ActionState } from "./action_state";
 export interface ValidationError {
     field: string;
@@ -10,6 +11,7 @@ export interface Error {
     location: string;
     documentation_url: string;
 }
+export declare function errorWith(errorInfo: HttpErrorInfo, message: string): Error;
 export declare class ActionResponse {
     message?: string;
     refreshQuery: boolean;
