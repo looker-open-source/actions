@@ -71,15 +71,7 @@ export class AirtableAction extends Hub.OAuthAction {
       const table = base(request.formParams.table)
 
       await Promise.all(records.map(async (record: any) => {
-        return new Promise<void>((resolve, reject) => {
-          table.create(record, (err: { message: string } | null, rec: any) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(rec)
-            }
-          })
-        })
+        return table.create(record, {typecast: true})
       }))
     } catch (e: any) {
       response.success = false
