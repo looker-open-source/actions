@@ -76,8 +76,8 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             "Error while sending data " + e.message,
         )
 
-        if (e.code && e.reason) {
-          error = {...error, http_code: e.code, message: `${HTTP_ERROR.internal.description} ${e.reason}`}
+        if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
+          error = {...error, http_code: e.code, message: `${HTTP_ERROR.internal.description} ${e.errors[0].message}`}
         }
 
         resp.success = false

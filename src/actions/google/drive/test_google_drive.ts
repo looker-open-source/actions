@@ -128,7 +128,11 @@ describe(`${action.constructor.name} unit tests`, () => {
             files: {
               create: async () => Promise.reject({
                 code: 1234,
-                reason: "testReason",
+                errors: [
+                  {
+                    message: "testReason",
+                  },
+                ],
               }),
             },
           })
