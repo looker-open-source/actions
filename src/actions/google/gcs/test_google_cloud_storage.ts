@@ -96,6 +96,35 @@ describe(`${action.constructor.name} unit tests`, () => {
           "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
     })
 
+    it("errors if there is an upload error", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return chai.expect(action.validateAndExecute(request)).to.eventually
+        .deep.equal({
+          refreshQuery: false,
+          success: false,
+          error: {
+            documentation_url: "TODO",
+            http_code: 500,
+            location: "GCS",
+            message: "Internal server error. [Google Cloud Storage]",
+            status_code: "INTERNAL",
+          },
+          message: "Internal server error. [Google Cloud Storage]",
+          validationErrors: [],
+          webhookId: undefined,
+        })
+    })
+
     it("sends right body to filename and bucket", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Dashboard

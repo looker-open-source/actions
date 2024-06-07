@@ -1,5 +1,6 @@
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
+import {formatErrorCode} from "../../../error_types/utils"
 import * as Hub from "../../../hub"
 import { Error } from "../../../hub/action_response"
 
@@ -112,7 +113,13 @@ export class GoogleCloudStorageAction extends Hub.Action {
       }
 
       if (e.code) {
-        error = {...error, status_code: e.code, message: `${HTTP_ERROR.internal.description} ${LOG_PREFIX} ${e.reason}`}
+        const formattedError = formatErrorCode(e.code)
+        error = {
+          ...error,
+          http_code: formattedError.code,
+          status_code: formattedError.status,
+          message: `${formattedError.description} ${LOG_PREFIX} ${e.message}`,
+        }
       }
       response.success = false
       response.error = error
