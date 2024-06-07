@@ -4,7 +4,7 @@ import * as gaxios from "gaxios"
 import * as sinon from "sinon"
 
 import * as Hub from "../../hub"
-import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
+import {displayError, getDisplayedFormFields, handleExecute, setErrorResponse} from "./utils"
 
 const stubFileName = "stubSuggestedFilename"
 
@@ -294,8 +294,20 @@ describe(`slack/utils unit tests`, () => {
                 dataBuffer: Buffer.from("1,2,3,4", "utf8"),
                 fileExtension: "csv",
             }
-            chai.expect(handleExecute(request, slackClient)).to.eventually
-                .be.rejectedWith("Missing channel.").and.notify(done)
+            chai.expect(handleExecute(request, slackClient)).to.eventually.deep.equal({
+                refreshQuery: false,
+                success: false,
+                error: {
+                  documentation_url: "TODO",
+                  http_code: 400,
+                  location: "ActionContainer",
+                  message: "Server cannot process request due to client request error. [SLACK] Missing channel",
+                  status_code: "BAD_REQUEST",
+                },
+                message: "Server cannot process request due to client request error. [SLACK] Missing channel",
+                validationErrors: [],
+                webhookId: undefined,
+              }).and.notify(done)
         })
 
         it("sends to right body, channel and filename if specified", () => {
@@ -448,11 +460,19 @@ describe(`slack/utils unit tests`, () => {
             const stubFinalize = sinon.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeFailSpy)
 
             chai.expect(handleExecute(request, slackClient)).to.eventually.deep.equal({
-                success: false,
-                message: "Could not find channel mychannel",
                 refreshQuery: false,
+                success: false,
+                error: {
+                  documentation_url: "TODO",
+                  http_code: 500,
+                  location: "slack",
+                  message: "Internal server error.",
+                  status_code: "INTERNAL",
+                },
+                message: "Internal server error.",
                 validationErrors: [],
-            }).then(() => {
+                webhookId: undefined,
+              }).then(() => {
                 stubClientURL.restore()
                 stubUpload.restore()
                 stubFinalize.restore()
@@ -460,6 +480,65 @@ describe(`slack/utils unit tests`, () => {
             })
         })
 
+    })
+
+    describe("setErrorResponse", () => {
+        it("returns defualt error when code doesn't match", () => {
+            chai.expect(setErrorResponse({error: "error"})).to.deep.equal({
+                documentation_url: "TODO",
+                http_code: 500,
+                location: "slack",
+                message: "Internal server error.",
+                status_code: "INTERNAL",
+            })
+        })
+        it("returns platformError correctly", () => {
+            chai.expect(setErrorResponse({code: "slack_webapi_platform_error", data: {error: "test"}})).to.deep.equal({
+                documentation_url: "TODO",
+                http_code: 500,
+                location: "slack",
+                message: "Slack errored with WebPlatformError test",
+                status_code: "INTERNAL",
+            })
+        })
+        it("returns requestError correctly", () => {
+            chai.expect(setErrorResponse({code: "slack_webapi_request_error", original: "test"})).to.deep.equal({
+                documentation_url: "TODO",
+                http_code: 400,
+                location: "slack",
+                message: "Slack errored with RequestError test",
+                status_code: "BAD_REQUEST",
+            })
+        })
+        it("returns httpError correctly", () => {
+            chai.expect(setErrorResponse(
+                {code: "slack_webapi_http_error", statusCode: 400, statusMessage: "test" })).to.deep.equal({
+                    documentation_url: "TODO",
+                    http_code: 400,
+                    location: "slack",
+                    message: "Slack errored with HTTPError test",
+                    status_code: "slack_webapi_http_error",
+                })
+        })
+        it("returns rateLimitError correctly", () => {
+            chai.expect(setErrorResponse({code: "slack_webapi_rate_limited_error"})).to.deep.equal({
+                documentation_url: "TODO",
+                http_code: 429,
+                location: "slack",
+                message: "Slack errored with RateLimitedError",
+                status_code: "RESOURCE_EXHAUSTED",
+            })
+        })
+        it("returns invalidArgumentError correctly", () => {
+            chai.expect(setErrorResponse(
+                {code: "slack_webapi_file_upload_invalid_args_error", data: {error: "test"}})).to.deep.equal({
+                    documentation_url: "TODO",
+                    http_code: 400,
+                    location: "slack",
+                    message: "Slack errored with InvalidArgumentsError test",
+                    status_code: "INVALID_ARGUMENT",
+                })
+        })
     })
 
     describe("displayError", () => {

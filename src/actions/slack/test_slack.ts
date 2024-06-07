@@ -335,9 +335,20 @@ describe(`${action.constructor.name} tests`, () => {
 
       const form = action.execute(request)
 
-      return chai.expect(form).to.eventually.deep.equal(
-          new Hub.ActionResponse({success: false, message: "You must connect to a Slack workspace first."}),
-      )
+      return chai.expect(form).to.eventually.deep.equal({
+        refreshQuery: false,
+        success: false,
+        error: {
+          documentation_url: "TODO",
+          http_code: 400,
+          location: "ActionContainer",
+          message: "Server cannot process request due to client request error. [SLACK] Missing client",
+          status_code: "BAD_REQUEST",
+        },
+        message: "Server cannot process request due to client request error. [SLACK] Missing client",
+        validationErrors: [],
+        webhookId: undefined,
+      })
     })
 
     it("returns fields correctly from getDisplayedFormFields", () => {
