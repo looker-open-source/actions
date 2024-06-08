@@ -394,6 +394,47 @@ describe(`${action.constructor.name} unit tests`, () => {
           done()
         })
       })
+
+      it("responds with appropriate data when drive client errors", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+            .resolves({
+              files: {
+                create: async () => Promise.reject({
+                  code: 1234,
+                  errors: [
+                    {
+                      message: "testException",
+                    },
+                  ],
+                }),
+              },
+            })
+
+        const csvFile = "a,b,c\n1,2,3"
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "no", filename: "random_sheet"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        request.webhookId = "webhookId"
+        const resp = action.validateAndExecute(request)
+        chai.expect(resp).to.eventually.deep.equal({
+          success: false,
+          message: undefined,
+          refreshQuery: false,
+          validationErrors: [],
+          error: {
+            documentation_url: "TODO",
+            http_code: 1234,
+            location: "ActionContainer",
+            message: "Internal server error. testException",
+            status_code: "INTERNAL",
+          },
+          webhookId: "webhookId",
+        }).and.notify(stubDriveClient.restore).and.notify(done)
+      })
     })
 
     describe("sanitizeFilename", () => {
@@ -505,6 +546,26 @@ describe(`${action.constructor.name} unit tests`, () => {
           done()
         })
       })
+
+      it("filename missing in request", () => {
+        const request = new TestActionRequest()
+        request.webhookId = "webhookId"
+        const resp = action.validateAndExecute(request)
+        chai.expect(resp).to.eventually
+            .deep.equal({
+          message: "Server cannot process request due to client request error. Error creating filename from request",
+          refreshQuery: false,
+          success: false,
+          error: {
+            http_code: 400,
+            status_code: "BAD_REQUEST",
+            message: "Server cannot process request due to client request error. Error creating filename from request",
+            location: "ActionContainer",
+            documentation_url: "TODO",
+          },
+          webhookId: "webhookId",
+        })
+      })
     })
 
     describe("form", () => {
@@ -613,3 +674,9 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
   })
 })
+
+class TestActionRequest extends Hub.ActionRequest {
+  suggestedFileName() {
+    return null
+  }
+}
