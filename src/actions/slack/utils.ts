@@ -4,7 +4,7 @@ import * as winston from "winston"
 import { HTTP_ERROR } from "../../error_types/http_errors"
 import * as Hub from "../../hub"
 import {ActionFormField} from "../../hub"
-import { Error} from "../../hub/action_response"
+import { Error, errorWith } from "../../hub/action_response"
 
 export const API_LIMIT_SIZE = 1000
 
@@ -62,37 +62,6 @@ const usableDMs = async (slack: WebClient): Promise<Channel[]> => {
         return !u.is_restricted && !u.is_ultra_restricted && !u.is_bot && !u.deleted
     })
     return users.map((user: any) => ({id: user.id, label: `@${user.name}`}))
-}
-
-export const setErrorResponse = (error: any) => {
-    const errorMessage: Error = {
-        http_code: HTTP_ERROR.internal.code,
-        status_code:  HTTP_ERROR.internal.status,
-        location: "slack",
-        message: HTTP_ERROR.internal.description,
-        documentation_url: "TODO",
-    }
-    if (error.code === ErrorCode.PlatformError) {
-        errorMessage.http_code = HTTP_ERROR.internal.code
-        errorMessage.message = `Slack errored with WebPlatformError ${error.data.error}`
-    } else if (error.code === ErrorCode.RequestError) {
-        errorMessage.http_code = HTTP_ERROR.bad_request.code
-        errorMessage.status_code = HTTP_ERROR.bad_request.status
-        errorMessage.message = `Slack errored with RequestError ${error.original}`
-    } else if (error.code === ErrorCode.HTTPError) {
-        errorMessage.http_code = error.statusCode
-        errorMessage.status_code = error.code
-        errorMessage.message = `Slack errored with HTTPError ${error.statusMessage}`
-    } else if (error.code === ErrorCode.RateLimitedError) {
-        errorMessage.http_code = HTTP_ERROR.resource_exhausted.code
-        errorMessage.status_code = HTTP_ERROR.resource_exhausted.status
-        errorMessage.message = `Slack errored with RateLimitedError`
-    } else if (error.code === ErrorCode.FileUploadInvalidArgumentsError) {
-        errorMessage.http_code = HTTP_ERROR.invalid_argument.code
-        errorMessage.status_code = HTTP_ERROR.invalid_argument.status
-        errorMessage.message = `Slack errored with InvalidArgumentsError ${error.data.error}`
-    }
-    return errorMessage
 }
 
 export const getDisplayedFormFields = async (slack: WebClient, channelType: string): Promise<ActionFormField[]> => {
@@ -264,13 +233,45 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
             })
         }
     } catch (e: any) {
-        const err = setErrorResponse(e)
-        response.error = err
+        let error: Error = errorWith(
+            HTTP_ERROR.internal,
+            `${LOG_PREFIX} Error while sending data ${e.message}`,
+        )
+        if (e.code) {
+            if (e.code === ErrorCode.PlatformError) {
+                error = errorWith(
+                    HTTP_ERROR.internal,
+                    `${LOG_PREFIX} errored with WebPlatformError ${e.data.error}`,
+                )
+            } else if (e.code === ErrorCode.RequestError) {
+                error = errorWith(
+                    HTTP_ERROR.bad_request,
+                    `${LOG_PREFIX} errored with RequestError ${e.original}`,
+                )
+            } else if (e.code === ErrorCode.HTTPError) {
+                error = errorWith(
+                    {status: e.status, code: e.code, description: "HTTP request error"},
+                    `${LOG_PREFIX} errored with HTTPError ${e.statusMessage}`,
+                )
+            } else if (e.code === ErrorCode.RateLimitedError) {
+                error = errorWith(
+                    HTTP_ERROR.resource_exhausted,
+                    `${LOG_PREFIX} errored with RateLimitedError`,
+                )
+            } else if (e.code === ErrorCode.FileUploadInvalidArgumentsError) {
+                error = errorWith(
+                    HTTP_ERROR.invalid_argument,
+                    `${LOG_PREFIX} errored with InvalidArgumentsError ${e.data.error}`,
+                )
+            }
+        }
+
+        response.error = error
         response.webhookId = request.webhookId
         response.success = false
-        response.message = err.message
+        response.message = error.message
 
-        winston.error(`${response.message}`, {err, webhookId: request.webhookId})
+        winston.error(`${response.message}`, {error, webhookId: request.webhookId})
     }
     return response
 }

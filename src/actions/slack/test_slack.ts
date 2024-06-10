@@ -332,6 +332,7 @@ describe(`${action.constructor.name} tests`, () => {
 
     it("returns error response if no client was selected", () => {
       const request = new Hub.ActionRequest()
+      request.webhookId = "webhookId"
 
       const form = action.execute(request)
 
@@ -347,7 +348,7 @@ describe(`${action.constructor.name} tests`, () => {
         },
         message: "Server cannot process request due to client request error. [SLACK] Missing client",
         validationErrors: [],
-        webhookId: undefined,
+        webhookId: "webhookId",
       })
     })
 
