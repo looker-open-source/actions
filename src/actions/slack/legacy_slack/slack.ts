@@ -1,7 +1,7 @@
 import * as Hub from "../../../hub"
 
 import {WebClient} from "@slack/web-api"
-import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
+import {displayError, getDisplayedFormFields, handleExecute } from "../utils"
 
 export class SlackAttachmentAction extends Hub.Action {
 

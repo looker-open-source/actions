@@ -3,7 +3,7 @@ import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../error_types/http_errors"
 import * as Hub from "../../hub"
-import { Error} from "../../hub/action_response"
+import { Error } from "../../hub/action_response"
 import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
 import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
 
