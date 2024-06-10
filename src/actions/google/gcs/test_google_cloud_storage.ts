@@ -115,11 +115,11 @@ describe(`${action.constructor.name} unit tests`, () => {
           error: {
             documentation_url: "TODO",
             http_code: 500,
-            location: "GCS",
-            message: "Internal server error. [Google Cloud Storage]",
+            location: "ActionContainer",
+            message: "Internal server error. [Google Cloud Storage] Error while sending data Could not authenticate request\nerror:1E08010C:DECODER routines::unsupported",
             status_code: "INTERNAL",
           },
-          message: "Internal server error. [Google Cloud Storage]",
+          message: "Internal server error. [Google Cloud Storage] Error while sending data Could not authenticate request\nerror:1E08010C:DECODER routines::unsupported",
           validationErrors: [],
           webhookId: undefined,
         })

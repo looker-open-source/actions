@@ -1,8 +1,8 @@
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
-import {formatErrorCode} from "../../../error_types/utils"
+import {getHttpErrorType} from "../../../error_types/utils"
 import * as Hub from "../../../hub"
-import { Error } from "../../../hub/action_response"
+import { Error, errorWith } from "../../../hub/action_response"
 
 const storage = require("@google-cloud/storage")
 
@@ -104,29 +104,25 @@ export class GoogleCloudStorageAction extends Hub.Action {
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e: any) {
-      let error: Error = {
-        http_code: HTTP_ERROR.internal.code,
-        status_code: HTTP_ERROR.internal.status,
-        message: `${HTTP_ERROR.internal.description} ${LOG_PREFIX}`,
-        location: "GCS",
-        documentation_url: "TODO",
-      }
+      let error: Error = errorWith(
+        HTTP_ERROR.internal,
+        `${LOG_PREFIX} Error while sending data ${e.message}`,
+      )
 
       if (e.code) {
-        const formattedError = formatErrorCode(e.code)
-        error = {
-          ...error,
-          http_code: formattedError.code,
-          status_code: formattedError.status,
-          message: `${formattedError.description} ${LOG_PREFIX} ${e.message}`,
-        }
+        const errorType = getHttpErrorType(e.code)
+        error = errorWith(
+          errorType,
+          `${errorType.description} ${LOG_PREFIX} ${e.message}`,
+        )
       }
+
       response.success = false
       response.error = error
       response.message = error.message
       response.webhookId = request.webhookId
 
-      winston.error(`${error.message}`, {error, webhookId: request.webhookId})
+      winston.error(`${LOG_PREFIX} ${error.message}`, {error, webhookId: request.webhookId})
       return response
     }
 
