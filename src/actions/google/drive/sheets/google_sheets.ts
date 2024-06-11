@@ -14,6 +14,7 @@ const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process
 const MAX_ROW_BUFFER_INCREASE = 6000
 const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_RETRY_COUNT = 5
+const LOG_PREFIX = "[GOOGLE_SHEETS]"
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -44,7 +45,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 const error: Hub.Error = {
                     http_code: HTTP_ERROR.bad_request.code,
                     status_code: HTTP_ERROR.bad_request.status,
-                    message: `${HTTP_ERROR.bad_request.description} Error creating file name`,
+                    message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} Error creating file name`,
                     location: "ActionContainer",
                     documentation_url: "TODO",
                 }
@@ -70,7 +71,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 this.sanitizeGaxiosError(e)
                 let error: Hub.Error = Hub.errorWith(
                     HTTP_ERROR.internal,
-                    `Failed execute for Google Sheets. Error: ${e.toString()}`,
+                    ` ${LOG_PREFIX} Failed execute. Error: ${e.toString()}`,
                 )
 
                 if (e.code && e.errors && e.errors[0] && e.errors[0].message) {

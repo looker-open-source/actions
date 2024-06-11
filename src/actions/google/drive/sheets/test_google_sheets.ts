@@ -435,6 +435,47 @@ describe(`${action.constructor.name} unit tests`, () => {
           webhookId: "webhookId",
         }).and.notify(stubDriveClient.restore).and.notify(done)
       })
+
+      it("filename missing in request", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+            .resolves({
+              files: {
+                create: async () => Promise.reject({
+                  code: 1234,
+                  errors: [
+                    {
+                      message: "testException",
+                    },
+                  ],
+                }),
+              },
+            })
+
+        const request = new TestActionRequest()
+        request.webhookId = "webhookId"
+        request.type = Hub.ActionType.Query
+        request.attachment = {dataBuffer: Buffer.from("data"), fileExtension: "csv"}
+        request.params = {
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        const resp = action.validateAndExecute(request)
+        chai.expect(resp).to.eventually
+            .deep.equal({
+          message:
+              "Server cannot process request due to client request error. [GOOGLE_SHEETS] Error creating file name",
+          refreshQuery: false,
+          success: false,
+          error: {
+            http_code: 400,
+            status_code: "BAD_REQUEST",
+            message: "Server cannot process request due to client request error. [GOOGLE_SHEETS] Error creating file name",
+            location: "ActionContainer",
+            documentation_url: "TODO",
+          },
+          validationErrors: [],
+          webhookId: "webhookId",
+        }).and.notify(stubDriveClient.restore).and.notify(done)
+      })
     })
 
     describe("sanitizeFilename", () => {
@@ -544,26 +585,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           batchUpdateStub.restore()
           delayStub.restore()
           done()
-        })
-      })
-
-      it("filename missing in request", () => {
-        const request = new TestActionRequest()
-        request.webhookId = "webhookId"
-        const resp = action.validateAndExecute(request)
-        chai.expect(resp).to.eventually
-            .deep.equal({
-          message: "Server cannot process request due to client request error. Error creating filename from request",
-          refreshQuery: false,
-          success: false,
-          error: {
-            http_code: 400,
-            status_code: "BAD_REQUEST",
-            message: "Server cannot process request due to client request error. Error creating filename from request",
-            location: "ActionContainer",
-            documentation_url: "TODO",
-          },
-          webhookId: "webhookId",
         })
       })
     })
@@ -676,7 +697,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 })
 
 class TestActionRequest extends Hub.ActionRequest {
-  suggestedFileName() {
+  suggestedFilename() {
     return null
   }
 }
