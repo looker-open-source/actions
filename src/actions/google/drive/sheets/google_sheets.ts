@@ -44,7 +44,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             if (!filename) {
                 const error: Hub.Error = Hub.errorWith(
                     HTTP_ERROR.bad_request,
-                    `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} Error creating file name`,
+                    `${LOG_PREFIX} Error creating file name`,
                 )
                 resp.error = error
                 resp.success = false
