@@ -42,13 +42,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
             let filename = request.formParams.filename || request.suggestedFilename()
             if (!filename) {
-                const error: Hub.Error = {
-                    http_code: HTTP_ERROR.bad_request.code,
-                    status_code: HTTP_ERROR.bad_request.status,
-                    message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} Error creating file name`,
-                    location: "ActionContainer",
-                    documentation_url: "TODO",
-                }
+                const error: Hub.Error = Hub.errorWith(
+                    HTTP_ERROR.bad_request,
+                    `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} Error creating file name`,
+                )
                 resp.error = error
                 resp.success = false
                 resp.message = error.message
@@ -75,7 +72,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 )
 
                 if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
-                    error = {...error, http_code: e.code, message: `${HTTP_ERROR.internal.description} ${e.errors[0].message}`}
+                    error = {...error, http_code: e.code, message: `${LOG_PREFIX} ${HTTP_ERROR.internal.description} ${e.errors[0].message}`}
                 }
 
                 resp.success = false
