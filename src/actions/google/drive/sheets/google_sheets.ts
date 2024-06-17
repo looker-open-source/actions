@@ -1,3 +1,4 @@
+import {HTTP_ERROR} from "../../../../error_types/http_errors"
 import * as Hub from "../../../../hub"
 
 import * as parse from "csv-parse"
@@ -13,6 +14,7 @@ const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process
 const MAX_ROW_BUFFER_INCREASE = 6000
 const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_RETRY_COUNT = 5
+const LOG_PREFIX = "[GOOGLE_SHEETS]"
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -40,9 +42,15 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
             let filename = request.formParams.filename || request.suggestedFilename()
             if (!filename) {
+                const error: Hub.Error = Hub.errorWith(
+                    HTTP_ERROR.bad_request,
+                    `${LOG_PREFIX} Error creating file name`,
+                )
+                resp.error = error
                 resp.success = false
-                resp.message = "Error creating filename"
-                winston.error("Error creating file name")
+                resp.message = error.message
+                resp.webhookId = request.webhookId
+                winston.error(`${error.message}`, {error, webhookId: request.webhookId})
                 return resp
             } else if (!filename.match(/\.csv$/)) {
                 filename = filename.concat(".csv")
@@ -58,10 +66,20 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 }
             } catch (e: any) {
                 this.sanitizeGaxiosError(e)
-                winston.error(`Failed execute for Google Sheets. Error: ${e.toString()}`,
-                    {webhookId: request.webhookId})
+                let error: Hub.Error = Hub.errorWith(
+                    HTTP_ERROR.internal,
+                    ` ${LOG_PREFIX} Failed execute. Error: ${e.toString()}`,
+                )
+
+                if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
+                    error = {...error, http_code: e.code, message: `${LOG_PREFIX} ${HTTP_ERROR.internal.description} ${e.errors[0].message}`}
+                }
+
                 resp.success = false
-                resp.message = e.toString()
+                resp.message = e.message
+                resp.webhookId = request.webhookId
+                resp.error = error
+                winston.error(`${error.message}`, {error, webhookId: request.webhookId})
             }
         } else {
             resp.success = false
