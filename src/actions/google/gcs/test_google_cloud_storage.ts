@@ -96,7 +96,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
     })
 
-    it("errors if there is an upload error", () => {
+    it("errors if there is an upload error", (done) => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Dashboard
       request.params = {
@@ -108,21 +108,25 @@ describe(`${action.constructor.name} unit tests`, () => {
         bucket: "mybucket",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-      return chai.expect(action.validateAndExecute(request)).to.eventually
-        .deep.equal({
-          refreshQuery: false,
-          success: false,
-          error: {
-            documentation_url: "TODO",
-            http_code: 500,
-            location: "ActionContainer",
-            message: "Internal server error. [Google Cloud Storage] Error while sending data Could not authenticate request\nerror:1E08010C:DECODER routines::unsupported",
-            status_code: "INTERNAL",
-          },
-          message: "Internal server error. [Google Cloud Storage] Error while sending data Could not authenticate request\nerror:1E08010C:DECODER routines::unsupported",
-          validationErrors: [],
-          webhookId: undefined,
-        })
+      request.webhookId = "webhookId"
+      const createWriteStreamSpy = sinon.spy(async () => Promise.reject(new Error("testReason")))
+      const stubRequest = sinon.stub(request, "stream").callsFake(createWriteStreamSpy)
+
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually.deep.equal({
+        success: false,
+        message: "Internal server error. [Google Cloud Storage] Error while sending data testReason",
+        refreshQuery: false,
+        validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 500,
+          location: "ActionContainer",
+          message: "Internal server error. [Google Cloud Storage] Error while sending data testReason",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
+      }).and.notify(stubRequest.restore).and.notify(done)
     })
 
     it("sends right body to filename and bucket", () => {

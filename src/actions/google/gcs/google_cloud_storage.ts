@@ -44,13 +44,10 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const response = new Hub.ActionResponse()
 
     if (!request.formParams.bucket) {
-      const error: Error = {
-        http_code: HTTP_ERROR.bad_request.code,
-        status_code: HTTP_ERROR.bad_request.status,
-        message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} needs a GCS bucket specified.`,
-        location: "ActionContainer",
-        documentation_url: "TODO",
-      }
+      const error: Error = errorWith(
+        HTTP_ERROR.bad_request,
+        `${LOG_PREFIX} needs a GCS bucket specified.`,
+      )
       response.success = false
       response.error = error
       response.message = error.message
@@ -73,13 +70,10 @@ export class GoogleCloudStorageAction extends Hub.Action {
     }
 
     if (!filename) {
-      const error: Error = {
-        http_code: HTTP_ERROR.bad_request.code,
-        status_code: HTTP_ERROR.bad_request.status,
-        message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} request did not contain filename, or invalid filename was provided.`,
-        location: "ActionContainer",
-        documentation_url: "TODO",
-      }
+      const error: Error = errorWith(
+        HTTP_ERROR.bad_request,
+        `${LOG_PREFIX} request did not contain filename, or invalid filename was provided.`,
+      )
       response.success = false
       response.error = error
       response.message = error.message
@@ -113,7 +107,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
         const errorType = getHttpErrorType(e.code)
         error = errorWith(
           errorType,
-          `${errorType.description} ${LOG_PREFIX} ${e.message}`,
+          `${LOG_PREFIX} ${e.message}`,
         )
       }
 

@@ -3,9 +3,7 @@ import * as winston from "winston"
 import * as Hub from "../../hub"
 
 export function registerDebugAction() {
-  if (process.env.ACTION_HUB_DEBUG_ENDPOINT) {
-    Hub.addAction(new DebugAction())
-  }
+  Hub.addAction(new DebugAction())
 }
 
 export class DebugAction extends Hub.Action {
@@ -14,7 +12,7 @@ export class DebugAction extends Hub.Action {
   label = "Debug"
   description = "Sends data to a sample website and optionally sleeps."
   supportedActionTypes = [Hub.ActionType.Cell, Hub.ActionType.Dashboard, Hub.ActionType.Query]
-  supportedFormats = []
+  supportedFormats = [Hub.ActionFormat.JsonDetail]
   params = []
   executeInOwnProcess = false
 
@@ -34,7 +32,9 @@ export class DebugAction extends Hub.Action {
       await this.delay(sleep)
     }
 
-    return new Hub.ActionResponse({message: `Completed debug action successfully by doing ${activities.join(", ")}.`})
+    return new Hub.ActionResponse({
+      message: `Completed debug action successfully by doing ${activities.join(", ")}.`, success: true
+    })
   }
 
   async form() {

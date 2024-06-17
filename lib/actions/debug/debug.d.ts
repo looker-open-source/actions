@@ -5,7 +5,7 @@ export declare class DebugAction extends Hub.Action {
     label: string;
     description: string;
     supportedActionTypes: Hub.ActionType[];
-    supportedFormats: never[];
+    supportedFormats: Hub.ActionFormat[];
     params: never[];
     executeInOwnProcess: boolean;
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
