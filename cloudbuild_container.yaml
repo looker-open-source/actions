@@ -11,4 +11,6 @@ steps:
   args: [ 'run', 'deploy', 'actionhub', '--image', 'gcr.io/$PROJECT_ID/actionhub', '--region', '${_REGION}', '--platform', 'managed' ]
 options:
   logging: CLOUD_LOGGING_ONLY
+substitutions:
+    _REGION: us-central1
 images: ['gcr.io/$PROJECT_ID/actionhub']

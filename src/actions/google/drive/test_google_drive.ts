@@ -88,6 +88,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({tokens: "code", redirect: "url"}),
       }
+      request.webhookId = "webhookId"
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
           files: {
@@ -98,16 +99,94 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(resp).to.eventually.deep.equal({
         success: false,
         message: undefined,
-        // state: {data: "reset"},
         refreshQuery: false,
         validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 500,
+          location: "ActionContainer",
+          message: "Internal server error. Error while sending data undefined",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("sets state to reset if error in create contains code and reason", (done) => {
+      const request = new Hub.ActionRequest()
+      const dataBuffer = Buffer.from("Hello")
+      request.type = Hub.ActionType.Query
+      request.attachment = {dataBuffer, fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, folder: stubFolder}
+      request.params = {
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({tokens: "code", redirect: "url"}),
+      }
+      request.webhookId = "webhookId"
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              create: async () => Promise.reject({
+                code: 1234,
+                errors: [
+                  {
+                    message: "testReason",
+                  },
+                ],
+              }),
+            },
+          })
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually.deep.equal({
+        success: false,
+        message: undefined,
+        refreshQuery: false,
+        validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 1234,
+          location: "ActionContainer",
+          message: "Internal server error. testReason",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("filename missing in request", () => {
+      const request = new TestActionRequest()
+      request.webhookId = "webhookId"
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually
+          .deep.equal({
+        message: "Server cannot process request due to client request error. Error creating filename from request",
+        refreshQuery: false,
+        success: false,
+        error: {
+          http_code: 400,
+          status_code: "BAD_REQUEST",
+          message: "Server cannot process request due to client request error. Error creating filename from request",
+          location: "ActionContainer",
+          documentation_url: "TODO",
+        },
+        webhookId: "webhookId",
+      })
     })
   })
 
   describe("form", () => {
     it("has form", () => {
       chai.expect(action.hasForm).equals(true)
+    })
+
+    it("generates a query with search string", () => {
+      const q = action.generateQuery("test")
+      chai.expect(q).equals(`mimeType='application/vnd.google-apps.folder' and trashed=false and name contains 'test'`)
+    })
+
+    it("generates a query without search string", () => {
+      const q = action.generateQuery("")
+      chai.expect(q).equals(`mimeType='application/vnd.google-apps.folder' and trashed=false`)
     })
 
     it("returns an oauth form on bad login", (done) => {
@@ -166,6 +245,84 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
+    it("returns correct fields on oauth success with search", (done) => {
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [
+                    {
+                      id: "fake_id",
+                      name: "fake_name",
+                    },
+                  ],
+                },
+              }),
+            },
+            drives: {
+              list: async () => Promise.resolve({
+                data: {
+                  drives: [
+                    {
+                      id: "fake_drive",
+                      name: "fake_drive_label",
+                    },
+                  ],
+                },
+              }),
+            },
+          })
+      const request = new Hub.ActionRequest()
+      request.formParams = {search: "word"}
+      request.params = {
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
+      }
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          description: "Google Drive where your file will be saved",
+          label: "Select Drive to save file",
+          name: "drive",
+          options: [{name: "mydrive", label: "My Drive"}, {name: "fake_drive", label: "fake_drive_label"}],
+          default: "mydrive",
+          interactive: true,
+          required: true,
+          type: "select",
+        }, {
+          description: "Google Drive folder where your file will be saved",
+          label: "Select folder to save file",
+          name: "folder",
+          options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
+          default: "root",
+          required: true,
+          type: "select",
+        }, {
+          label: "Enter a name",
+          name: "filename",
+          type: "string",
+          required: true,
+        }, {
+          label: "Fetch Folders",
+          description: "After entering text to search below, select \"Fetch Folders\"",
+          name: "fetch",
+          type: "select",
+          interactive: true,
+          required: true,
+          options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
+        }, {
+          label: "Folder Name Search",
+          name: "search",
+          type: "string",
+          required: true,
+        }],
+        state: {
+          data: JSON.stringify({tokens: "access", redirect: "url"}),
+        },
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
     it("returns correct fields on oauth success", (done) => {
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
@@ -211,16 +368,16 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
           type: "select",
         }, {
-          description: "Google Drive folder where your file will be saved",
-          label: "Select folder to save file",
-          name: "folder",
-          options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
-          default: "root",
-          required: true,
+          label: "Fetch Folders",
+          description: "After entering text to search below, select \"Fetch Folders\"",
+          name: "fetch",
           type: "select",
+          interactive: true,
+          required: true,
+          options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
         }, {
-          label: "Enter a name",
-          name: "filename",
+          label: "Folder Name Search",
+          name: "search",
           type: "string",
           required: true,
         }],
@@ -283,3 +440,9 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
   })
 })
+
+class TestActionRequest extends Hub.ActionRequest {
+  suggestedFileName() {
+    return null
+  }
+}
