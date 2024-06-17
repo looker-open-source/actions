@@ -294,6 +294,7 @@ describe(`slack/utils unit tests`, () => {
                 dataBuffer: Buffer.from("1,2,3,4", "utf8"),
                 fileExtension: "csv",
             }
+            request.webhookId = "webhookId"
             chai.expect(handleExecute(request, slackClient)).to.eventually.deep.equal({
                 refreshQuery: false,
                 success: false,
@@ -306,7 +307,7 @@ describe(`slack/utils unit tests`, () => {
                 },
                 message: "Server cannot process request due to client request error. [SLACK] Missing channel",
                 validationErrors: [],
-                webhookId: undefined,
+                webhookId: "webhookId",
               }).and.notify(done)
         })
 
@@ -452,7 +453,7 @@ describe(`slack/utils unit tests`, () => {
             })
 
             const finalizeFailSpy = sinon.spy(async () => Promise.reject({
-                type: "missing_channel",
+                type: "CHANNEL_NOT_FOUND",
                 message: "Could not find channel mychannel",
             }))
 

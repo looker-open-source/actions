@@ -128,13 +128,10 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
     const response = new Hub.ActionResponse({success: true})
     if (!request.formParams.channel) {
-        const error: Error = {
-            http_code: HTTP_ERROR.bad_request.code,
-            status_code: HTTP_ERROR.bad_request.status,
-            message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} Missing channel`,
-            location: "ActionContainer",
-            documentation_url: "TODO",
-        }
+        const error: Error = errorWith(
+            HTTP_ERROR.bad_request,
+            `${LOG_PREFIX} Missing channel`,
+        )
         response.error = error
         response.message = error.message
         response.webhookId = request.webhookId

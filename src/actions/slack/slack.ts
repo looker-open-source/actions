@@ -1,9 +1,9 @@
 import {WebClient} from "@slack/web-api"
 import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
 import * as winston from "winston"
-import { HTTP_ERROR } from "../../error_types/http_errors"
+import {HTTP_ERROR} from "../../error_types/http_errors"
 import * as Hub from "../../hub"
-import { Error } from "../../hub/action_response"
+import {Error, errorWith} from "../../hub/action_response"
 import {isSupportMultiWorkspaces, SlackClientManager} from "./slack_client_manager"
 import {displayError, getDisplayedFormFields, handleExecute} from "./utils"
 
@@ -42,13 +42,11 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     const clientManager = new SlackClientManager(request, true)
     const selectedClient = clientManager.getSelectedClient()
     if (!selectedClient) {
-      const error: Error = {
-        http_code: HTTP_ERROR.bad_request.code,
-        status_code: HTTP_ERROR.bad_request.status,
-        message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} Missing client`,
-        location: "ActionContainer",
-        documentation_url: "TODO",
-      }
+      const error: Error = errorWith(
+        HTTP_ERROR.bad_request,
+        `${LOG_PREFIX} Missing client`,
+      )
+
       resp.error = error
       resp.message = error.message
       resp.webhookId = request.webhookId
