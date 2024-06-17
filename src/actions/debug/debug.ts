@@ -33,7 +33,8 @@ export class DebugAction extends Hub.Action {
     }
 
     return new Hub.ActionResponse({
-      message: `Completed debug action successfully by doing ${activities.join(", ")}.`, success: true
+      message: `Completed debug action successfully by doing ${activities.join(", ")}.`,
+      success: true,
     })
   }
 
