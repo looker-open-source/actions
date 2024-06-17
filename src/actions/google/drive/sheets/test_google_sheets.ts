@@ -619,7 +619,6 @@ describe(`${action.constructor.name} unit tests`, () => {
             },
           })
         const request = new Hub.ActionRequest()
-        request.formParams = {search: "word"}
         request.params = {
           state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
           state_json: JSON.stringify({tokens: "access", redirect: "url"}),
@@ -646,19 +645,6 @@ describe(`${action.constructor.name} unit tests`, () => {
           }, {
             label: "Enter a name",
             name: "filename",
-            type: "string",
-            required: true,
-          }, {
-            label: "Fetch Folders",
-            description: "After entering text to search below, select \"Fetch Folders\"",
-            name: "fetch",
-            type: "select",
-            interactive: true,
-            required: true,
-            options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
-          }, {
-            label: "Folder Name Search",
-            name: "search",
             type: "string",
             required: true,
           }, {
