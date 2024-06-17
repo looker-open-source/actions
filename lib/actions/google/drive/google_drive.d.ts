@@ -16,7 +16,6 @@ export declare class GoogleDriveAction extends Hub.OAuthAction {
     mimeType: string | undefined;
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
-    generateQuery(search: string): string;
     oauthUrl(redirectUri: string, encryptedState: string): Promise<string>;
     oauthFetchInfo(urlParams: {
         [key: string]: string;
