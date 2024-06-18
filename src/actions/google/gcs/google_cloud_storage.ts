@@ -1,7 +1,8 @@
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
+import {getHttpErrorType} from "../../../error_types/utils"
 import * as Hub from "../../../hub"
-import { Error } from "../../../hub/action_response"
+import { Error, errorWith } from "../../../hub/action_response"
 
 const storage = require("@google-cloud/storage")
 
@@ -43,13 +44,10 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const response = new Hub.ActionResponse()
 
     if (!request.formParams.bucket) {
-      const error: Error = {
-        http_code: HTTP_ERROR.bad_request.code,
-        status_code: HTTP_ERROR.bad_request.status,
-        message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} needs a GCS bucket specified.`,
-        location: "ActionContainer",
-        documentation_url: "TODO",
-      }
+      const error: Error = errorWith(
+        HTTP_ERROR.bad_request,
+        `${LOG_PREFIX} needs a GCS bucket specified.`,
+      )
       response.success = false
       response.error = error
       response.message = error.message
@@ -72,13 +70,10 @@ export class GoogleCloudStorageAction extends Hub.Action {
     }
 
     if (!filename) {
-      const error: Error = {
-        http_code: HTTP_ERROR.bad_request.code,
-        status_code: HTTP_ERROR.bad_request.status,
-        message: `${HTTP_ERROR.bad_request.description} ${LOG_PREFIX} request did not contain filename, or invalid filename was provided.`,
-        location: "ActionContainer",
-        documentation_url: "TODO",
-      }
+      const error: Error = errorWith(
+        HTTP_ERROR.bad_request,
+        `${LOG_PREFIX} request did not contain filename, or invalid filename was provided.`,
+      )
       response.success = false
       response.error = error
       response.message = error.message
@@ -103,23 +98,25 @@ export class GoogleCloudStorageAction extends Hub.Action {
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e: any) {
-      let error: Error = {
-        http_code: HTTP_ERROR.internal.code,
-        status_code: HTTP_ERROR.internal.status,
-        message: `${HTTP_ERROR.internal.description} ${LOG_PREFIX}`,
-        location: "GCS",
-        documentation_url: "TODO",
-      }
+      let error: Error = errorWith(
+        HTTP_ERROR.internal,
+        `${LOG_PREFIX} Error while sending data ${e.message}`,
+      )
 
       if (e.code) {
-        error = {...error, status_code: e.code, message: `${HTTP_ERROR.internal.description} ${LOG_PREFIX} ${e.reason}`}
+        const errorType = getHttpErrorType(e.code)
+        error = errorWith(
+          errorType,
+          `${LOG_PREFIX} ${e.message}`,
+        )
       }
+
       response.success = false
       response.error = error
       response.message = error.message
       response.webhookId = request.webhookId
 
-      winston.error(`${error.message}`, {error, webhookId: request.webhookId})
+      winston.error(`${LOG_PREFIX} ${error.message}`, {error, webhookId: request.webhookId})
       return response
     }
 

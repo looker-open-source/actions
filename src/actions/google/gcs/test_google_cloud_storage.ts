@@ -96,6 +96,39 @@ describe(`${action.constructor.name} unit tests`, () => {
           "A streaming action was sent incompatible data. The action must have a download url or an attachment.")
     })
 
+    it("errors if there is an upload error", (done) => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      request.webhookId = "webhookId"
+      const createWriteStreamSpy = sinon.spy(async () => Promise.reject(new Error("testReason")))
+      const stubRequest = sinon.stub(request, "stream").callsFake(createWriteStreamSpy)
+
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually.deep.equal({
+        success: false,
+        message: "Internal server error. [Google Cloud Storage] Error while sending data testReason",
+        refreshQuery: false,
+        validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 500,
+          location: "ActionContainer",
+          message: "Internal server error. [Google Cloud Storage] Error while sending data testReason",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
+      }).and.notify(stubRequest.restore).and.notify(done)
+    })
+
     it("sends right body to filename and bucket", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Dashboard
