@@ -127,6 +127,17 @@ export declare class GoogleAdsActionFormBuilder {
         default: string;
         required: boolean;
     };
+    consentSetting(): {
+        name: string;
+        label: string;
+        type: "select";
+        options: {
+            name: string;
+            label: string;
+        }[];
+        default: string;
+        required: boolean;
+    }[];
     private maybeSetLoginCustomer;
     private maybeSetTargetCustomer;
     private getLoginCidOptions;

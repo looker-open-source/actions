@@ -6,6 +6,8 @@ export declare class GoogleAdsActionExecutor {
     readonly targetCid: any;
     readonly mobileAppId: any;
     readonly uploadKeyType: string;
+    readonly consentAdUserData: any;
+    readonly consentAdPersonalization: any;
     offlineUserDataJobResourceName: string;
     targetUserListRN: string;
     constructor(adsRequest: GoogleAdsActionRequest);
