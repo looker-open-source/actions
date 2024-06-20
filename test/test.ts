@@ -13,6 +13,8 @@ winston.remove(winston.transports.Console)
 
 import "../src/actions/index"
 
+import "../src/error_types/test_error_utils"
+
 import "./test_action_request"
 import "./test_action_response"
 import "./test_actions"
