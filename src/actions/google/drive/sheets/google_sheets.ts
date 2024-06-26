@@ -6,6 +6,8 @@ import {Credentials} from "google-auth-library"
 import {drive_v3, google, sheets_v4} from "googleapis"
 import {GaxiosPromise} from "googleapis-common"
 import * as winston from "winston"
+import {getHttpErrorType} from "../../../../error_types/utils"
+import { Error, errorWith } from "../../../../hub/action_response"
 import {GoogleDriveAction} from "../google_drive"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
@@ -66,13 +68,15 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 }
             } catch (e: any) {
                 this.sanitizeGaxiosError(e)
-                let error: Hub.Error = Hub.errorWith(
-                    HTTP_ERROR.internal,
-                    ` ${LOG_PREFIX} Failed execute. Error: ${e.toString()}`,
+
+                const errorType = getHttpErrorType(e, this.name)
+                let error: Error = errorWith(
+                errorType,
+                `${LOG_PREFIX} ${e.toString()}`,
                 )
 
                 if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
-                    error = {...error, http_code: e.code, message: `${LOG_PREFIX} ${HTTP_ERROR.internal.description} ${e.errors[0].message}`}
+                    error = {...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`}
                 }
 
                 resp.success = false

@@ -115,14 +115,14 @@ describe(`${action.constructor.name} unit tests`, () => {
       const resp = action.validateAndExecute(request)
       chai.expect(resp).to.eventually.deep.equal({
         success: false,
-        message: "Internal server error. [Google Cloud Storage] Error while sending data testReason",
+        message: "Internal server error. [Google Cloud Storage] testReason",
         refreshQuery: false,
         validationErrors: [],
         error: {
           documentation_url: "TODO",
           http_code: 500,
           location: "ActionContainer",
-          message: "Internal server error. [Google Cloud Storage] Error while sending data testReason",
+          message: "Internal server error. [Google Cloud Storage] testReason",
           status_code: "INTERNAL",
         },
         webhookId: "webhookId",
