@@ -237,7 +237,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
         if (e.code) {
             if (e.code === ErrorCode.PlatformError) {
                 error = errorWith(
-                    HTTP_ERROR.internal,
+                    HTTP_ERROR.bad_request,
                     `${LOG_PREFIX} errored with WebPlatformError ${e.data.error}`,
                 )
             } else if (e.code === ErrorCode.RequestError) {
