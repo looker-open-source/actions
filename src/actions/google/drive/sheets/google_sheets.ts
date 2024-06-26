@@ -1,14 +1,14 @@
-import {HTTP_ERROR} from "../../../../error_types/http_errors"
+import { HTTP_ERROR } from "../../../../error_types/http_errors"
 import * as Hub from "../../../../hub"
 
 import * as parse from "csv-parse"
-import {Credentials} from "google-auth-library"
-import {drive_v3, google, sheets_v4} from "googleapis"
-import {GaxiosPromise} from "googleapis-common"
+import { Credentials } from "google-auth-library"
+import { drive_v3, google, sheets_v4 } from "googleapis"
+import { GaxiosPromise } from "googleapis-common"
 import * as winston from "winston"
-import {getHttpErrorType} from "../../../../error_types/utils"
+import { getHttpErrorType } from "../../../../error_types/utils"
 import { Error, errorWith } from "../../../../hub/action_response"
-import {GoogleDriveAction} from "../google_drive"
+import { GoogleDriveAction } from "../google_drive"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 

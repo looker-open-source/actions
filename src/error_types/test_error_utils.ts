@@ -1,6 +1,6 @@
 import * as chai from "chai"
-import {HTTP_ERROR} from "./http_errors"
-import {getHttpErrorType} from "./utils"
+import { HTTP_ERROR } from "./http_errors"
+import { getHttpErrorType } from "./utils"
 
 describe("Http Error util tests", () => {
   it("returns server error if input is bad",  () => {

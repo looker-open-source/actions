@@ -429,7 +429,7 @@ describe(`${action.constructor.name} unit tests`, () => {
             documentation_url: "TODO",
             http_code: 1234,
             location: "ActionContainer",
-            message: "[GOOGLE_SHEETS] Internal server error. testException",
+            message: "Internal server error. [GOOGLE_SHEETS] testException",
             status_code: "INTERNAL",
           },
           webhookId: "webhookId",

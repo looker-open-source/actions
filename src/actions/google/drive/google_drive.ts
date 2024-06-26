@@ -1,12 +1,12 @@
 import * as https from "request-promise-native"
 
-import {GaxiosResponse} from "gaxios"
-import {Credentials, OAuth2Client} from "google-auth-library"
+import { GaxiosResponse } from "gaxios"
+import { Credentials, OAuth2Client } from "google-auth-library"
 import { drive_v3, google } from "googleapis"
 
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
-import {getHttpErrorType} from "../../../error_types/utils"
+import { getHttpErrorType } from "../../../error_types/utils"
 import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
 import Drive = drive_v3.Drive
@@ -43,7 +43,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       if (!filename) {
         const error: Error = errorWith(
           HTTP_ERROR.bad_request,
-          `${LOG_PREFIX} ${HTTP_ERROR.bad_request.description} Error creating filename from request`,
+          `${LOG_PREFIX} Error creating filename from request`,
         )
 
         resp.success = false
