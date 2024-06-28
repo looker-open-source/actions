@@ -163,7 +163,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const spreadsheetId = files.data.files[0].id!
 
         const sheets = await this.retriableSpreadsheetGet(spreadsheetId, sheet,
-            1, request.webhookId!).catch((e: any) => {
+            0, request.webhookId!).catch((e: any) => {
                 this.sanitizeGaxiosError(e)
                 winston.debug(`Error retrieving spreadsheet. Error ${e.toString()}`,
                     {webhookId: request.webhookId})
