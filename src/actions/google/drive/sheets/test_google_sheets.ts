@@ -509,7 +509,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         process.env.GOOGLE_SHEET_RETRY = "true"
         const sheet = {
           spreadsheets: {
-            batchUpdate: async () => Promise.reject({code: 500}),
+            batchUpdate: async () => Promise.reject({code: 503}),
           },
         }
         // @ts-ignore
@@ -553,7 +553,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.rejectedWith("Max retries attempted")
+        chai.expect(action.flushRetry({}, sheet , "0", "web")).to.eventually.be.rejectedWith("Max retries attempted")
             .then( () => {
           chai.expect(batchUpdateStub).to.have.callCount(5)
           chai.expect(delayStub).to.have.been.calledWith(3000)
@@ -573,13 +573,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         const spreadSheetsStub = {
           batchUpdate: async () => Promise.resolve(),
         }
-        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 500})
+        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 503})
 
         const sheet = {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
+        chai.expect(action.flushRetry({}, sheet , "0", "web")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(batchUpdateStub).to.have.callCount(1)
           chai.expect(delayStub).to.have.been.calledWith(3000)
           batchUpdateStub.restore()
