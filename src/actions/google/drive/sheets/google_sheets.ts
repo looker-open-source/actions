@@ -16,7 +16,9 @@ const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process
 const MAX_ROW_BUFFER_INCREASE = 6000
 const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_RETRY_COUNT = 5
+const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.env.GOOGLE_SHEETS_BASE_DELAY) : 3
 const LOG_PREFIX = "[GOOGLE_SHEETS]"
+const QUOTA_STRING = "Quota Exceeded"
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -350,9 +352,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             this.sanitizeGaxiosError(e)
             winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
-                winston.warn("Queueing retry", {webhookId})
-                await this.delay((3 ** (attempt + 1)) * 1000)
-                return this.retriableSpreadsheetGet(spreadsheetId, sheet, attempt, spreadsheetId)
+                winston.warn("Queueing retry for read", {webhookId})
+                await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
+                // Try again and increment attempt
+                return this.retriableSpreadsheetGet(spreadsheetId, sheet, attempt + 1, spreadsheetId)
             } else {
                 throw e
             }
@@ -364,28 +367,39 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch(async (e: any) => {
             this.sanitizeGaxiosError(e)
             winston.debug(`Flush error: ${e}`, {webhookId})
-            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
-                winston.warn("Queueing retry", {webhookId})
-                return this.flushRetry(buffer, sheet, spreadsheetId)
+            // If we turned retries off do not attempt to retry and just throw
+            if (!process.env.GOOGLE_SHEET_RETRY) {
+                throw e
+            // if this is a too many request, we can retry
+            } else if (e.code === 429) {
+                winston.warn("Queueing retry for write", {webhookId})
+                return this.flushRetry(buffer, sheet, spreadsheetId, webhookId)
+            // If this is a 500, and it's a quota issue.
+            } else if (e.code === 500 && e.toString().includes(QUOTA_STRING)) {
+                winston.warn("Quota error retry", {webhookId})
+                return this.flushRetry(buffer, sheet, spreadsheetId, webhookId)
+            // This is an unexpected error and will get properly logged out of
+            // This function
             } else {
                 throw e
             }
         })
     }
 
-    async flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+    async flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,
+                     sheet: Sheet, spreadsheetId: string, webhookId: string) {
         let retrySuccess = false
         let retryCount = 1
         while (!retrySuccess && retryCount <= MAX_RETRY_COUNT) {
             retrySuccess = true
-            await this.delay((3 ** retryCount) * 1000)
+            await this.delay((RETRY_BASE_DELAY ** retryCount) * 1000)
             try {
                 return await sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer})
             } catch (e: any) {
                 this.sanitizeGaxiosError(e)
                 retrySuccess = false
-                if (e.code === 429) {
-                    winston.debug(`Retry number ${retryCount} failed`)
+                if (e.code === 429 || e.code === 500) {
+                    winston.info(`Retry number ${retryCount} for writeBatch failed`, {webhookId})
                     winston.debug(e)
                 } else {
                     throw e
