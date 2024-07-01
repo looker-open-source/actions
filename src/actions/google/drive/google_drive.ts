@@ -1,14 +1,17 @@
 import * as https from "request-promise-native"
 
-import {GaxiosResponse} from "gaxios"
-import {Credentials, OAuth2Client} from "google-auth-library"
+import { GaxiosResponse } from "gaxios"
+import { Credentials, OAuth2Client } from "google-auth-library"
 import { drive_v3, google } from "googleapis"
 
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
+import { getHttpErrorType } from "../../../error_types/utils"
 import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
 import Drive = drive_v3.Drive
+
+const LOG_PREFIX = "[GOOGLE_DRIVE]"
 
 export class GoogleDriveAction extends Hub.OAuthAction {
     name = "google_drive"
@@ -38,13 +41,11 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
       const filename = request.formParams.filename || request.suggestedFilename()
       if (!filename) {
-        const error: Error = {
-          http_code: HTTP_ERROR.bad_request.code,
-          status_code: HTTP_ERROR.bad_request.status,
-          message: `${HTTP_ERROR.bad_request.description} Error creating filename from request`,
-          location: "ActionContainer",
-          documentation_url: "TODO",
-        }
+        const error: Error = errorWith(
+          HTTP_ERROR.bad_request,
+          `${LOG_PREFIX} Error creating filename from request`,
+        )
+
         resp.success = false
         resp.error = error
         resp.message = error.message
@@ -56,13 +57,17 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         await this.sendData(filename, request, drive)
         resp.success = true
       } catch (e: any) {
+        const errorType = getHttpErrorType(e, this.name)
+
         let error: Error = errorWith(
-            HTTP_ERROR.internal,
-            "Error while sending data " + e.message,
+          errorType,
+          `${LOG_PREFIX} ${e.message}`,
         )
 
         if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
-          error = {...error, http_code: e.code, message: `${HTTP_ERROR.internal.description} ${e.errors[0].message}`}
+          error = {
+            ...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`,
+          }
         }
 
         resp.success = false

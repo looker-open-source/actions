@@ -1,6 +1,6 @@
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
-import {getHttpErrorType} from "../../../error_types/utils"
+import { getHttpErrorType } from "../../../error_types/utils"
 import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
 
@@ -98,18 +98,12 @@ export class GoogleCloudStorageAction extends Hub.Action {
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e: any) {
-      let error: Error = errorWith(
-        HTTP_ERROR.internal,
-        `${LOG_PREFIX} Error while sending data ${e.message}`,
-      )
+      const errorType = getHttpErrorType(e, this.name)
 
-      if (e.code) {
-        const errorType = getHttpErrorType(e.code)
-        error = errorWith(
-          errorType,
-          `${LOG_PREFIX} ${e.message}`,
-        )
-      }
+      const error: Error = errorWith(
+        errorType,
+        `${LOG_PREFIX} ${e.message}`,
+      )
 
       response.success = false
       response.error = error

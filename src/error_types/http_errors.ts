@@ -55,6 +55,11 @@ export const HTTP_ERROR = {
     code: 500,
     description: "Internal server error.",
   },
+  internal_connreset: {
+    status: "INTERNAL_ECONNRESET",
+    code: 500,
+    description: "Server has closed the connection while the client was writing data.",
+  },
   bad_gateway: {
     status: "BAD_GATEWAY",
     code: 502,

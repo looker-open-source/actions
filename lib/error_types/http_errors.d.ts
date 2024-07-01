@@ -54,6 +54,11 @@ export declare const HTTP_ERROR: {
         code: number;
         description: string;
     };
+    internal_connreset: {
+        status: string;
+        code: number;
+        description: string;
+    };
     bad_gateway: {
         status: string;
         code: number;
