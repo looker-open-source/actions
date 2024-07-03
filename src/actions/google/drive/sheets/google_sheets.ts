@@ -150,12 +150,13 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             options.corpora = "user"
         }
 
-        const files = await drive.files.list(options).catch((e: any) => {
-            this.sanitizeGaxiosError(e)
-            winston.warn(`Error listing drives. Error ${e.toString()}`,
-                {webhookId: request.webhookId})
-            throw e
-        })
+        const files = await this.retriableFileList(drive, options, 0, request.webhookId!)
+            .catch((e: any) => {
+                this.sanitizeGaxiosError(e)
+                winston.warn(`Error listing drives. Error ${e.toString()}`,
+                    {webhookId: request.webhookId})
+                throw e
+            })
         if (files.data.files === undefined || files.data.files.length === 0) {
             winston.debug(`New file: ${filename}`,
                 {webhookId: request.webhookId})
@@ -164,7 +165,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         if (files.data.files[0].id === undefined) {
             throw "No spreadsheet ID"
         }
-        const spreadsheetId = files.data.files[0].id!
+        const spreadsheetId = files.data.files[0].id
 
         const sheets = await this.retriableSpreadsheetGet(spreadsheetId, sheet,
             0, request.webhookId!).catch((e: any) => {
@@ -380,6 +381,21 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
                 // Try again and increment attempt
                 return this.retriableSpreadsheetGet(spreadsheetId, sheet, attempt + 1, spreadsheetId)
+            } else {
+                throw e
+            }
+        })
+    }
+
+    async retriableFileList(drive: Drive, options: any, attempt: number, webhookId: string): Promise<any> {
+        return await drive.files.list(options).catch(async (e: any) => {
+            this.sanitizeGaxiosError(e)
+            winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
+            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+                winston.warn("Queueing retry for file list", {webhookId})
+                await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
+                // Try again and increment attempt
+                return this.retriableFileList(drive, options, attempt + 1, webhookId)
             } else {
                 throw e
             }

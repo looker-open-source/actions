@@ -22,6 +22,7 @@ export declare class GoogleSheetsAction extends GoogleDriveAction {
     retriableResize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number, attempt: number, webhookId: string): GaxiosPromise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>;
     sanitizeFilename(filename: string): string;
     retriableSpreadsheetGet(spreadsheetId: string, sheet: Sheet, attempt: number, webhookId: string): Promise<any>;
+    retriableFileList(drive: Drive, options: any, attempt: number, webhookId: string): Promise<any>;
     flush(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string, webhookId: string): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
     flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string, webhookId: string): Promise<import("gaxios").GaxiosResponse<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>;
     protected delay(time: number): Promise<void>;
