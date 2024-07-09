@@ -70,15 +70,20 @@ export class AirtableAction extends Hub.OAuthAction {
         if (request.params.state_json) {
           const stateJson = JSON.parse(request.params.state_json)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
-          accessToken = (refreshResponse as any).data.access_token
-          state.data = JSON.stringify({
-            tokens: {
-              refresh_token: (refreshResponse as any).data.refresh_token,
-              access_token: accessToken,
-            },
-          })
+          // @ts-ignore
+          if (Object.keys(refreshResponse.data as any).length !== 0) {
+            accessToken = (refreshResponse as any).data.access_token
+            state.data = JSON.stringify({
+              tokens: {
+                refresh_token: (refreshResponse as any).data.refresh_token,
+                access_token: accessToken,
+              },
+            })
+          } else {
+            delete state.data
+          }
         }
-        // Try again one more time with the new access token
+        // Try again one more time
         await this.executeAirtable(request, records, accessToken)
       }
     } catch (e: any) {
@@ -111,18 +116,24 @@ export class AirtableAction extends Hub.OAuthAction {
       }
       try {
         await this.checkBaseList(accessToken)
+        if (form.state === undefined) {
+          form.state = new ActionState()
+          form.state.data = request.params.state_json
+        }
       } catch {
         // Assume the failure is due to Oauth failure,
         // refresh token and retry once.
         if (request.params.state_json) {
           const stateJson = JSON.parse(request.params.state_json)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
-          accessToken = (refreshResponse as any).data.access_token
-          form.state = new ActionState()
-          form.state.data = JSON.stringify({tokens: {
-              refresh_token: (refreshResponse as any).data.refresh_token,
-              access_token: accessToken,
-            }})
+          if (Object.keys(refreshResponse.data as any).length !== 0) {
+            accessToken = (refreshResponse as any).data.access_token
+            form.state = new ActionState()
+            form.state.data = JSON.stringify({tokens: {
+                refresh_token: (refreshResponse as any).data.refresh_token,
+                access_token: accessToken,
+              }})
+          }
         }
         await this.checkBaseList(accessToken)
       }
@@ -154,10 +165,6 @@ export class AirtableAction extends Hub.OAuthAction {
         type: "oauth_link",
         oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
       }]
-    }
-    if (form.state === undefined) {
-      form.state = new ActionState()
-      form.state.data = request.params.state_json
     }
     return form
   }
