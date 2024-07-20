@@ -539,7 +539,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     describe("delay", () => {
-      it("will block on await delay",async () => {
+      it("will block on await delay", async () => {
         const start = Date.now()
         await action.delay(100)
         const end = Date.now()

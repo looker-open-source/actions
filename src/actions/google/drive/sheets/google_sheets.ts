@@ -5,7 +5,7 @@ import * as parse from "csv-parse"
 import { Credentials } from "google-auth-library"
 import { drive_v3, google, sheets_v4 } from "googleapis"
 import { GaxiosPromise } from "googleapis-common"
-import {setTimeout} from "timers/promises";
+import {setTimeout} from "timers/promises"
 import * as winston from "winston"
 import { getHttpErrorType } from "../../../../error_types/utils"
 import { Error, errorWith } from "../../../../hub"
