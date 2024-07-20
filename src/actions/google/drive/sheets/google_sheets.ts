@@ -5,9 +5,10 @@ import * as parse from "csv-parse"
 import { Credentials } from "google-auth-library"
 import { drive_v3, google, sheets_v4 } from "googleapis"
 import { GaxiosPromise } from "googleapis-common"
+import {setTimeout} from "timers/promises";
 import * as winston from "winston"
 import { getHttpErrorType } from "../../../../error_types/utils"
-import { Error, errorWith } from "../../../../hub/action_response"
+import { Error, errorWith } from "../../../../hub"
 import { GoogleDriveAction } from "../google_drive"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
@@ -444,10 +445,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         throw `Max retries attempted`
     }
 
-    protected async delay(time: number) {
-        await new Promise<void>((resolve) => {
-            setTimeout(resolve, time)
-        })
+    async delay(time: number) {
+        return await setTimeout(time).catch((_) => { winston.error("setTimeout throw!")})
     }
 
     protected async sheetsClientFromRequest(redirect: string, tokens: Credentials) {
