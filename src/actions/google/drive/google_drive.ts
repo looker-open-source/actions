@@ -104,51 +104,12 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             required: true,
             type: "select",
           })
-
-          // drive.files.list() options
-          const options: any = {
-            fields: "files(id,name,parents),nextPageToken",
-            orderBy: "recency desc",
-            pageSize: 1000,
-            q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
-            spaces: "drive",
-          }
-          if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
-            options.driveId = request.formParams.drive
-            options.includeItemsFromAllDrives = true
-            options.supportsAllDrives = true
-            options.corpora = "drive"
-          } else {
-            options.corpora = "user"
-          }
-
-          async function pagedFileList(
-            accumulatedFiles: drive_v3.Schema$File[],
-            response: GaxiosResponse<drive_v3.Schema$FileList>): Promise<drive_v3.Schema$File[]> {
-            const mergedFiles = accumulatedFiles.concat(response.data.files!)
-
-            // When a `nextPageToken` exists, recursively call this function to get the next page.
-            if (response.data.nextPageToken) {
-              const pageOptions = { ...options }
-              pageOptions.pageToken = response.data.nextPageToken
-              return pagedFileList(mergedFiles, await drive.files.list(pageOptions))
-            }
-            return mergedFiles
-          }
-          const paginatedFiles = await pagedFileList([], await drive.files.list(options))
-          const folders = paginatedFiles.filter((folder) => (
-            !(folder.id === undefined) && !(folder.name === undefined)))
-            .map((folder) => ({name: folder.id!, label: folder.name!}))
-          folders.unshift({name: "root", label: "Drive Root"})
-
           form.fields.push({
             description: "Google Drive folder where your file will be saved",
-            label: "Select folder to save file",
+            label: "Enter the folder name to save file",
             name: "folder",
-            options: folders,
-            default: folders[0].name,
             required: true,
-            type: "select",
+            type: "string",
           })
           form.fields.push({
             label: "Enter a name",
@@ -224,14 +185,15 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
    async sendData(filename: string, request: Hub.ActionRequest, drive: Drive) {
-     const mimeType = this.getMimeType(request)
-     const fileMetadata: drive_v3.Schema$File = {
+    const folderId = await this.getFolderId(request, drive)
+    const mimeType = this.getMimeType(request)
+    const fileMetadata: drive_v3.Schema$File = {
        name: filename,
        mimeType,
-       parents: request.formParams.folder ? [request.formParams.folder] : undefined,
+       parents: folderId ? [folderId] : undefined,
      }
 
-     return request.stream(async (readable) => {
+    return request.stream(async (readable) => {
        winston.info("Creating new file in Drive", {webhookId: request.webhookId})
        const driveParams: drive_v3.Params$Resource$Files$Create = {
          requestBody: fileMetadata,
@@ -304,6 +266,53 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           config[prop] = "[REDACTED]"
         }
       }
+    }
+  }
+
+  async getFolderId(request: Hub.ActionRequest, drive: Drive) {
+    try {
+      let nextPageToken: string | null | undefined = null
+      let folderId = "root"
+
+      // drive.files.list() options
+      const options: any = {
+        fields: "files(id,name,parents),nextPageToken",
+        orderBy: "recency desc",
+        pageSize: 1000,
+        q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
+        spaces: "drive",
+      }
+
+      if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
+        options.driveId = request.formParams.drive
+        options.includeItemsFromAllDrives = true
+        options.supportsAllDrives = true
+        options.corpora = "drive"
+      } else {
+        options.corpora = "user"
+      }
+
+      do {
+        const response: GaxiosResponse<drive_v3.Schema$FileList> = await drive.files.list({
+          ...options,
+          pageToken: nextPageToken,
+        })
+
+        if (response.data.files && response.data.files.length > 0) {
+          const files = response.data.files.filter((folder) => (
+            !(folder.id === undefined) && !(folder.name === undefined) && folder.name === request.formParams.folder))
+          if (files.length > 0) {
+            folderId = files[0].id!
+            nextPageToken = null
+            return folderId
+          }
+        } else {
+          nextPageToken = response.data.nextPageToken
+        }
+      } while (nextPageToken)
+      return folderId
+    } catch (error) {
+      winston.error(`${LOG_PREFIX} Can not get folder ID`, {webhookId: request.webhookId} )
     }
   }
 
