@@ -538,6 +538,15 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    describe("delay", () => {
+      it("will block on await delay", async () => {
+        const start = Date.now()
+        await action.delay(100)
+        const end = Date.now()
+        chai.expect(end - start).to.be.greaterThanOrEqual(10)
+      })
+    })
+
     describe("flushRetry", () => {
       it("will retry until the MAX_RETRY_LIMIT is reached", (done) => {
         const delayStub = sinon.stub(action as any, "delay")
