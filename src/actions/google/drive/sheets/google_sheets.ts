@@ -194,6 +194,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         rtrim: true,
                         ltrim: true,
                         bom: true,
+                        relax_column_count: true,
                     })
                     // This will not clear formulas or protected regions
                     await this.retriableClearSheet(spreadsheetId, sheet, sheetId, 0, request.webhookId!)
