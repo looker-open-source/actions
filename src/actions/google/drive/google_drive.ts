@@ -166,7 +166,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           errorType,
           `${LOG_PREFIX} ${e.message}`,
         )
-        let errorObjectKeys: any
+        const errorObjectKeys: any = []
         for (const [key, _] of Object.entries(e)) {
           errorObjectKeys.push(key)
         }
