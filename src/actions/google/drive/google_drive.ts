@@ -161,7 +161,21 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           return form
         }
       } catch (e: any) {
-        winston.error("Can not sign in to Google", {webhookId: request.webhookId} )
+        const errorType = getHttpErrorType(e, this.name)
+        let error: Error = errorWith(
+          errorType,
+          `${LOG_PREFIX} ${e.message}`,
+        )
+        let errorObjectKeys: any
+        for (const [key, _] of Object.entries(e)) {
+          errorObjectKeys.push(key)
+        }
+        if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
+          error = {
+            ...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`,
+          }
+        }
+        winston.error("Can not sign in to Google", {errorKeys: errorObjectKeys, error, webhookId: request.webhookId} )
       }
     }
     return this.loginForm(request)
