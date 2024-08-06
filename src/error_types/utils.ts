@@ -91,6 +91,12 @@ const getGoogleHttpErrorType = (e: any) => {
     httpErrorType = HTTP_ERROR.unauthenticated
   } else if (googleErrorMessage.includes("socket hang up")) {
     httpErrorType = HTTP_ERROR.internal_connreset
+  } else if (googleErrorMessage.includes("the caller does not have permission")) {
+    httpErrorType = HTTP_ERROR.permision_denied
+  } else if (googleErrorMessage.includes("cannot send more than")) {
+    httpErrorType = HTTP_ERROR.bad_request
+  } else if (googleErrorMessage.includes("the service is currently unavailable")) {
+    httpErrorType = HTTP_ERROR.unavailable
   } else {
     httpErrorType = HTTP_ERROR.internal
   }
