@@ -191,13 +191,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
+      request.webhookId = "testId"
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
           type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
-            " once to your Google account.",
+            " once to your Google account. WebhookID if oauth fails: testId",
           label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
@@ -219,13 +220,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({bad: "access", redirect: "url"}),
       }
+      request.webhookId = "testId"
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
           type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
-          " once to your Google account.",
+          " once to your Google account. WebhookID if oauth fails: testId",
           label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
