@@ -29,6 +29,7 @@ export declare class GoogleDriveAction extends Hub.OAuthAction {
     }[]>;
     getMimeType(request: Hub.ActionRequest): string | undefined;
     sanitizeGaxiosError(err: any): void;
+    getFolderId(request: Hub.ActionRequest, drive: Drive): Promise<string | undefined>;
     protected getAccessTokenCredentialsFromCode(redirect: string, code: string): Promise<Credentials>;
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
     private loginForm;

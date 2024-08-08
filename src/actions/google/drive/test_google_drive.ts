@@ -281,12 +281,10 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "select",
         }, {
           description: "Google Drive folder where your file will be saved",
-          label: "Select folder to save file",
+          label: "Enter the folder name to save file",
           name: "folder",
-          options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
-          default: "root",
           required: true,
-          type: "select",
+          type: "string",
         }, {
           label: "Enter a name",
           name: "filename",
