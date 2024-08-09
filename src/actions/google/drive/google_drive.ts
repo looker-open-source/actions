@@ -349,7 +349,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       type: "oauth_link_google",
       label: "Log in",
       description: "In order to send to Google Drive, you will need to log in" +
-        " once to your Google account.",
+        ` once to your Google account. WebhookID if oauth fails: ${request.webhookId}`,
       oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
     })
     winston.debug(`Login form, OAuthURL${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`)
