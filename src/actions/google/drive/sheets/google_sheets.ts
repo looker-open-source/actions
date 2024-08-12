@@ -132,7 +132,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
-        const parents = request.formParams.folder ? [request.formParams.folder] : undefined
+        const folderId = await this.getFolderId(request, drive)
+        const parents = folderId ? [folderId] : undefined
 
         filename = this.sanitizeFilename(filename)
         const options: any = {
