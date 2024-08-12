@@ -1,7 +1,7 @@
 steps:
-- name: node:18.12.1
+- name: node:20.16-alpine
   entrypoint: yarn
   args: ["install"]
-- name: node:18.12.1
+- name: node:20.16-alpine
   entrypoint: yarn
   args: ["test"]
