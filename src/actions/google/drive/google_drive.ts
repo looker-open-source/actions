@@ -152,13 +152,11 @@ export class GoogleDriveAction extends Hub.OAuthAction {
               required: true,
               type: "select",
             })
-            form.state = new Hub.ActionState()
-            form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
           // We did not fetch the folder, offer to fetch or to enter a folderid
           } else {
             form.fields.push({
               description: "Add url of directory that will receive the data.",
-              label: "Folder ID",
+              label: "Google Drive Destination URL",
               name: "folderid",
               type: "string",
               required: false,
@@ -173,11 +171,13 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             })
           }
           form.fields.push({
-            label: "Enter a name",
+            label: "Enter a filename",
             name: "filename",
             type: "string",
             required: true,
           })
+          form.state = new Hub.ActionState()
+          form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
           return form
         }
       } catch (e: any) {
