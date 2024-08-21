@@ -1,7 +1,7 @@
 steps:
-- name: node:18.12.1
+- name: us-docker.pkg.dev/prow-build-looker/looker/node-20-alpine@sha256:3bf3021bad0b085d04275eea4eb8a42e78f1517a9d013ad231eb82f3cbd328ae
   entrypoint: yarn
   args: ["install"]
-- name: node:18.12.1
+- name: us-docker.pkg.dev/prow-build-looker/looker/node-20-alpine@sha256:3bf3021bad0b085d04275eea4eb8a42e78f1517a9d013ad231eb82f3cbd328ae
   entrypoint: yarn
   args: ["test"]
