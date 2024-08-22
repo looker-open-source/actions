@@ -282,7 +282,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
           type: "select",
         }, {
-          description: "Add url of directory that will receive the data.",
+          description: "Enter the full Google Drive URL of the folder where you want to save your data. It should look something like https://drive.google.com/corp/drive/folders/xyz. If this is inaccessible, your data will be saved to the root folder of your Google Drive. You do not need to enter a URL if you have already chosen a folder in the dropdown menu.\n",
           label: "Google Drive Destination URL",
           name: "folderid",
           type: "string",

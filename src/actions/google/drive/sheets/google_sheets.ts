@@ -135,6 +135,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
         let folder: string | undefined
         if (request.formParams.folderid) {
+            winston.info("Using manual folder id")
             if (request.formParams.folderid.includes("my-drive")) {
                 folder = "root"
             } else {
@@ -148,7 +149,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         } else {
             folder = request.formParams.folder
         }
-        winston.info(`Folder: ${folder}, folderid: ${request.formParams.folderid}`)
         const parents = folder ? [folder] : undefined
 
         filename = this.sanitizeFilename(filename)
