@@ -1,4 +1,7 @@
 # mParticle
+
+**This is not an officially supported Google product.**
+
 ## Send User Identities or Events from Looker to mParticle
 
 The mParticle action allows you to bulk export your user or event data from Looker to mParticle. It looks for tags in the LookML to determine how to shape the body of the POST to the mParticle API. User is required to specify whether the row data is user or event related based on a form in the action, and all rows must contain at least one user identity.

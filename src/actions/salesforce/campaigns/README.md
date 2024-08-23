@@ -1,5 +1,7 @@
 # Salesforce Campaigns
 
+**This is not an officially supported Google product.**
+
 ## Send data to Salesforce
 
 For instances on the 22.6 release or later, Looker has created a new integration called Salesforce Campaigns that lets you create campaigns in Salesforce and populate the campaign members with leads and/or contacts. You can choose to create a new campaign, or append users to an existing campaign from Looker.

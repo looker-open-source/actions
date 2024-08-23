@@ -1,5 +1,7 @@
 # Auger
 
+**This is not an officially supported Google product.**
+
 This action takes a query result and uses it to run the industries most accurate Automated Machine Learning to build a predictive model.
 
 ## Setup
