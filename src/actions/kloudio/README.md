@@ -1,4 +1,7 @@
 # Kloudio
+
+**This is not an officially supported Google product.**
+
 ## Push records to a Google Sheet.
 
 1. Visit [Kloudio's Account Page](https://app.kloud.io/#/app/account).

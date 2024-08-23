@@ -1,5 +1,7 @@
 # Microsoft Teams - Incoming Webhook
 
+**This is not an officially supported Google product.**
+
 ## Send message from a Look to Microsoft Teams using incoming webhook
 
 The Microsoft Teams Action allow you to send message from looker to Teams channel via incoming webhook. By entering the incoming webhook endpoint, card title, and body in the form, the message will be sent like a bot in Teams.（also, you can attache metadata of Look/Explore/Dashboard）

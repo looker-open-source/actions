@@ -1,5 +1,7 @@
 # Facebook Custom Audiences
 
+**This is not an officially supported Google product.**
+
 ## Send data to Facebook Custom Audiences
 
 The Facebook Custom Audiences Action enables you to create audiences based on your first-party data and send them to Facebook Ads Custom Audiences. You authenticate with your Facebook account and then you're able to send one-off or recurring uploads to a [customer list Custom Audience](https://www.facebook.com/business/help/744354708981227?id=2469097953376494).

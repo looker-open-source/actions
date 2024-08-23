@@ -1,4 +1,7 @@
 # Braze
+
+**This is not an officially supported Google product.**
+
 ## Sends data to Braze via REST API
 The Braze actions enables you to flag users within Braze via the [Rest API Endpoint](https://www.braze.com/docs/developer_guide/rest_api/user_data/#user-track-request) from a Looker look. This actions requires that a dimension is tagged with `braze_id`.  The action will append the flagged value to the user's `looker_export` custom attribute.  Standard and custom attributes can also be set by tagging the field with `braze[]` and the name of the attribute within `[]` ie `braze[NAMEOFATTRIBUTE]`.
 

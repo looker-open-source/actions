@@ -1,4 +1,7 @@
 # Airtable
+
+**This is not an officially supported Google product.**
+
 ## Add records to an Airtable table.
 
 1. Visit [Airtable's Account API Page](https://airtable.com/account).
