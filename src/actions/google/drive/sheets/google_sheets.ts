@@ -7,7 +7,7 @@ import { drive_v3, google, sheets_v4 } from "googleapis"
 import { GaxiosPromise } from "googleapis-common"
 import * as winston from "winston"
 import { getHttpErrorType } from "../../../../error_types/utils"
-import { Error, errorWith } from "../../../../hub/action_response"
+import { Error, errorWith } from "../../../../hub"
 import { GoogleDriveAction } from "../google_drive"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
@@ -18,6 +18,7 @@ const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_RETRY_COUNT = 5
 const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.env.GOOGLE_SHEETS_BASE_DELAY) : 3
 const LOG_PREFIX = "[GOOGLE_SHEETS]"
+const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -132,7 +133,23 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
-        const parents = request.formParams.folder ? [request.formParams.folder] : undefined
+        let folder: string | undefined
+        if (request.formParams.folderid) {
+            winston.info("Using manual folder id")
+            if (request.formParams.folderid.includes("my-drive")) {
+                folder = "root"
+            } else {
+                const match = request.formParams.folderid.match(FOLDERID_REGEX)
+                if (match && match.groups) {
+                    folder = match.groups.folderId
+                } else {
+                    folder = "root"
+                }
+            }
+        } else {
+            folder = request.formParams.folder
+        }
+        const parents = folder ? [folder] : undefined
 
         filename = this.sanitizeFilename(filename)
         const options: any = {
