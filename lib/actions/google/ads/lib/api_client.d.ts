@@ -1,4 +1,5 @@
 import { Logger } from "../../common/logger";
+type ConsentType = "UNSPECIFIED" | "GRANTED" | "DENIED";
 export declare class GoogleAdsApiClient {
     readonly log: Logger;
     readonly accessToken: string;
@@ -9,8 +10,9 @@ export declare class GoogleAdsApiClient {
     searchOpenUserLists(clientCid: string, uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO"): Promise<any>;
     searchClientCustomers(clientCid: string): Promise<any>;
     createUserList(targetCid: string, newListName: string, newListDescription: string, uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO", mobileAppId?: string): Promise<any>;
-    createDataJob(targetCid: string, userListResourceName: string): Promise<any>;
+    createDataJob(targetCid: string, userListResourceName: string, consentAdUserData: ConsentType, consentAdPersonalization: ConsentType): Promise<any>;
     addDataJobOperations(offlineUserDataJobResourceName: string, userIdentifiers: any[]): Promise<any>;
     runJob(offlineUserDataJobResourceName: string): Promise<any>;
     apiCall(method: "GET" | "POST", url: string, data?: any): Promise<any>;
 }
+export {};

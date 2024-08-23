@@ -1,14 +1,18 @@
 import * as https from "request-promise-native"
 
-import {GaxiosResponse} from "gaxios"
-import {Credentials, OAuth2Client} from "google-auth-library"
+import { GaxiosResponse } from "gaxios"
+import { Credentials, OAuth2Client } from "google-auth-library"
 import { drive_v3, google } from "googleapis"
 
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
+import { getHttpErrorType } from "../../../error_types/utils"
 import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
 import Drive = drive_v3.Drive
+
+const LOG_PREFIX = "[GOOGLE_DRIVE]"
+const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
 export class GoogleDriveAction extends Hub.OAuthAction {
     name = "google_drive"
@@ -53,13 +57,11 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
       const filename = request.formParams.filename || request.suggestedFilename()
       if (!filename) {
-        const error: Error = {
-          http_code: HTTP_ERROR.bad_request.code,
-          status_code: HTTP_ERROR.bad_request.status,
-          message: `${HTTP_ERROR.bad_request.description} Error creating filename from request`,
-          location: "ActionContainer",
-          documentation_url: "TODO",
-        }
+        const error: Error = errorWith(
+          HTTP_ERROR.bad_request,
+          `${LOG_PREFIX} Error creating filename from request`,
+        )
+
         resp.success = false
         resp.error = error
         resp.message = error.message
@@ -71,13 +73,17 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         await this.sendData(filename, request, drive)
         resp.success = true
       } catch (e: any) {
+        const errorType = getHttpErrorType(e, this.name)
+
         let error: Error = errorWith(
-            HTTP_ERROR.internal,
-            "Error while sending data " + e.message,
+          errorType,
+          `${LOG_PREFIX} ${e.message}`,
         )
 
         if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
-          error = {...error, http_code: e.code, message: `${HTTP_ERROR.internal.description} ${e.errors[0].message}`}
+          error = {
+            ...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`,
+          }
         }
 
         resp.success = false
@@ -115,14 +121,13 @@ export class GoogleDriveAction extends Hub.OAuthAction {
             type: "select",
           })
 
-          if (request.formParams.search !== undefined) {
-            const query = this.generateQuery(request.formParams.search)
+          if (request.formParams.fetchpls) {
             // drive.files.list() options
             const options: any = {
               fields: "files(id,name,parents),nextPageToken",
               orderBy: "recency desc",
               pageSize: 1000,
-              q: query,
+              q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
               spaces: "drive",
             }
             if (request.formParams.drive !== undefined && request.formParams.drive !== "mydrive") {
@@ -141,7 +146,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
               // When a `nextPageToken` exists, recursively call this function to get the next page.
               if (response.data.nextPageToken) {
-                const pageOptions = {...options}
+                const pageOptions = { ...options }
                 pageOptions.pageToken = response.data.nextPageToken
                 return pagedFileList(mergedFiles, await drive.files.list(pageOptions))
               }
@@ -170,27 +175,28 @@ export class GoogleDriveAction extends Hub.OAuthAction {
               required: true,
               type: "select",
             })
+          // We did not fetch the folder, offer to fetch or to enter a folderid
+          } else {
             form.fields.push({
-              label: "Enter a name",
-              name: "filename",
+              description: "Enter the full Google Drive URL of the folder where you want to save your data. It should look something like https://drive.google.com/corp/drive/folders/xyz. If this is inaccessible, your data will be saved to the root folder of your Google Drive. You do not need to enter a URL if you have already chosen a folder in the dropdown menu.\n",
+              label: "Google Drive Destination URL",
+              name: "folderid",
               type: "string",
-              required: true,
+              required: false,
+            })
+            form.fields.push({
+              description: "Fetch folders",
+              name: "fetchpls",
+              type: "select",
+              interactive: true,
+              label: "Select Fetch to fetch a list of folders in this drive",
+              options: [{label: "Fetch", name: "fetch"}],
             })
           }
           // Fetch forms is to provide searching.
           form.fields.push({
-            label: "Fetch Folders",
-            description: "After entering text to search below, select \"Fetch Folders\"",
-            name: "fetch",
-            type: "select",
-            required: true,
-            interactive: true,
-            // Need two values to be able to have two values in Looker frontend to refetch
-            options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
-          })
-          form.fields.push({
-            label: "Folder Name Search",
-            name: "search",
+            label: "Enter a filename",
+            name: "filename",
             type: "string",
             required: true,
           })
@@ -199,8 +205,21 @@ export class GoogleDriveAction extends Hub.OAuthAction {
           return form
         }
       } catch (e: any) {
-        this.sanitizeGaxiosError(e)
-        winston.warn(`Error fetching form. ${e.toString()}`, {webhookId: request.webhookId})
+        const errorType = getHttpErrorType(e, this.name)
+        let error: Error = errorWith(
+          errorType,
+          `${LOG_PREFIX} ${e.message}`,
+        )
+        const errorObjectKeys: any = []
+        for (const [key, _] of Object.entries(e)) {
+          errorObjectKeys.push(key)
+        }
+        if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
+          error = {
+            ...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`,
+          }
+        }
+        winston.error("Can not sign in to Google", {errorKeys: errorObjectKeys, error, webhookId: request.webhookId} )
       }
     }
     return this.loginForm(request)
@@ -274,10 +293,25 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
    async sendData(filename: string, request: Hub.ActionRequest, drive: Drive) {
      const mimeType = this.getMimeType(request)
+     let folder: string | undefined
+     if (request.formParams.folderid) {
+       if (request.formParams.folderid.includes("my-drive")) {
+         folder = "root"
+       } else {
+         const match = request.formParams.folderid.match(FOLDERID_REGEX)
+         if (match && match.groups) {
+           folder = match.groups.folderId
+         } else {
+           folder = "root"
+         }
+       }
+     } else {
+       folder = request.formParams.folder
+     }
      const fileMetadata: drive_v3.Schema$File = {
        name: filename,
        mimeType,
-       parents: request.formParams.folder ? [request.formParams.folder] : undefined,
+       parents: folder ? [folder] : undefined,
      }
 
      return request.stream(async (readable) => {
@@ -295,7 +329,6 @@ export class GoogleDriveAction extends Hub.OAuthAction {
        }
 
        return drive.files.create(driveParams).catch((e: any) => {
-         this.sanitizeGaxiosError(e)
          winston.error(e.toString(), {webhookId: request.webhookId})
          throw e
        })
@@ -401,7 +434,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       type: "oauth_link_google",
       label: "Log in",
       description: "In order to send to Google Drive, you will need to log in" +
-        " once to your Google account.",
+        ` once to your Google account. WebhookID if oauth fails: ${request.webhookId}`,
       oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`,
     })
     winston.debug(`Login form, OAuthURL${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`)

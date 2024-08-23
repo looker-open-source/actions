@@ -1,8 +1,10 @@
-import {WebClient} from "@slack/web-api"
+import {ErrorCode, WebClient} from "@slack/web-api"
 import * as gaxios from "gaxios"
 import * as winston from "winston"
+import { HTTP_ERROR } from "../../error_types/http_errors"
 import * as Hub from "../../hub"
 import {ActionFormField} from "../../hub"
+import { Error, errorWith } from "../../hub/action_response"
 
 export const API_LIMIT_SIZE = 1000
 
@@ -124,15 +126,24 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
 }
 
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
+    const response = new Hub.ActionResponse({success: true})
     if (!request.formParams.channel) {
-        winston.error(`${LOG_PREFIX} Missing channel`, {webhookId: request.webhookId})
-        throw "Missing channel."
+        const error: Error = errorWith(
+            HTTP_ERROR.bad_request,
+            `${LOG_PREFIX} Missing channel`,
+        )
+        response.error = error
+        response.message = error.message
+        response.webhookId = request.webhookId
+        response.success = false
+
+        winston.error(`${error.message}`, {error, webhookId: request.webhookId})
+        return response
     }
 
     const webhookId = request.webhookId
     const fileName = request.formParams.filename  ? request.completeFilename() : request.suggestedFilename()
 
-    let response = new Hub.ActionResponse({success: true})
     try {
         const isUserToken = request.formParams.channel.startsWith("U") || request.formParams.channel.startsWith("W")
         const forceV1Upload = process.env.FORCE_V1_UPLOAD
@@ -219,8 +230,45 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
             })
         }
     } catch (e: any) {
-        winston.error(`${LOG_PREFIX} Slack App Error: ${e.message}`)
-        response = new Hub.ActionResponse({success: false, message: e.message})
+        let error: Error = errorWith(
+            HTTP_ERROR.internal,
+            `${LOG_PREFIX} Error while sending data ${e.message}`,
+        )
+        if (e.code) {
+            if (e.code === ErrorCode.PlatformError) {
+                error = errorWith(
+                    HTTP_ERROR.bad_request,
+                    `${LOG_PREFIX} errored with WebPlatformError ${e.data.error}`,
+                )
+            } else if (e.code === ErrorCode.RequestError) {
+                error = errorWith(
+                    HTTP_ERROR.bad_request,
+                    `${LOG_PREFIX} errored with RequestError ${e.original}`,
+                )
+            } else if (e.code === ErrorCode.HTTPError) {
+                error = errorWith(
+                    {status: e.status, code: e.code, description: "HTTP request error"},
+                    `${LOG_PREFIX} errored with HTTPError ${e.statusMessage}`,
+                )
+            } else if (e.code === ErrorCode.RateLimitedError) {
+                error = errorWith(
+                    HTTP_ERROR.resource_exhausted,
+                    `${LOG_PREFIX} errored with RateLimitedError`,
+                )
+            } else if (e.code === ErrorCode.FileUploadInvalidArgumentsError) {
+                error = errorWith(
+                    HTTP_ERROR.invalid_argument,
+                    `${LOG_PREFIX} errored with InvalidArgumentsError ${e.data.error}`,
+                )
+            }
+        }
+
+        response.error = error
+        response.webhookId = request.webhookId
+        response.success = false
+        response.message = error.message
+
+        winston.error(`${response.message}`, {error, webhookId: request.webhookId})
     }
     return response
 }

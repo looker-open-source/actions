@@ -11,21 +11,14 @@ export interface Error {
     location: string;
     documentation_url: string;
 }
-<<<<<<< HEAD
 export declare function errorWith(errorInfo: HttpErrorInfo, message: string): Error;
-=======
->>>>>>> 47a1a25 (First sweep at adding dynamic hostname verification)
 export declare class ActionResponse {
     message?: string;
     refreshQuery: boolean;
     success: boolean;
     validationErrors: ValidationError[];
     state?: ActionState;
-<<<<<<< HEAD
     error?: Error;
-=======
-    errors?: Error[];
->>>>>>> 47a1a25 (First sweep at adding dynamic hostname verification)
     webhookId?: string;
     constructor(fields?: {
         message?: string;

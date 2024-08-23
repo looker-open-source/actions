@@ -111,6 +111,10 @@ export class AirtableAction extends Hub.OAuthAction {
       }
       try {
         await this.checkBaseList(accessToken)
+        if (form.state === undefined) {
+          form.state = new ActionState()
+          form.state.data = request.params.state_json
+        }
       } catch {
         // Assume the failure is due to Oauth failure,
         // refresh token and retry once.

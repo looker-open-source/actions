@@ -105,7 +105,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           documentation_url: "TODO",
           http_code: 500,
           location: "ActionContainer",
-          message: "Internal server error. Error while sending data undefined",
+          message: "Internal server error. [GOOGLE_DRIVE] undefined",
           status_code: "INTERNAL",
         },
         webhookId: "webhookId",
@@ -146,7 +146,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           documentation_url: "TODO",
           http_code: 1234,
           location: "ActionContainer",
-          message: "Internal server error. testReason",
+          message: "Internal server error. [GOOGLE_DRIVE] testReason",
           status_code: "INTERNAL",
         },
         webhookId: "webhookId",
@@ -165,7 +165,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         error: {
           http_code: 400,
           status_code: "BAD_REQUEST",
-          message: "Server cannot process request due to client request error. Error creating filename from request",
+          message: "Server cannot process request due to client request error. [GOOGLE_DRIVE] Error creating filename from request",
           location: "ActionContainer",
           documentation_url: "TODO",
         },
@@ -201,13 +201,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
+      request.webhookId = "testId"
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
           type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
-            " once to your Google account.",
+            " once to your Google account. WebhookID if oauth fails: testId",
           label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
@@ -229,13 +230,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({bad: "access", redirect: "url"}),
       }
+      request.webhookId = "testId"
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
           type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
-          " once to your Google account.",
+          " once to your Google account. WebhookID if oauth fails: testId",
           label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
@@ -368,16 +370,21 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
           type: "select",
         }, {
-          label: "Fetch Folders",
-          description: "After entering text to search below, select \"Fetch Folders\"",
-          name: "fetch",
+          description: "Enter the full Google Drive URL of the folder where you want to save your data. It should look something like https://drive.google.com/corp/drive/folders/xyz. If this is inaccessible, your data will be saved to the root folder of your Google Drive. You do not need to enter a URL if you have already chosen a folder in the dropdown menu.\n",
+          label: "Google Drive Destination URL",
+          name: "folderid",
+          type: "string",
+          required: false,
+        }, {
+          description: "Fetch folders",
+          name: "fetchpls",
           type: "select",
           interactive: true,
-          required: true,
-          options: [{label: "Reset", name: "reset"}, {label: "Fetch Folders", name: "fetch"}],
+          label: "Select Fetch to fetch a list of folders in this drive",
+          options: [{label: "Fetch", name: "fetch"}],
         }, {
-          label: "Folder Name Search",
-          name: "search",
+          label: "Enter a filename",
+          name: "filename",
           type: "string",
           required: true,
         }],

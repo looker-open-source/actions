@@ -3,6 +3,12 @@ import * as lodash from "lodash"
 import { sanitizeError as sanitize } from "../../common/error_utils"
 import { Logger } from "../../common/logger"
 
+type ConsentType = "UNSPECIFIED" | "GRANTED" | "DENIED"
+interface Consent {
+  ad_user_data: ConsentType
+  ad_personalization: ConsentType
+}
+
 export class GoogleAdsApiClient {
 
     constructor(readonly log: Logger, readonly accessToken: string
@@ -77,9 +83,18 @@ export class GoogleAdsApiClient {
       return this.apiCall(method, path, body)
     }
 
-    async createDataJob(targetCid: string, userListResourceName: string) {
+    async createDataJob(
+      targetCid: string,
+      userListResourceName: string,
+      consentAdUserData: ConsentType,
+      consentAdPersonalization: ConsentType,
+    ) {
       const method = "POST"
       const path = `customers/${targetCid}/offlineUserDataJobs:create`
+      const consent: Consent = {
+        ad_user_data: consentAdUserData,
+        ad_personalization: consentAdPersonalization,
+      }
       const body = {
         customer_id: targetCid,
         job: {
@@ -87,6 +102,7 @@ export class GoogleAdsApiClient {
           type: "CUSTOMER_MATCH_USER_LIST",
           customer_match_user_list_metadata: {
             user_list: userListResourceName,
+            consent,
           },
         },
       }
@@ -129,7 +145,7 @@ export class GoogleAdsApiClient {
         url,
         data,
         headers,
-        baseURL: "https://googleads.googleapis.com/v14/",
+        baseURL: "https://googleads.googleapis.com/v15/",
       })
 
       if (process.env.ACTION_HUB_DEBUG) {

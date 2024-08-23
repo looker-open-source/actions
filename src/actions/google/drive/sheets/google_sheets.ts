@@ -1,11 +1,14 @@
+import { HTTP_ERROR } from "../../../../error_types/http_errors"
 import * as Hub from "../../../../hub"
 
 import * as parse from "csv-parse"
-import {Credentials} from "google-auth-library"
-import {drive_v3, google, sheets_v4} from "googleapis"
-import {GaxiosPromise} from "googleapis-common"
+import { Credentials } from "google-auth-library"
+import { drive_v3, google, sheets_v4 } from "googleapis"
+import { GaxiosPromise } from "googleapis-common"
 import * as winston from "winston"
-import {GoogleDriveAction} from "../google_drive"
+import { getHttpErrorType } from "../../../../error_types/utils"
+import { Error, errorWith } from "../../../../hub"
+import { GoogleDriveAction } from "../google_drive"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 
@@ -13,6 +16,9 @@ const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process
 const MAX_ROW_BUFFER_INCREASE = 6000
 const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_RETRY_COUNT = 5
+const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.env.GOOGLE_SHEETS_BASE_DELAY) : 3
+const LOG_PREFIX = "[GOOGLE_SHEETS]"
+const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -48,9 +54,15 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
             let filename = request.formParams.filename || request.suggestedFilename()
             if (!filename) {
+                const error: Hub.Error = Hub.errorWith(
+                    HTTP_ERROR.bad_request,
+                    `${LOG_PREFIX} Error creating file name`,
+                )
+                resp.error = error
                 resp.success = false
-                resp.message = "Error creating filename"
-                winston.error("Error creating file name")
+                resp.message = error.message
+                resp.webhookId = request.webhookId
+                winston.error(`${error.message}`, {error, webhookId: request.webhookId})
                 return resp
             } else if (!filename.match(/\.csv$/)) {
                 filename = filename.concat(".csv")
@@ -66,10 +78,22 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 }
             } catch (e: any) {
                 this.sanitizeGaxiosError(e)
-                winston.error(`Failed execute for Google Sheets. Error: ${e.toString()}`,
-                    {webhookId: request.webhookId})
+
+                const errorType = getHttpErrorType(e, this.name)
+                let error: Error = errorWith(
+                errorType,
+                `${LOG_PREFIX} ${e.toString()}`,
+                )
+
+                if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
+                    error = {...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`}
+                }
+
                 resp.success = false
-                resp.message = e.toString()
+                resp.message = e.message
+                resp.webhookId = request.webhookId
+                resp.error = error
+                winston.error(`${error.message}`, {error, webhookId: request.webhookId})
             }
         } else {
             resp.success = false
@@ -118,7 +142,23 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
-        const parents = request.formParams.folder ? [request.formParams.folder] : undefined
+        let folder: string | undefined
+        if (request.formParams.folderid) {
+            winston.info("Using manual folder id")
+            if (request.formParams.folderid.includes("my-drive")) {
+                folder = "root"
+            } else {
+                const match = request.formParams.folderid.match(FOLDERID_REGEX)
+                if (match && match.groups) {
+                    folder = match.groups.folderId
+                } else {
+                    folder = "root"
+                }
+            }
+        } else {
+            folder = request.formParams.folder
+        }
+        const parents = folder ? [folder] : undefined
 
         filename = this.sanitizeFilename(filename)
         const options: any = {
@@ -135,12 +175,13 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             options.corpora = "user"
         }
 
-        const files = await drive.files.list(options).catch((e: any) => {
-            this.sanitizeGaxiosError(e)
-            winston.debug(`Error listing drives. Error ${e.toString()}`,
-                {webhookId: request.webhookId})
-            throw e
-        })
+        const files = await this.retriableFileList(drive, options, 0, request.webhookId!)
+            .catch((e: any) => {
+                this.sanitizeGaxiosError(e)
+                winston.warn(`Error listing drives. Error ${e.toString()}`,
+                    {webhookId: request.webhookId})
+                throw e
+            })
         if (files.data.files === undefined || files.data.files.length === 0) {
             winston.debug(`New file: ${filename}`,
                 {webhookId: request.webhookId})
@@ -149,7 +190,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         if (files.data.files[0].id === undefined) {
             throw "No spreadsheet ID"
         }
-        const spreadsheetId = files.data.files[0].id!
+        const spreadsheetId = files.data.files[0].id
 
         const sheets = await this.retriableSpreadsheetGet(spreadsheetId, sheet,
             0, request.webhookId!).catch((e: any) => {
@@ -179,9 +220,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         rtrim: true,
                         ltrim: true,
                         bom: true,
+                        relax_column_count: true,
                     })
                     // This will not clear formulas or protected regions
-                    await this.clearSheet(spreadsheetId, sheet, sheetId)
+                    await this.retriableClearSheet(spreadsheetId, sheet, sheetId, 0, request.webhookId!)
                     csvparser.on("data", (line: any) => {
                         if (rowCount > maxPossibleRows) {
                             reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`)
@@ -223,11 +265,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     winston.info(`Resetting back to max possible rows`, request.webhookId)
                                     maxRows = maxPossibleRows
                                 }
-                                this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
-                                    this.sanitizeGaxiosError(e)
-                                    winston.debug(e.toString(), {webhookId: request.webhookId})
-                                    throw e
-                                })
+                                this.retriableResize(maxRows, sheet, spreadsheetId, sheetId, 0, request.webhookId!)
+                                    .catch((e: any) => {
+                                        this.sanitizeGaxiosError(e)
+                                        winston.debug(e.toString(), {webhookId: request.webhookId})
+                                        throw e
+                                    })
                             }
                             this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
                                 this.sanitizeGaxiosError(e)
@@ -251,11 +294,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     winston.info(`Resetting back to max possible rows`, request.webhookId)
                                     maxRows = maxPossibleRows
                                 }
-                                this.resize(maxRows, sheet, spreadsheetId, sheetId).catch((e: any) => {
-                                    this.sanitizeGaxiosError(e)
-                                    winston.debug(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
-                                    throw e
-                                })
+                                this.retriableResize(maxRows, sheet, spreadsheetId, sheetId, 0 , request.webhookId!)
+                                    .catch((e: any) => {
+                                        this.sanitizeGaxiosError(e)
+                                        winston.debug(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
+                                        throw e
+                                     })
                             }
                             this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).then(() => {
                                 winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
@@ -286,7 +330,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             })
     }
 
-    async clearSheet(spreadsheetId: string, sheet: Sheet, sheetId: number):
+    async retriableClearSheet(spreadsheetId: string, sheet: Sheet,
+                              sheetId: number, attempt: number, webhookId: string):
         GaxiosPromise<sheets_v4.Schema$ClearValuesResponse>  {
         return sheet.spreadsheets.batchUpdate({
             spreadsheetId,
@@ -302,10 +347,23 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     },
                   ],
             },
+        }).catch(async (e: any) => {
+            this.sanitizeGaxiosError(e)
+            winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
+            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+                winston.warn("Queueing retry for clear sheet", {webhookId})
+                await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
+                // Try again and increment attempt
+                return this.retriableClearSheet(spreadsheetId, sheet, sheetId, attempt + 1, webhookId)
+            } else {
+                throw e
+            }
         })
     }
 
-    async resize(maxRows: number, sheet: Sheet, spreadsheetId: string, sheetId: number) {
+    async retriableResize(maxRows: number, sheet: Sheet, spreadsheetId: string,
+                          sheetId: number, attempt: number, webhookId: string):
+        GaxiosPromise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> {
         return sheet.spreadsheets.batchUpdate({
             spreadsheetId,
             requestBody: {
@@ -321,9 +379,17 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     },
                 }],
             },
-        }).catch((e: any) => {
+        }).catch(async (e: any) => {
             this.sanitizeGaxiosError(e)
-            throw e
+            winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
+            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+                winston.warn("Queueing retry for resize sheet", {webhookId})
+                await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
+                // Try again and increment attempt
+                return this.retriableResize(maxRows, sheet, spreadsheetId, sheetId, attempt + 1, webhookId)
+            } else {
+                throw e
+            }
         })
     }
 
@@ -337,9 +403,25 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             this.sanitizeGaxiosError(e)
             winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
             if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
-                winston.warn("Queueing retry", {webhookId})
-                await this.delay((3 ** (attempt + 1)) * 1000)
-                return this.retriableSpreadsheetGet(spreadsheetId, sheet, attempt, spreadsheetId)
+                winston.warn("Queueing retry for read", {webhookId})
+                await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
+                // Try again and increment attempt
+                return this.retriableSpreadsheetGet(spreadsheetId, sheet, attempt + 1, spreadsheetId)
+            } else {
+                throw e
+            }
+        })
+    }
+
+    async retriableFileList(drive: Drive, options: any, attempt: number, webhookId: string): Promise<any> {
+        return await drive.files.list(options).catch(async (e: any) => {
+            this.sanitizeGaxiosError(e)
+            winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
+            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+                winston.warn("Queueing retry for file list", {webhookId})
+                await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
+                // Try again and increment attempt
+                return this.retriableFileList(drive, options, attempt + 1, webhookId)
             } else {
                 throw e
             }
@@ -351,28 +433,33 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         return sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer}).catch(async (e: any) => {
             this.sanitizeGaxiosError(e)
             winston.debug(`Flush error: ${e}`, {webhookId})
-            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY) {
-                winston.warn("Queueing retry", {webhookId})
-                return this.flushRetry(buffer, sheet, spreadsheetId)
+            // If we turned retries off do not attempt to retry and just throw
+            if (!process.env.GOOGLE_SHEET_RETRY) {
+                throw e
+            // if this is a too many request, we can retry
+            } else if (e.code === 429 || e.code === 500) {
+                winston.warn(`Queueing retry for ${e.code}`, {webhookId})
+                return this.flushRetry(buffer, sheet, spreadsheetId, webhookId)
             } else {
                 throw e
             }
         })
     }
 
-    async flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest, sheet: Sheet, spreadsheetId: string) {
+    async flushRetry(buffer: sheets_v4.Schema$BatchUpdateSpreadsheetRequest,
+                     sheet: Sheet, spreadsheetId: string, webhookId: string) {
         let retrySuccess = false
         let retryCount = 1
         while (!retrySuccess && retryCount <= MAX_RETRY_COUNT) {
             retrySuccess = true
-            await this.delay((3 ** retryCount) * 1000)
+            await this.delay((RETRY_BASE_DELAY ** retryCount) * 1000)
             try {
                 return await sheet.spreadsheets.batchUpdate({ spreadsheetId, requestBody: buffer})
             } catch (e: any) {
                 this.sanitizeGaxiosError(e)
                 retrySuccess = false
-                if (e.code === 429) {
-                    winston.debug(`Retry number ${retryCount} failed`)
+                if (e.code === 429 || e.code === 500) {
+                    winston.info(`Retry number ${retryCount} for writeBatch failed`, {webhookId})
                     winston.debug(e)
                 } else {
                     throw e
