@@ -400,7 +400,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const response = await authy.tokeninfo()
     const email = response.data.email ? response.data.email : "INVALID"
     list.forEach((domain) => {
-      const domainRegex = new RegExp(`@${domain}\.com$`)
+      const domainRegex = new RegExp(`@${domain}$`)
       if (email.match(domainRegex)) {
         return true
       }
