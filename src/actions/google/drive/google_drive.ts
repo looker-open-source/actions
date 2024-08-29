@@ -101,14 +101,21 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
 
     if (request.params.state_json) {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
+          if (request.params.domain_allowlist &&
+              !await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)) {
+            winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+            form.state = new Hub.ActionState()
+            form.state.data = "reset"
+            throw "Domain Verification Failure"
+          }
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
-          const form = new Hub.ActionForm()
           const driveSelections = await this.getDrives(drive)
           form.fields.push({
             description: "Google Drive where your file will be saved",
@@ -393,7 +400,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const response = await authy.tokeninfo()
     const email = response.data.email ? response.data.email : "INVALID"
     list.forEach((domain) => {
-      const domainRegex = new RegExp(`@${domain}\\.com$`)
+      const domainRegex = new RegExp(`@${domain}\.com$`)
       if (email.match(domainRegex)) {
         return true
       }
