@@ -28,7 +28,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       label: "Domain Allowlist",
       required: false,
       sensitive: false,
-      description: "Comma separated domain allowlist ex: facts.com,car.com",
+      description: "Comma separated domain allowlist ex: facts.com,car.com. Be advised that if this is enabled after, all existing accounts will have to reauth due to an additional scope needed to check the email address.",
     }]
 
     mimeType: string | undefined = undefined
@@ -45,13 +45,17 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
-      if (request.params.domain_allowlist &&
-          !await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)) {
-        winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
-        resp.success = false
-        resp.state = new Hub.ActionState()
-        resp.state.data = "reset"
-        return resp
+      if (request.params.domain_allowlist) {
+        const domainCheck = await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)
+        if (domainCheck) {
+          winston.info("Domain Verification successful",{webhookId: request.webhookId})
+        } else {
+          winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+          resp.success = false
+          resp.state = new Hub.ActionState()
+          resp.state.data = "reset"
+          return resp
+        }
       }
       const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
@@ -107,12 +111,16 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
-          if (request.params.domain_allowlist &&
-              !await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)) {
-            winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
-            form.state = new Hub.ActionState()
-            form.state.data = "reset"
-            throw "Domain Verification Failure"
+          if (request.params.domain_allowlist) {
+            const domainCheck = await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)
+            if (domainCheck) {
+              winston.info("Domain Verification successful",{webhookId: request.webhookId})
+            } else {
+              winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+              form.state = new Hub.ActionState()
+              form.state.data = "reset"
+              throw "Domain Verification Failed"
+            }
           }
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
@@ -399,12 +407,12 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const authy = google.oauth2({version: "v2", auth: client})
     const response = await authy.tokeninfo()
     const email = response.data.email ? response.data.email : "INVALID"
-    list.forEach((domain) => {
+    for (const domain of list) {
       const domainRegex = new RegExp(`@${domain}$`)
       if (email.match(domainRegex)) {
         return true
       }
-    })
+    }
     return false
   }
 
