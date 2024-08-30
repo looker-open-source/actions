@@ -46,9 +46,10 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
       if (request.params.domain_allowlist) {
-        const domainCheck = await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)
+        const domainCheck = await this.checkDomain(stateJson.redirect,
+            stateJson.tokens, request.params.domain_allowlist)
         if (domainCheck) {
-          winston.info("Domain Verification successful",{webhookId: request.webhookId})
+          winston.info("Domain Verification successful", {webhookId: request.webhookId})
         } else {
           winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
           resp.success = false
@@ -112,9 +113,10 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
           if (request.params.domain_allowlist) {
-            const domainCheck = await this.checkDomain(stateJson.redirect, stateJson.tokens, request.params.domain_allowlist)
+            const domainCheck = await this.checkDomain(stateJson.redirect,
+                stateJson.tokens, request.params.domain_allowlist)
             if (domainCheck) {
-              winston.info("Domain Verification successful",{webhookId: request.webhookId})
+              winston.info("Domain Verification successful", {webhookId: request.webhookId})
             } else {
               winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
               form.state = new Hub.ActionState()
