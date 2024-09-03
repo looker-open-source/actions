@@ -404,11 +404,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
   protected async checkDomain(redirect: string, tokens: Credentials, domainCSV: string) {
     const domains = domainCSV.split(",").map((domain) => domain.trim())
-    const client = this.oauth2Client(redirect)
-    client.setCredentials(tokens)
-    const authy = google.oauth2({version: "v2", auth: client})
-    const response = await authy.tokeninfo()
-    const email = response.data.email ? response.data.email : "INVALID"
+    const email = await this.getUserEmail(redirect, tokens)
     for (const domain of domains) {
       const domainRegex = new RegExp(`${domain}`)
       if (email.match(domainRegex)) {
@@ -416,6 +412,16 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       }
     }
     return false
+  }
+
+  private async getUserEmail(redirect: string, tokens: Credentials) {
+    const client = this.oauth2Client(redirect)
+    client.setCredentials(tokens)
+    const authy = google.oauth2({version: "v2", auth: client})
+    const response = await authy.tokeninfo()
+    const email = response.data.email ? response.data.email : "INVALID"
+
+    return email
   }
 
   private async loginForm(request: Hub.ActionRequest) {
