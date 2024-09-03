@@ -402,15 +402,15 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     return google.drive({version: "v3", auth: client})
   }
 
-  protected async checkDomain(redirect: string, tokens: Credentials, domainList: string) {
-    const list = domainList.split(",")
+  protected async checkDomain(redirect: string, tokens: Credentials, domainCSV: string) {
+    const domains = domainCSV.split(",").map((domain) => domain.trim())
     const client = this.oauth2Client(redirect)
     client.setCredentials(tokens)
     const authy = google.oauth2({version: "v2", auth: client})
     const response = await authy.tokeninfo()
     const email = response.data.email ? response.data.email : "INVALID"
-    for (const domain of list) {
-      const domainRegex = new RegExp(`@${domain}$`)
+    for (const domain of domains) {
+      const domainRegex = new RegExp(`${domain}`)
       if (email.match(domainRegex)) {
         return true
       }

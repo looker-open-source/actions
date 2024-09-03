@@ -37,6 +37,6 @@ export declare class GoogleDriveAction extends Hub.OAuthAction {
     sanitizeGaxiosError(err: any): void;
     protected getAccessTokenCredentialsFromCode(redirect: string, code: string): Promise<Credentials>;
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
-    protected checkDomain(redirect: string, tokens: Credentials, domainList: string): Promise<boolean>;
+    protected checkDomain(redirect: string, tokens: Credentials, domainCSV: string): Promise<boolean>;
     private loginForm;
 }
