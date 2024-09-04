@@ -47,16 +47,16 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
-      this.validateUserInDomainAllowlist(request.params.domain_allowlist,
+      await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
                                          stateJson.redirect,
                                          stateJson.tokens,
                                          request.webhookId)
-        .catch(() => {
-            winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
-            resp.success = false
-            resp.state = new Hub.ActionState()
-            resp.state.data = "reset"
-            return resp
+        .catch((error) => {
+          winston.info(error + " - invalidating token", {webhookId: request.webhookId})
+          resp.success = false
+          resp.state = new Hub.ActionState()
+          resp.state.data = "reset"
+          return resp
         })
 
       const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
@@ -113,22 +113,16 @@ export class GoogleDriveAction extends Hub.OAuthAction {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
-          if (request.params.domain_allowlist) {
-            const domainValidator = new DomainValidator(request.params.domain_allowlist)
-            // check for valid domain allowlist before fetching user email address
-            if (domainValidator.hasValidDomains()) {
-              const userEmail = await this.getUserEmail(stateJson.redirect, stateJson.tokens)
-
-              if (domainValidator.isValidEmailDomain(userEmail)) {
-                winston.info("Domain Verification successful", {webhookId: request.webhookId})
-              } else {
-                winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
-                form.state = new Hub.ActionState()
-                form.state.data = "reset"
-                throw "Domain Verification Failed"
-              }
-            }
-          }
+          await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
+                                             stateJson.redirect,
+                                             stateJson.tokens,
+                                             request.webhookId)
+            .catch((error) => {
+              winston.info(error + " - invalidating token", {webhookId: request.webhookId})
+              form.state = new Hub.ActionState()
+              form.state.data = "reset"
+              throw "Domain Verification Failed"
+            })
 
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 

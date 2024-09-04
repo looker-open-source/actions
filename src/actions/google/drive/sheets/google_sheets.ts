@@ -44,16 +44,16 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
         if (stateJson.tokens && stateJson.redirect) {
             await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
-                                                   stateJson.redirect,
-                                                   stateJson.tokens,
-                                                   request.webhookId)
+                                                     stateJson.redirect,
+                                                     stateJson.tokens,
+                                                     request.webhookId)
                 .catch((error) => {
                     winston.info(error + " - invalidating token", {webhookId: request.webhookId})
                     resp.success = false
                     resp.state = new Hub.ActionState()
                     resp.state.data = "reset"
                     return resp
-                })
+            })
 
             const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
