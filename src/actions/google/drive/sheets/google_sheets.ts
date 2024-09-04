@@ -8,11 +8,9 @@ import { GaxiosPromise } from "googleapis-common"
 import * as winston from "winston"
 import { getHttpErrorType } from "../../../../error_types/utils"
 import { Error, errorWith } from "../../../../hub"
-import { DomainValidator } from "../domain_validator"
 import { GoogleDriveAction } from "../google_drive"
 import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
-
 
 const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process.env.GOOGLE_SHEETS_WRITE_BATCH) : 4096
 const MAX_ROW_BUFFER_INCREASE = 6000
@@ -43,26 +41,19 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         }
 
         const stateJson = JSON.parse(request.params.state_json)
+
         if (stateJson.tokens && stateJson.redirect) {
-
-            // validating against optional domain allowlist
-            if (request.params.domain_allowlist) {
-                const domainValidator = new DomainValidator(request.params.domain_allowlist)
-                // check for valid domain allowlist before fetching user email address
-                if (domainValidator.hasValidDomains()) {
-                    const userEmail = await this.getUserEmail(stateJson.redirect, stateJson.tokens)
-
-                    if (domainValidator.isValidEmailDomain(userEmail)) {
-                        winston.info("Domain Verification successful", {webhookId: request.webhookId})
-                    } else {
-                        winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
-                        resp.success = false
-                        resp.state = new Hub.ActionState()
-                        resp.state.data = "reset"
-                        return resp
-                    }
-                }
-            }
+            await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
+                                                   stateJson.redirect,
+                                                   stateJson.tokens,
+                                                   request.webhookId)
+                .catch((error) => {
+                    winston.info(error + " - invalidating token", {webhookId: request.webhookId})
+                    resp.success = false
+                    resp.state = new Hub.ActionState()
+                    resp.state.data = "reset"
+                    return resp
+                })
 
             const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
@@ -194,12 +185,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             this.sanitizeGaxiosError(e)
             winston.warn(`Error listing drives. Error ${e.toString()}`,
                          {webhookId: request.webhookId})
-                         throw e
+            throw e
         })
         if (files.data.files === undefined || files.data.files.length === 0) {
             winston.debug(`New file: ${filename}`,
                           {webhookId: request.webhookId})
-                          return this.sendData(filename, request, drive)
+            return this.sendData(filename, request, drive)
         }
         if (files.data.files[0].id === undefined) {
             throw "No spreadsheet ID"
@@ -211,23 +202,23 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                                               this.sanitizeGaxiosError(e)
                                                               winston.debug(`Error retrieving spreadsheet. Error ${e.toString()}`,
                                                                             {webhookId: request.webhookId})
-                                                                            throw e
+                                                              throw e
                                                           })
-                                                          if (!sheets.data.sheets ||
+        if (!sheets.data.sheets ||
                                                               sheets.data.sheets[0].properties === undefined ||
                                                                   sheets.data.sheets[0].properties.gridProperties === undefined) {
                                                               throw "Now sheet data available"
                                                           }
                                                           // The ignore is here because Typescript is not correctly inferring that I have done existence checks
-                                                          const sheetId = sheets.data.sheets[0].properties.sheetId as number
-                                                          let maxRows = sheets.data.sheets[0].properties.gridProperties.rowCount as number
-                                                          const columns = sheets.data.sheets[0].properties.gridProperties.columnCount as number
-                                                          const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT / columns)
-                                                          const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
-                                                          let rowCount = 0
-                                                          let finished = false
+        const sheetId = sheets.data.sheets[0].properties.sheetId as number
+        let maxRows = sheets.data.sheets[0].properties.gridProperties.rowCount as number
+        const columns = sheets.data.sheets[0].properties.gridProperties.columnCount as number
+        const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT / columns)
+        const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
+        let rowCount = 0
+        let finished = false
 
-                                                          return request.stream(async (readable) => {
+        return request.stream(async (readable) => {
                                                               return new Promise<void>(async (resolve, reject) => {
                                                                   try {
                                                                       const csvparser = parse({
@@ -244,7 +235,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                                                           }
                                                                           const rowIndex: number = rowCount++
                                                                               // Sanitize line data and properly encapsulate string formatting for CSV lines
-                                                                              const lineData = line.map((record: string) => {
+                                                                          const lineData = line.map((record: string) => {
                                                                               record = record.replace(/\"/g, "\"\"")
                                                                               return `"${record}"`
                                                                           }).join(",") as string
@@ -318,11 +309,11 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                                                               this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).then(() => {
                                                                                   winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
                                                                                                {webhookId: request.webhookId})
-                                                                                               resolve()
+                                                                                  resolve()
                                                                               }).catch((e) => {
                                                                                   winston.warn("End flush failed.",
                                                                                                {webhookId: request.webhookId})
-                                                                                               reject(e)
+                                                                                  reject(e)
                                                                               })
                                                                           }
                                                                       }).on("error", (e: any) => {
@@ -332,7 +323,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                                                           if (!finished) {
                                                                               winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`,
                                                                                            {webhookId: request.webhookId})
-                                                                                           reject(`"end" event not called before finishing stream`)
+                                                                              reject(`"end" event not called before finishing stream`)
                                                                           }
                                                                       })
                                                                       readable.pipe(csvparser)

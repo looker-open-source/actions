@@ -47,24 +47,17 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
-      // validating against optional domain allowlist
-      if (request.params.domain_allowlist) {
-        const domainValidator = new DomainValidator(request.params.domain_allowlist)
-        // check for valid domain allowlist before fetching user email address
-        if (domainValidator.hasValidDomains()) {
-          const userEmail = await this.getUserEmail(stateJson.redirect, stateJson.tokens)
-
-          if (domainValidator.isValidEmailDomain(userEmail)) {
-            winston.info("Domain Verification successful", {webhookId: request.webhookId})
-          } else {
+      this.validateUserInDomainAllowlist(request.params.domain_allowlist,
+                                         stateJson.redirect,
+                                         stateJson.tokens,
+                                         request.webhookId)
+        .catch(() => {
             winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
             resp.success = false
             resp.state = new Hub.ActionState()
             resp.state.data = "reset"
             return resp
-          }
-        }
-      }
+        })
 
       const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
@@ -423,6 +416,29 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const email = response.data.email ? response.data.email : "INVALID"
 
     return email
+  }
+
+  protected async validateUserInDomainAllowlist(domainAllowlist: string | undefined,
+                                                redirect: string,
+                                                tokens: Credentials,
+                                                requestWebhookId: string | undefined) {
+      // validating against optional domain allowlist
+      if (domainAllowlist) {
+        const domainValidator = new DomainValidator(domainAllowlist)
+        // check for valid domain allowlist before fetching user email address
+        if (domainValidator.hasValidDomains()) {
+          const userEmail = await this.getUserEmail(redirect, tokens)
+
+          if (domainValidator.isValidEmailDomain(userEmail)) {
+            winston.info("Domain Verification successful", {webhookId: requestWebhookId})
+          } else {
+            throw "Domain Verification unsuccessful"
+          }
+        } else {
+          winston.info("No Domain Verification performed", {webhookId: requestWebhookId})
+        }
+      }
+
   }
 
   private async loginForm(request: Hub.ActionRequest) {
