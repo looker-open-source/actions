@@ -11,6 +11,8 @@ import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
 import Drive = drive_v3.Drive
 
+import { DomainValidator } from "./domain_validator"
+
 const LOG_PREFIX = "[GOOGLE_DRIVE]"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
@@ -23,7 +25,14 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     usesStreaming = true
     minimumSupportedLookerVersion = "7.3.0"
     requiredFields = []
-    params = []
+    params = [{
+      name: "domain_allowlist",
+      label: "Domain Allowlist",
+      required: false,
+      sensitive: false,
+      description: "Comma separated domain allowlist ex: facts.com,car.com. Be advised that if this is enabled after, all existing accounts will have to reauth due to an additional scope needed to check the email address.",
+    }]
+
     mimeType: string | undefined = undefined
 
   async execute(request: Hub.ActionRequest) {
@@ -38,6 +47,18 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
+      this.validateUserInDomainAllowlist(request.params.domain_allowlist,
+                                         stateJson.redirect,
+                                         stateJson.tokens,
+                                         request.webhookId)
+        .catch(() => {
+            winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+            resp.success = false
+            resp.state = new Hub.ActionState()
+            resp.state.data = "reset"
+            return resp
+        })
+
       const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
       const filename = request.formParams.filename || request.suggestedFilename()
@@ -86,14 +107,31 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
+    const form = new Hub.ActionForm()
 
     if (request.params.state_json) {
       try {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
+          if (request.params.domain_allowlist) {
+            const domainValidator = new DomainValidator(request.params.domain_allowlist)
+            // check for valid domain allowlist before fetching user email address
+            if (domainValidator.hasValidDomains()) {
+              const userEmail = await this.getUserEmail(stateJson.redirect, stateJson.tokens)
+
+              if (domainValidator.isValidEmailDomain(userEmail)) {
+                winston.info("Domain Verification successful", {webhookId: request.webhookId})
+              } else {
+                winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+                form.state = new Hub.ActionState()
+                form.state.data = "reset"
+                throw "Domain Verification Failed"
+              }
+            }
+          }
+
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
-          const form = new Hub.ActionForm()
           const driveSelections = await this.getDrives(drive)
           form.fields.push({
             description: "Google Drive where your file will be saved",
@@ -208,6 +246,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     // generate a url that asks permissions for Google Drive scope
     const scopes = [
       "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/userinfo.email",
     ]
 
     const url = oauth2Client.generateAuthUrl({
@@ -227,6 +266,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     })
 
     const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
+
     // Pass back context to Looker
     const payload = JSON.parse(plaintext)
     await https.post({
@@ -368,6 +408,39 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     return google.drive({version: "v3", auth: client})
   }
 
+  protected async getUserEmail(redirect: string, tokens: Credentials) {
+    const client = this.oauth2Client(redirect)
+    client.setCredentials(tokens)
+    const authy = google.oauth2({version: "v2", auth: client})
+    const response = await authy.tokeninfo()
+    const email = response.data.email ? response.data.email : "INVALID"
+
+    return email
+  }
+
+  protected async validateUserInDomainAllowlist(domainAllowlist: string | undefined,
+                                                redirect: string,
+                                                tokens: Credentials,
+                                                requestWebhookId: string | undefined) {
+      // validating against optional domain allowlist
+      if (domainAllowlist) {
+        const domainValidator = new DomainValidator(domainAllowlist)
+        // check for valid domain allowlist before fetching user email address
+        if (domainValidator.hasValidDomains()) {
+          const userEmail = await this.getUserEmail(redirect, tokens)
+
+          if (domainValidator.isValidEmailDomain(userEmail)) {
+            winston.info("Domain Verification successful", {webhookId: requestWebhookId})
+          } else {
+            throw "Domain Verification unsuccessful"
+          }
+        } else {
+          winston.info("No Domain Verification performed", {webhookId: requestWebhookId})
+        }
+      }
+
+  }
+
   private async loginForm(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     form.fields = []
@@ -390,6 +463,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     winston.debug(`Login form, OAuthURL${process.env.ACTION_HUB_BASE_URL}/actions/${this.name}/oauth?state=${ciphertextBlob}`)
     return form
   }
+
 }
 
 if (process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET) {

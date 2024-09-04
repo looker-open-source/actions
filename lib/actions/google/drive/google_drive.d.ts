@@ -12,7 +12,13 @@ export declare class GoogleDriveAction extends Hub.OAuthAction {
     usesStreaming: boolean;
     minimumSupportedLookerVersion: string;
     requiredFields: never[];
-    params: never[];
+    params: {
+        name: string;
+        label: string;
+        required: boolean;
+        sensitive: boolean;
+        description: string;
+    }[];
     mimeType: string | undefined;
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
@@ -31,5 +37,7 @@ export declare class GoogleDriveAction extends Hub.OAuthAction {
     sanitizeGaxiosError(err: any): void;
     protected getAccessTokenCredentialsFromCode(redirect: string, code: string): Promise<Credentials>;
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
+    protected getUserEmail(redirect: string, tokens: Credentials): Promise<string>;
+    protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
     private loginForm;
 }
