@@ -11,6 +11,8 @@ import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
 import Drive = drive_v3.Drive
 
+import { DomainValidator } from "./domain_validator"
+
 const LOG_PREFIX = "[GOOGLE_DRIVE]"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
@@ -45,19 +47,25 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
     const stateJson = JSON.parse(request.params.state_json)
     if (stateJson.tokens && stateJson.redirect) {
+      // validating against optional domain allowlist
       if (request.params.domain_allowlist) {
-        const domainCheck = await this.checkDomain(stateJson.redirect,
-            stateJson.tokens, request.params.domain_allowlist)
-        if (domainCheck) {
-          winston.info("Domain Verification successful", {webhookId: request.webhookId})
-        } else {
-          winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
-          resp.success = false
-          resp.state = new Hub.ActionState()
-          resp.state.data = "reset"
-          return resp
+        const domainValidator = new DomainValidator(request.params.domain_allowlist)
+        // check for valid domain allowlist before fetching user email address
+        if (domainValidator.hasValidDomains()) {
+          const userEmail = await this.getUserEmail(stateJson.redirect, stateJson.tokens)
+
+          if (domainValidator.isValidEmailDomain(userEmail)) {
+            winston.info("Domain Verification successful", {webhookId: request.webhookId})
+          } else {
+            winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+            resp.success = false
+            resp.state = new Hub.ActionState()
+            resp.state.data = "reset"
+            return resp
+          }
         }
       }
+
       const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
       const filename = request.formParams.filename || request.suggestedFilename()
@@ -113,17 +121,22 @@ export class GoogleDriveAction extends Hub.OAuthAction {
         const stateJson = JSON.parse(request.params.state_json)
         if (stateJson.tokens && stateJson.redirect) {
           if (request.params.domain_allowlist) {
-            const domainCheck = await this.checkDomain(stateJson.redirect,
-                stateJson.tokens, request.params.domain_allowlist)
-            if (domainCheck) {
-              winston.info("Domain Verification successful", {webhookId: request.webhookId})
-            } else {
-              winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
-              form.state = new Hub.ActionState()
-              form.state.data = "reset"
-              throw "Domain Verification Failed"
+            const domainValidator = new DomainValidator(request.params.domain_allowlist)
+            // check for valid domain allowlist before fetching user email address
+            if (domainValidator.hasValidDomains()) {
+              const userEmail = await this.getUserEmail(stateJson.redirect, stateJson.tokens)
+
+              if (domainValidator.isValidEmailDomain(userEmail)) {
+                winston.info("Domain Verification successful", {webhookId: request.webhookId})
+              } else {
+                winston.info("Domain Verification failed, invalidating token", {webhookId: request.webhookId})
+                form.state = new Hub.ActionState()
+                form.state.data = "reset"
+                throw "Domain Verification Failed"
+              }
             }
           }
+
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
           const driveSelections = await this.getDrives(drive)
@@ -402,19 +415,7 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     return google.drive({version: "v3", auth: client})
   }
 
-  protected async checkDomain(redirect: string, tokens: Credentials, domainCSV: string) {
-    const domains = domainCSV.split(",").map((domain) => domain.trim())
-    const email = await this.getUserEmail(redirect, tokens)
-    for (const domain of domains) {
-      const domainRegex = new RegExp(`${domain}`)
-      if (email.match(domainRegex)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  private async getUserEmail(redirect: string, tokens: Credentials) {
+  protected async getUserEmail(redirect: string, tokens: Credentials) {
     const client = this.oauth2Client(redirect)
     client.setCredentials(tokens)
     const authy = google.oauth2({version: "v2", auth: client})
