@@ -210,7 +210,7 @@ export class ActionRequest {
               winston.warn(`[stream] There was an error received from Looker.` +
                   `ErrorCode: ${response.statusCode} ErrorMessage: ${response.statusMessage}`, this.logInfo)
               if (!hasResolved) {
-                reject(`There was an error with Action Hub calling back to Looker, ${response.statusCode}`)
+                reject(`There was an error with Action Hub calling back to Looker, status code: ${response.statusCode}`)
               }
             }
           })
