@@ -18,6 +18,7 @@ const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_RETRY_COUNT = 5
 const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.env.GOOGLE_SHEETS_BASE_DELAY) : 3
 const LOG_PREFIX = "[GOOGLE_SHEETS]"
+const ROOT = "root"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
 export class GoogleSheetsAction extends GoogleDriveAction {
@@ -151,19 +152,19 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         if (request.formParams.folderid) {
             winston.info("Using manual folder id")
             if (request.formParams.folderid.includes("my-drive")) {
-                folder = "root"
+                folder = ROOT
             } else {
                 const match = request.formParams.folderid.match(FOLDERID_REGEX)
                 if (match && match.groups) {
                     folder = match.groups.folderId
                 } else {
-                    folder = "root"
+                    folder = ROOT
                 }
             }
         } else {
             folder = request.formParams.folder
         }
-        const parents = folder ? [folder] : undefined
+        const parents = folder ? [folder] : ROOT
 
         filename = this.sanitizeFilename(filename)
         const options: any = {
