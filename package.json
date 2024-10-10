@@ -118,8 +118,7 @@
     "**/google-auth-library": "7.14.1",
     "**/pac-resolver": "^5.0.0",
     "**/mem": "^4.0.0",
-    "**/formidable": "^3.2.4",
-    "**/handlebars": "^4.7.8"
+    "**/formidable": "^3.2.4"
   },
   "devDependencies": {
     "@types/chai": "^4.2.12",
