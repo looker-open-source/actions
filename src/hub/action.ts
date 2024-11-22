@@ -1,6 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
-import {ExecuteProcessQueue} from "../xpc/execute_process_queue"
+import {ProcessQueue} from "../xpc/process_queue"
 
 import * as winston from "winston"
 import {
@@ -52,6 +52,7 @@ export abstract class Action {
   abstract description: string
   usesStreaming = false
   executeInOwnProcess = false
+  extendedAction = false
   iconName?: string
 
   // Default to the earliest version of Looker with support for the Action API
@@ -76,6 +77,7 @@ export abstract class Action {
       required_fields: this.requiredFields,
       supported_action_types: this.supportedActionTypes,
       uses_oauth: false,
+      delegate_oauth: false,
       supported_formats: (this.supportedFormats instanceof Function)
         ? this.supportedFormats(request) : this.supportedFormats,
       supported_formattings: this.supportedFormattings,
@@ -92,7 +94,7 @@ export abstract class Action {
     }
   }
 
-  async validateAndExecute(request: ActionRequest, queue?: ExecuteProcessQueue) {
+  async validateAndExecute(request: ActionRequest, queue?: ProcessQueue) {
     if (this.supportedActionTypes.indexOf(request.type) === -1) {
       const types = this.supportedActionTypes.map((at) => `"${at}"`).join(", ")
       if (request.type as any) {
@@ -119,14 +121,18 @@ export abstract class Action {
         throw "An action marked for being executed on a separate process needs a ExecuteProcessQueue."
       }
       request.actionId = this.name
+      winston.info(`Execute Action Enqueued. Queue length: ${queue.queue.size}`, {webhookId: request.webhookId})
       return new Promise<ActionResponse>((resolve, reject) => {
-        queue.run(JSON.stringify(request)).then((response: string) => {
+        queue.run(JSON.stringify(request)).then((response: any) => {
           const actionResponse = new ActionResponse()
           Object.assign(actionResponse, response)
           resolve(actionResponse)
         }).catch((err) => {
-          winston.error(JSON.stringify(err))
-          reject(err)
+          winston.error(`${JSON.stringify(err)}`, {webhookId: request.webhookId})
+          const response = new ActionResponse()
+          response.success = false
+          response.message = JSON.stringify(err)
+          reject(response)
         })
       })
     } else {
@@ -138,7 +144,7 @@ export abstract class Action {
   async validateAndFetchForm(request: ActionRequest) {
     try {
       this.throwForMissingRequiredParameters(request)
-    } catch (e) {
+    } catch (e: any) {
       const errorForm = new ActionForm()
       errorForm.error = e
       return errorForm

@@ -1,7 +1,7 @@
 import * as Hub from "../../hub"
 
 import * as req from "request-promise-native"
-import * as url from "url"
+import { URL } from "url"
 
 export abstract class WebhookAction extends Hub.Action {
 
@@ -26,7 +26,7 @@ export abstract class WebhookAction extends Hub.Action {
     }
 
     const providedUrl = request.formParams.url
-    const parsedUrl = url.parse(providedUrl)
+    const parsedUrl = new URL(providedUrl)
     if (!parsedUrl.hostname) {
       throw "Incorrect domain for url."
     }
@@ -41,7 +41,7 @@ export abstract class WebhookAction extends Hub.Action {
         return req.post({ uri: providedUrl, body: readable } ).promise()
       })
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
+    } catch (e: any) {
       return new Hub.ActionResponse({ success: false, message: e.message })
     }
   }

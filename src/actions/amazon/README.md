@@ -1,4 +1,7 @@
 # AWS S3, EC2
+
+**This is not an officially supported Google product.**
+
 ## Write data files to an S3 bucket or Stop an EC2 instance.
 
 The Amazon S3 actions enables you to send and store a data file on S3 via the Amazon S3 API. The Amazon EC2 Stop Instance action allows you to stop an EC2 (from a dimension tagged with `aws_resource_id` in LookML) via the Amazon EC2 API.

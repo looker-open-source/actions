@@ -9,6 +9,7 @@ export class AzureStorageAction extends Hub.Action {
   iconName = "azure/azure_storage.png"
   description = "Write data files to an Azure container."
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
+  usesStreaming = true
   requiredFields = []
   params = [
     {
@@ -27,71 +28,81 @@ export class AzureStorageAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
-    if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment"
-    }
 
     if (!request.formParams.container) {
       throw "Need Azure container."
     }
 
-    const blobService = this.azureClientFromRequest(request)
     const fileName = request.formParams.filename || request.suggestedFilename()
     const container = request.formParams.container
-    const data = request.attachment.dataBuffer
 
     if (!fileName) {
       return new Hub.ActionResponse({ success: false, message: "Cannot determine a filename." })
     }
 
-    return new Promise<Hub.ActionResponse>((resolve, reject) => {
-      blobService.createBlockBlobFromText(
-        container,
-        fileName,
-        data,
-        (e?: Error) => {
-          if (e) {
-            reject(new Hub.ActionResponse({success: false, message: e.message}))
-          } else {
-            resolve(new Hub.ActionResponse({success: true}))
-          }
+    const blobService = this.azureClientFromRequest(request)
+    const writeStream = blobService.createWriteStreamToBlockBlob(container, fileName)
+
+    try {
+      await request.stream(async (readable) => {
+        return new Promise<any>((resolve, reject) => {
+          readable.pipe(writeStream)
+            .on("error", reject)
+            .on("finish", resolve)
         })
-    })
+      })
+      return new Hub.ActionResponse({ success: true })
+    } catch (e: any) {
+      return new Hub.ActionResponse({success: false, message: e.message})
+    }
   }
 
   async form(request: Hub.ActionRequest) {
     // error in type definition for listContainersSegmented currentToken?
     // https://github.com/Azure/azure-storage-node/issues/352
     const form = new Hub.ActionForm()
-    const blogService: any = this.azureClientFromRequest(request)
+    const blobService: any = this.azureClientFromRequest(request)
     return new Promise<Hub.ActionForm>((resolve, _reject) => {
-      blogService.listContainersSegmented(null, (err: any, res: any) => {
+      blobService.listContainersSegmented(null, (err: any, res: any) => {
         if (err) {
           form.error = err
           resolve(form)
         } else {
-          form.fields = [{
-            label: "Container",
-            name: "container",
-            required: true,
-            options: res.entries.map((c: any) => {
-              return {name: c.name, label: c.name}
-            }),
-            type: "select",
-            default: res.entries[0].name,
-          }, {
-            label: "Filename",
-            name: "filename",
-            type: "string",
-          }]
-          resolve(form)
+          const entries: any[] = res.entries
+          if (entries.length > 0) {
+            form.fields = [{
+              label: "Container",
+              name: "container",
+              required: true,
+              options: entries.map((c: any) => {
+                return {name: c.name, label: c.name}
+              }),
+              type: "select",
+              default: entries[0].name,
+            }, {
+              label: "Filename",
+              name: "filename",
+              type: "string",
+            }]
+            resolve(form)
+          } else {
+            form.error = "Create a container in your Azure account."
+            resolve(form)
+          }
         }
       })
     })
   }
 
   private azureClientFromRequest(request: Hub.ActionRequest) {
-    return azure.createBlobService(request.params.account!, request.params.accessKey!)
+    try {
+      return azure.createBlobService(request.params.account!, request.params.accessKey!)
+    } catch (err: any) {
+      if (err && err.toString().includes("base64")) {
+        throw "The provided Account Key is not a valid base64 string"
+      }
+      throw "Error making Azure client. Storage Account and Access Key settings may be incorrect"
+    }
   }
 
 }

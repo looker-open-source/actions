@@ -29,20 +29,32 @@ function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any) {
 }
 
 describe(`${action.constructor.name} unit tests`, () => {
-  sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
-  sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+  let encryptStub: any
+  let decryptStub: any
+
+  beforeEach(() => {
+    encryptStub = sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
+    decryptStub = sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+  })
+
+  afterEach(() => {
+    encryptStub.restore()
+    decryptStub.restore()
+  })
 
   describe("action", () => {
+
+    it("has streaming disabled to support legacy schedules", () => {
+      chai.expect(action.usesStreaming).equals(false)
+    })
 
     it("successfully interprets execute request params", () => {
       const request = new Hub.ActionRequest()
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
-        stateUrl: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        stateJson: `{"access_token": "token"}`,
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: `{"access_token": "token"}`,
       }
       return expectDropboxMatch(request,
         {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
@@ -54,8 +66,6 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {filename: stubFileName, directory: stubDirectory}
       request.type = Hub.ActionType.Query
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -85,8 +95,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -112,8 +120,6 @@ describe(`${action.constructor.name} unit tests`, () => {
         }))
       const request = new Hub.ActionRequest()
       request.params = {
-        appKey: "mykey",
-        secretKey: "mySecret",
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
@@ -150,7 +156,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           default: "__root",
-          description: "Dropbox folder where file will be saved",
+          description: "Dropbox folder where your file will be saved",
           label: "Select folder to save file",
           name: "directory",
           options: [{ name: "__root", label: "Home" }, { name: "fake_name", label: "fake_name" }],
@@ -161,6 +167,20 @@ describe(`${action.constructor.name} unit tests`, () => {
           name: "filename",
           type: "string",
           required: true,
+        }, {
+          label: "Append timestamp",
+          name: "includeTimestamp",
+          description: "Append timestamp to end of file name. Should be set to 'Yes' if the file will be sent repeatedly",
+          required: true,
+          default: "no",
+          type: "select",
+          options: [{
+            name: "yes",
+            label: "Yes",
+          }, {
+            name: "no",
+            label: "No",
+          }],
         }],
       }).and.notify(stubClient.restore).and.notify(done)
     })
@@ -178,6 +198,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     })
 
     it("correctly handles redirect from authorization server", (done) => {
+      // @ts-ignore
       const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
       const result = action.oauthFetchInfo({code: "code",
         state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
@@ -185,6 +206,30 @@ describe(`${action.constructor.name} unit tests`, () => {
         "redirect")
       chai.expect(result)
         .and.notify(stubReq.restore).and.notify(done)
+    })
+  })
+
+  describe("dropboxFilename", () => {
+    it("returns basic filename if includeTimeStamp flag is not set", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {filename: stubFileName, directory: stubDirectory}
+      const result = action.dropboxFilename(request)
+      chai.expect(result).equal(stubFileName)
+    })
+
+    it("returns basic filename if includeTimeStamp flag is no", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {filename: stubFileName, directory: stubDirectory, includeTimestamp: "no"}
+      const result = action.dropboxFilename(request)
+      chai.expect(result).equal(stubFileName)
+    })
+
+    it("returns filename with timestamp if includeTimeStamp flag is yes", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {filename: stubFileName, directory: stubDirectory, includeTimestamp: "yes"}
+      const result = action.dropboxFilename(request)
+      chai.expect(result).to.include(stubFileName)
+      chai.expect(result).not.equal(stubFileName)
     })
   })
 })

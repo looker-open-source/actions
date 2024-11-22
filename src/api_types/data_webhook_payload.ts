@@ -14,9 +14,9 @@ export interface DataWebhookPayload {
   type: DataWebhookPayloadType | null
   /** The associated scheduled plan, if this payload is on a schedule. */
   scheduled_plan: DataWebhookPayloadScheduledPlan | null
-  /** Attached data, if the payload data is a file. */
+  /** Attached data, if the payload data is a file and the integration specifies "push" in its supported_download_settings. */
   attachment: DataWebhookPayloadAttachment | null
-  /** Data, if the payload data is in an inline format. */
+  /** Data, if the payload data is in an inline format and the integration specifies "push" in its supported_download_settings. */
   data: {[key: string]: string} | null
   /** Form parameters associated with the payload. */
   form_params: {[key: string]: string} | null

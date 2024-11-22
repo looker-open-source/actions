@@ -1,11 +1,12 @@
 import * as express from "express"
 import * as oboe from "oboe"
 import * as httpRequest from "request"
-import * as sanitizeFilename from "sanitize-filename"
 import * as semver from "semver"
 import { PassThrough, Readable } from "stream"
 import * as winston from "winston"
-import { truncateString } from "./utils"
+import { formatToFileExtension, truncateString } from "./utils"
+
+const sanitizeFilename = require("sanitize-filename")
 
 import {
   DataWebhookPayload,
@@ -36,7 +37,7 @@ export interface ParamMap {
 
 export interface ActionAttachment {
   dataBuffer?: Buffer
-  encoding?: string
+  encoding?: BufferEncoding
   dataJSON?: any
   mime?: string
   fileExtension?: string
@@ -59,6 +60,8 @@ export interface ActionScheduledPlan {
   filtersDifferFromLook?: boolean
   /** A string to be included in scheduled integrations if this scheduled plan is a download query */
   downloadUrl?: string | null
+  /** A string to be included in scheduled integrations if this scheduled plan is an async action */
+  asyncCallbackUrl?: string | null
 }
 
 export class ActionRequest {
@@ -70,7 +73,7 @@ export class ActionRequest {
     const userAgent = request.header("user-agent")
     if (userAgent) {
       const version = userAgent.split("LookerOutgoingWebhook/")[1]
-      actionRequest.lookerVersion = semver.valid(version)
+      actionRequest.lookerVersion = semver.valid(version, true)
     }
     return actionRequest
   }
@@ -125,6 +128,7 @@ export class ActionRequest {
         type: json.scheduled_plan.type,
         url: json.scheduled_plan.url,
         downloadUrl: json.scheduled_plan.download_url,
+        asyncCallbackUrl: json.scheduled_plan.async_callback_url,
       }
     }
 
@@ -148,6 +152,12 @@ export class ActionRequest {
   instanceId?: string
   webhookId?: string
   lookerVersion: string | null = null
+
+  empty(): boolean {
+    const url = !this.scheduledPlan || !this.scheduledPlan.downloadUrl
+    const buffer = !this.attachment || !this.attachment.dataBuffer
+    return url && buffer
+  }
 
   /** `stream` creates and manages a stream of the request data
    *
@@ -195,6 +205,15 @@ export class ActionRequest {
               reject(err)
             }
           })
+          .on("response", (response) => {
+            if (response.statusCode !== 200) {
+              winston.warn(`[stream] There was an error received from Looker.` +
+                  `ErrorCode: ${response.statusCode} ErrorMessage: ${response.statusMessage}`, this.logInfo)
+              if (!hasResolved) {
+                reject(`There was an error with Action Hub calling back to Looker, status code: ${response.statusCode}`)
+              }
+            }
+          })
           .on("finish", () => {
             winston.info(`[stream] streaming via download url finished`, this.logInfo)
           })
@@ -215,8 +234,6 @@ export class ActionRequest {
           .on("error", (err) => {
             winston.error(`[stream] PassThrough stream error`, {
               ...this.logInfo,
-              error: err,
-              stack: err.stack,
             })
             reject(err)
           })
@@ -231,9 +248,12 @@ export class ActionRequest {
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
           winston.info(`Using "fake" streaming because request contained attachment data.`, this.logInfo)
-          stream.end(this.attachment.dataBuffer)
+          winston.info(`DataBuffer: ${this.attachment.dataBuffer.length}`)
+          stream.write(this.attachment.dataBuffer)
+          stream.end()
           resolve()
         } else {
+          stream.end()
           reject(
             "startStream was called on an ActionRequest that does not have" +
             "a streaming download url or an attachment. Ensure usesStreaming is set properly on the action.")
@@ -242,6 +262,10 @@ export class ActionRequest {
     })
 
     const results = await Promise.all([returnPromise, streamPromise])
+        .catch((err: any) => {
+          winston.error(`Error caught awaiting for results. Error: ${err.toString()}`, this.logInfo)
+          throw err
+        })
     return results[0]
   }
 
@@ -312,7 +336,7 @@ export class ActionRequest {
       let rows = 0
       this.stream(async (readable) => {
         oboe(readable)
-          .node("data.*", this.safeOboe(readable, reject, (row) => {
+          .node("!.data.*", this.safeOboe(readable, reject, (row) => {
             rows++
             callbacks.onRow(row)
           }))
@@ -348,7 +372,30 @@ export class ActionRequest {
       } else {
         return sanitizeFilename(`looker_file_${Date.now()}.${this.attachment.fileExtension}`)
       }
+    } else if (this.formParams.format) {
+      if (this.scheduledPlan && this.scheduledPlan.title) {
+        return sanitizeFilename(`${this.scheduledPlan.title}.${formatToFileExtension(this.formParams.format)}`)
+      } else {
+        return sanitizeFilename(`looker_file_${Date.now()}.${formatToFileExtension(this.formParams.format)}`)
+      }
     }
+    winston.warn("Couldn't infer file extension from action request, using default filename scheme")
+    return sanitizeFilename(`looker_file_${Date.now()}`)
+  }
+
+  /** Returns filename with whitespace removed and the file extension included
+   */
+  completeFilename() {
+    if (this.attachment && this.formParams.filename) {
+      if (this.formParams.filename.endsWith(this.attachment.fileExtension!)) {
+        return this.formParams.filename.trim().replace(/\s/g, "_")
+      } else if (this.formParams.filename.indexOf(".") !== -1) {
+        return this.suggestedFilename()
+      } else {
+        return `${this.formParams.filename.trim().replace(/\s/g, "_")}.${this.attachment.fileExtension}`
+      }
+    }
+    return this.formParams.filename
   }
 
   /** creates a truncated message with a max number of lines and max number of characters with Title, Url,
@@ -400,7 +447,7 @@ export class ActionRequest {
       try {
         callback(node)
         return oboe.drop
-      } catch (e) {
+      } catch (e: any) {
         winston.info(`safeOboe callback produced an error, aborting stream`, logInfo)
         this.abort()
         stream.destroy()

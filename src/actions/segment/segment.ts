@@ -107,7 +107,8 @@ export class SegmentAction extends Hub.Action {
           this.unassignedSegmentFieldsCheck(segmentFields)
           const payload = {
             ...this.prepareSegmentTraitsFromRow(
-              row, fieldset, segmentFields!, hiddenFields, segmentCall === SegmentCalls.Track),
+              row, fieldset, segmentFields!, hiddenFields,
+                segmentCall === SegmentCalls.Track, segmentCall === SegmentCalls.Group),
             ...{event, context, timestamp},
           }
           if (payload.groupId === null) {
@@ -118,7 +119,7 @@ export class SegmentAction extends Hub.Action {
           }
           try {
             segmentClient[segmentCall](payload)
-          } catch (e) {
+          } catch (e: any) {
             errors.push(e)
           }
         },
@@ -133,7 +134,7 @@ export class SegmentAction extends Hub.Action {
             }
           })
       })
-    } catch (e) {
+    } catch (e: any) {
       errors.push(e)
     }
 
@@ -183,29 +184,79 @@ export class SegmentAction extends Hub.Action {
     }
   }
 
+  // Removes JsonDetail Cell metadata and only sends relevant nested data to Segment
+  // See JsonDetail.ts to see structure of a JsonDetail Row
+  protected filterJson(jsonRow: any, segmentFields: SegmentFields, fieldName: string) {
+    const pivotValues: any = {}
+    pivotValues[fieldName] = []
+    const filterFunction = (currentObject: any, name: string) => {
+      const returnVal: any = {}
+      if (Object(currentObject) === currentObject) {
+        for (const key in currentObject) {
+          if (currentObject.hasOwnProperty(key)) {
+            if (key === "value") {
+              returnVal[name] = currentObject[key]
+              // Segment Identify Nulls #186583506
+              if (currentObject[key] === null) {
+                pivotValues[fieldName] = null
+              }
+              return returnVal
+            } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
+              const res = filterFunction(currentObject[key], key)
+              if (JSON.stringify(res) !== JSON.stringify({})) {
+                pivotValues[fieldName].push(res)
+              }
+            }
+          }
+        }
+      }
+      return returnVal
+    }
+    filterFunction(jsonRow, fieldName)
+    return pivotValues
+  }
+
   protected prepareSegmentTraitsFromRow(
     row: Hub.JsonDetail.Row,
     fields: Hub.Field[],
     segmentFields: SegmentFields,
     hiddenFields: string[],
     trackCall: boolean,
+    groupCall: boolean,
   ) {
-    const traits: {[key: string]: string} = {}
+    const traits: { [key: string]: string } = {}
     for (const field of fields) {
-      const value = row[field.name].value
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
         if (hiddenFields.indexOf(field.name) === -1) {
-          traits[field.name] = value
+          let values: any = {}
+          if (!row.hasOwnProperty(field.name)) {
+            winston.error("Field name does not exist for Segment action")
+            throw new SegmentActionError(`Field id ${field.name} does not exist for JsonDetail.Row`)
+          }
+          if (row[field.name].value || row[field.name].value === 0) {
+            values[field.name] = row[field.name].value
+          } else {
+            values = this.filterJson(row[field.name], segmentFields, field.name)
+          }
+          for (const key in values) {
+            if (values.hasOwnProperty(key)) {
+              traits[key] = values[key]
+            }
+          }
         }
       }
       if (segmentFields.emailField && field.name === segmentFields.emailField.name) {
-        traits.email = value
+        traits.email = row[field.name].value
       }
     }
     const userId: string | null = segmentFields.idField ? row[segmentFields.idField.name].value : null
     let anonymousId: string | null
     if (segmentFields.anonymousIdField) {
       anonymousId = row[segmentFields.anonymousIdField.name].value
+    } else if (groupCall) {
+      // If this is a Segment Group Call, do not send an anonymous ID to preserve
+      // Segment API quotas
+      anonymousId = null
     } else {
       anonymousId = userId ? null : this.generateAnonymousId()
     }

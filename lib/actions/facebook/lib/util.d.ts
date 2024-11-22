@@ -1,0 +1,11 @@
+export declare function sanitizeError(err: any): void;
+export declare function removeAllWhitespace(str: string): string;
+export declare function removeNonRomanAlphaNumeric(str: string, keepWhitespace?: boolean): string;
+export declare function countryNameTo2Code(name: string, localeString?: string): string;
+export declare function usStateNameTo2Code(name: string): string;
+export declare function getMonth(date: string | number): string;
+export declare function getDayOfMonth(date: string | number): string;
+export declare function getYear(date: string | number): string;
+export declare function formatFullDate(dayOfMonth: string, month: string, year: string): string;
+export declare function isNullOrUndefined(a: any): true | undefined;
+export declare function sortCompare(a: any, b: any): 0 | 1 | -1;

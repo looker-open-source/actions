@@ -60,6 +60,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params.datarobot_api_token = "token"
       const form = action.validateAndFetchForm(request)
+      request.params.datarobot_url = "https://custom-url.com"
 
       chai.expect(form).to.eventually.deep.equal({
         fields: [

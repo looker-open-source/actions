@@ -1,3 +1,4 @@
+import winston = require("winston")
 import * as Hub from "../../hub"
 
 import * as helpers from "@sendgrid/helpers"
@@ -22,14 +23,23 @@ export class SendGridAction extends Hub.Action {
   supportedActionTypes = [Hub.ActionType.Query, Hub.ActionType.Dashboard]
 
   async execute(request: Hub.ActionRequest) {
+    const response = new Hub.ActionResponse()
+
     if (!request.attachment || !request.attachment.dataBuffer) {
-      throw "Couldn't get data from attachment."
+      response.success = false
+      response.message = "Error: could not retrieve data from attachment, or attachment does not exist"
+      winston.error(`Failed execute for sendgrid. ${response.message}`)
+      return response
     }
 
     if (!request.formParams.to) {
-      throw "Needs a valid email address."
+      response.success = false
+      response.message = "Error: invalid email address"
+      winston.error(`Failed execute for sendgrid. ${response.message}`)
+      return response
     }
-    const filename = request.formParams.filename || request.suggestedFilename() as string
+
+    const filename = request.formParams.filename || request.suggestedFilename()
     const plan = request.scheduledPlan
     const subject = request.formParams.subject || (plan && plan.title ? plan.title : "Looker")
     const from = request.formParams.from ? request.formParams.from : "Looker <noreply@lookermail.com>"
@@ -51,13 +61,18 @@ export class SendGridAction extends Hub.Action {
         filename,
       }],
     })
-    let response
     try {
       await this.sendEmail(request, msg)
-    } catch (e) {
-      response = {success: false, message: e.message}
+      response.success = true
+    } catch (e: any) {
+      response.success = false
+      response.message = `Error: ${e.message}`
+
+      if (e.response) {
+        winston.error(`Failed execute for sendgrid with status code: ${e.response.status}`)
+      }
     }
-    return new Hub.ActionResponse(response)
+    return response
   }
 
   async sendEmail(request: Hub.ActionRequest, msg: helpers.classes.Mail) {
