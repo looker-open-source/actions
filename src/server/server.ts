@@ -1,4 +1,3 @@
-import * as bodyParser from "body-parser"
 import * as express from "express"
 import * as fs from "fs"
 import * as path from "path"
@@ -86,7 +85,7 @@ export default class Server implements Hub.RouteBuilder {
   constructor() {
 
     this.app = express()
-    this.app.use(bodyParser.json({limit: "250mb"}))
+    this.app.use(express.json({limit: "250mb"}))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
       dynamicMeta: this.requestLog,
@@ -180,7 +179,7 @@ export default class Server implements Hub.RouteBuilder {
               this.oauthRedirectUrl(action))
           res.statusCode = 200
           res.send(`<html><script>window.close()</script>><body>You may now close this tab.</body></html>`)
-        } catch (e) {
+        } catch (e: any) {
           this.logPromiseFail(req, res, e)
           res.statusCode = 400
         }
@@ -256,7 +255,7 @@ export default class Server implements Hub.RouteBuilder {
 
       try {
         await fn(req, res)
-      } catch (e) {
+      } catch (e: any) {
         this.logError(req, res, "Error on request")
         if (typeof(e) === "string") {
           if (!res.headersSent) {

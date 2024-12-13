@@ -37,7 +37,7 @@ export interface ParamMap {
 
 export interface ActionAttachment {
   dataBuffer?: Buffer
-  encoding?: string
+  encoding?: BufferEncoding
   dataJSON?: any
   mime?: string
   fileExtension?: string
@@ -60,6 +60,8 @@ export interface ActionScheduledPlan {
   filtersDifferFromLook?: boolean
   /** A string to be included in scheduled integrations if this scheduled plan is a download query */
   downloadUrl?: string | null
+  /** A string to be included in scheduled integrations if this scheduled plan is an async action */
+  asyncCallbackUrl?: string | null
 }
 
 export class ActionRequest {
@@ -126,6 +128,7 @@ export class ActionRequest {
         type: json.scheduled_plan.type,
         url: json.scheduled_plan.url,
         downloadUrl: json.scheduled_plan.download_url,
+        asyncCallbackUrl: json.scheduled_plan.async_callback_url,
       }
     }
 
@@ -202,6 +205,15 @@ export class ActionRequest {
               reject(err)
             }
           })
+          .on("response", (response) => {
+            if (response.statusCode !== 200) {
+              winston.warn(`[stream] There was an error received from Looker.` +
+                  `ErrorCode: ${response.statusCode} ErrorMessage: ${response.statusMessage}`, this.logInfo)
+              if (!hasResolved) {
+                reject(`There was an error with Action Hub calling back to Looker, status code: ${response.statusCode}`)
+              }
+            }
+          })
           .on("finish", () => {
             winston.info(`[stream] streaming via download url finished`, this.logInfo)
           })
@@ -222,8 +234,6 @@ export class ActionRequest {
           .on("error", (err) => {
             winston.error(`[stream] PassThrough stream error`, {
               ...this.logInfo,
-              error: err,
-              stack: err.stack,
             })
             reject(err)
           })
@@ -238,7 +248,9 @@ export class ActionRequest {
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
           winston.info(`Using "fake" streaming because request contained attachment data.`, this.logInfo)
-          stream.end(this.attachment.dataBuffer)
+          winston.info(`DataBuffer: ${this.attachment.dataBuffer.length}`)
+          stream.write(this.attachment.dataBuffer)
+          stream.end()
           resolve()
         } else {
           stream.end()
@@ -250,6 +262,10 @@ export class ActionRequest {
     })
 
     const results = await Promise.all([returnPromise, streamPromise])
+        .catch((err: any) => {
+          winston.error(`Error caught awaiting for results. Error: ${err.toString()}`, this.logInfo)
+          throw err
+        })
     return results[0]
   }
 
@@ -431,7 +447,7 @@ export class ActionRequest {
       try {
         callback(node)
         return oboe.drop
-      } catch (e) {
+      } catch (e: any) {
         winston.info(`safeOboe callback produced an error, aborting stream`, logInfo)
         this.abort()
         stream.destroy()

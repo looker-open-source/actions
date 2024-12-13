@@ -1,6 +1,6 @@
 import * as Hub from "../../hub"
 
-import * as URL from "url"
+import { URL } from "url"
 
 const jiraApi = require("jira-client")
 
@@ -59,7 +59,7 @@ export class JiraAction extends Hub.Action {
     let response
     try {
       await jira.addNewIssue(issue)
-    } catch (e) {
+    } catch (e: any) {
       response = {success: false, message: e.message}
     }
     return new Hub.ActionResponse(response)
@@ -107,14 +107,14 @@ export class JiraAction extends Hub.Action {
           }),
         required: true,
       }]
-    } catch (e) {
+    } catch (e: any) {
       form.error = e
     }
     return form
   }
 
   private jiraClientFromRequest(request: Hub.ActionRequest) {
-    const parsedUrl = URL.parse(request.params.address!)
+    const parsedUrl = new URL(request.params.address!)
     if (!parsedUrl.host) {
       throw "Invalid JIRA server address."
     }

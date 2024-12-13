@@ -45,7 +45,7 @@ describe(`${action.constructor.name} class`, () => {
     gaSinonSandbox.stub(Hub.ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
     gaSinonSandbox.stub(Hub.ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
 
-    gaClientStub = gaSinonSandbox.stub(google, "analytics").returns(fakeClientObj)
+    gaClientStub = gaSinonSandbox.stub(google, "analytics").returns(fakeClientObj as any)
   })
 
   afterEach(() => {
@@ -680,7 +680,7 @@ describe(`${action.constructor.name} class`, () => {
           "https://accounts.google.com/o/oauth2/v2/auth" +
           "?access_type=offline" +
           "&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fanalytics.edit" +
-          "&prompt=consent" +
+          "&prompt=select_account" +
           "&state=not-actually-encrypted-payload-used-for-test" +
           "&response_type=code" +
           "&client_id=test_oauth_client_id" +

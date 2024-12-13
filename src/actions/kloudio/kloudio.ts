@@ -83,7 +83,7 @@ export class KloudioAction extends Hub.Action {
         } else {
           response = { success: true, message: lambdaResponse.message }
         }
-    } catch (e) {
+    } catch (e: any) {
       winston.error("Inside catch statement" + e)
       response = { success: false, message: e.message }
     }

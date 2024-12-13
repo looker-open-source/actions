@@ -16,6 +16,10 @@ export class GoogleAdsActionFormBuilder {
 
   readonly apiClient = this.adsRequest.apiClient!
   readonly createOrAppend = this.adsRequest.createOrAppend
+  readonly mobileDevice = this.adsRequest.mobileDevice
+  readonly mobileAppId = this.adsRequest.mobileAppId
+  readonly isMobileDevice = this.adsRequest.isMobileDevice
+  readonly uploadKeyType = this.adsRequest.uploadKeyType
   readonly completedFormParams = this.adsRequest.formParams
   readonly isCreate = this.adsRequest.isCreate
   readonly loginCid = this.adsRequest.loginCid
@@ -48,23 +52,40 @@ export class GoogleAdsActionFormBuilder {
       this.targetCustomer = this.loginCustomer
     }
 
-    // 3) Now choose whether to create a new list or append to an existing one
+    // 2a) Now choose whether to create a new list or append to an existing one
     form.fields.push(this.createOrAppendField())
     if (!this.createOrAppend) { return form }
 
-    // 4) Branch 1: Show the fields for creating a new list (name & desc), plus hashing, and we're done
+    // 2b) Now choose whether to use mobile device ID data
+    form.fields.push(this.mobileDeviceField())
+    if (!this.mobileDevice) { return form }
+
+    // 2c) If mobile device data, add mobile app id field to form
+    if (this.isMobileDevice) {
+      form.fields.push(this.mobileAppIdField())
+    }
+
+    // 3) Branch 1: Show the fields for creating a new list (name & desc), plus hashing, and we're done
     if (this.isCreate) {
-      form.fields.push(this.newListNameField())
-      form.fields.push(this.newListDescriptionField())
-      form.fields.push(this.doHashingFormField())
+      form.fields = [
+        ...form.fields,
+        this.newListNameField(),
+        this.newListDescriptionField(),
+        this.doHashingFormField(),
+        ...this.consentSetting(),
+      ]
       return form
     }
 
-    // 5) Branch 2: Select an existing list, but we need to check that there is at least one to choose...
+    // 4) Branch 2: Select an existing list, but we need to check that there is at least one to choose...
     const userListOptions = await this.getUserListOptions()
     if (userListOptions.length) {
-      form.fields.push(this.targetListField(userListOptions))
-      form.fields.push(this.doHashingFormField())
+      form.fields = [
+        ...form.fields,
+        this.targetListField(userListOptions),
+        this.doHashingFormField(),
+        ...this.consentSetting(),
+      ]
     } else {
       form.fields.push(this.noAvailableListsField())
     }
@@ -129,7 +150,7 @@ export class GoogleAdsActionFormBuilder {
   createOrAppendField() {
     return {
       name: "createOrAppend",
-      label: "Step 2) Create a new list or append to existing?",
+      label: "Step 2a) Create a new list or append to existing?",
       description:
           "Choose whether to create a new list or append to an existing one."
         + " You will then be shown the appropriate fields in the next step.",
@@ -140,6 +161,42 @@ export class GoogleAdsActionFormBuilder {
       ],
       default: this.createOrAppend as string,
       interactive: true,
+      required: true,
+    }
+  }
+
+  mobileDeviceField() {
+    return {
+      name: "mobileDevice",
+      label: "Step 2b) Are you sending Mobile Device ID data?",
+      description:
+          "Select this option to use mobile device IDs."
+        + " You can perform customer matching using IDFA (Identifier for Advertising)"
+        + " or AAID (Google Advertising ID) mobile device IDs."
+        + " Note that mobile device IDs cannot be combined with any other types of customer data.",
+      type: "select" as "select",
+      options: [
+        {name: "yes", label: "Yes"},
+        {name: "no", label: "No"},
+      ],
+      default: this.mobileDevice as string,
+      interactive: true,
+      required: true,
+    }
+  }
+
+  mobileAppIdField() {
+    return {
+      name: "mobileAppId",
+      label: "Step 2c) Enter the mobile application ID",
+      description:
+          "A string that uniquely identifies a mobile application from which the data was collected to the Google Ads API."
+        + " For iOS, the ID string is the 9 digit string that appears at the end of an App Store URL"
+        + " (e.g., http://itunes.apple.com/us/app/APP_NAME/idMOBILE_APP_ID)."
+        + " For Android, the ID string is the application's package name"
+        + " (e.g., https://play.google.com/store/apps/details?id=MOBILE_APP_ID)",
+      type: "string" as "string",
+      default: "",
       required: true,
     }
   }
@@ -212,37 +269,69 @@ export class GoogleAdsActionFormBuilder {
     }
   }
 
+  consentSetting() {
+    return [
+      {
+        name: "consentAdUserData",
+        label: "Step 5) The consent setting for consent for ad user data",
+        type: "select" as "select",
+        options: [
+          {name: "UNSPECIFIED", label: "Unspecified"},
+          {name: "GRANTED", label: "Granted"},
+          {name: "DENIED", label: "Denied"},
+        ],
+        default: "UNSPECIFIED",
+        required: true,
+      },
+      {
+        name: "consentAdPersonalization",
+        label: "The consent setting for consent for ad personalization",
+        type: "select" as "select",
+        options: [
+          {name: "UNSPECIFIED", label: "Unspecified"},
+          {name: "GRANTED", label: "Granted"},
+          {name: "DENIED", label: "Denied"},
+        ],
+        default: "UNSPECIFIED",
+        required: true,
+      },
+    ]
+  }
+
   private async maybeSetLoginCustomer() {
     if (!this.loginCid) {
       return
     }
-    this.loginCustomer = await this.apiClient.getCustomer(this.loginCid) as AdsCustomer
+    this.loginCustomer = await this.getCustomer(this.loginCid)
   }
 
   private async maybeSetTargetCustomer() {
     if (!this.targetCid) {
       return
     }
-    this.targetCustomer = await this.apiClient.getCustomer(this.targetCid) as AdsCustomer
+    this.targetCustomer = await this.getCustomer(this.targetCid)
   }
 
   private async getLoginCidOptions() {
     const listCustomersResp = await this.apiClient.listAccessibleCustomers()
     const customerResourceNames = listCustomersResp.resourceNames
     const customers = await Promise.all(customerResourceNames.map(async (rn: string) => {
-      return this.apiClient.getCustomer(rn)
-        // Now is a good place to coalesce the name, before we try to sort the list
-        .then((cust: any) => {
-          if (!cust.descriptiveName) { cust.descriptiveName = "Untitled" }
-          return cust as AdsCustomer
-        })
-        // We expect some errors on this call because the list endpoint returns test accounts that aren't accessible
-        .catch((_) => undefined)
+      const clientCid = rn.replace("customers/", "")
+      return this.getCustomer(clientCid).catch(() =>  undefined) // ignore any auth errors from draft accounts
     }))
     const filteredCustomers = customers.filter(Boolean) as AdsCustomer[]
     const sortedCustomers = filteredCustomers.sort(this.sortCustomersCompareFn)
     const selectOptions = sortedCustomers.map(this.selectOptionForCustomer)
     return selectOptions
+  }
+
+  private async getCustomer(cId: string) {
+    return await this.apiClient.searchClientCustomers(cId)
+      .then((data: any) => {
+        const cust  = data[0].results.filter((c: any) => c.customerClient.id === cId)[0].customerClient
+        if (!cust.descriptiveName) { cust.descriptiveName = "Untitled" }
+        return cust as AdsCustomer
+      })
   }
 
   private async getTargetCidOptions() {
@@ -291,7 +380,7 @@ export class GoogleAdsActionFormBuilder {
     if (!this.targetCustomer) {
       throw new Error("Could not reference the target customer record.")
     }
-    const searchResp = await this.apiClient.searchOpenUserLists(this.targetCustomer.id)
+    const searchResp = await this.apiClient.searchOpenUserLists(this.targetCustomer.id, this.uploadKeyType)
     const userListResults = searchResp.length ? searchResp[0].results : []
 
     const selectOptions = userListResults.map((i: any) => (

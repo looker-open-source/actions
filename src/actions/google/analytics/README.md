@@ -1,4 +1,7 @@
 # Google Analytics - Data Import
+
+**This is not an officially supported Google product.**
+
 ## Upload data to a GA Data Set
 
 The GA Data Import action allows you to upload data to an existing Data Set within your GA property.

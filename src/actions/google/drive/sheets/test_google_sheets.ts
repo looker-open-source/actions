@@ -394,6 +394,95 @@ describe(`${action.constructor.name} unit tests`, () => {
           done()
         })
       })
+
+      it("responds with appropriate data when drive client errors", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+            .resolves({
+              files: {
+                create: async () => Promise.reject({
+                  code: 1234,
+                  errors: [
+                    {
+                      message: "testException",
+                    },
+                  ],
+                }),
+              },
+            })
+
+        const csvFile = "a,b,c\n1,2,3"
+        const request = new Hub.ActionRequest()
+        request.attachment = {dataBuffer: Buffer.from(csvFile), fileExtension: "csv"}
+        request.formParams = {overwrite: "no", filename: "random_sheet"}
+        request.type = Hub.ActionType.Query
+        request.params = {
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        request.webhookId = "webhookId"
+        const resp = action.validateAndExecute(request)
+        chai.expect(resp).to.eventually.deep.equal({
+          success: false,
+          message: undefined,
+          refreshQuery: false,
+          validationErrors: [],
+          error: {
+            documentation_url: "TODO",
+            http_code: 1234,
+            location: "ActionContainer",
+            message: "Internal server error. [GOOGLE_SHEETS] testException",
+            status_code: "INTERNAL",
+          },
+          webhookId: "webhookId",
+        }).and.notify(stubDriveClient.restore).and.notify(done)
+      })
+
+      it("filename missing in request", (done) => {
+        const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
+            .resolves({
+              files: {
+                create: async () => Promise.reject({
+                  code: 1234,
+                  errors: [
+                    {
+                      message: "testException",
+                    },
+                  ],
+                }),
+              },
+            })
+
+        const request = new TestActionRequest()
+        request.webhookId = "webhookId"
+        request.type = Hub.ActionType.Query
+        request.attachment = {dataBuffer: Buffer.from("data"), fileExtension: "csv"}
+        request.params = {
+          state_json: `{"tokens": {"access_token": "token"}, "redirect": "fake.com"}`,
+        }
+        const resp = action.validateAndExecute(request)
+        chai.expect(resp).to.eventually
+            .deep.equal({
+          message:
+              "Server cannot process request due to client request error. [GOOGLE_SHEETS] Error creating file name",
+          refreshQuery: false,
+          success: false,
+          error: {
+            http_code: 400,
+            status_code: "BAD_REQUEST",
+            message: "Server cannot process request due to client request error. [GOOGLE_SHEETS] Error creating file name",
+            location: "ActionContainer",
+            documentation_url: "TODO",
+          },
+          validationErrors: [],
+          webhookId: "webhookId",
+        }).and.notify(stubDriveClient.restore).and.notify(done)
+      })
+    })
+
+    describe("sanitizeFilename", () => {
+      it("will sanitize apostrophe in filename", () => {
+        const filename = "Barbara'sFile.csv"
+        chai.expect(action.sanitizeFilename(filename)).to.equal("Barbara\'sFile.csv")
+      })
     })
 
     describe("flush", () => {
@@ -420,11 +509,11 @@ describe(`${action.constructor.name} unit tests`, () => {
         process.env.GOOGLE_SHEET_RETRY = "true"
         const sheet = {
           spreadsheets: {
-            batchUpdate: async () => Promise.reject({code: 500}),
+            batchUpdate: async () => Promise.reject({code: 503}),
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
           done()
@@ -441,7 +530,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           },
         }
         // @ts-ignore
-        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flush({}, sheet , "0")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(retryStub).to.have.callCount(0)
           retryStub.restore()
           done()
@@ -456,13 +545,16 @@ describe(`${action.constructor.name} unit tests`, () => {
         const spreadSheetsStub = {
           batchUpdate: async () => Promise.resolve(),
         }
-        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 429})
+        const batchUpdateCallSpy = sinon.spy(async () => { throw {code: 429}})
+        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate")
+            .callsFake(batchUpdateCallSpy)
 
         const sheet = {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flushRetry({}, sheet , "0", "web")).to.eventually.be.rejectedWith("Max retries attempted")
+            .then( () => {
           chai.expect(batchUpdateStub).to.have.callCount(5)
           chai.expect(delayStub).to.have.been.calledWith(3000)
           chai.expect(delayStub).to.have.been.calledWith(9000)
@@ -475,19 +567,19 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
       })
 
-      it("will only retry if a 429 code is recieved", (done) => {
+      it("will only retry if a 429 code is received", (done) => {
         const delayStub = sinon.stub(action as any, "delay")
 
         const spreadSheetsStub = {
           batchUpdate: async () => Promise.resolve(),
         }
-        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 500})
+        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 503})
 
         const sheet = {
           spreadsheets: spreadSheetsStub,
         }
         // @ts-ignore
-        chai.expect(action.flushRetry({}, sheet , "0")).to.eventually.be.fulfilled.then( () => {
+        chai.expect(action.flushRetry({}, sheet , "0", "web")).to.eventually.be.rejectedWith({code: 500}).then( () => {
           chai.expect(batchUpdateStub).to.have.callCount(1)
           chai.expect(delayStub).to.have.been.calledWith(3000)
           batchUpdateStub.restore()
@@ -543,15 +635,20 @@ describe(`${action.constructor.name} unit tests`, () => {
             required: true,
             type: "select",
           }, {
-            description: "Google Drive folder where your file will be saved",
-            label: "Select folder to save file",
-            name: "folder",
-            options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
-            default: "root",
-            required: true,
-            type: "select",
+            description: "Enter the full Google Drive URL of the folder where you want to save your data. It should look something like https://drive.google.com/corp/drive/folders/xyz. If this is inaccessible, your data will be saved to the root folder of your Google Drive. You do not need to enter a URL if you have already chosen a folder in the dropdown menu.\n",
+            label: "Google Drive Destination URL",
+            name: "folderid",
+            type: "string",
+            required: false,
           }, {
-            label: "Enter a name",
+            description: "Fetch folders",
+            name: "fetchpls",
+            type: "select",
+            interactive: true,
+            label: "Select Fetch to fetch a list of folders in this drive",
+            options: [{label: "Fetch", name: "fetch"}],
+          }, {
+            label: "Enter a filename",
             name: "filename",
             type: "string",
             required: true,
@@ -578,5 +675,20 @@ describe(`${action.constructor.name} unit tests`, () => {
         }).and.notify(stubClient.restore).and.notify(done)
       })
     })
+
+    describe("mimeType", () => {
+      it("uses the action mimeType if it exists", () => {
+        const request = new Hub.ActionRequest()
+        request.attachment = {mime: "foo"}
+        request.formParams = {format: "bar"}
+        chai.expect(action.getMimeType(request)).to.equal("application/vnd.google-apps.spreadsheet")
+      })
+    })
   })
 })
+
+class TestActionRequest extends Hub.ActionRequest {
+  suggestedFilename() {
+    return null
+  }
+}

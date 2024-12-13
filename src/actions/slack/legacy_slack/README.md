@@ -1,5 +1,7 @@
 # Slack Attachment (API Token)
 
+**This is not an officially supported Google product.**
+
 Perform this action to post an attachment with your Looker data to a public or private Slack channel or to a direct message (DM).
 
 To use this action, you'll create an action app in the [api.slack.com](https://api.slack.com) interface that is tied to your Slack workspace and then configure a bot user from which the action will post the attachments by using the appropriate API token for that "user."
@@ -30,6 +32,7 @@ From the drop-down of OAuth scopes, select:
     * `groups:read`
     * `im:read`
     * `mpim:read`
+    * `chat:write`
 
 ![](slack_attachment_scopes.png)
 
@@ -40,6 +43,7 @@ From the drop-down of OAuth scopes, select:
     > - [https://api.slack.com/scopes/groups:read](https://api.slack.com/scopes/groups:read) <br>
     > - [https://api.slack.com/scopes/im:read](https://api.slack.com/scopes/im:read) <br>
     > - [https://api.slack.com/scopes/mpim:read](https://api.slack.com/scopes/mpim:read) <br>
+    > - [https://api.slack.com/scopes/chat:write](chat:write) <br>
 
 6. At the top of the **OAuth & Permissions** page, click **Install App to Workspace**.
 

@@ -1,6 +1,13 @@
+import * as winston from "winston"
+import { HTTP_ERROR } from "../../../error_types/http_errors"
+import { getHttpErrorType } from "../../../error_types/utils"
 import * as Hub from "../../../hub"
+import { Error, errorWith } from "../../../hub/action_response"
 
 const storage = require("@google-cloud/storage")
+
+const FILE_EXTENSION = new RegExp(/(.*)\.(.*)$/)
+const LOG_PREFIX = "[Google Cloud Storage]"
 
 export class GoogleCloudStorageAction extends Hub.Action {
 
@@ -34,20 +41,46 @@ export class GoogleCloudStorageAction extends Hub.Action {
   ]
 
   async execute(request: Hub.ActionRequest) {
+    const response = new Hub.ActionResponse()
 
     if (!request.formParams.bucket) {
-      throw "Need Google Cloud Storage bucket."
+      const error: Error = errorWith(
+        HTTP_ERROR.bad_request,
+        `${LOG_PREFIX} needs a GCS bucket specified.`,
+      )
+      response.success = false
+      response.error = error
+      response.message = error.message
+      response.webhookId = request.webhookId
+
+      winston.error(`${error.message}`, {error, webhookId: request.webhookId})
+      return response
     }
 
     let filename = request.formParams.filename || request.suggestedFilename()
 
     // If the overwrite formParam exists and it is "no" - ensure a timestamp is appended
     if (request.formParams.overwrite && request.formParams.overwrite === "no") {
-      filename += `_${Date.now()}`
+      const captures = filename.match(FILE_EXTENSION)
+      if (captures && captures.length > 1) {
+        filename = captures[1] + `_${Date.now()}.` + captures[2]
+      } else {
+        filename += `_${Date.now()}`
+      }
     }
 
     if (!filename) {
-      throw new Error("Couldn't determine filename.")
+      const error: Error = errorWith(
+        HTTP_ERROR.bad_request,
+        `${LOG_PREFIX} request did not contain filename, or invalid filename was provided.`,
+      )
+      response.success = false
+      response.error = error
+      response.message = error.message
+      response.webhookId = request.webhookId
+
+      winston.error(`${error.message}`, {error, webhookId: request.webhookId})
+      return response
     }
 
     const gcs = this.gcsClientFromRequest(request)
@@ -64,8 +97,21 @@ export class GoogleCloudStorageAction extends Hub.Action {
         })
       })
       return new Hub.ActionResponse({ success: true })
-    } catch (e) {
-      return new Hub.ActionResponse({success: false, message: e.message})
+    } catch (e: any) {
+      const errorType = getHttpErrorType(e, this.name)
+
+      const error: Error = errorWith(
+        errorType,
+        `${LOG_PREFIX} ${e.message}`,
+      )
+
+      response.success = false
+      response.error = error
+      response.message = error.message
+      response.webhookId = request.webhookId
+
+      winston.error(`${LOG_PREFIX} ${error.message}`, {error, webhookId: request.webhookId})
+      return response
     }
 
   }
@@ -78,17 +124,22 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
     try {
       results = await gcs.getBuckets()
-    } catch (e) {
+    } catch (e: any) {
       form.error = `An error occurred while fetching the bucket list.
 
       Your Google Cloud Storage credentials may be incorrect.
 
       Google SDK Error: "${e.message}"`
+      winston.error(
+        `${LOG_PREFIX} An error occurred while fetching the bucket list. Google SDK Error: ${e.message} `,
+        {webhookId: request.webhookId},
+      )
       return form
     }
 
-    if (!(results && results[0])) {
+    if (!(results && results[0] && results[0][0])) {
       form.error = "No buckets in account."
+      winston.error(`${LOG_PREFIX} No buckets in account`, {webhookId: request.webhookId})
       return form
     }
 

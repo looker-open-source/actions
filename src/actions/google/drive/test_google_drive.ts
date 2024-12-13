@@ -88,6 +88,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({tokens: "code", redirect: "url"}),
       }
+      request.webhookId = "webhookId"
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
           files: {
@@ -98,10 +99,78 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(resp).to.eventually.deep.equal({
         success: false,
         message: undefined,
-        // state: {data: "reset"},
         refreshQuery: false,
         validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 500,
+          location: "ActionContainer",
+          message: "Internal server error. [GOOGLE_DRIVE] undefined",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("sets state to reset if error in create contains code and reason", (done) => {
+      const request = new Hub.ActionRequest()
+      const dataBuffer = Buffer.from("Hello")
+      request.type = Hub.ActionType.Query
+      request.attachment = {dataBuffer, fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, folder: stubFolder}
+      request.params = {
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({tokens: "code", redirect: "url"}),
+      }
+      request.webhookId = "webhookId"
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              create: async () => Promise.reject({
+                code: 1234,
+                errors: [
+                  {
+                    message: "testReason",
+                  },
+                ],
+              }),
+            },
+          })
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually.deep.equal({
+        success: false,
+        message: undefined,
+        refreshQuery: false,
+        validationErrors: [],
+        error: {
+          documentation_url: "TODO",
+          http_code: 1234,
+          location: "ActionContainer",
+          message: "Internal server error. [GOOGLE_DRIVE] testReason",
+          status_code: "INTERNAL",
+        },
+        webhookId: "webhookId",
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("filename missing in request", () => {
+      const request = new TestActionRequest()
+      request.webhookId = "webhookId"
+      const resp = action.validateAndExecute(request)
+      chai.expect(resp).to.eventually
+          .deep.equal({
+        message: "Server cannot process request due to client request error. Error creating filename from request",
+        refreshQuery: false,
+        success: false,
+        error: {
+          http_code: 400,
+          status_code: "BAD_REQUEST",
+          message: "Server cannot process request due to client request error. [GOOGLE_DRIVE] Error creating filename from request",
+          location: "ActionContainer",
+          documentation_url: "TODO",
+        },
+        webhookId: "webhookId",
+      })
     })
   })
 
@@ -122,13 +191,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({tokens: "access", redirect: "url"}),
       }
+      request.webhookId = "testId"
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
           type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
-            " once to your Google account.",
+            " once to your Google account. WebhookID if oauth fails: testId",
           label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
@@ -150,13 +220,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: JSON.stringify({bad: "access", redirect: "url"}),
       }
+      request.webhookId = "testId"
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
         fields: [{
           name: "login",
           type: "oauth_link_google",
           description: "In order to send to Google Drive, you will need to log in" +
-          " once to your Google account.",
+          " once to your Google account. WebhookID if oauth fails: testId",
           label: "Log in",
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
@@ -211,15 +282,20 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
           type: "select",
         }, {
-          description: "Google Drive folder where your file will be saved",
-          label: "Select folder to save file",
-          name: "folder",
-          options: [{name: "root", label: "Drive Root"}, { name: "fake_id", label: "fake_name" }],
-          default: "root",
-          required: true,
-          type: "select",
+          description: "Enter the full Google Drive URL of the folder where you want to save your data. It should look something like https://drive.google.com/corp/drive/folders/xyz. If this is inaccessible, your data will be saved to the root folder of your Google Drive. You do not need to enter a URL if you have already chosen a folder in the dropdown menu.\n",
+          label: "Google Drive Destination URL",
+          name: "folderid",
+          type: "string",
+          required: false,
         }, {
-          label: "Enter a name",
+          description: "Fetch folders",
+          name: "fetchpls",
+          type: "select",
+          interactive: true,
+          label: "Select Fetch to fetch a list of folders in this drive",
+          options: [{label: "Fetch", name: "fetch"}],
+        }, {
+          label: "Enter a filename",
           name: "filename",
           type: "string",
           required: true,
@@ -236,15 +312,12 @@ describe(`${action.constructor.name} unit tests`, () => {
       process.env.GOOGLE_DRIVE_CLIENT_ID = "testingkey"
       const prom = action.oauthUrl("https://actionhub.com/actions/google_drive/oauth_redirect",
         `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`)
-      return chai.expect(prom).to.eventually.equal("https://accounts.google.com/o/oauth2/v2/auth?" +
-        "access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&prompt=consent&state=" +
-        "eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0&" +
-        "response_type=code&client_id=testingkey&" +
-        "redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fgoogle_drive%2Foauth_redirect")
+      return chai.expect(prom).to.eventually.equal("https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&prompt=consent&state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0&response_type=code&client_id=testingkey&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fgoogle_drive%2Foauth_redirect")
     })
 
     it("correctly handles redirect from authorization server", (done) => {
       const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({tokens: "token"})
+      // @ts-ignore
       const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
       const result = action.oauthFetchInfo({code: "code",
         state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
@@ -255,4 +328,36 @@ describe(`${action.constructor.name} unit tests`, () => {
         .and.notify(stubReq.restore).and.notify(done)
     })
   })
+
+  describe("mimeType", () => {
+    it("identifies attachment mimeTypes", () => {
+      const request = new Hub.ActionRequest()
+      request.attachment = {mime: "application/zip;base64"}
+      request.formParams = {format: "foobar"}
+      chai.expect(action.getMimeType(request)).to.equal("application/zip;base64")
+      request.attachment = {mime: "application/pdf;base64"}
+      chai.expect(action.getMimeType(request)).to.equal("application/pdf;base64")
+      request.attachment = {mime: "image/png;base64"}
+      chai.expect(action.getMimeType(request)).to.equal("image/png;base64")
+    })
+
+    it("identifies mimeType for streamed actions", () => {
+      const request = new Hub.ActionRequest()
+      request.formParams = {format: "csv"}
+      chai.expect(action.getMimeType(request)).to.equal("text/csv")
+      request.formParams = {format: "json"}
+      chai.expect(action.getMimeType(request)).to.equal("application/json")
+    })
+
+    it("returns undefined if no format is given", () => {
+      const request = new Hub.ActionRequest()
+      chai.expect(action.getMimeType(request)).to.equal(undefined)
+    })
+  })
 })
+
+class TestActionRequest extends Hub.ActionRequest {
+  suggestedFileName() {
+    return null
+  }
+}

@@ -119,7 +119,7 @@ export class SegmentAction extends Hub.Action {
           }
           try {
             segmentClient[segmentCall](payload)
-          } catch (e) {
+          } catch (e: any) {
             errors.push(e)
           }
         },
@@ -134,7 +134,7 @@ export class SegmentAction extends Hub.Action {
             }
           })
       })
-    } catch (e) {
+    } catch (e: any) {
       errors.push(e)
     }
 
@@ -196,10 +196,14 @@ export class SegmentAction extends Hub.Action {
           if (currentObject.hasOwnProperty(key)) {
             if (key === "value") {
               returnVal[name] = currentObject[key]
+              // Segment Identify Nulls #186583506
+              if (currentObject[key] === null) {
+                pivotValues[fieldName] = null
+              }
               return returnVal
             } else if (segmentFields.idFieldNames.indexOf(key) === -1) {
               const res = filterFunction(currentObject[key], key)
-              if (res !== {}) {
+              if (JSON.stringify(res) !== JSON.stringify({})) {
                 pivotValues[fieldName].push(res)
               }
             }

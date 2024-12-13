@@ -28,16 +28,25 @@ export class GoogleAdsUserListUploader {
    * Schema object: {"User Email Address": "hashed_email", "US Zipcode": "address_info.postal_code"}
    * Parsed result: [{"hashed_email": "lukeperry@example.com"}, {"address_info": {"postal_code": "90210"}}]
    *                                   ^^^^^^^ Except the email could actually be a hash
+   *
+   * Note: mobile device data cannot be combined with any other types of customer data,
+   * therefore the regex conditions are kept separate
    */
   private regexes = [
-    [/email/i, "hashed_email"],
-    [/phone/i, "hashed_phone_number"],
-    [/first/i, "address_info.hashed_first_name"],
-    [/last/i, "address_info.hashed_last_name"],
-    [/city/i, "address_info.city"],
-    [/state/i, "address_info.state"],
-    [/country/i, "address_info.country_code"],
-    [/postal|zip/i, "address_info.postal_code"],
+    ... this.adsRequest.isMobileDevice ? [
+      [/idfa|identifier.for.advertising/i, "mobile_id"],
+      [/aaid|advertiser.assigned.user|google.advertising/i, "third_party_user_id"],
+    ] : [
+      [/email/i, "hashed_email"],
+      [/phone/i, "hashed_phone_number"],
+      [/first/i, "address_info.hashed_first_name"],
+      [/last/i, "address_info.hashed_last_name"],
+      [/street|address/i, "address_info.hashed_street_address"],
+      [/city/i, "address_info.city"],
+      [/state/i, "address_info.state"],
+      [/country/i, "address_info.country_code"],
+      [/postal|zip/i, "address_info.postal_code"],
+    ],
   ]
 
   constructor(readonly adsExecutor: GoogleAdsActionExecutor) {}
@@ -57,9 +66,10 @@ export class GoogleAdsUserListUploader {
       await this.adsRequest.streamingDownload(async (downloadStream: Readable) => {
         return this.startAsyncParser(downloadStream)
       })
-    } catch (errorReport) {
+    } catch (errorReport: any) {
       // TODO: the oboe fail() handler sends an errorReport object, but that might not be the only thing we catch
-      this.log("error", "Streaming parse failure:", errorReport.toString())
+      this.log("error", "Streaming parse failure toString:", errorReport.toString())
+      this.log("error", "Streaming parse failure JSON:", JSON.stringify(errorReport))
     }
     await Promise.all(this.batchPromises)
     this.log("info",
@@ -100,7 +110,7 @@ export class GoogleAdsUserListUploader {
 
   private handleRow(row: any) {
     const output = this.transformRow(row)
-    this.rowQueue.push(...output)
+    this.rowQueue.push(output)
   }
 
   private transformRow(row: any) {
@@ -115,7 +125,8 @@ export class GoogleAdsUserListUploader {
       }
       return lodash.set({} as any, outputPath, outputValue)
     })
-    return outputCells.filter(Boolean)
+
+    return { create: { user_identifiers: outputCells.filter(Boolean)}}
   }
 
   // Formatting guidelines: https://support.google.com/google-ads/answer/7476159?hl=en
@@ -132,6 +143,7 @@ export class GoogleAdsUserListUploader {
     const batch = this.rowQueue.splice(0, BATCH_SIZE - 1)
     this.batchQueue.push(batch)
     this.batchPromises.push(this.sendBatch())
+    this.log("debug", `Sent batch number: ${this.numBatches}`)
   }
 
   // The Ads API seems to generate a concurrent modification exception if we have multiple
@@ -141,11 +153,13 @@ export class GoogleAdsUserListUploader {
     if (this.currentRequest !== undefined || this.batchQueue.length === 0) {
       return
     }
-    const currentBatch = this.batchQueue.shift()
-    this.currentRequest = this.adsExecutor.addDataJobOperations(currentBatch)
-    await this.currentRequest
-    this.currentRequest = undefined
-    return this.sendBatch()
+    await this.adsRequest.checkTokens().then(async () => {
+      const currentBatch = this.batchQueue.shift()
+      this.currentRequest = this.adsExecutor.addDataJobOperations(currentBatch)
+      await this.currentRequest
+      this.currentRequest = undefined
+      return this.sendBatch()
+    })
   }
 
 }

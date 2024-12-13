@@ -1,4 +1,7 @@
 # Google Cloud Storage
+
+**This is not an officially supported Google product.**
+
 ## Write data files to Google Cloud Storage bucket.
 
 The Google Cloud Storage action enables you to send and store a data file on Google Cloud Storage via the Google Cloud API.

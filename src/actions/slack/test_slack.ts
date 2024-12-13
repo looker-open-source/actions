@@ -8,7 +8,9 @@ import {isSupportMultiWorkspaces, MULTI_WORKSPACE_SUPPORTED_VERSION} from "./sla
 import * as utils from "./utils"
 
 const action = new SlackAction()
+action.executeInOwnProcess = false
 
+// @ts-ignore
 const stubSlackClient = (fn: () => void) => sinon.stub(SlackClientManager, "makeSlackClient").callsFake(fn)
 
 describe(`${action.constructor.name} tests`, () => {
@@ -257,6 +259,7 @@ describe(`${action.constructor.name} tests`, () => {
           },
         }
 
+        // @ts-ignore
         const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
           switch (token) {
             case "someToken1":
@@ -270,6 +273,7 @@ describe(`${action.constructor.name} tests`, () => {
           }
         })
 
+        // @ts-ignore
         getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").callsFake((client) => {
           chai.expect(client).to.equals(mockClient2)
           return [
@@ -328,12 +332,24 @@ describe(`${action.constructor.name} tests`, () => {
 
     it("returns error response if no client was selected", () => {
       const request = new Hub.ActionRequest()
+      request.webhookId = "webhookId"
 
       const form = action.execute(request)
 
-      return chai.expect(form).to.eventually.deep.equal(
-          new Hub.ActionResponse({success: false, message: "You must connect to a Slack workspace first."}),
-      )
+      return chai.expect(form).to.eventually.deep.equal({
+        refreshQuery: false,
+        success: false,
+        error: {
+          documentation_url: "TODO",
+          http_code: 400,
+          location: "ActionContainer",
+          message: "Server cannot process request due to client request error. [SLACK] Missing client",
+          status_code: "BAD_REQUEST",
+        },
+        message: "Server cannot process request due to client request error. [SLACK] Missing client",
+        validationErrors: [],
+        webhookId: "webhookId",
+      })
     })
 
     it("returns fields correctly from getDisplayedFormFields", () => {
@@ -391,6 +407,7 @@ describe(`${action.constructor.name} tests`, () => {
         const mockClient1 = { id: "I'm mockClient1", token: "some token 1"}
         const mockClient2 = { id: "I'm mockClient2", token: "some token 2"}
 
+        // @ts-ignore
         const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
           switch (token) {
             case "some token 1":
@@ -415,6 +432,7 @@ describe(`${action.constructor.name} tests`, () => {
 
         request.formParams = { workspace: "ws2" }
 
+        // @ts-ignore
         handleExecuteStub = sinon.stub(utils, "handleExecute").callsFake((r, client) => {
           // pass in the whole request
           chai.expect(r).to.equals(request)

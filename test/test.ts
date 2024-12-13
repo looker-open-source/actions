@@ -1,22 +1,25 @@
 import * as chai from "chai"
+// import chaiHttp from "chai-http"
 import * as chaiAsPromised from "chai-as-promised"
 import * as sinonChai from "sinon-chai"
 import * as winston from "winston"
 
-const chaiHttp = require("chai-http")
+// const chaiHttp = require("chai-http")
 
-chai.use(chaiHttp)
+// chai.use(chaiHttp)
 chai.use(sinonChai)
 chai.use(chaiAsPromised) // should be last
 winston.remove(winston.transports.Console)
 
 import "../src/actions/index"
 
+import "../src/error_types/test_error_utils"
+
 import "./test_action_request"
 import "./test_action_response"
 import "./test_actions"
 import "./test_json_detail_stream"
-import "./test_server"
+// import "./test_server"
 import "./test_smoke"
 
 import "../src/actions/airtable/test_airtable"
@@ -29,9 +32,12 @@ import "../src/actions/datarobot/test_datarobot"
 import "../src/actions/digitalocean/test_digitalocean_droplet"
 import "../src/actions/digitalocean/test_digitalocean_object_storage"
 import "../src/actions/dropbox/test_dropbox"
+import "../src/actions/facebook/test_facebook_custom_audiences"
+import "../src/actions/firebase/test_firebase.ts"
 import "../src/actions/google/ads/test_customer_match"
 import "../src/actions/google/analytics/test_data_import"
 import "../src/actions/google/drive/sheets/test_google_sheets"
+import "../src/actions/google/drive/test_domain_validator"
 import "../src/actions/google/drive/test_google_drive"
 import "../src/actions/google/gcs/test_google_cloud_storage"
 import "../src/actions/hubspot/test_hubspot_companies"
@@ -44,6 +50,7 @@ import "../src/actions/queueaction/test_queue_action"
 import "../src/actions/sagemaker/test_sagemaker_infer"
 import "../src/actions/sagemaker/test_sagemaker_train_linearlearner"
 import "../src/actions/sagemaker/test_sagemaker_train_xgboost"
+import "../src/actions/salesforce/campaigns/test_salesforce_campaigns"
 import "../src/actions/segment/test_segment"
 import "../src/actions/segment/test_segment_group"
 import "../src/actions/segment/test_segment_track"

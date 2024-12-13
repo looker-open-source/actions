@@ -2,6 +2,7 @@ import * as gaxios from "gaxios"
 import * as googleAuth from "google-auth-library"
 import { google } from "googleapis"
 import * as Hub from "../../../hub"
+import { sanitizeError } from "./error_utils"
 import { Logger } from "./logger"
 
 // Double dispatch type pattern at work here
@@ -40,7 +41,7 @@ export class GoogleOAuthHelper {
       try {
         const actionCrypto = new Hub.ActionCrypto()
         encryptedPayload = await actionCrypto.encrypt(payloadString)
-      } catch (e) {
+      } catch (e: any) {
         this.log("error", "Payload encryption error:", e.toString())
         throw e
       }
@@ -81,7 +82,7 @@ export class GoogleOAuthHelper {
       const url = oauthClient.generateAuthUrl({
         access_type: "offline",
         scope: this.actionInstance.oauthScopes,
-        prompt: "consent",
+        prompt: "select_account",
         state: encryptedPayload,
       })
 
@@ -99,7 +100,7 @@ export class GoogleOAuthHelper {
       try {
         const actionCrypto = new Hub.ActionCrypto()
         plaintext = await actionCrypto.decrypt(urlParams.state)
-      } catch (err) {
+      } catch (err: any) {
         this.log("error", "Encryption not correctly configured: ", err.toString())
         throw err
       }
@@ -122,12 +123,13 @@ export class GoogleOAuthHelper {
           url: payload.stateUrl,
           data: userState,
         })
-      } catch (err) {
+      } catch (err: any) {
         // We have seen weird behavior where Looker correctly updates the state, but returns a nonsense status code
         if (err instanceof gaxios.GaxiosError && err.response !== undefined && err.response.status < 100) {
           this.log("debug", "Ignoring state update response with response code <100")
         } else {
           this.log("error", "Error sending user state to Looker:", err.toString())
+          sanitizeError(err)
           throw err
         }
       }

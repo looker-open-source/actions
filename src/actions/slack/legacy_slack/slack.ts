@@ -1,6 +1,6 @@
 import * as Hub from "../../../hub"
 
-import { WebClient } from "@slack/client"
+import {WebClient} from "@slack/web-api"
 import {displayError, getDisplayedFormFields, handleExecute} from "../utils"
 
 export class SlackAttachmentAction extends Hub.Action {
@@ -21,25 +21,30 @@ https://github.com/looker/actions/blob/master/src/actions/slack/legacy_slack/REA
     sensitive: true,
   }]
   usesStreaming = false
+  executeInOwnProcess = true
 
   async execute(request: Hub.ActionRequest) {
-    return await handleExecute(request, this.slackClientFromRequest(request))
+    return await handleExecute(request, this.slackClientFromRequest(request, true))
   }
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-
+    const channelType = request.formParams.channelType ? request.formParams.channelType : "manual"
     try {
-      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request))
-    } catch (e) {
+      form.fields = await getDisplayedFormFields(this.slackClientFromRequest(request), channelType)
+    } catch (e: any) {
       form.error = displayError[e.message] || e
     }
 
     return form
   }
 
-  private slackClientFromRequest(request: Hub.ActionRequest) {
-    return new WebClient(request.params.slack_api_token!)
+  private slackClientFromRequest(request: Hub.ActionRequest, disableRetries = false) {
+    if (disableRetries) {
+      return new WebClient(request.params.slack_api_token!, {retryConfig: {retries: 0}})
+    } else {
+      return new WebClient(request.params.slack_api_token!)
+    }
   }
 
 }

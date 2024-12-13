@@ -1,15 +1,15 @@
-import * as Pq from "p-queue"
+import PQueue from "p-queue"
 
 export abstract class ProcessQueue {
-    queue: Pq
+    queue: PQueue
 
     constructor() {
         // Actions that haven't specified executeInOwnProcess will not
         // be affected by this process count
         const concurrency = process.env.ACTION_HUB_EXECUTE_PROCESS_COUNT ?
             parseInt(process.env.ACTION_HUB_EXECUTE_PROCESS_COUNT, 10) : 1
-        this.queue = new Pq({concurrency})
+        this.queue = new PQueue({concurrency})
     }
 
-    abstract async run(data: string): Promise<string>
+    abstract run(data: string): Promise<string>
 }

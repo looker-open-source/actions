@@ -192,7 +192,7 @@ export class HubspotAction extends Hub.Action {
                 id: hubspotId,
                 properties,
               })
-            } catch (e) {
+            } catch (e: any) {
               errors.push(e)
             }
           }
@@ -227,7 +227,7 @@ export class HubspotAction extends Hub.Action {
             await hubspotBatchUpdateRequest({
               inputs: updateIteration,
             })
-          } catch (e) {
+          } catch (e: any) {
             errors.push(e)
           }
 
@@ -240,7 +240,7 @@ export class HubspotAction extends Hub.Action {
         winston.error(error, request.webhookId)
         throw new HubspotActionError(error)
       }
-    } catch (e) {
+    } catch (e: any) {
       errors.push(e)
     }
 

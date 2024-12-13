@@ -1,10 +1,10 @@
 import * as winston from "winston"
 import * as Hub from "../../../hub"
+import { makeBetterErrorMessage, sanitizeError } from "../common/error_utils"
 import { MissingAuthError } from "../common/missing_auth_error"
 import { GoogleOAuthHelper, UseGoogleOAuthHelper } from "../common/oauth_helper"
 import { WrappedResponse } from "../common/wrapped_response"
 import { GoogleAdsActionRequest } from "./lib/ads_request"
-import { makeBetterErrorMessage, sanitizeError } from "./lib/error_utils"
 
 const LOG_PREFIX = "[G Ads Customer Match]"
 
@@ -83,7 +83,7 @@ export class GoogleAdsCustomerMatch
       await adsRequest.execute()
       log("info", "Execution complete")
       return wrappedResp.returnSuccess(adsRequest.userState)
-    } catch (err) {
+    } catch (err: any) {
       sanitizeError(err)
       makeBetterErrorMessage(err, hubReq.webhookId)
       log("error", "Execution error toString:", err.toString())
@@ -103,7 +103,7 @@ export class GoogleAdsCustomerMatch
       // wrappedResp.form = await this.oauthHelper.makeLoginForm(hubReq)
       // wrappedResp.resetState()
       // return wrappedResp.returnSuccess()
-    } catch (err) {
+    } catch (err: any) {
       sanitizeError(err)
       const loginForm = await this.oauthHelper.makeLoginForm(hubReq)
       // Token errors that we can detect ahead of time
@@ -113,15 +113,28 @@ export class GoogleAdsCustomerMatch
       }
       log("error", "Form error toString:", err.toString())
       log("error", "Form error JSON:", JSON.stringify(err))
-      // Errors from the API client - typically an auth problem
+
+      // AuthorizationError from API client - this occurs when request contains bad loginCid or targetCid
+      if (err.code === "403") {
+        wrappedResp.errorPrefix = `Error loading target account with request: ${err.response.request.responseURL}. `
+        + `${err.response.data[0].error.details[0].errors[0].message}`
+        + ` Please retry loading the form again with the correct login account. `
+        log("error", `Error loading target account with request: ${err.response.request.responseURL}. `
+        + `${err.response.data[0].error.details[0].errors[0].message}`)
+        return wrappedResp.returnError(err)
+      }
+
+      // Other errors from the API client - typically an auth problem
       if (err.code) {
         loginForm.fields[0].label =
           `Received error code ${err.code} from the API, so your credentials have been discarded.`
           + " Please reauthenticate and try again."
+        log("error", `Received error code ${err.code} from the API, credentials have been discarded.`)
         return loginForm
       }
       // All other errors
       wrappedResp.errorPrefix = "Form generation error: "
+      log("error", `Form generation error, code: ${err.code}.`)
       return wrappedResp.returnError(err)
     }
   }
