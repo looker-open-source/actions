@@ -278,7 +278,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                   throw e
                               })
                           }
-                          this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
+                          await this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
                               this.sanitizeGaxiosError(e)
                               winston.debug(e, {webhookId: request.webhookId})
                               throw e
@@ -307,7 +307,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                   throw e
                               })
                           }
-                          this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).then(() => {
+                          await this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).then(() => {
                               winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
                                            {webhookId: request.webhookId})
                               resolve()
