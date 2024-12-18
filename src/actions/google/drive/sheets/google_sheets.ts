@@ -222,6 +222,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         return request.stream(async (readable) => {
           return new Promise<void>(async (resolve, reject) => {
               try {
+                  const requestArray: (() => Promise<any>)[] = []
                   const csvparser = parse({
                       rtrim: true,
                       ltrim: true,
@@ -230,7 +231,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                   })
                   // This will not clear formulas or protected regions
                   await this.retriableClearSheet(spreadsheetId, sheet, sheetId, 0, request.webhookId!)
-                  csvparser.on("data", async (line: any) => {
+                  csvparser.on("data", (line: any) => {
                       if (rowCount > maxPossibleRows) {
                           reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`)
                       }
@@ -271,17 +272,28 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                   winston.info(`Resetting back to max possible rows`, request.webhookId)
                                   maxRows = maxPossibleRows
                               }
-                              await this.retriableResize(maxRows, sheet, spreadsheetId, sheetId, 0, request.webhookId!)
-                              .catch((e: any) => {
-                                  this.sanitizeGaxiosError(e)
-                                  winston.debug(e.toString(), {webhookId: request.webhookId})
-                                  throw e
+                              requestArray.push(async () => {
+                                return this.retriableResize(
+                                    maxRows,
+                                    sheet,
+                                    spreadsheetId,
+                                    sheetId,
+                                    0,
+                                    request.webhookId!,
+                                ).catch((e: any) => {
+                                    this.sanitizeGaxiosError(e)
+                                    winston.debug(e.toString(), {webhookId: request.webhookId})
+                                    throw e
+                                })
                               })
                           }
-                          await this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!).catch((e: any) => {
-                              this.sanitizeGaxiosError(e)
-                              winston.debug(e, {webhookId: request.webhookId})
-                              throw e
+                          requestArray.push(async () => {
+                            return this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!)
+                                .catch((e: any) => {
+                                    this.sanitizeGaxiosError(e)
+                                    winston.debug(e, {webhookId: request.webhookId})
+                                    throw e
+                                })
                           })
                       }
                   }).on("end", async () => {
@@ -300,12 +312,25 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                   winston.info(`Resetting back to max possible rows`, request.webhookId)
                                   maxRows = maxPossibleRows
                               }
-                              await this.retriableResize(maxRows, sheet, spreadsheetId, sheetId, 0 , request.webhookId!)
-                              .catch((e: any) => {
-                                  this.sanitizeGaxiosError(e)
-                                  winston.debug(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
-                                  throw e
+                              requestArray.push(async () => {
+                                return this.retriableResize(
+                                    maxRows,
+                                    sheet,
+                                    spreadsheetId,
+                                    sheetId,
+                                    0,
+                                    request.webhookId!,
+                                ).catch((e: any) => {
+                                        this.sanitizeGaxiosError(e)
+                                        winston.debug(`Resize failed: rowCount: ${maxRows}`, request.webhookId)
+                                        throw e
+                                })
                               })
+                          }
+                          // Make sure we execute any intermediate resizes / flushes in order
+                          // before the final flush.
+                          for (const item of requestArray) {
+                            await item()
                           }
                           await this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).then(() => {
                               winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
