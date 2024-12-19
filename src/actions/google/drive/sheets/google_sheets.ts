@@ -287,11 +287,11 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                         // Write any remaining rows to the sheet
                         promiseArray.push(
                             this.flush(requestBody, sheet, spreadsheetId, request.webhookId!)
-                            .catch((e: any) => {
-                                this.sanitizeGaxiosError(e)
-                                winston.debug(e, {webhookId: request.webhookId})
-                                throw e
-                            }),
+                                .catch((e: any) => {
+                                    this.sanitizeGaxiosError(e)
+                                    winston.debug(e, {webhookId: request.webhookId})
+                                    throw e
+                                }),
                         )
 
                     }
