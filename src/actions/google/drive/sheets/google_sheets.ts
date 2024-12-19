@@ -277,7 +277,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                                     this.sanitizeGaxiosError(e)
                                     winston.debug(e, {webhookId: request.webhookId})
                                     throw e
-                                })
+                                }),
                           )
                       }
                   }).on("end", () => {
@@ -293,8 +293,14 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                               winston.warn("End flush failed.",
                                            {webhookId: request.webhookId})
                               throw e
-                          })
+                          }),
                         )
+
+                        Promise.all(promiseArray).then(() => {
+                            resolve()
+                        }).catch((e) => {
+                            throw e
+                        })
                       }
                   }).on("error", (e: any) => {
                       winston.debug(e, {webhookId: request.webhookId})
@@ -308,10 +314,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                   })
 
                   readable.pipe(csvparser)
-
-                  // wait for all requests to complete
-                  await Promise.all(promiseArray)
-                  resolve()
               } catch (e: any) {
                   winston.debug("Error thrown: " + e.toString(), {webhookId: request.webhookId})
                   reject(e.toString())
