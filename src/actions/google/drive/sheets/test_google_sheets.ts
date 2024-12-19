@@ -106,7 +106,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                     columnIndex: 0,
                     rowIndex: 0,
                   },
-                  data: "a,b,c",
+                  data: '"a","b","c"',
                   delimiter: ",",
                   type: "PASTE_NORMAL",
                 },
@@ -117,7 +117,7 @@ describe(`${action.constructor.name} unit tests`, () => {
                     columnIndex: 0,
                     rowIndex: 1,
                   },
-                  data: "1,2,3",
+                  data: '"1","2","3"',
                   delimiter: ",",
                   type: "PASTE_NORMAL",
                 },
@@ -127,6 +127,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           return Promise.resolve({})
         })
         const stubFlush = sinon.stub(action as any, "flush").callsFake(flushSpy)
+        const stubRetriableResize = sinon.stub(action as any, "retriableResize").resolves()
         const stubSheetClient = sinon.stub(action as any, "sheetsClientFromRequest")
           .resolves({
             spreadsheets: {
@@ -176,6 +177,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           stubDriveClient.restore()
           stubSheetClient.restore()
           stubFlush.restore()
+          stubRetriableResize.restore()
           done()
         })
 
