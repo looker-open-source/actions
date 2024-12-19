@@ -281,27 +281,29 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                           )
                       }
                   }).on("end", () => {
-                      finished = true
-                      // @ts-ignore
-                      if (requestBody.requests.length > 0) {
+                    finished = true
+                    // @ts-ignore
+                    if (requestBody.requests.length > 0) {
                         // Write any remaining rows to the sheet
                         promiseArray.push(
-                          this.flush(requestBody, sheet, spreadsheetId, request.webhookId!).then(() => {
-                              winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
-                                           {webhookId: request.webhookId})
-                          }).catch((e) => {
-                              winston.warn("End flush failed.",
-                                           {webhookId: request.webhookId})
-                              throw e
-                          }),
+                            this.flush(requestBody, sheet, spreadsheetId, request.webhookId!)
+                            .catch((e: any) => {
+                                this.sanitizeGaxiosError(e)
+                                winston.debug(e, {webhookId: request.webhookId})
+                                throw e
+                            }),
                         )
 
-                        Promise.all(promiseArray).then(() => {
-                            resolve()
-                        }).catch((e) => {
-                            throw e
-                        })
-                      }
+                    }
+                    Promise.all(promiseArray).then(() => {
+                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
+                                     {webhookId: request.webhookId})
+                        resolve()
+                    }).catch((e: any) => {
+                        winston.warn("Flush failed.",
+                                     {webhookId: request.webhookId})
+                        reject(e)
+                    })
                   }).on("error", (e: any) => {
                       winston.debug(e, {webhookId: request.webhookId})
                       reject(e)
