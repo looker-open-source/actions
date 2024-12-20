@@ -505,13 +505,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
       })
 
-      it("will not retry a non 429 error code is recieved", (done) => {
+      it("will not retry a non RETRIABLE_ERROR is recieved", (done) => {
         const retrySpy = sinon.spy()
         const retryStub = sinon.stub(action as any, "flushRetry").callsFake(retrySpy)
         process.env.GOOGLE_SHEET_RETRY = "true"
         const sheet = {
           spreadsheets: {
-            batchUpdate: async () => Promise.reject({code: 503}),
+            batchUpdate: async () => Promise.reject({code: 401}),
           },
         }
         // @ts-ignore
@@ -569,13 +569,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
       })
 
-      it("will only retry if a 429 code is received", (done) => {
+      it("will only retry if a RETRIABLE_ERROR code is received", (done) => {
         const delayStub = sinon.stub(action as any, "delay")
 
         const spreadSheetsStub = {
           batchUpdate: async () => Promise.resolve(),
         }
-        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 503})
+        const batchUpdateStub = sinon.stub(spreadSheetsStub, "batchUpdate").rejects({code: 401})
 
         const sheet = {
           spreadsheets: spreadSheetsStub,

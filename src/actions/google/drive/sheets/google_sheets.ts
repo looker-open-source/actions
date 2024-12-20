@@ -19,6 +19,7 @@ const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.e
 const LOG_PREFIX = "[GOOGLE_SHEETS]"
 const ROOT = "root"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
+const RETRIABLE_CODES = [429, 500, 504, 503]
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
@@ -344,7 +345,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
       }).catch(async (e: any) => {
           this.sanitizeGaxiosError(e)
           winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
-          if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+          if (RETRIABLE_CODES.includes(e.code) && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
               winston.warn("Queueing retry for clear sheet", {webhookId})
               await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
               // Try again and increment attempt
@@ -376,7 +377,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         }).catch(async (e: any) => {
             this.sanitizeGaxiosError(e)
             winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
-            if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+            if (RETRIABLE_CODES.includes(e.code) && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
                 winston.warn("Queueing retry for resize sheet", {webhookId})
                 await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
                 // Try again and increment attempt
@@ -396,7 +397,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
       return await sheet.spreadsheets.get({spreadsheetId}).catch(async (e: any) => {
           this.sanitizeGaxiosError(e)
           winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
-          if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+          if (RETRIABLE_CODES.includes(e.code) && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
               winston.warn("Queueing retry for read", {webhookId})
               await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
               // Try again and increment attempt
@@ -410,7 +411,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
           return await drive.files.list(options).catch(async (e: any) => {
               this.sanitizeGaxiosError(e)
               winston.debug(`SpreadsheetG error: ${e}`, {webhookId})
-              if (e.code === 429 && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
+              if (RETRIABLE_CODES.includes(e.code) && process.env.GOOGLE_SHEET_RETRY && attempt <= MAX_RETRY_COUNT) {
                   winston.warn("Queueing retry for file list", {webhookId})
                   await this.delay((RETRY_BASE_DELAY ** (attempt)) * 1000)
                   // Try again and increment attempt
@@ -431,7 +432,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                           if (!process.env.GOOGLE_SHEET_RETRY) {
                               throw e
                               // if this is a too many request, we can retry
-                          } else if (e.code === 429 || e.code === 500) {
+                          } else if (RETRIABLE_CODES.includes(e.code)) {
                               winston.warn(`Queueing retry for ${e.code}`, {webhookId})
                               return this.flushRetry(buffer, sheet, spreadsheetId, webhookId)
                           } else {
@@ -452,7 +453,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                            } catch (e: any) {
                                this.sanitizeGaxiosError(e)
                                retrySuccess = false
-                               if (e.code === 429 || e.code === 500) {
+                               if (RETRIABLE_CODES.includes(e.code)) {
                                    winston.info(`Retry number ${retryCount} for writeBatch failed`, {webhookId})
                                    winston.debug(e)
                                } else {
