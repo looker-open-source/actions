@@ -1,42 +1,28 @@
-## Running an Action Hub on Heroku
+## Running an Action Hub on Cloud Run
 
-Because Looker will only accept an action hub with a valid HTTPS certificate, it is convenient to develop with Heroku. Really! It's super convenient and fast! Just as snappy as running locally. Here are some instructions to get you started:
+Because Looker will only accept an action hub with a valid HTTPS certificate, it is convenient to run the Action Hub on Cloud Run, which provides ways to both serve TLS and autoscale your custom action deployment
+First ensure you can use the gcloud cli, which you can learn install [here](https://cloud.google.com/sdk/docs/install)
 
-* Create an account with Heroku if you don't already have one
-* Run `heroku login` and provide your Heroku credentials
-* `cd` into the project folder and run:
-   * `heroku create`
-   * `git push heroku master`
-   * `heroku config:set ACTION_HUB_BASE_URL="https://my-heroku-action-server-1234.herokuapp.com"`
-      
-      Use the URL for your Heroku application that was mentioned after running `git push heroku master` above
-   * `heroku config:set ACTION_HUB_LABEL="Awesome Action Hub"`
-   * `heroku config:set ACTION_HUB_SECRET="<my-secret>"`
+With the gcloud cli installed, you can create a build and deploy for your GCP project through the following command
+```bash
+gcloud builds submit --config=cloudbuild_container.yaml --project=YOUR_PROJECT
+```
+You can view the cloudbuild status [here](https://pantheon.corp.google.com/cloud-build/builds).
+You can view the status of your deployment [here](https://pantheon.corp.google.com/run/detail/us-central1/actionhub) if the build correctly worked.
 
-We recommend that you work on features using a branch. To create and push a branch to Heroku:
-
-* `git checkout -b my-name/my-awesome-feature` 
-   
-   This creates a branch called `my-name/my-awesome-feature` and switches to it
-* `git push heroku my-name/my-awesome-feature:master`
-
-   This pushes your branch to Heroku and runs it
-
-You can test that the action hub is running by going to your Heroku application URL. If you need to view logs at any time, you can run:
-
-    heroku logs
-
-If at some point you forget the URL of your Heroku server, you can run:
-
-    heroku info -s | grep web_url
+### Environment variables
+In the revisions page you will need to set the following environment variables at minimum for the actionhub to work. Some actions may require more environment settings to work.
+ACTION_HUB_LABEL=YourHubName
+ACTION_HUB_SECRET=YOURSECRET
+ACTION_HUB_BASE_URL=<CLOUDRUN_URL>
 
 #### Adding the Action Hub to Looker
 
-Make sure your action hub is running. You will then need to run the following command on the server that is running the action hub:
+Make sure your action hub is running. You will then need to run the following command locally:
 
     yarn generate-api-key
 
-Note that if you are using Heroku, you can run this command on your dyno by running `heroku run yarn generate-api-key`.
+You can locally run this command as long as the secret key is set and the same as the one used in Cloud Run.
 
 Save the value that is returned and then navigate to the actions admin page on a Looker instance or go directly to:
 
