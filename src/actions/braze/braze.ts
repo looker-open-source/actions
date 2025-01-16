@@ -124,7 +124,7 @@ export class BrazeAction extends Hub.Action {
             if (!field.tags) {
               continue
             }
-            if (field.tags.find((tag: string) => tag === BrazeConfig.BRAZE_ID_TAG )) {
+            if (field.tags.find((tag: string) => tag === BrazeConfig.BRAZE_ID_TAG.toString() )) {
               bzIdField = field.name
             }
             for (const tag of field.tags) {

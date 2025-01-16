@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import * as spawn from "child_process";
 import { ProcessQueue } from "./process_queue";
 export declare class ExtendedProcessQueue extends ProcessQueue {
