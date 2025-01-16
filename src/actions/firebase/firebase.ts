@@ -99,7 +99,7 @@ export class FirebaseAction extends Hub.Action {
               const message = {
                 token: deviceId,
                 notification,
-                data: notificationData
+                data: notificationData,
               }
               try {
                 await this.sendMessageToDevice(message, webhookId)
