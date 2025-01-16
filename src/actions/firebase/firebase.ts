@@ -3,7 +3,6 @@ import * as firebaseApp from "firebase-admin/app"
 import { v4 } from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
-import {getMessaging} from 'firebase-admin/lib/messaging';
 
 const LOG_PREFIX = "[Firebase]"
 
@@ -128,7 +127,7 @@ export class FirebaseAction extends Hub.Action {
   ): Promise<any> {
     return new Promise<void>((resolve, reject) => {
       FirebaseAction.setFirebaseClient()
-      getMessaging().send(message)
+      firebaseAdmin.messaging().send(message)
         .then( (response: any) => {
           winston.info(`${LOG_PREFIX} notification sent to firebase. ${JSON.stringify(response)}`, { webhookId })
           resolve()
