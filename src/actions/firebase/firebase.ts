@@ -3,6 +3,7 @@ import * as firebaseApp from "firebase-admin/app"
 import { v4 } from "uuid"
 import * as winston from "winston"
 import * as Hub from "../../hub"
+import {getMessaging} from 'firebase-admin/lib/messaging';
 
 const LOG_PREFIX = "[Firebase]"
 
@@ -96,12 +97,13 @@ export class FirebaseAction extends Hub.Action {
             if (device.device_id && device.user_id) {
               const deviceId = device.device_id.toString()
               notificationData.user_id = device.user_id.toString()
-              const payload = {
+              const message = {
+                token: deviceId,
                 notification,
-                data: notificationData,
+                data: notificationData
               }
               try {
-                await this.sendMessageToDevice(deviceId, webhookId, payload, notificationOptions)
+                await this.sendMessageToDevice(message, webhookId)
               } catch (error: any) {
                 winston.error(`${LOG_PREFIX} Error in sendMessageToDevice. ${error.toString()} `, { webhookId })
                 reject(error)
@@ -121,14 +123,12 @@ export class FirebaseAction extends Hub.Action {
     })
   }
 
-  async sendMessageToDevice(deviceId: string,
+  async sendMessageToDevice(message: firebaseAdmin.messaging.TokenMessage,
                             webhookId: string | undefined,
-                            payload: firebaseAdmin.messaging.MessagingPayload,
-                            options?: firebaseAdmin.messaging.MessagingOptions,
-                            ): Promise<any> {
+  ): Promise<any> {
     return new Promise<void>((resolve, reject) => {
       FirebaseAction.setFirebaseClient()
-      firebaseAdmin.messaging().sendToDevice(deviceId, payload, options)
+      getMessaging().send(message)
         .then( (response: any) => {
           winston.info(`${LOG_PREFIX} notification sent to firebase. ${JSON.stringify(response)}`, { webhookId })
           resolve()

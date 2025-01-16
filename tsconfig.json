@@ -9,7 +9,7 @@
       "outDir": "lib",
       "sourceMap": false,
       "strict": true,
-      "target": "ES6",
+      "target": "ES2018",
       "plugins": [
         {
           "name": "tslint-language-service",
