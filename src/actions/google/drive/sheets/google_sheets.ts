@@ -35,7 +35,9 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const resp = new Hub.ActionResponse()
 
         if (!request.params.state_json) {
+            winston.info("No state json found", {webhookId: request.webhookId})
             resp.success = false
+            resp.message = "No state found with oauth credentials."
             resp.state = new Hub.ActionState()
             resp.state.data = "reset"
             return resp
