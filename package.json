@@ -94,7 +94,7 @@
     "typescript": "^5.7.3",
     "uuid": "^3.4.0",
     "winston": "^2.4.5",
-    "firebase-admin": "^12.7.0",
+    "firebase-admin": "^13.0.2",
     "yarn": "^1.22.18"
   },
   "typings": "lib/index",

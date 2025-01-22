@@ -100,7 +100,24 @@ export class FirebaseAction extends Hub.Action {
                 token: deviceId,
                 notification,
                 data: notificationData,
+                android: {
+                  priority: "high",
+                  ttl: 60 * 60 * 24 * 1000, // 24 hours in milliseconds
+                },
+                apns: {
+                  headers: {
+                    "apns-priority": "10", // High priority for iOS
+                    "apns-expiration": Math.floor(Date.now() / 1000) + (60 * 60 * 24), // Expires in 24 hours
+                  },
+                  payload: {
+                    aps: {
+                      "content-available": 1, // Enable background updates for iOS
+                      "mutable-content": 1,  // Allow notification modification for iOS
+                    },
+                  },
+                },
               }
+
               try {
                 await this.sendMessageToDevice(message, webhookId)
               } catch (error: any) {
@@ -122,7 +139,7 @@ export class FirebaseAction extends Hub.Action {
     })
   }
 
-  async sendMessageToDevice(message: firebaseAdmin.messaging.TokenMessage,
+  async sendMessageToDevice(message: any,
                             webhookId: string | undefined,
   ): Promise<any> {
     return new Promise<void>((resolve, reject) => {
