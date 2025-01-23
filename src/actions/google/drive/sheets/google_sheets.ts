@@ -104,7 +104,9 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 winston.error(`${error.message}`, {error, webhookId: request.webhookId})
             }
         } else {
+            winston.info("Request did not have oauth tokens present", {webhookId: request.webhookId})
             resp.success = false
+            resp.message = "Request did not have necessary oauth tokens saved. Fast failing"
             resp.state = new Hub.ActionState()
             resp.state.data = "reset"
         }
