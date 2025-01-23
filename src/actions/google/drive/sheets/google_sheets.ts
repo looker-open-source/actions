@@ -19,7 +19,7 @@ const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.e
 const LOG_PREFIX = "[GOOGLE_SHEETS]"
 const ROOT = "root"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
-const RETRIABLE_CODES = [429, 500, 504, 503]
+const RETRIABLE_CODES = [429, 409, 500, 504, 503]
 
 export class GoogleSheetsAction extends GoogleDriveAction {
     name = "google_sheets"
