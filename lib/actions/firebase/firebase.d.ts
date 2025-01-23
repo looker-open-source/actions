@@ -1,4 +1,3 @@
-import * as firebaseAdmin from "firebase-admin";
 import * as firebaseApp from "firebase-admin/app";
 import * as Hub from "../../hub";
 export declare class FirebaseAction extends Hub.Action {
@@ -23,5 +22,5 @@ export declare class FirebaseAction extends Hub.Action {
     supportedVisualizationFormattings: Hub.ActionVisualizationFormatting[];
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     verifyAndSendMessage(params: Hub.ParamMap, webhookId: string | undefined): Promise<any>;
-    sendMessageToDevice(message: firebaseAdmin.messaging.TokenMessage, webhookId: string | undefined): Promise<any>;
+    sendMessageToDevice(message: any, webhookId: string | undefined): Promise<any>;
 }
