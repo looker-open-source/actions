@@ -99,7 +99,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                 }
 
                 resp.success = false
-                resp.message = e.message
+                resp.message = e.toString()
                 resp.webhookId = request.webhookId
                 resp.error = error
                 winston.error(`${error.message}`, {error, webhookId: request.webhookId})
