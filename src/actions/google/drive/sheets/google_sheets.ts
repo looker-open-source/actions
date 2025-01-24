@@ -54,6 +54,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     winston.info(error + " - invalidating token", {webhookId: request.webhookId})
                     resp.success = false
                     resp.state = new Hub.ActionState()
+                    resp.message = "User Domain validation failed"
                     resp.state.data = "reset"
                     return resp
             })
@@ -95,10 +96,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
                 if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
                     error = {...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`}
+                    resp.message = e.errors[0].message
+                } else {
+                    resp.message = e.toString()
                 }
 
                 resp.success = false
-                resp.message = e.message
                 resp.webhookId = request.webhookId
                 resp.error = error
                 winston.error(`${error.message}`, {error, webhookId: request.webhookId})

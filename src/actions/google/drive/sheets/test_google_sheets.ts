@@ -424,7 +424,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         const resp = action.validateAndExecute(request)
         chai.expect(resp).to.eventually.deep.equal({
           success: false,
-          message: undefined,
+          message: "testException",
           refreshQuery: false,
           validationErrors: [],
           error: {
