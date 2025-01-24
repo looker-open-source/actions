@@ -96,10 +96,12 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
                 if (e.code && e.errors && e.errors[0] && e.errors[0].message) {
                     error = {...error, http_code: e.code, message: `${errorType.description} ${LOG_PREFIX} ${e.errors[0].message}`}
+                    resp.message = e.errors[0].message
+                } else {
+                    resp.message = e.toString()
                 }
 
                 resp.success = false
-                resp.message = e.toString()
                 resp.webhookId = request.webhookId
                 resp.error = error
                 winston.error(`${error.message}`, {error, webhookId: request.webhookId})
