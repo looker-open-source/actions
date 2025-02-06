@@ -292,7 +292,10 @@ export class GoogleDriveAction extends Hub.OAuthAction {
   }
 
    async sendData(filename: string, request: Hub.ActionRequest, drive: Drive) {
-     const mimeType = this.getMimeType(request)
+     let mimeType = this.getMimeType(request)
+     if (mimeType?.includes("spreadsheetml.sheet") && mimeType.includes(";base64")) {
+      mimeType = mimeType.replace(";base64", "")
+     }
      let folder: string | undefined
      if (request.formParams.folderid) {
        if (request.formParams.folderid.includes("my-drive")) {
