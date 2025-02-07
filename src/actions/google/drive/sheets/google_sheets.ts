@@ -243,7 +243,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                   await this.retriableClearSheet(spreadsheetId, sheet, sheetId, 0, request.webhookId!)
 
                   // Set the sheet's rows to max rows possible
-                  winston.info(`Setting sheet rows to ${1}`, request.webhookId)
+                  winston.info(`Setting sheet rows to ${INITIAL_RESIZE}`, request.webhookId)
                   await this.retriableResize(
                     INITIAL_RESIZE,
                     sheet,
