@@ -271,7 +271,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                               0,
                               request.webhookId!,
                           ).then(() => {
-                              winston.info("Resuming")
+                              winston.info("Resuming stream", {webhookId: request.webhookId})
                               csvparser.resume()
                           }).catch((e: any) => {
                               throw e
