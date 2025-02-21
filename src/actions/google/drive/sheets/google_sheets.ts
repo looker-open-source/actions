@@ -13,7 +13,6 @@ import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 
 const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process.env.GOOGLE_SHEETS_WRITE_BATCH) : 4096
-const RESIZE_SENSITIVITY = process.env.RESIZE_SENSITIVITY ? Number(process.env.RESIZE_SENSITIVITY) : 1
 
 const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_ROW_BUFFER_INCREASE = 6000
@@ -224,7 +223,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         // The ignore is here because Typescript is not correctly inferring that I have done existence checks
         const sheetId = sheets.data.sheets[0].properties.sheetId as number
         const columns = sheets.data.sheets[0].properties.gridProperties.columnCount as number
-        let  currentMaxRows = sheets.data.sheets[0].properties.gridProperties.rowCount as number
+        let  currentMaxRows = INITIAL_RESIZE
         const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT / columns)
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
@@ -263,7 +262,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                               reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`)
                           }
                           const rowIndex: number = rowCount++
-                          if (rowIndex >= currentMaxRows - RESIZE_SENSITIVITY) {
+                          if (rowIndex >= currentMaxRows - 1) {
                               currentMaxRows = Math.min(rowCount + MAX_ROW_BUFFER_INCREASE, maxPossibleRows)
                               winston.info(`Pausing stream and resizing to ${currentMaxRows} rows`,
                                   {webhookId: request.webhookId})
