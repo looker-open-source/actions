@@ -227,7 +227,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT / columns)
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
-        let finished = false
 
         return request.stream(async (readable) => {
           return new Promise<void>(async (resolve, reject) => {
@@ -337,8 +336,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                           resolve()
                           winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
                               {webhookId: request.webhookId})
-                      }).then(() => {
-                          resolve()
                       }).catch((e: any) => {
                           winston.warn("Await flushes failed.",
                               {webhookId: request.webhookId})
@@ -347,12 +344,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                   }).on("error", (e: any) => {
                       winston.debug(e, {webhookId: request.webhookId})
                       reject(e)
-                  }).on("close", () => {
-                      if (!finished) {
-                          winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`,
-                                       {webhookId: request.webhookId})
-                          reject(`"end" event not called before finishing stream`)
-                      }
                   })
 
                   readable.pipe(csvparser)
