@@ -227,7 +227,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT / columns)
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
-        let finished = false
 
         return request.stream(async (readable) => {
           return new Promise<void>(async (resolve, reject) => {
@@ -253,7 +252,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     0,
                     request.webhookId!,
                   )
-                  let line: any
+                  let line: any = null
 
                   csvparser.on("readable", async () => {
                       line = csvparser.read()
@@ -313,40 +312,38 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                               )
                           }
                           line = csvparser.read()
+                          if (line === null) {
+                              winston.info("Sheets line was empty, ending stream and sending final flush")
+                              if ( requestBody.requests && requestBody.requests.length >= 1) {
+                                  const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                                  // Make sure to do a deep copy of the request
+                                  Object.assign(requestCopy, requestBody)
+                                  requestBody.requests = []
+                                  promiseArray.push(
+                                      this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!)
+                                          .catch((e: any) => {
+                                              this.sanitizeGaxiosError(e)
+                                              winston.debug(e, {webhookId: request.webhookId})
+                                              throw e
+                                          }),
+                                  )
+                              }
+                              break
+                          }
                       }
                   }).on("end", () => {
-                    finished = true
-                    // @ts-ignore
-                    if (requestBody.requests.length > 0) {
-                        // Write any remaining rows to the sheet
-                        promiseArray.push(
-                            this.flush(requestBody, sheet, spreadsheetId, request.webhookId!)
-                                .catch((e: any) => {
-                                    this.sanitizeGaxiosError(e)
-                                    winston.debug(e, {webhookId: request.webhookId})
-                                    throw e
-                                }),
-                        )
-
-                    }
-                    Promise.all(promiseArray).then(() => {
-                        winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
-                                     {webhookId: request.webhookId})
-                        resolve()
-                    }).catch((e: any) => {
-                        winston.warn("Flush failed.",
-                                     {webhookId: request.webhookId})
-                        reject(e)
-                    })
+                      Promise.all(promiseArray).then(() => {
+                          resolve()
+                          winston.info(`Google Sheets Streamed ${rowCount} rows including headers`,
+                              {webhookId: request.webhookId})
+                      }).catch((e: any) => {
+                          winston.warn("Await flushes failed.",
+                              {webhookId: request.webhookId})
+                          reject(e)
+                      })
                   }).on("error", (e: any) => {
                       winston.debug(e, {webhookId: request.webhookId})
                       reject(e)
-                  }).on("close", () => {
-                      if (!finished) {
-                          winston.warn(`Google Sheets Streaming closed socket before "end" event stream.`,
-                                       {webhookId: request.webhookId})
-                          reject(`"end" event not called before finishing stream`)
-                      }
                   })
 
                   readable.pipe(csvparser)
