@@ -1,5 +1,5 @@
-export declare const API_VERSION = "v19.0";
-export declare const API_BASE_URL = "https://graph.facebook.com/v19.0/";
+export declare const API_VERSION = "v22.0";
+export declare const API_BASE_URL = "https://graph.facebook.com/v22.0/";
 export declare const CUSTOMER_LIST_SOURCE_TYPES: {
     USER_PROVIDED_ONLY: string;
     PARTNER_PROVIDED_ONLY: string;
