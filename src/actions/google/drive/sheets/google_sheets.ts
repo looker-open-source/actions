@@ -15,7 +15,6 @@ import Sheet = sheets_v4.Sheets
 const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process.env.GOOGLE_SHEETS_WRITE_BATCH) : 4096
 const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_ROW_BUFFER_INCREASE = 6000
-const INITIAL_RESIZE = 6000
 const MAX_RETRY_COUNT = 5
 const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.env.GOOGLE_SHEETS_BASE_DELAY) : 3
 const LOG_PREFIX = "[GOOGLE_SHEETS]"
@@ -241,17 +240,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
                   // This will not clear formulas or protected regions
                   await this.retriableClearSheet(spreadsheetId, sheet, sheetId, 0, request.webhookId!)
-
-                  // Set the sheet's rows to max rows possible
-                  winston.info(`Setting sheet rows to ${INITIAL_RESIZE}`, request.webhookId)
-                  await this.retriableResize(
-                    INITIAL_RESIZE,
-                    sheet,
-                    spreadsheetId,
-                    sheetId,
-                    0,
-                    request.webhookId!,
-                  )
 
                   csvparser.on("data", (line: any) => {
                       if (rowCount > maxPossibleRows) {
