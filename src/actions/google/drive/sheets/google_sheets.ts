@@ -13,7 +13,6 @@ import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 
 const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process.env.GOOGLE_SHEETS_WRITE_BATCH) : 4096
-
 const SHEETS_MAX_CELL_LIMIT = 5000000
 const MAX_ROW_BUFFER_INCREASE = 6000
 const INITIAL_RESIZE = 6000
@@ -223,7 +222,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         // The ignore is here because Typescript is not correctly inferring that I have done existence checks
         const sheetId = sheets.data.sheets[0].properties.sheetId as number
         const columns = sheets.data.sheets[0].properties.gridProperties.columnCount as number
-        let  currentMaxRows = INITIAL_RESIZE
+        let  currentMaxRows = sheets.data.sheets[0].properties.gridProperties.rowCount as number
         const maxPossibleRows = Math.floor(SHEETS_MAX_CELL_LIMIT / columns)
         const requestBody: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {requests: []}
         let rowCount = 0
@@ -253,66 +252,63 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     0,
                     request.webhookId!,
                   )
-                  let line: any
 
-                  csvparser.on("readable", async () => {
-                      line = csvparser.read()
-                      while (line !== null) {
-                          if (rowCount > maxPossibleRows) {
-                              reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`)
-                          }
-                          const rowIndex: number = rowCount++
-                          if (rowIndex >= currentMaxRows - 1) {
-                              currentMaxRows = Math.min(rowCount + MAX_ROW_BUFFER_INCREASE, maxPossibleRows)
-                              winston.info(`Pausing stream and resizing to ${currentMaxRows} rows`,
-                                  {webhookId: request.webhookId})
-                              await this.retriableResize(
-                                  currentMaxRows,
-                                  sheet,
-                                  spreadsheetId,
-                                  sheetId,
-                                  0,
-                                  request.webhookId!,
-                              ).then(() => {
-                                  winston.info("Resuming stream", {webhookId: request.webhookId})
-                              }).catch((e: any) => {
-                                  throw e
-                              })
-                          }
-                          // Sanitize line data and properly encapsulate string formatting for CSV lines
-                          const lineData = line.map((record: string) => {
-                              record = record.replace(/\"/g, "\"\"")
-                              return `"${record}"`
-                          }).join(",") as string
-                          // @ts-ignore
-                          requestBody.requests.push({
-                              pasteData: {
-                                  coordinate: {
-                                      sheetId,
-                                      columnIndex: 0,
-                                      rowIndex,
-                                  },
-                                  data: lineData,
-                                  delimiter: ",",
-                                  type: "PASTE_NORMAL",
-                              },
+                  csvparser.on("data", (line: any) => {
+                      if (rowCount > maxPossibleRows) {
+                          reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`)
+                      }
+                      const rowIndex: number = rowCount++
+                      if (rowIndex >= currentMaxRows - 1) {
+                          csvparser.pause()
+                          currentMaxRows = Math.min(rowCount + MAX_ROW_BUFFER_INCREASE, maxPossibleRows)
+                          winston.info(`Pausing stream and resizing to ${currentMaxRows} rows`,
+                              {webhookId: request.webhookId})
+                          this.retriableResize(
+                              currentMaxRows,
+                              sheet,
+                              spreadsheetId,
+                              sheetId,
+                              0,
+                              request.webhookId!,
+                          ).then(() => {
+                              winston.info("Resuming stream", {webhookId: request.webhookId})
+                              csvparser.resume()
+                          }).catch((e: any) => {
+                              throw e
                           })
-                          // @ts-ignore
-                          if (requestBody.requests.length > MAX_REQUEST_BATCH) {
-                              const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
-                              // Make sure to do a deep copy of the request
-                              Object.assign(requestCopy, requestBody)
-                              requestBody.requests = []
-                              promiseArray.push(
-                                  this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!)
-                                      .catch((e: any) => {
-                                          this.sanitizeGaxiosError(e)
-                                          winston.debug(e, {webhookId: request.webhookId})
-                                          throw e
-                                      }),
-                              )
-                          }
-                          line = csvparser.read()
+                      }
+                      // Sanitize line data and properly encapsulate string formatting for CSV lines
+                      const lineData = line.map((record: string) => {
+                          record = record.replace(/\"/g, "\"\"")
+                          return `"${record}"`
+                      }).join(",") as string
+                      // @ts-ignore
+                      requestBody.requests.push({
+                          pasteData: {
+                              coordinate: {
+                                  sheetId,
+                                  columnIndex: 0,
+                                  rowIndex,
+                              },
+                              data: lineData,
+                              delimiter: ",",
+                              type: "PASTE_NORMAL",
+                          },
+                      })
+                      // @ts-ignore
+                      if (requestBody.requests.length > MAX_REQUEST_BATCH) {
+                          const requestCopy: sheets_v4.Schema$BatchUpdateSpreadsheetRequest = {}
+                          // Make sure to do a deep copy of the request
+                          Object.assign(requestCopy, requestBody)
+                          requestBody.requests = []
+                          promiseArray.push(
+                            this.flush(requestCopy, sheet, spreadsheetId, request.webhookId!)
+                                .catch((e: any) => {
+                                    this.sanitizeGaxiosError(e)
+                                    winston.debug(e, {webhookId: request.webhookId})
+                                    throw e
+                                }),
+                          )
                       }
                   }).on("end", () => {
                     finished = true
