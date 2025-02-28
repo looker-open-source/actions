@@ -126,7 +126,12 @@ export class GoogleDriveAction extends Hub.OAuthAction {
 
           const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
 
-          const driveSelections = await this.getDrives(drive)
+          const paginatedDrives = await this.getDrives(drive, [], await drive.drives.list({pageSize: 50}))
+          const driveSelections = paginatedDrives.filter((_drive) => (
+            !(_drive.id === undefined) && !(_drive.name === undefined)))
+            .map((folder) => ({name: folder.id!, label: folder.name!}))
+          driveSelections.unshift({name: "mydrive", label: "My Drive"})
+
           form.fields.push({
             description: "Google Drive where your file will be saved",
             label: "Select Drive to save file",
@@ -338,16 +343,19 @@ export class GoogleDriveAction extends Hub.OAuthAction {
      })
    }
 
-   async getDrives(drive: Drive) {
-     const driveList = [{name: "mydrive", label: "My Drive"}]
-     const drives: GaxiosResponse<drive_v3.Schema$DriveList> = await drive.drives.list({
-       pageSize: 50,
-     })
-     if (drives.data.drives) {
-       drives.data.drives.forEach((d) => {
-         driveList.push({name: d.id!, label: d.name!})
-       })
+   async getDrives(drive: Drive,
+                   accumulatedFolders: drive_v3.Schema$Drive[],
+                   response: GaxiosResponse<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]> {
+     const driveList = accumulatedFolders.concat(response.data.drives!)
+
+     if (response.data.nextPageToken) {
+      const pageOptions = {
+        pageSize: 50,
+        pageToken: response.data.nextPageToken,
+      }
+      return this.getDrives(drive, driveList, await drive.drives.list(pageOptions))
      }
+
      return driveList
    }
 
