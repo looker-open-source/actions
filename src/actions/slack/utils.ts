@@ -124,7 +124,16 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
 
     return response
 }
-
+const convertUMTokens = async (channel: string, slack: WebClient): Promise<string> => {
+    const openResponse = await slack.conversations.open({channel: channel})
+    if (openResponse.error) {
+        throw openResponse.error
+    } else if (!openResponse?.channel?.id) {
+        throw "No channel ID found"
+    } else {
+        return openResponse.channel.id
+    }
+}
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
     const response = new Hub.ActionResponse({success: true})
     if (!request.formParams.channel) {
@@ -146,7 +155,8 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
 
     try {
         const isUserToken = request.formParams.channel.startsWith("U") || request.formParams.channel.startsWith("W")
-        const forceV1Upload = process.env.FORCE_V1_UPLOAD
+        const channel = isUserToken ?
+            await convertUMTokens(request.formParams.channel, slack) : request.formParams.channel
         if (!request.empty()) {
             const buffs: any[] = []
             await request.stream(async (readable) => {
@@ -170,53 +180,43 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                         // Unfortunately UploadV2 does not provide a way to upload files
                         // to user tokens which are common in Looker schedules
                         // (UXXXXXXX)
-                        if (isUserToken || forceV1Upload) {
-                            winston.info(`${LOG_PREFIX} V1 Upload of file`, {webhookId})
-                            await slack.files.upload({
-                                file: buffer,
-                                filename: fileName,
-                                channels: request.formParams.channel,
-                                initial_comment: comment,
-                            })
-                        } else {
-                            winston.info(`${LOG_PREFIX} V2 Upload of file`, {webhookId})
-                            const res = await slack.files.getUploadURLExternal({
-                                filename: fileName,
-                                length: buffer.byteLength,
-                            })
-                            const upload_url = res.upload_url
+                        winston.info(`${LOG_PREFIX} V2 Upload of file`, {webhookId})
+                        const res = await slack.files.getUploadURLExternal({
+                            filename: fileName,
+                            length: buffer.byteLength,
+                        })
+                        const upload_url = res.upload_url
 
-                            // Upload file to Slack
-                            await gaxios.request({
-                                method: "POST",
-                                url: upload_url,
-                                data: buffer,
-                            })
+                        // Upload file to Slack
+                        await gaxios.request({
+                            method: "POST",
+                            url: upload_url,
+                            data: buffer,
+                        })
 
-                            // Finalize upload and give metadata for channel, title and
-                            // comment for the file to be posted.
-                            await slack.files.completeUploadExternal({
-                                files: [{
-                                    id: res.file_id ? res.file_id : "",
-                                    title: fileName,
-                                }],
-                                channel_id: request.formParams.channel,
+                        // Finalize upload and give metadata for channel, title and
+                        // comment for the file to be posted.
+                        await slack.files.completeUploadExternal({
+                            files: [{
+                                id: res.file_id ? res.file_id : "",
+                                title: fileName,
+                            }],
+                            channel_id: channel,
+                        }).catch((e: any) => {
+                            winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
+                            reject(e)
+                        })
+                        // Workaround for regression in V2 upload, the initial
+                        // comment does not support markdown formatting, breaking
+                        // customer links
+                        if (comment !== "") {
+                            await slack.chat.postMessage({
+                                channel: request.formParams.channel!,
+                                text: comment,
                             }).catch((e: any) => {
                                 winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
                                 reject(e)
                             })
-                            // Workaround for regression in V2 upload, the initial
-                            // comment does not support markdown formatting, breaking
-                            // customer links
-                            if (comment !== "") {
-                                await slack.chat.postMessage({
-                                    channel: request.formParams.channel!,
-                                    text: comment,
-                                }).catch((e: any) => {
-                                    winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
-                                    reject(e)
-                                })
-                            }
                         }
                         resolve()
                     })
