@@ -125,7 +125,8 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
     return response
 }
 const convertUMTokens = async (channel: string, slack: WebClient): Promise<string> => {
-    const openResponse = await slack.conversations.open({channel: channel})
+    winston.info(`Converting token ${channel}`)
+    const openResponse = await slack.conversations.open({users: channel})
     if (openResponse.error) {
         throw openResponse.error
     } else if (!openResponse?.channel?.id) {
@@ -177,9 +178,6 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                             {webhookId},
                         )
 
-                        // Unfortunately UploadV2 does not provide a way to upload files
-                        // to user tokens which are common in Looker schedules
-                        // (UXXXXXXX)
                         winston.info(`${LOG_PREFIX} V2 Upload of file`, {webhookId})
                         const res = await slack.files.getUploadURLExternal({
                             filename: fileName,
