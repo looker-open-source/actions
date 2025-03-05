@@ -29,10 +29,7 @@ export declare class GoogleDriveAction extends Hub.OAuthAction {
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauth2Client(redirectUri: string | undefined): OAuth2Client;
     sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponse<drive_v3.Schema$File>>;
-    getDrives(drive: Drive): Promise<{
-        name: string;
-        label: string;
-    }[]>;
+    getDrives(drive: Drive, accumulatedFolders: drive_v3.Schema$Drive[], response: GaxiosResponse<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]>;
     getMimeType(request: Hub.ActionRequest): string | undefined;
     sanitizeGaxiosError(err: any): void;
     protected getAccessTokenCredentialsFromCode(redirect: string, code: string): Promise<Credentials>;
