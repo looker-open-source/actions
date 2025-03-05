@@ -124,17 +124,6 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
 
     return response
 }
-const convertUMTokens = async (channel: string, slack: WebClient): Promise<string> => {
-    winston.info(`Converting token ${channel}`)
-    const openResponse = await slack.conversations.open({users: channel})
-    if (openResponse.error) {
-        throw openResponse.error
-    } else if (!openResponse?.channel?.id) {
-        throw "No channel ID found"
-    } else {
-        return openResponse.channel.id
-    }
-}
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
     const response = new Hub.ActionResponse({success: true})
     if (!request.formParams.channel) {
@@ -156,8 +145,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
 
     try {
         const isUserToken = request.formParams.channel.startsWith("U") || request.formParams.channel.startsWith("W")
-        const channel = isUserToken ?
-            await convertUMTokens(request.formParams.channel, slack) : request.formParams.channel
+        const channel = request.formParams.channel
         if (!request.empty()) {
             const buffs: any[] = []
             await request.stream(async (readable) => {
@@ -194,27 +182,59 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
 
                         // Finalize upload and give metadata for channel, title and
                         // comment for the file to be posted.
-                        await slack.files.completeUploadExternal({
-                            files: [{
-                                id: res.file_id ? res.file_id : "",
-                                title: fileName,
-                            }],
-                            channel_id: channel,
-                        }).catch((e: any) => {
-                            winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
-                            reject(e)
-                        })
-                        // Workaround for regression in V2 upload, the initial
-                        // comment does not support markdown formatting, breaking
-                        // customer links
-                        if (comment !== "") {
-                            await slack.chat.postMessage({
-                                channel: request.formParams.channel!,
-                                text: comment,
+                        if (isUserToken) {
+                            //  If we have a user token, we need to convert the
+                            //  UXXXXX token into a DXXXXX token. Conversations.open()
+                            //  requires channels:manage and extra *:write scopes
+                            //  which will break existing schedules. Posting a message
+                            //  first only requires chat:write which we already have.
+                            //  the response returns a DXXXX token which we can use
+                            //  to upload to the channel
+                            const postResponse = await slack.chat.postMessage({
+                                channel,
+                                text: comment.length !== 0 ? comment : "Looker Data",
+                            }).catch((e: any) => {
+                                winston.error("Issue posting message", {webhookId})
+                                reject(e)
+                            })
+                            const directChannel = postResponse?.channel
+                            const resp2 = await slack.files.completeUploadExternal({
+                                files: [{
+                                    id: res.file_id ? res.file_id : "",
+                                    title: fileName,
+                                }],
+                                channel_id: directChannel,
                             }).catch((e: any) => {
                                 winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
                                 reject(e)
                             })
+                            winston.info(`response complete : ${JSON.stringify(resp2)}`)
+                            // Workaround for regression in V2 upload, the initial
+                            // comment does not support markdown formatting, breaking
+                            // customer links
+                        } else {
+                            await slack.files.completeUploadExternal({
+                                files: [{
+                                    id: res.file_id ? res.file_id : "",
+                                    title: fileName,
+                                }],
+                                channel_id: channel,
+                            }).catch((e: any) => {
+                                winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
+                                reject(e)
+                            })
+                            // Workaround for regression in V2 upload, the initial
+                            // comment does not support markdown formatting, breaking
+                            // customer links
+                            if (comment !== "") {
+                                await slack.chat.postMessage({
+                                    channel,
+                                    text: comment,
+                                }).catch((e: any) => {
+                                    winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
+                                    reject(e)
+                                })
+                            }
                         }
                         resolve()
                     })

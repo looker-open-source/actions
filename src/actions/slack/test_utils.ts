@@ -26,10 +26,6 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
         return {}
     })
 
-    const convertUser = sinon.spy(async (_options: any) => {
-        return {channel: {id: "D98765"}}
-    })
-
     const finalizeSpy = sinon.spy(async (params: any) => {
         chai.expect(params.files[0].id).to.equal(fileId)
         chai.expect(params.files[0].title).to.equal(optionsMatch.filename)
@@ -39,7 +35,6 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
         return {}
     })
 
-    const stubUserUrl = sinon.stub(slackClient.conversations, "open").callsFake(convertUser)
     const stubClientURL = sinon.stub(slackClient.files, "getUploadURLExternal").callsFake(uploadUrlSpy)
     const stubUpload = sinon.stub(gaxios, "request").callsFake(filesUploadSpy)
     const stubFinalize = sinon.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeSpy)
@@ -55,7 +50,6 @@ function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadA
         stubUpload.restore()
         stubFinalize.restore()
         stubSuggestedFilename.restore()
-        stubUserUrl.restore()
     })
 }
 
