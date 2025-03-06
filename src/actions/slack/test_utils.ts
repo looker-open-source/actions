@@ -8,25 +8,6 @@ import { getDisplayedFormFields, handleExecute } from "./utils"
 
 const stubFileName = "stubSuggestedFilename"
 
-function expectSlackMatchV1(request: Hub.ActionRequest, optionsMatch: FilesUploadArguments) {
-    const slackClient = new WebClient("someToken")
-    const expectedBuffer = optionsMatch.file as Buffer
-    delete optionsMatch.file
-    const filesUploadSpy = sinon.spy(async (params: any) => {
-        chai.expect(params.file.toString()).to.equal(expectedBuffer.toString())
-        return {}
-    })
-    const stubClient = sinon.stub(slackClient.files, "upload")
-        .callsFake(filesUploadSpy)
-    const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
-        .callsFake(() => stubFileName)
-    return chai.expect(handleExecute(request, slackClient)).to.be.fulfilled.then(() => {
-        chai.expect(filesUploadSpy).to.have.been.calledWithMatch(optionsMatch)
-        stubClient.restore()
-        stubSuggestedFilename.restore()
-    })
-}
-
 function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadArguments) {
 
     const slackClient = new WebClient("someToken")
@@ -366,28 +347,7 @@ describe(`slack/utils unit tests`, () => {
             })
         })
 
-        it("uses V1 if channel if FORCE_V1_UPLOAD is on", () => {
-            const request = new Hub.ActionRequest()
-            request.type = Hub.ActionType.Query
-            request.formParams = {
-                channel: "mychannel",
-                initial_comment: "mycomment",
-            }
-            request.attachment = {
-                dataBuffer: Buffer.from("1,2,3,4", "utf8"),
-                fileExtension: "csv",
-            }
-            process.env.FORCE_V1_UPLOAD = "on"
-            const results = expectSlackMatchV1(request, {
-                channels: request.formParams.channel,
-                initial_comment: request.formParams.initial_comment,
-                file: Buffer.from("1,2,3,4", "utf8"),
-            })
-            process.env.FORCE_V1_UPLOAD = ""
-            return results
-        })
-
-        it("uses V1 if channel is a User token", () => {
+        it("uses convertUM if channel is a User token", () => {
             const request = new Hub.ActionRequest()
             request.type = Hub.ActionType.Query
             request.formParams = {
@@ -398,7 +358,7 @@ describe(`slack/utils unit tests`, () => {
                 dataBuffer: Buffer.from("1,2,3,4", "utf8"),
                 fileExtension: "csv",
             }
-            return expectSlackMatchV1(request, {
+            return expectSlackMatch(request, {
                 channels: request.formParams.channel,
                 initial_comment: request.formParams.initial_comment,
                 file: Buffer.from("1,2,3,4", "utf8"),
@@ -416,7 +376,7 @@ describe(`slack/utils unit tests`, () => {
                 dataBuffer: Buffer.from("1,2,3,4", "utf8"),
                 fileExtension: "csv",
             }
-            return expectSlackMatchV1(request, {
+            return expectSlackMatch(request, {
                 channels: request.formParams.channel,
                 initial_comment: request.formParams.initial_comment,
                 file: Buffer.from("1,2,3,4", "utf8"),
