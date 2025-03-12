@@ -124,7 +124,6 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
 
     return response
 }
-
 export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient): Promise<Hub.ActionResponse> => {
     const response = new Hub.ActionResponse({success: true})
     if (!request.formParams.channel) {
@@ -146,7 +145,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
 
     try {
         const isUserToken = request.formParams.channel.startsWith("U") || request.formParams.channel.startsWith("W")
-        const forceV1Upload = process.env.FORCE_V1_UPLOAD
+        const channel = request.formParams.channel
         if (!request.empty()) {
             const buffs: any[] = []
             await request.stream(async (readable) => {
@@ -167,40 +166,59 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                             {webhookId},
                         )
 
-                        // Unfortunately UploadV2 does not provide a way to upload files
-                        // to user tokens which are common in Looker schedules
-                        // (UXXXXXXX)
-                        if (isUserToken || forceV1Upload) {
-                            winston.info(`${LOG_PREFIX} V1 Upload of file`, {webhookId})
-                            await slack.files.upload({
-                                file: buffer,
-                                filename: fileName,
-                                channels: request.formParams.channel,
-                                initial_comment: comment,
+                        winston.info(`${LOG_PREFIX} V2 Upload of file`, {webhookId})
+                        const res = await slack.files.getUploadURLExternal({
+                            filename: fileName,
+                            length: buffer.byteLength,
+                        })
+                        const upload_url = res.upload_url
+
+                        // Upload file to Slack
+                        await gaxios.request({
+                            method: "POST",
+                            url: upload_url,
+                            data: buffer,
+                        })
+
+                        // Finalize upload and give metadata for channel, title and
+                        // comment for the file to be posted.
+                        if (isUserToken) {
+                            //  If we have a user token, we need to convert the
+                            //  UXXXXX token into a DXXXXX token. Conversations.open()
+                            //  requires channels:manage and extra *:write scopes
+                            //  which will break existing schedules. Posting a message
+                            //  first only requires chat:write which we already have.
+                            //  the response returns a DXXXX token which we can use
+                            //  to upload to the channel
+                            const postResponse = await slack.chat.postMessage({
+                                channel,
+                                text: comment.length !== 0 ? comment : "Looker Data",
+                            }).catch((e: any) => {
+                                winston.error("Issue posting message", {webhookId})
+                                reject(e)
                             })
+                            const directChannel = postResponse?.channel
+                            const resp2 = await slack.files.completeUploadExternal({
+                                files: [{
+                                    id: res.file_id ? res.file_id : "",
+                                    title: fileName,
+                                }],
+                                channel_id: directChannel,
+                            }).catch((e: any) => {
+                                winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
+                                reject(e)
+                            })
+                            winston.info(`response complete : ${JSON.stringify(resp2)}`)
+                            // Workaround for regression in V2 upload, the initial
+                            // comment does not support markdown formatting, breaking
+                            // customer links
                         } else {
-                            winston.info(`${LOG_PREFIX} V2 Upload of file`, {webhookId})
-                            const res = await slack.files.getUploadURLExternal({
-                                filename: fileName,
-                                length: buffer.byteLength,
-                            })
-                            const upload_url = res.upload_url
-
-                            // Upload file to Slack
-                            await gaxios.request({
-                                method: "POST",
-                                url: upload_url,
-                                data: buffer,
-                            })
-
-                            // Finalize upload and give metadata for channel, title and
-                            // comment for the file to be posted.
                             await slack.files.completeUploadExternal({
                                 files: [{
                                     id: res.file_id ? res.file_id : "",
                                     title: fileName,
                                 }],
-                                channel_id: request.formParams.channel,
+                                channel_id: channel,
                             }).catch((e: any) => {
                                 winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
                                 reject(e)
@@ -210,7 +228,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                             // customer links
                             if (comment !== "") {
                                 await slack.chat.postMessage({
-                                    channel: request.formParams.channel!,
+                                    channel,
                                     text: comment,
                                 }).catch((e: any) => {
                                     winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
