@@ -198,7 +198,7 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                                 reject(e)
                             })
                             const directChannel = postResponse?.channel
-                            const resp2 = await slack.files.completeUploadExternal({
+                            await slack.files.completeUploadExternal({
                                 files: [{
                                     id: res.file_id ? res.file_id : "",
                                     title: fileName,
@@ -208,10 +208,6 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                                 winston.error(`${LOG_PREFIX} ${e.message}`, {webhookId})
                                 reject(e)
                             })
-                            winston.info(`response complete : ${JSON.stringify(resp2)}`)
-                            // Workaround for regression in V2 upload, the initial
-                            // comment does not support markdown formatting, breaking
-                            // customer links
                         } else {
                             await slack.files.completeUploadExternal({
                                 files: [{
