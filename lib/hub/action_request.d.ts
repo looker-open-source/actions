@@ -27,7 +27,7 @@ export interface ActionScheduledPlan {
     /** URL of the content item in Looker. */
     url?: string | null;
     /** ID of the query that the data payload represents. */
-    queryId?: number | null;
+    queryId?: string | number | null;
     /** Query that was run (not available for dashboards) */
     query?: Query | null;
     /** A boolean representing whether this schedule payload has customized the filter values. */
