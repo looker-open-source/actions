@@ -110,6 +110,15 @@ export const getDisplayedFormFields = async (slack: WebClient, channelType: stri
         })
     }
 
+    // Add an custom intro message field to the form
+    response.push({
+        label: "Intro Message",
+        type: "string",
+        name: "intro_message",
+        required: true,
+        description: "An custom intro message",
+    });
+
     // Always allow comment and filename
     response.push({
         label: "Comment",
@@ -146,6 +155,8 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
     try {
         const isUserToken = request.formParams.channel.startsWith("U") || request.formParams.channel.startsWith("W")
         const channel = request.formParams.channel
+        const introMessage = request.formParams.intro_message ? request.formParams.intro_message : "";
+
         if (!request.empty()) {
             const buffs: any[] = []
             await request.stream(async (readable) => {
@@ -160,7 +171,10 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                     })
                     readable.on("end", async () => {
                         const buffer = Buffer.concat(buffs)
-                        const comment = request.formParams.initial_comment ? request.formParams.initial_comment : ""
+                        const initialComment = request.formParams.initial_comment || "";
+                        const comment = introMessage ? `${introMessage}\n${initialComment}` : initialComment;
+                        
+
                         winston.info(
                             `${LOG_PREFIX} Attempting to send ${buffer.byteLength} bytes to Slack`,
                             {webhookId},
