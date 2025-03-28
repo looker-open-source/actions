@@ -31,6 +31,9 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-ec2": "^3.772.0",
+    "@aws-sdk/client-s3": "^3.772.0",
+    "@aws-sdk/lib-storage": "^3.772.0",
     "@google-cloud/storage": "^1.5.2",
     "@hubspot/api-client": "^2.0.1",
     "@sendgrid/helpers": "7.2.0",
@@ -70,6 +73,7 @@
     "dropbox": "^3.0.0",
     "express": "^4.21.1",
     "express-winston": "^4.2.0",
+    "firebase-admin": "^13.0.2",
     "googleapis": "^59.0.0",
     "i18n-iso-countries": "^7.1.0",
     "jira-client": "^6.18.0",
@@ -94,7 +98,6 @@
     "typescript": "^5.7.3",
     "uuid": "^3.4.0",
     "winston": "^2.4.5",
-    "firebase-admin": "^13.0.2",
     "yarn": "^1.22.18"
   },
   "typings": "lib/index",
