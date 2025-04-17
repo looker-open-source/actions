@@ -1,6 +1,5 @@
+import { BlobServiceClient, StorageSharedKeyCredential } from "@azure/storage-blob"
 import * as Hub from "../../hub"
-
-import * as azure from "azure-storage"
 
 export class AzureStorageAction extends Hub.Action {
 
@@ -41,15 +40,12 @@ export class AzureStorageAction extends Hub.Action {
     }
 
     const blobService = this.azureClientFromRequest(request)
-    const writeStream = blobService.createWriteStreamToBlockBlob(container, fileName)
+    const containerClient = blobService.getContainerClient(container)
+    const blockBlobClient = containerClient.getBlockBlobClient(fileName)
 
     try {
       await request.stream(async (readable) => {
-        return new Promise<any>((resolve, reject) => {
-          readable.pipe(writeStream)
-            .on("error", reject)
-            .on("finish", resolve)
-        })
+        return blockBlobClient.uploadStream(readable)
       })
       return new Hub.ActionResponse({ success: true })
     } catch (e: any) {
@@ -58,17 +54,12 @@ export class AzureStorageAction extends Hub.Action {
   }
 
   async form(request: Hub.ActionRequest) {
-    // error in type definition for listContainersSegmented currentToken?
-    // https://github.com/Azure/azure-storage-node/issues/352
     const form = new Hub.ActionForm()
-    const blobService: any = this.azureClientFromRequest(request)
-    return new Promise<Hub.ActionForm>((resolve, _reject) => {
-      blobService.listContainersSegmented(null, (err: any, res: any) => {
-        if (err) {
-          form.error = err
-          resolve(form)
-        } else {
-          const entries: any[] = res.entries
+    const blobService: BlobServiceClient = this.azureClientFromRequest(request)
+    return new Promise<Hub.ActionForm>(async (resolve, _reject) => {
+      for await (const response of blobService.listContainers().byPage()) {
+        if (response.containerItems.length > 0) {
+          const entries: any[] = response.containerItems
           if (entries.length > 0) {
             form.fields = [{
               label: "Container",
@@ -85,18 +76,22 @@ export class AzureStorageAction extends Hub.Action {
               type: "string",
             }]
             resolve(form)
-          } else {
-            form.error = "Create a container in your Azure account."
-            resolve(form)
           }
+        } else {
+          form.error = "Create a container in your Azure account."
+          resolve(form)
         }
-      })
+      }
     })
   }
 
-  private azureClientFromRequest(request: Hub.ActionRequest) {
+  private azureClientFromRequest(request: Hub.ActionRequest): BlobServiceClient {
     try {
-      return azure.createBlobService(request.params.account!, request.params.accessKey!)
+      const sharedKeyCredential = new StorageSharedKeyCredential(request.params.account!, request.params.accessKey!)
+      return new BlobServiceClient(
+        `https://${request.params.account!}.blob.core.windows.net`,
+        sharedKeyCredential,
+      )
     } catch (err: any) {
       if (err && err.toString().includes("base64")) {
         throw "The provided Account Key is not a valid base64 string"
