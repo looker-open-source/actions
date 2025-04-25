@@ -1,5 +1,5 @@
 import * as Hub from "../../hub";
-import { S3Client } from "@aws-sdk/client-s3";
+import * as S3 from "aws-sdk/clients/s3";
 export declare class AmazonS3Action extends Hub.Action {
     name: string;
     label: string;
@@ -17,5 +17,5 @@ export declare class AmazonS3Action extends Hub.Action {
     }[];
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
-    protected amazonS3ClientFromRequest(request: Hub.ActionRequest): S3Client;
+    protected amazonS3ClientFromRequest(request: Hub.ActionRequest): S3;
 }
