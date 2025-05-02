@@ -276,4 +276,34 @@ The token is provided as a standard HTTP `Authorization` header with a `token` l
 Authorization: Token token="abcdefg123456789"
 ```
 
+Here's an example (in python) of checking for this header. Note this function should be called before executing anything else in all three main workflows (execute, list, form). The entry point is the main() function.
+```
+def authenticate(request):
+    if request.method != 'POST':
+        r =  '|ERROR| Request must be POST'; print (r)
+        return Response(r, status=401, mimetype='application/json')
+
+    elif 'X-Forwarded-Authorization' not in request.headers:
+        r = '|ERROR| Request does not have auth token'; print (r)
+        return Response(r, status=400, mimetype='application/json')
+
+    else:
+        expected_auth_header = 'Token token="{}"'.format(os.environ.get('LOOKER_AUTH_SECRET'))
+        submitted_auth = request.headers['X-Forwarded-Authorization']
+        if hmac.compare_digest(expected_auth_header,submitted_auth):
+            return Response(status=200, mimetype='application/json')
+
+        else:
+            r = '|ERROR| Incorrect token'; print (r)
+            return Response(r, status=403, mimetype='application/json')
+
+
+
+def main(request):
+    auth = authenticate(request)
+    if auth.status_code != 200:
+        return auth
+  # Continue with the intended functionality, it will only get executed if auth.status_code is 200
+```
+
 Each individual action can also specify additional options or credentials as part of its `params`. This is useful if you need different secrets or global configurations for each action.
