@@ -7,6 +7,7 @@ import {ActionFormField} from "../../hub"
 import { Error, errorWith } from "../../hub/action_response"
 
 export const API_LIMIT_SIZE = 1000
+export const MAX_SIZE = 2 ** 30
 
 const LOG_PREFIX = "[SLACK]"
 
@@ -153,7 +154,12 @@ export const handleExecute = async (request: Hub.ActionRequest, slack: WebClient
                 await new Promise<void>((resolve, reject) => {
                     readable.on("readable", () => {
                         let buff = readable.read()
+                        let size = 0
                         while (buff) {
+                            size += buff.length
+                            if (size > MAX_SIZE) {
+                                reject("Payload was over 1 GB which is not supported")
+                            }
                             buffs.push(buff)
                             buff = readable.read()
                         }

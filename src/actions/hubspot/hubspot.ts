@@ -44,9 +44,9 @@ export class HubspotAction extends Hub.Action {
   iconName = "hubspot/hubspot.png"
   params = [
     {
-      description: "An api key for Hubspot.",
-      label: "Hubspot API Key",
-      name: "hubspot_api_key",
+      description: "Access Token of your Private Hubspot App.",
+      label: "Hubspot Access Token",
+      name: "hubspot_access_token",
       required: true,
       sensitive: true,
     },
@@ -95,7 +95,7 @@ export class HubspotAction extends Hub.Action {
   }
 
   protected hubspotClientFromRequest(request: Hub.ActionRequest) {
-    return new hubspot.Client({ apiKey: request.params.hubspot_api_key })
+    return new hubspot.Client({ accessToken: request.params.hubspot_access_token })
   }
 
   protected taggedFields(fields: Hub.Field[], tags: string[]) {
@@ -245,6 +245,7 @@ export class HubspotAction extends Hub.Action {
     }
 
     if (errors.length > 0) {
+      winston.debug(`Hubspot encountered errors: ${util.inspect(errors)}`)
       let msg = errors.map((e) => (e.message ? e.message : e)).join(", ")
       if (msg.length === 0) {
         msg = "An unknown error occurred while processing the Hubspot action."
