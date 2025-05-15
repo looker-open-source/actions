@@ -68,7 +68,7 @@ export class GoogleAdsApiClient {
               name: newListName,
               description: newListDescription,
               membership_status: "OPEN",
-              membership_life_span: 10000,
+              membership_life_span: 540,
               crm_based_user_list: {
                 upload_key_type: uploadKeyType,
                 app_id: mobileAppId,
