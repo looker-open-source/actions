@@ -1947,6 +1947,11 @@ csv-stringify@^1.0.4:
   dependencies:
     lodash.get "~4.4.2"
 
+customerio-node@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/customerio-node/-/customerio-node-3.3.0.tgz#c2ae00370a600acef73fe73998eb4be3431aa52a"
+  integrity sha512-DV3B9JlJtn+vewDCC1QrDscR7/fTOr0S20aKEGs6PlzkepkXSMsoINLHOK5UXu6D2GUCYzP4UtoRCDXcuAjnVA==
+
 cycle@1.0.x:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/cycle/-/cycle-1.0.3.tgz#21e80b2be8580f98b468f379430662b046c34ad2"
