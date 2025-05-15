@@ -11,8 +11,8 @@ interface Consent {
 
 export class GoogleAdsApiClient {
 
-  constructor(readonly log: Logger, readonly accessToken: string
-              , readonly developerToken: string, readonly loginCid?: string) {}
+  constructor(readonly log: Logger, readonly accessToken: string,
+              readonly developerToken: string, readonly loginCid?: string) {}
 
     async listAccessibleCustomers() {
         const method = "GET"
