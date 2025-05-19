@@ -34,7 +34,8 @@ process.on("message", (req) => {
       } else {
           errorString = String(err)
       }
-      winston.error("Error on child: " + errorString)
+      const request = Hub.ActionRequest.fromIPC(req)
+      winston.error(`Error on child: ${errorString}. WebhookID: ${request.webhookId}`)
       process.send!({success: false, message: errorString})
     })
 })
