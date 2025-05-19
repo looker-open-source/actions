@@ -22,19 +22,19 @@ process.on("message", (req) => {
   execute(req)
     .then((val) => { process.send!(val) })
     .catch((err) => {
-      let errorString;
+      let errorString
       if (err instanceof Error) {
-          errorString = err.message || err.toString();
+          errorString = err.message || err.toString()
       } else if (typeof err === 'object' && err !== null) {
           try {
-              errorString = JSON.stringify(err);
+              errorString = JSON.stringify(err)
           } catch (jsonError: any) {
-              errorString = `[Object could not be stringified: ${jsonError.message || jsonError.toString()}]`;
+              errorString = `[Object could not be stringified: ${jsonError.message || jsonError.toString()}]`
           }
       } else {
-          errorString = String(err);
+          errorString = String(err)
       }
-      winston.error("Error on child: " + errorString);
-      process.send!({success: false, message: errorString});
+      winston.error("Error on child: " + errorString)
+      process.send!({success: false, message: errorString})
     })
 })
