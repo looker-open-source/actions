@@ -25,7 +25,7 @@ process.on("message", (req) => {
       let errorString
       if (err instanceof Error) {
           errorString = err.message || err.toString()
-      } else if (typeof err === 'object' && err !== null) {
+      } else if (typeof err === "object" && err !== null) {
           try {
               errorString = JSON.stringify(err)
           } catch (jsonError: any) {
