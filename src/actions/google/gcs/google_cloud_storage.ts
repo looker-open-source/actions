@@ -3,8 +3,7 @@ import { HTTP_ERROR } from "../../../error_types/http_errors"
 import { getHttpErrorType } from "../../../error_types/utils"
 import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
-
-const storage = require("@google-cloud/storage")
+import { Storage } from "@google-cloud/storage"
 
 const FILE_EXTENSION = new RegExp(/(.*)\.(.*)$/)
 const LOG_PREFIX = "[Google Cloud Storage]"
@@ -175,12 +174,12 @@ export class GoogleCloudStorageAction extends Hub.Action {
       client_email: request.params.client_email,
       private_key: request.params.private_key!.replace(/\\n/g, "\n"),
     }
-    const config = {
+
+    return new Storage({
       projectId: request.params.project_id,
       credentials,
-    }
-
-    return new storage(config)
+      apiEndpoint: "https://storage.googleapis.com"
+    })
   }
 
 }
