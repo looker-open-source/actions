@@ -11,8 +11,8 @@ interface Consent {
 
 export class GoogleAdsApiClient {
 
-    constructor(readonly log: Logger, readonly accessToken: string
-              , readonly developerToken: string, readonly loginCid?: string) {}
+  constructor(readonly log: Logger, readonly accessToken: string,
+              readonly developerToken: string, readonly loginCid?: string) {}
 
     async listAccessibleCustomers() {
         const method = "GET"
@@ -58,6 +58,7 @@ export class GoogleAdsApiClient {
     }
 
     async createUserList(targetCid: string, newListName: string, newListDescription: string, uploadKeyType: "MOBILE_ADVERTISING_ID" | "CONTACT_INFO", mobileAppId?: string) {
+      const MAX_CUSTOMER_MATCH_MEMBERSHIP_LIFE_SPAN_DAYS = 540
       const method = "POST"
       const path = `customers/${targetCid}/userLists:mutate`
       const body = {
@@ -68,7 +69,7 @@ export class GoogleAdsApiClient {
               name: newListName,
               description: newListDescription,
               membership_status: "OPEN",
-              membership_life_span: 10000,
+              membership_life_span: MAX_CUSTOMER_MATCH_MEMBERSHIP_LIFE_SPAN_DAYS,
               crm_based_user_list: {
                 upload_key_type: uploadKeyType,
                 app_id: mobileAppId,

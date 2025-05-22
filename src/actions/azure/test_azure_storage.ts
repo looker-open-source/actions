@@ -1,32 +1,31 @@
 import * as chai from "chai"
+import chaiAsPromised = require("chai-as-promised")
 import * as sinon from "sinon"
-import { Stream } from "stream"
-
 import * as Hub from "../../hub"
-
 import { AzureStorageAction } from "./azure_storage"
+
+chai.use(chaiAsPromised)
 
 const action = new AzureStorageAction()
 
-function expectAzureStorageMatch(
+async function expectAzureStorageMatch(
   request: Hub.ActionRequest, _container: string, _fileName: string, dataBuffer: Buffer) {
 
-  const createWriteStreamToBlockBlobSpy = sinon.spy(async () => {
-    let data = Buffer.from("")
-    const stream = new Stream()
-    stream
-      .on("data", (chunk: any) => {
-        data = Buffer.concat([data, chunk])
-      })
-      .on("finish", () => {
-        chai.expect(data).to.equal(dataBuffer)
-      })
-    return stream
+  const uploadStreamSpy = sinon.spy(async (buffer: Buffer) => {
+    chai.expect(buffer).to.deep.equal(dataBuffer)
   })
+
+  const mockBlockBlobClient = {
+    uploadStream: uploadStreamSpy,
+  }
+
+  const mockContainerClient = {
+    getBlockBlobClient: sinon.stub().returns(mockBlockBlobClient),
+  }
 
   const stubClient = sinon.stub(action as any, "azureClientFromRequest")
     .callsFake(() => ({
-      createWriteStreamToBlockBlob: createWriteStreamToBlockBlobSpy,
+      getContainerClient: sinon.stub().withArgs(_container).returns(mockContainerClient),
     }))
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
@@ -52,26 +51,26 @@ describe(`${action.constructor.name} unit tests`, () => {
         .be.rejectedWith("Need Azure container.")
     })
 
-    it("sends right body to filename and container", () => {
+    it("sends right body to filename and container", async () => {
       const request = new Hub.ActionRequest()
       request.formParams = {
         container: "mycontainer",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-      return expectAzureStorageMatch(request,
+      return await expectAzureStorageMatch(request,
         "mycontainer",
         "stubSuggestedFilename",
         Buffer.from("1,2,3,4", "utf8"))
     })
 
-    it("sends to right filename if specified", () => {
+    it("sends to right filename if specified", async () => {
       const request = new Hub.ActionRequest()
       request.formParams = {
         container: "mycontainer",
         filename: "mywackyfilename",
       }
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
-      return expectAzureStorageMatch(request,
+      return await expectAzureStorageMatch(request,
         "mycontainer",
         "mywackyfilename",
         Buffer.from("1,2,3,4", "utf8"))
@@ -88,16 +87,18 @@ describe(`${action.constructor.name} unit tests`, () => {
     it("has form with correct containers", (done) => {
       const stubClient = sinon.stub(action as any, "azureClientFromRequest")
         .callsFake(() => ({
-          listContainersSegmented: (filter: any, cb: (err: any, res: any) => void) => {
-            chai.expect(filter).to.equal(null)
-            const containers = {
-              entries: [
-                {id: "A", name: "A"},
-                {id: "B", name: "B"},
-              ],
-            }
-            cb(null, containers)
-          },
+          listContainers: () => ({
+            byPage: () => ({
+              async *[Symbol.asyncIterator]() {
+                yield {
+                  containerItems: [
+                    {id: "A", name: "A"},
+                    {id: "B", name: "B"},
+                  ],
+                }
+              },
+            }),
+          }),
         }))
 
       const request = new Hub.ActionRequest()
@@ -130,13 +131,15 @@ describe(`${action.constructor.name} unit tests`, () => {
   it("returns form error if no containers are present", (done) => {
     const stubClient = sinon.stub(action as any, "azureClientFromRequest")
         .callsFake(() => ({
-          listContainersSegmented: (filter: any, cb: (err: any, res: any) => void) => {
-            chai.expect(filter).to.equal(null)
-            const containers = {
-              entries: [],
-            }
-            cb(null, containers)
-          },
+          listContainers: () => ({
+            byPage: () => ({
+              async *[Symbol.asyncIterator]() {
+                yield {
+                  containerItems: [],
+                }
+              },
+            }),
+          }),
         }))
 
     const request = new Hub.ActionRequest()

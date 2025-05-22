@@ -11,7 +11,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
     request.params = {
-      hubspot_api_key: "hubspot_key",
+      hubspot_access_token: "hubspot_access_token",
     }
     request.attachment = {
       dataBuffer: Buffer.from(
@@ -62,7 +62,7 @@ describe(`${action.constructor.name} unit tests`, () => {
     const request = new Hub.ActionRequest()
     request.type = Hub.ActionType.Query
     request.params = {
-      hubspot_api_key: "hubspot_key",
+      hubspot_access_token: "hubspot_access_token",
     }
     request.attachment = {
       dataBuffer: Buffer.from(
