@@ -46,7 +46,7 @@ From the drop-down of OAuth scopes, select:
 > - [https://api.slack.com/scopes/groups:read](https://api.slack.com/scopes/groups:read) <br>
 > - [https://api.slack.com/scopes/im:read](https://api.slack.com/scopes/im:read) <br>
 > - [https://api.slack.com/scopes/mpim:read](https://api.slack.com/scopes/mpim:read) <br>
-> - [https://api.slack.com/scopes/chat:write](chat:write) <br>
+> - [https://api.slack.com/scopes/chat:write](https://api.slack.com/scopes/chat:write) <br>
 > - [https://api.slack.com/scopes/chat:write.public](https://api.slack.com/scopes/chat:write.public) <br>
 
 6. At the top of the **OAuth & Permissions** page, click **Install App to Workspace**.
