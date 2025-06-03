@@ -13,7 +13,7 @@ import Drive = drive_v3.Drive
 import Sheet = sheets_v4.Sheets
 
 const MAX_REQUEST_BATCH = process.env.GOOGLE_SHEETS_WRITE_BATCH ? Number(process.env.GOOGLE_SHEETS_WRITE_BATCH) : 4096
-const SHEETS_MAX_CELL_LIMIT = 5000000
+const SHEETS_MAX_CELL_LIMIT = 10000000 // 10 million cells is the maximum allowed
 const MAX_ROW_BUFFER_INCREASE = 6000
 const MAX_RETRY_COUNT = 5
 const RETRY_BASE_DELAY = process.env.GOOGLE_SHEETS_BASE_DELAY ? Number(process.env.GOOGLE_SHEETS_BASE_DELAY) : 3
@@ -243,7 +243,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
                   csvparser.on("data", (line: any) => {
                       if (rowCount > maxPossibleRows) {
-                          reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 5 million cells in Google Sheets`)
+                          reject(`Cannot send more than ${maxPossibleRows} without exceeding limit of 10 million cells in Google Sheets. Consider trimming empty columns in Google Sheets to allow for more rows`)
                       }
                       const rowIndex: number = rowCount++
                       if (rowIndex >= currentMaxRows - 1) {
