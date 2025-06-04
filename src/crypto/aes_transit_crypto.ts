@@ -50,7 +50,7 @@ export class AESTransitCrypto implements CryptoProvider {
     const masterCipher = crypto.createDecipheriv(this.ALGORITHM, masterBuffer, iv)
     
     // Decrypt dataKey directly into a Buffer
-    const decryptedKeyChunks = [];
+    const decryptedKeyChunks: Buffer[] = [];
     decryptedKeyChunks.push(masterCipher.update(encDataKey, "base64"));
     decryptedKeyChunks.push(masterCipher.final());
     const byteKey = Buffer.concat(decryptedKeyChunks)
