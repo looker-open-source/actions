@@ -20,7 +20,7 @@ export class AESTransitCrypto implements CryptoProvider {
     cipherText = b64.escape(cipherText)
 
     const masterCipher = crypto.createCipheriv(this.ALGORITHM, masterbuffer, iv)
-    let encDataKey = masterCipher.update(dataKey.toString("binary"), "binary", "base64")
+    let encDataKey = masterCipher.update(dataKey, undefined, "base64")
     encDataKey += masterCipher.final("base64")
     encDataKey = b64.escape(encDataKey)
 
@@ -48,11 +48,12 @@ export class AESTransitCrypto implements CryptoProvider {
     const offset = keySize + ivSize + 7
     const encDataKey = b64.unescape(ciphertext.substring(7 + ivSize, offset))
     const masterCipher = crypto.createDecipheriv(this.ALGORITHM, masterBuffer, iv)
-
-    // Decrypt dataKey and reassign to a Buffer to decrypt the data
-    let dataKey = masterCipher.update(encDataKey, "base64", "binary")
-    dataKey += masterCipher.final("binary")
-    const byteKey = Buffer.from(dataKey, "binary")
+    
+    // Decrypt dataKey directly into a Buffer
+    const decryptedKeyChunks = [];
+    decryptedKeyChunks.push(masterCipher.update(encDataKey, "base64"));
+    decryptedKeyChunks.push(masterCipher.final());
+    const byteKey = Buffer.concat(decryptedKeyChunks)
 
     const cipher = crypto.createDecipheriv(this.ALGORITHM, byteKey, iv)
     let cipherText = cipher.update(b64.unescape(ciphertext.substring(offset)), "base64", "utf8")
