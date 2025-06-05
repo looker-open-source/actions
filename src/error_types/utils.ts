@@ -72,7 +72,7 @@ const getGoogleHttpErrorType = (e: any) => {
   } else if (googleErrorMessage.includes("file not found")) {
     httpErrorType = HTTP_ERROR.not_found
   } else if (googleErrorMessage.includes("insufficient permissions")) {
-    httpErrorType = HTTP_ERROR.permision_denied
+    httpErrorType = HTTP_ERROR.permission_denied
   } else if (googleErrorMessage.includes("invalid value")) {
     httpErrorType = HTTP_ERROR.invalid_argument
   } else if (googleErrorMessage.includes("etimedout")) {
@@ -92,7 +92,7 @@ const getGoogleHttpErrorType = (e: any) => {
   } else if (googleErrorMessage.includes("socket hang up")) {
     httpErrorType = HTTP_ERROR.internal_connreset
   } else if (googleErrorMessage.includes("the caller does not have permission")) {
-    httpErrorType = HTTP_ERROR.permision_denied
+    httpErrorType = HTTP_ERROR.permission_denied
   } else if (googleErrorMessage.includes("cannot send more than")) {
     httpErrorType = HTTP_ERROR.bad_request
   } else if (googleErrorMessage.includes("the service is currently unavailable")) {

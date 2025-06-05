@@ -20,8 +20,8 @@ export const HTTP_ERROR = {
     code: 401,
     description: "Request not authenticated due to missing, invalid, or expired authentication.",
   },
-  permision_denied: {
-    status: "PERMISION_DENIED",
+  permission_denied: {
+    status: "PERMISSION_DENIED",
     code: 403,
     description: "Client does not have sufficient permission.",
   },
