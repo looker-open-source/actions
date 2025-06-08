@@ -19,7 +19,7 @@ export declare const HTTP_ERROR: {
         code: number;
         description: string;
     };
-    permision_denied: {
+    permission_denied: {
         status: string;
         code: number;
         description: string;
