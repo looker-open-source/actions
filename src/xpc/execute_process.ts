@@ -22,14 +22,30 @@ process.on("message", (req) => {
             let errorString
             if (err instanceof Error) {
                 errorString = err.message || err.toString()
+                if (errorString === "{}") {
+                    winston.debug("err.message resolved into {}");
+                }
             } else if (typeof err === "object" && err !== null) {
                 try {
-                    errorString = JSON.stringify(err)
+                    if (Object.prototype.hasOwnProperty.call(err, 'message') && typeof (err as any).message === 'string') {
+                        errorString = (err as any).message;
+                    } else {
+                        const stringified = JSON.stringify(err);
+                        if (stringified === "{}" || stringified === "[]") {
+                            winston.debug("Error stringified into {}");
+                            errorString = err.toString();
+                        } else {
+                            errorString = stringified;
+                        }
+                    }
                 } catch (jsonError: any) {
                     errorString = `[Object could not be stringified: ${jsonError.message || jsonError.toString()}]`
                 }
             } else {
                 errorString = String(err)
+                if (errorString === "{}") {
+                    winston.debug("String(err) resolved into {}");
+                }
             }
             const request = Hub.ActionRequest.fromIPC(req)
             winston.error(`Error on child: ${errorString}. WebhookID: ${request.webhookId}`)
