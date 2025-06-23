@@ -88,8 +88,8 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const writeStream = file.createWriteStream({
       resumable: false,
       metadata: {
-        contentType: request.attachment?.mime ?? 'application/octet-stream'
-      }
+        contentType: request.attachment?.mime ?? "application/octet-stream",
+      },
     })
 
     try {
@@ -118,7 +118,11 @@ export class GoogleCloudStorageAction extends Hub.Action {
       response.message = error.message
       response.webhookId = request.webhookId
 
-      winston.error(`${LOG_PREFIX} Error uploading file. Error: ${error.message}`, {error, webhookId: request.webhookId})
+      winston.error(
+        `${LOG_PREFIX} Error uploading file. Error: ${error.message}`, {
+          error,
+          webhookId: request.webhookId,
+        })
       return response
     }
 
@@ -126,7 +130,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-    const gcs = this.gcsClientFromRequest(request)    
+    const gcs = this.gcsClientFromRequest(request)
     let results: any
 
     try {
@@ -187,7 +191,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
       projectId: request.params.project_id,
       credentials,
       apiEndpoint: "https://storage.googleapis.com",
-      useAuthWithCustomEndpoint : true
+      useAuthWithCustomEndpoint : true,
     })
   }
 
