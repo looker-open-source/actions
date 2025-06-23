@@ -87,6 +87,9 @@ export class GoogleCloudStorageAction extends Hub.Action {
       .file(filename)
     const writeStream = file.createWriteStream({
       resumable: false,
+      metadata: {
+        contentType: request.attachment?.mime ?? 'application/octet-stream'
+      }
     })
 
     try {
