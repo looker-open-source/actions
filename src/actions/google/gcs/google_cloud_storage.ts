@@ -3,8 +3,7 @@ import { HTTP_ERROR } from "../../../error_types/http_errors"
 import { getHttpErrorType } from "../../../error_types/utils"
 import * as Hub from "../../../hub"
 import { Error, errorWith } from "../../../hub/action_response"
-
-const storage = require("@google-cloud/storage")
+const { Storage } = require("@google-cloud/storage")
 
 const FILE_EXTENSION = new RegExp(/(.*)\.(.*)$/)
 const LOG_PREFIX = "[Google Cloud Storage]"
@@ -86,13 +85,22 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const gcs = this.gcsClientFromRequest(request)
     const file = gcs.bucket(request.formParams.bucket)
       .file(filename)
-    const writeStream = file.createWriteStream()
+    const writeStream = file.createWriteStream({
+      resumable: false,
+      metadata: {
+        contentType: request.attachment?.mime ?? "application/octet-stream",
+      },
+    })
 
     try {
       await request.stream(async (readable) => {
         return new Promise<any>((resolve, reject) => {
           readable.pipe(writeStream)
-            .on("error", reject)
+            .on("error", (error: any) => {
+              winston.error(`${LOG_PREFIX} Stream error: ${error.message}`, {error, webhookId: request.webhookId})
+              writeStream.end()
+              reject(error)
+            })
             .on("finish", resolve)
         })
       })
@@ -110,7 +118,11 @@ export class GoogleCloudStorageAction extends Hub.Action {
       response.message = error.message
       response.webhookId = request.webhookId
 
-      winston.error(`${LOG_PREFIX} ${error.message}`, {error, webhookId: request.webhookId})
+      winston.error(
+        `${LOG_PREFIX} Error uploading file. Error: ${error.message}`, {
+          error,
+          webhookId: request.webhookId,
+        })
       return response
     }
 
@@ -118,7 +130,6 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-
     const gcs = this.gcsClientFromRequest(request)
     let results: any
 
@@ -175,12 +186,13 @@ export class GoogleCloudStorageAction extends Hub.Action {
       client_email: request.params.client_email,
       private_key: request.params.private_key!.replace(/\\n/g, "\n"),
     }
-    const config = {
+
+    return new Storage({
       projectId: request.params.project_id,
       credentials,
-    }
-
-    return new storage(config)
+      apiEndpoint: "https://storage.googleapis.com",
+      useAuthWithCustomEndpoint : true,
+    })
   }
 
 }
