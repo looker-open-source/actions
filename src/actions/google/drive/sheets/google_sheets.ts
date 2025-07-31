@@ -200,11 +200,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                          {webhookId: request.webhookId})
             throw e
         })
-<<<<<<< HEAD
-        winston.info(`${LOG_PREFIX} File list call complete. Found ${files.data.files?.length} files.`,
-=======
         winston.info(`${LOG_PREFIX} File list call complete. Found ${files.data.files?.length ?? 0} files.`,
->>>>>>> 0b0cfbf8 (Adds thorough logging to Google sheets action)
             {webhookId: request.webhookId},
         )
 
