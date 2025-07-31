@@ -6,6 +6,7 @@ import concatStream = require("concat-stream")
 
 import * as Hub from "../../../../hub"
 
+import * as winston from "winston"
 import { ActionCrypto } from "../../../../hub"
 import { GoogleSheetsAction } from "./google_sheets"
 
@@ -96,6 +97,7 @@ describe(`${action.constructor.name} unit tests`, () => {
               }),
             },
           })
+        const winstonSpy = sinon.spy(winston, "info")
         const flushSpy = sinon.spy(async (buffer: any, _sheet: any, _spreadsheetId: number) => {
           chai.expect(buffer).to.deep.equal({
             requests: [
@@ -174,10 +176,12 @@ describe(`${action.constructor.name} unit tests`, () => {
         }
         chai.expect(action.validateAndExecute(request)).to.eventually.be.fulfilled.then( () => {
           chai.expect(flushSpy).to.have.been.calledOnce
+          chai.expect(winstonSpy).to.have.been.calledWith("[GOOGLE_SHEETS] Beginning sendOverwriteData")
           stubDriveClient.restore()
           stubSheetClient.restore()
           stubFlush.restore()
           stubRetriableResize.restore()
+          winstonSpy.restore()
           done()
         })
 
