@@ -156,6 +156,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
     }
 
     async sendOverwriteData(filename: string, request: Hub.ActionRequest, drive: Drive, sheet: Sheet) {
+        winston.info(`${LOG_PREFIX} Beginning sendOverwriteData`, {webhookId: request.webhookId})
         let folder: string | undefined
         if (request.formParams.folderid) {
             winston.info("Using manual folder id")
@@ -189,6 +190,9 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             options.corpora = "user"
         }
 
+        winston.info(`${LOG_PREFIX} Searching for existing file with options: ${JSON.stringify(options)}`,
+            {webhookId: request.webhookId},
+        )
         const files = await this.retriableFileList(drive, options, 0, request.webhookId!)
         .catch((e: any) => {
             this.sanitizeGaxiosError(e)
@@ -196,6 +200,10 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                          {webhookId: request.webhookId})
             throw e
         })
+        winston.info(`${LOG_PREFIX} File list call complete. Found ${files.data.files?.length ?? 0} files.`,
+            {webhookId: request.webhookId},
+        )
+
         if (files.data.files === undefined || files.data.files.length === 0) {
             winston.debug(`New file: ${filename}`,
                           {webhookId: request.webhookId})
@@ -214,6 +222,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                             {webhookId: request.webhookId})
               throw e
             })
+        winston.info(`${LOG_PREFIX} Spreadsheet get call complete.`, {webhookId: request.webhookId})
+
         if (!sheets.data.sheets || sheets.data.sheets[0].properties === undefined ||
             sheets.data.sheets[0].properties.gridProperties === undefined) {
           throw "Now sheet data available"
@@ -227,6 +237,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         let rowCount = 0
         let finished = false
 
+        winston.info(`${LOG_PREFIX} Beginning stream processing.`, {webhookId: request.webhookId})
         return request.stream(async (readable) => {
           return new Promise<void>(async (resolve, reject) => {
               try {
