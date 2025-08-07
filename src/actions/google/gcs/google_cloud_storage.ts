@@ -86,7 +86,6 @@ export class GoogleCloudStorageAction extends Hub.Action {
     const file = gcs.bucket(request.formParams.bucket)
       .file(filename)
     const writeStream = file.createWriteStream({
-      resumable: false,
       metadata: {
         contentType: request.attachment?.mime ?? "application/octet-stream",
       },
@@ -98,7 +97,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
           readable.pipe(writeStream)
             .on("error", (error: any) => {
               winston.error(`${LOG_PREFIX} Stream error: ${error.message}`, {error, webhookId: request.webhookId})
-              writeStream.end()
+              writeStream.end() // Ensure stream is closed after an error
               reject(error)
             })
             .on("finish", resolve)
