@@ -188,6 +188,19 @@ export default class Server implements Hub.RouteBuilder {
       }
     })
 
+    this.route("/actions/:actionId/oauth_token", async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+
+      // TODO: implement new method for OAuthAction to handle fetching token
+      if (isOauthAction(action)) {
+        const check = (action as OAuthAction).oauthCheck(request)
+        res.json(check)
+      } else {
+        res.statusCode = 404
+      }
+    })
+
     // To provide a health or version check endpoint you should place a status.json file
     // into the project root, which will get served by this endpoint (or 404 otherwise).
     this.app.get("/status", (_req, res) => {
@@ -202,6 +215,10 @@ export default class Server implements Hub.RouteBuilder {
 
   formUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
+  }
+
+  tokenUrl(action: Hub.Action) {
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_token`)
   }
 
   private oauthRedirectUrl(action: Hub.Action) {

@@ -9,6 +9,7 @@ export abstract class OAuthAction extends Action {
   asJson(router: RouteBuilder, request: ActionRequest): any {
     const json = super.asJson(router, request)
     json.uses_oauth = true
+    json.token_url = router.tokenUrl(this)
     return json
   }
 }

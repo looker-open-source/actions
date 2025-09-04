@@ -39,6 +39,7 @@ export interface Action {
 export interface RouteBuilder {
   actionUrl(action: Action): string
   formUrl(action: Action): string
+  tokenUrl(action: Action): string
 }
 
 export abstract class Action {
@@ -91,6 +92,7 @@ export abstract class Action {
       ),
       icon_data_uri: this.getImageDataUri(),
       url: router.actionUrl(this),
+      token_url: "",
     }
   }
 
