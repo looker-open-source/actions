@@ -138,7 +138,6 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
     async oauthUrl(redirectUri: string, encryptedState: string) {
         const oauth2Client = this.oauth2Client(redirectUri)
-        winston.info(redirectUri)
 
         // generate a url that asks permissions for Google Drive scope
         const scopes = [
