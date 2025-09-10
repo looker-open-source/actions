@@ -208,6 +208,35 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
+    it("returns an oauth form on bad login when v2 flow param is provided", (done) => {
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+        .resolves({
+          files: {
+            list: async () => Promise.reject("reject"),
+          },
+        })
+      const request = new Hub.ActionRequest()
+      request.params = {
+        state_redir_url: "https://looker.state.url.com/action_hub_fetch_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
+      }
+      request.webhookId = "testId"
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          name: "login",
+          type: "oauth_link_google",
+          description: "In order to send to Google Drive, you will need to log in" +
+            " once to your Google account. WebhookID if oauth fails: testId",
+          label: "Log in",
+          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
+            `oauth?state=eyJ0b2tlbnVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb` +
+            `20vYWN0aW9uX2h1Yl9mZXRjaF9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
+        }],
+        state: {},
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
     it("does not blow up on bad state JSON and returns an OAUTH form", (done) => {
       const stubClient = sinon.stub(action as any, "driveClientFromRequest")
         .resolves({
@@ -232,6 +261,35 @@ describe(`${action.constructor.name} unit tests`, () => {
           oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
             `oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
+        }],
+        state: {},
+      }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("does not blow up on bad state JSON and returns an OAUTH form when v2 param is provided", (done) => {
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+        .resolves({
+          files: {
+            list: async () => Promise.reject("reject"),
+          },
+        })
+      const request = new Hub.ActionRequest()
+      request.params = {
+        state_redir_url: "https://looker.state.url.com/action_hub_fetch_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({bad: "access", redirect: "url"}),
+      }
+      request.webhookId = "testId"
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          name: "login",
+          type: "oauth_link_google",
+          description: "In order to send to Google Drive, you will need to log in" +
+          " once to your Google account. WebhookID if oauth fails: testId",
+          label: "Log in",
+          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/google_drive/` +
+            `oauth?state=eyJ0b2tlbnVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb` +
+            `20vYWN0aW9uX2h1Yl9mZXRjaF9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
         state: {},
       }).and.notify(stubClient.restore).and.notify(done)
@@ -315,17 +373,46 @@ describe(`${action.constructor.name} unit tests`, () => {
       return chai.expect(prom).to.eventually.equal("https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&prompt=consent&state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0&response_type=code&client_id=testingkey&redirect_uri=https%3A%2F%2Factionhub.com%2Factions%2Fgoogle_drive%2Foauth_redirect")
     })
 
-    it("correctly handles redirect from authorization server", (done) => {
-      const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({tokens: "token"})
-      // @ts-ignore
-      const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
-      const result = action.oauthFetchInfo({code: "code",
-        state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
-          `c2RmIiwiYXBwIjoibXlrZXkifQ`},
-        "redirect")
-      chai.expect(result)
-        .and.notify(stubAccessToken.restore)
-        .and.notify(stubReq.restore).and.notify(done)
+    describe("v1 flow", () => {
+      it("correctly handles redirect from authorization server", (done) => {
+        const stubAccessToken = sinon
+          .stub(action as any, "getAccessTokenCredentialsFromCode")
+          .resolves({tokens: "token"})
+        // @ts-ignore
+        const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
+        const redirectUrl = action.oauthHandleRedirect({code: "code",
+          state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
+            `c2RmIiwiYXBwIjoibXlrZXkifQ`},
+          "redirect")
+        chai.expect(redirectUrl).to.eventually.equal("")
+          .and.notify(stubAccessToken.restore)
+          .and.notify(stubReq.restore).and.notify(done)
+      })
+    })
+
+    describe ("v2 flow", () => {
+      it("correctly handles redirect from authorization server", (done) => {
+        // @ts-ignore
+        const redirectUrl = action.oauthHandleRedirect({code: "code",
+          state: `eyJ0b2tlbnVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb` +
+              `20vYWN0aW9uX2h1Yl9mZXRjaF9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`},
+          "redirect")
+        chai.expect(redirectUrl).to.eventually.equal("https://looker.state.url.com/action_hub_fetch_state/asdfasdfasdfasdf?state=eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ")
+          .and.notify(done)
+      })
+
+      it("correctly handles request from Looker to fetch token", (done) => {
+        const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode")
+          .resolves({tokens: "token"})
+        const request = new Hub.ActionRequest()
+        request.params = {
+          state: "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"}
+        request.webhookId = "testId"
+        const tokenPayload = action.oauthFetchAccessToken(request)
+        chai.expect(tokenPayload).to.eventually.equal(`{"tokens":{"tokens":"token"},"redirect":"redirect"}`)
+          .and.notify(stubAccessToken.restore)
+          .and.notify(done)
+      })
     })
   })
 

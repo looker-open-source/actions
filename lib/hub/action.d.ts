@@ -20,6 +20,7 @@ export interface Action {
 export interface RouteBuilder {
     actionUrl(action: Action): string;
     formUrl(action: Action): string;
+    tokenUrl(action: Action): string;
 }
 export declare abstract class Action {
     get hasForm(): boolean;
@@ -54,6 +55,7 @@ export declare abstract class Action {
         supported_download_settings: ActionDownloadSettings[];
         icon_data_uri: any;
         url: string;
+        token_url: string;
     };
     validateAndExecute(request: ActionRequest, queue?: ProcessQueue): Promise<ActionResponse>;
     validateAndFetchForm(request: ActionRequest): Promise<ActionForm>;

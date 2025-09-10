@@ -8,6 +8,7 @@ export default class Server implements Hub.RouteBuilder {
     constructor();
     actionUrl(action: Hub.Action): string;
     formUrl(action: Hub.Action): string;
+    tokenUrl(action: Hub.Action): string;
     private oauthRedirectUrl;
     /**
      * For JSON responses that take a long time without sending any data,

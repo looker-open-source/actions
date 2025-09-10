@@ -3,7 +3,7 @@ import { Credentials, OAuth2Client } from "google-auth-library";
 import { drive_v3 } from "googleapis";
 import * as Hub from "../../../hub";
 import Drive = drive_v3.Drive;
-export declare class GoogleDriveAction extends Hub.OAuthAction {
+export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     name: string;
     label: string;
     iconName: string;
@@ -23,9 +23,10 @@ export declare class GoogleDriveAction extends Hub.OAuthAction {
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
     oauthUrl(redirectUri: string, encryptedState: string): Promise<string>;
-    oauthFetchInfo(urlParams: {
+    oauthHandleRedirect(urlParams: {
         [key: string]: string;
-    }, redirectUri: string): Promise<void>;
+    }, redirectUri: string): Promise<string>;
+    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<string>;
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauth2Client(redirectUri: string | undefined): OAuth2Client;
     sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponse<drive_v3.Schema$File>>;

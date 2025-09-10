@@ -4,7 +4,7 @@ import * as path from "path"
 import * as Raven from "raven"
 import * as winston from "winston"
 import * as Hub from "../hub"
-import {DelegateOAuthAction, isDelegateOauthAction, isOauthAction, OAuthAction} from "../hub"
+import {DelegateOAuthAction, isDelegateOauthAction, isOauthAction, isOauthActionV2, OAuthAction, OAuthActionV2} from "../hub"
 import * as ExecuteProcessQueue from "../xpc/execute_process_queue"
 import * as ExtendedProcessQueue from "../xpc/extended_process_queue"
 import * as apiKey from "./api_key"
@@ -148,7 +148,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (isOauthAction(action)) {
+      if (isOauthAction(action) || isOauthActionV2(action)) {
         const parts = uparse.parse(req.url, true)
         const state = parts.query.state
         const url = await (action as OAuthAction).oauthUrl(this.oauthRedirectUrl(action), state)
@@ -161,7 +161,7 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
-      if (isOauthAction(action)) {
+      if (isOauthAction(action) || isOauthActionV2(action)) {
         const check = (action as OAuthAction).oauthCheck(request)
         res.json(check)
       } else {
@@ -173,18 +173,40 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_redirect", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
-      if (isOauthAction(action)) {
-        try {
+      try {
+        if (isOauthAction(action)) {
           await (action as OAuthAction).oauthFetchInfo(req.query as {[key: string]: string},
               this.oauthRedirectUrl(action))
           res.statusCode = 200
-          res.send(`<html><script>window.close()</script>><body>You may now close this tab.</body></html>`)
-        } catch (e: any) {
-          this.logPromiseFail(req, res, e)
-          res.statusCode = 400
+          res.send(`<html><script>window.close()</script><body>You may now close this tab.</body></html>`)
+        } else if (isOauthActionV2(action)) {
+          const redirUrl = await (action as OAuthActionV2).oauthHandleRedirect(req.query as {[key: string]: string},
+                this.oauthRedirectUrl(action))
+          if (redirUrl === "") {
+            res.statusCode = 200
+            res.send(`<html><script>window.close()</script><body>You may now close this tab.</body></html>`)
+          } else {
+            res.redirect(redirUrl)
+          }
+        } else {
+          throw "Action does not support OAuth."
         }
+      } catch (e: any) {
+        this.logPromiseFail(req, res, e)
+        res.statusCode = 400
+      }
+    })
+
+    this.route("/actions/:actionId/oauth_token", async (req, res) => {
+      const request = Hub.ActionRequest.fromRequest(req)
+      const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+
+      if (isOauthActionV2(action)) {
+        const jsonPayload = await (action as OAuthActionV2).oauthFetchAccessToken(request)
+        res.type("json")
+        res.send(jsonPayload)
       } else {
-        throw "Action does not support OAuth."
+        res.statusCode = 404
       }
     })
 
@@ -202,6 +224,10 @@ export default class Server implements Hub.RouteBuilder {
 
   formUrl(action: Hub.Action) {
     return this.absUrl(`/actions/${encodeURIComponent(action.name)}/form`)
+  }
+
+  tokenUrl(action: Hub.Action) {
+    return this.absUrl(`/actions/${encodeURIComponent(action.name)}/oauth_token`)
   }
 
   private oauthRedirectUrl(action: Hub.Action) {

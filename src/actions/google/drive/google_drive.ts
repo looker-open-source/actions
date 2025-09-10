@@ -16,7 +16,7 @@ import { DomainValidator } from "./domain_validator"
 const LOG_PREFIX = "[GOOGLE_DRIVE]"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
-export class GoogleDriveAction extends Hub.OAuthAction {
+export class GoogleDriveAction extends Hub.OAuthActionV2 {
     name = "google_drive"
     label = "Google Drive"
     iconName = "google/drive/google_drive.svg"
@@ -257,21 +257,52 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     return url.toString()
   }
 
-  async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string) {
+  async oauthHandleRedirect(urlParams: { [key: string]: string }, redirectUri: string) {
     const actionCrypto = new Hub.ActionCrypto()
     const plaintext = await actionCrypto.decrypt(urlParams.state).catch((err: string) => {
       winston.error("Encryption not correctly configured" + err)
       throw err
     })
 
-    const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
+    const statePayload = JSON.parse(plaintext)
+    if (statePayload.hasOwnProperty("tokenurl")) {
+      // redirect user back to Looker with context
+      const newState = {
+        code: urlParams.code,
+        redirecturi: redirectUri,
+      }
+      const jsonString = JSON.stringify(newState)
+      const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
+        winston.error("Encryption not correctly configured")
+        throw err
+      })
 
-    // Pass back context to Looker
-    const payload = JSON.parse(plaintext)
-    await https.post({
-      url: payload.stateurl,
-      body: JSON.stringify({tokens, redirect: redirectUri}),
-    }).catch((_err) => { winston.error(_err.toString()) })
+      return `${statePayload.tokenurl}?state=${ciphertextBlob}`
+    } else {
+      // Pass back context to Looker
+      const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
+      await https.post({
+        url: statePayload.stateurl,
+        body: JSON.stringify({tokens, redirect: redirectUri}),
+      }).catch((_err) => { winston.error(_err.toString()) })
+      return ""
+    }
+  }
+
+  async oauthFetchAccessToken(request: Hub.ActionRequest) {
+    if (request.params.state) {
+      const actionCrypto = new Hub.ActionCrypto()
+      const plaintext = await actionCrypto.decrypt(request.params.state).catch((err: string) => {
+        winston.error("Encryption not correctly configured" + err)
+        throw err
+      })
+      const state = JSON.parse(plaintext)
+
+      const tokens = await this.getAccessTokenCredentialsFromCode(state.redirecturi, state.code)
+      return JSON.stringify({tokens, redirect: state.redirecturi})
+    } else {
+      throw new Error("Request is missing state parameter.")
+    }
   }
 
   async oauthCheck(request: Hub.ActionRequest) {
@@ -450,8 +481,11 @@ export class GoogleDriveAction extends Hub.OAuthAction {
     const form = new Hub.ActionForm()
     form.fields = []
 
+    const hasTokenUrl = request.params.hasOwnProperty("state_redir_url")
+    const state = hasTokenUrl ? {tokenurl: request.params.state_redir_url} : {stateurl: request.params.state_url}
+    const jsonString = JSON.stringify(state)
+
     const actionCrypto = new Hub.ActionCrypto()
-    const jsonString = JSON.stringify({stateurl: request.params.state_url})
     const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
       winston.error("Encryption not correctly configured")
       throw err
