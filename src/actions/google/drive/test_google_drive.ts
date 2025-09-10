@@ -375,7 +375,9 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     describe("v1 flow", () => {
       it("correctly handles redirect from authorization server", (done) => {
-        const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode").resolves({tokens: "token"})
+        const stubAccessToken = sinon
+          .stub(action as any, "getAccessTokenCredentialsFromCode")
+          .resolves({tokens: "token"})
         // @ts-ignore
         const stubReq = sinon.stub(https, "post").callsFake(async () => Promise.resolve({access_token: "token"}))
         const redirectUrl = action.oauthHandleRedirect({code: "code",

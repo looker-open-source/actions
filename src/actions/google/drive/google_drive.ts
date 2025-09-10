@@ -301,7 +301,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       const tokens = await this.getAccessTokenCredentialsFromCode(state.redirecturi, state.code)
       return JSON.stringify({tokens, redirect: state.redirecturi})
     } else {
-      return ""
+      throw new Error("Request is missing state parameter.")
     }
   }
 
