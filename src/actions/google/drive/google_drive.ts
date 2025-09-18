@@ -267,6 +267,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     const statePayload = JSON.parse(plaintext)
     if (statePayload.hasOwnProperty("tokenurl")) {
       // redirect user back to Looker with context
+      winston.info("Redirected with V2 flow")
       const newState = {
         code: urlParams.code,
         redirecturi: redirectUri,
@@ -280,7 +281,9 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       return `${statePayload.tokenurl}?state=${ciphertextBlob}`
     } else {
       // Pass back context to Looker
+      winston.info("Posting1 to " + statePayload.stateurl)
       const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
+      winston.info("Posting2 to " + statePayload.stateurl)
       await https.post({
         url: statePayload.stateurl,
         body: JSON.stringify({tokens, redirect: redirectUri}),
@@ -482,6 +485,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     form.fields = []
 
     const hasTokenUrl = request.params.hasOwnProperty("state_redir_url")
+    winston.info("Using" + hasTokenUrl ? "V2" : "V1")
     const state = hasTokenUrl ? {tokenurl: request.params.state_redir_url} : {stateurl: request.params.state_url}
     const jsonString = JSON.stringify(state)
 
