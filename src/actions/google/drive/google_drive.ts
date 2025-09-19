@@ -485,7 +485,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     form.fields = []
 
     const hasTokenUrl = request.params.hasOwnProperty("state_redir_url")
-    winston.info("Using" + hasTokenUrl ? "V2" : "V1")
+    winston.info(`Using ${hasTokenUrl ? "V2" : "V1"} flow`)
     const state = hasTokenUrl ? {tokenurl: request.params.state_redir_url} : {stateurl: request.params.state_url}
     const jsonString = JSON.stringify(state)
 
