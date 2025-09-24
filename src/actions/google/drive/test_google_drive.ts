@@ -409,7 +409,7 @@ describe(`${action.constructor.name} unit tests`, () => {
           state: "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"}
         request.webhookId = "testId"
         const tokenPayload = action.oauthFetchAccessToken(request)
-        chai.expect(tokenPayload).to.eventually.equal(`{"tokens":{"tokens":"token"},"redirect":"redirect"}`)
+        chai.expect(tokenPayload).to.eventually.deep.equal({"tokens": {"tokens": "token"},"redirect": "redirect"})
           .and.notify(stubAccessToken.restore)
           .and.notify(done)
       })
