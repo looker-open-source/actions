@@ -202,9 +202,9 @@ export default class Server implements Hub.RouteBuilder {
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
 
       if (isOauthActionV2(action)) {
-        const jsonPayload = await (action as OAuthActionV2).oauthFetchAccessToken(request)
+        const payload = await (action as OAuthActionV2).oauthFetchAccessToken(request)
         res.type("json")
-        res.send(jsonPayload)
+        res.send(JSON.stringify(payload))
       } else {
         res.statusCode = 404
       }
