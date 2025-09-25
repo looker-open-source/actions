@@ -6,7 +6,10 @@ export declare abstract class OAuthActionV2 extends Action {
     abstract oauthHandleRedirect(urlParams: {
         [key: string]: string;
     }, redirectUri: string): Promise<string>;
-    abstract oauthFetchAccessToken(request: ActionRequest): Promise<object>;
+    abstract oauthFetchAccessToken(request: ActionRequest): Promise<{
+        tokens: any;
+        redirect: any;
+    }>;
     asJson(router: RouteBuilder, request: ActionRequest): any;
 }
 export declare function isOauthActionV2(action: Action): boolean;
