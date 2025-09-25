@@ -5,7 +5,7 @@ export abstract class OAuthActionV2 extends Action {
   abstract oauthCheck(request: ActionRequest): Promise<boolean>
   abstract oauthUrl(redirectUri: string, encryptedState: string): Promise<string>
   abstract oauthHandleRedirect(urlParams: { [key: string]: string }, redirectUri: string): Promise<string>
-  abstract oauthFetchAccessToken(request: ActionRequest): Promise<any>
+  abstract oauthFetchAccessToken(request: ActionRequest): Promise<object>
 
   asJson(router: RouteBuilder, request: ActionRequest): any {
     const json = super.asJson(router, request)
