@@ -26,10 +26,7 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     oauthHandleRedirect(urlParams: {
         [key: string]: string;
     }, redirectUri: string): Promise<string>;
-    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<{
-        tokens: Credentials;
-        redirect: any;
-    }>;
+    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.ActionToken>;
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauth2Client(redirectUri: string | undefined): OAuth2Client;
     sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponse<drive_v3.Schema$File>>;
