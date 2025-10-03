@@ -18,4 +18,6 @@ export class SegmentGroupAction extends SegmentAction {
 
 }
 
-Hub.addAction(new SegmentGroupAction())
+const segmentGroupAction = new SegmentGroupAction()
+Hub.addUnfilteredAction(segmentGroupAction)
+Hub.addAction(segmentGroupAction)

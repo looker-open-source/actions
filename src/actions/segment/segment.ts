@@ -283,4 +283,6 @@ export class SegmentAction extends Hub.Action {
 
 }
 
-Hub.addAction(new SegmentAction())
+const segmentAction = new SegmentAction()
+Hub.addUnfilteredAction(segmentAction)
+Hub.addAction(segmentAction)

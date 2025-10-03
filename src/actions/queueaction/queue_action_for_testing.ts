@@ -18,6 +18,8 @@ export class QueueTestAction extends Hub.Action {
     }
 }
 
+const queueTestAction = new QueueTestAction()
+Hub.addUnfilteredAction(queueTestAction)
 if (process.env.CHILD_TEST) {
-    Hub.addAction(new QueueTestAction())
+    Hub.addAction(queueTestAction)
 }

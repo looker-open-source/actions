@@ -13,4 +13,6 @@ export class HubspotCompaniesAction extends HubspotAction {
   }
 }
 
-Hub.addAction(new HubspotCompaniesAction())
+const hubspotCompaniesAction = new HubspotCompaniesAction()
+Hub.addUnfilteredAction(hubspotCompaniesAction)
+Hub.addAction(hubspotCompaniesAction)

@@ -98,4 +98,6 @@ export class MarketoAction extends Hub.Action {
 
 }
 
-Hub.addAction(new MarketoAction())
+const marketoAction = new MarketoAction()
+Hub.addUnfilteredAction(marketoAction)
+Hub.addAction(marketoAction)

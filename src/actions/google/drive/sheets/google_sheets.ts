@@ -505,6 +505,8 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                    }
 }
 
+const googleSheetsAction = new GoogleSheetsAction()
+Hub.addUnfilteredAction(googleSheetsAction)
 if (process.env.GOOGLE_SHEET_CLIENT_ID && process.env.GOOGLE_SHEET_CLIENT_SECRET) {
-    Hub.addAction(new GoogleSheetsAction())
+    Hub.addAction(googleSheetsAction)
 }

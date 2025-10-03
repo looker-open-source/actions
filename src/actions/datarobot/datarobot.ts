@@ -127,4 +127,6 @@ export class DataRobotAction extends Hub.Action {
   }
 }
 
-Hub.addAction(new DataRobotAction())
+const dataRobotAction = new DataRobotAction()
+Hub.addUnfilteredAction(dataRobotAction)
+Hub.addAction(dataRobotAction)

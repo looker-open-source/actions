@@ -142,15 +142,16 @@ export class GoogleAdsCustomerMatch
 
 /******** Register with Hub if prereqs are satisfied ********/
 
+const gacm = new GoogleAdsCustomerMatch(
+  process.env.GOOGLE_ADS_CLIENT_ID || "",
+  process.env.GOOGLE_ADS_CLIENT_SECRET || "",
+  process.env.GOOGLE_ADS_DEVELOPER_TOKEN || "",
+)
+Hub.addUnfilteredAction(gacm)
 if (process.env.GOOGLE_ADS_CLIENT_ID
   && process.env.GOOGLE_ADS_CLIENT_SECRET
   && process.env.GOOGLE_ADS_DEVELOPER_TOKEN
   ) {
-    const gacm = new GoogleAdsCustomerMatch(
-      process.env.GOOGLE_ADS_CLIENT_ID,
-      process.env.GOOGLE_ADS_CLIENT_SECRET,
-      process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
-    )
     Hub.addAction(gacm)
 } else {
     winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)

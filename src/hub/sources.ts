@@ -3,9 +3,14 @@ import * as semver from "semver"
 import { Action } from "./action"
 
 export const actions: Action[] = []
+export const unfilteredActions: Action[] = []
 
 export function addAction(action: Action) {
   actions.push(action)
+}
+
+export function addUnfilteredAction(action: Action) {
+  unfilteredActions.push(action)
 }
 
 export async function allActions(opts?: { lookerVersion?: string | null }) {
@@ -23,6 +28,10 @@ export async function allActions(opts?: { lookerVersion?: string | null }) {
     )
   }
   return filtered
+}
+
+export async function allUnfilteredActions() {
+  return unfilteredActions
 }
 
 export async function findAction(id: string, opts?: {lookerVersion?: string | null}) {

@@ -176,4 +176,7 @@ async function parseGsheet(gsheet: string) {
   const sheetId = assignmentArray[1]
   return {spreadsheetId, sheetId}
 }
-Hub.addAction(new KloudioAction())
+
+const kloudioAction = new KloudioAction()
+Hub.addUnfilteredAction(kloudioAction)
+Hub.addAction(kloudioAction)

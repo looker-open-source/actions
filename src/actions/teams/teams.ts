@@ -135,4 +135,6 @@ export class TeamsAction extends Hub.Action {
   }
 }
 
-Hub.addAction(new TeamsAction())
+const teamsAction = new TeamsAction()
+Hub.addUnfilteredAction(teamsAction)
+Hub.addAction(teamsAction)

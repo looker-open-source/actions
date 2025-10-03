@@ -23,4 +23,6 @@ export class TrayAction extends WebhookAction {
 
 }
 
-Hub.addAction(new TrayAction())
+const trayAction = new TrayAction()
+Hub.addUnfilteredAction(trayAction)
+Hub.addAction(trayAction)

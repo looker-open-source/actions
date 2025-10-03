@@ -109,4 +109,6 @@ export class TwilioMessageAction extends Hub.Action {
 
 }
 
-Hub.addAction(new TwilioMessageAction())
+const twilioMessageAction = new TwilioMessageAction()
+Hub.addUnfilteredAction(twilioMessageAction)
+Hub.addAction(twilioMessageAction)

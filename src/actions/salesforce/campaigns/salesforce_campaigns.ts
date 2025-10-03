@@ -238,21 +238,22 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
 // Client Secret is Salesforce Consumer Secret
 // Max results is max number of objects to fetch. Used in the form builder to get existing campaigns (default is 10,000)
 // Chunk size is the number of sObject sent per single request (limit is 200 records)
+const envMaxResults = parseInt(process.env.SALESFORCE_MAX_RESULTS + "", 10)
+const maxResults = Number.isInteger(envMaxResults) ? envMaxResults : 10000
+
+const envChunkSize = parseInt(process.env.SALESFORCE_CHUNK_SIZE + "", 10)
+const chunkSize = Number.isInteger(envChunkSize) ? envChunkSize : 200
+
+const sfdcCampaigns = new SalesforceCampaignsAction(
+  process.env.SALESFORCE_CLIENT_ID || "",
+  process.env.SALESFORCE_CLIENT_SECRET || "",
+  maxResults,
+  chunkSize,
+)
+Hub.addUnfilteredAction(sfdcCampaigns)
+
 if (process.env.SALESFORCE_CLIENT_ID && process.env.SALESFORCE_CLIENT_SECRET
   && process.env.SALESFORCE_MAX_RESULTS && process.env.SALESFORCE_CHUNK_SIZE) {
-
-  const envMaxResults = parseInt(process.env.SALESFORCE_MAX_RESULTS + "", 10)
-  const maxResults = Number.isInteger(envMaxResults) ? envMaxResults : 10000
-
-  const envChunkSize = parseInt(process.env.SALESFORCE_CHUNK_SIZE + "", 10)
-  const chunkSize = Number.isInteger(envChunkSize) ? envChunkSize : 200
-
-  const sfdcCampaigns = new SalesforceCampaignsAction(
-    process.env.SALESFORCE_CLIENT_ID,
-    process.env.SALESFORCE_CLIENT_SECRET,
-    maxResults,
-    chunkSize,
-  )
   Hub.addAction(sfdcCampaigns)
 } else {
   winston.warn(

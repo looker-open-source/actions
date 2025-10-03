@@ -48,4 +48,6 @@ export class DigitalOceanObjectStorageAction extends AmazonS3Action {
 
 }
 
-Hub.addAction(new DigitalOceanObjectStorageAction())
+const digitalOceanObjectStorageAction = new DigitalOceanObjectStorageAction()
+Hub.addUnfilteredAction(digitalOceanObjectStorageAction)
+Hub.addAction(digitalOceanObjectStorageAction)

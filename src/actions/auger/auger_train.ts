@@ -472,4 +472,6 @@ export class AugerTrainAction extends Hub.Action {
   }
 }
 
-Hub.addAction(new AugerTrainAction())
+const augerTrainAction = new AugerTrainAction()
+Hub.addUnfilteredAction(augerTrainAction)
+Hub.addAction(augerTrainAction)

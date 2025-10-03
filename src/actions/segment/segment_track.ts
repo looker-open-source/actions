@@ -27,4 +27,6 @@ export class SegmentTrackAction extends SegmentAction {
 
 }
 
-Hub.addAction(new SegmentTrackAction())
+const segmentTrackAction = new SegmentTrackAction()
+Hub.addUnfilteredAction(segmentTrackAction)
+Hub.addAction(segmentTrackAction)

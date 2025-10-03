@@ -79,4 +79,6 @@ export class TwilioAction extends Hub.Action {
 
 }
 
-Hub.addAction(new TwilioAction())
+const twilioAction = new TwilioAction()
+Hub.addUnfilteredAction(twilioAction)
+Hub.addAction(twilioAction)

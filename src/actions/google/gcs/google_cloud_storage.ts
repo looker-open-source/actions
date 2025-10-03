@@ -196,4 +196,6 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
 }
 
-Hub.addAction(new GoogleCloudStorageAction())
+const googleCloudStorageAction = new GoogleCloudStorageAction()
+Hub.addUnfilteredAction(googleCloudStorageAction)
+Hub.addAction(googleCloudStorageAction)

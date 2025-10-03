@@ -304,6 +304,9 @@ export class AirtableAction extends Hub.OAuthAction {
 
 }
 
+const airtableAction = new AirtableAction()
+Hub.addUnfilteredAction(airtableAction)
+
 if (process.env.AIRTABLE_CLIENT_ID && process.env.AIRTABLE_CLIENT_SECRET) {
-  Hub.addAction(new AirtableAction())
+  Hub.addAction(airtableAction)
 }

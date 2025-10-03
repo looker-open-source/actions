@@ -101,3 +101,7 @@ export class AmazonS3Action extends Hub.Action {
   }
 
 }
+
+const amazonS3Action = new AmazonS3Action()
+Hub.addUnfilteredAction(amazonS3Action)
+Hub.addAction(amazonS3Action)

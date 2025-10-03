@@ -75,4 +75,6 @@ export class MparticleAction extends Hub.Action {
   }
 }
 
-Hub.addAction(new MparticleAction())
+const mparticleAction = new MparticleAction()
+Hub.addUnfilteredAction(mparticleAction)
+Hub.addAction(mparticleAction)

@@ -185,13 +185,15 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
 
 /******** Register with Hub if prereqs are satisfied ********/
 
+const fcma = new FacebookCustomAudiencesAction(
+  process.env.FACEBOOK_CLIENT_ID || "",
+  process.env.FACEBOOK_CLIENT_SECRET || "",
+)
+Hub.addUnfilteredAction(fcma)
+
 if (process.env.FACEBOOK_CLIENT_ID
   && process.env.FACEBOOK_CLIENT_SECRET
   ) {
-    const fcma = new FacebookCustomAudiencesAction(
-      process.env.FACEBOOK_CLIENT_ID,
-      process.env.FACEBOOK_CLIENT_SECRET,
-    )
     Hub.addAction(fcma)
 } else {
   winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)

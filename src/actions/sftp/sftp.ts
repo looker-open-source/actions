@@ -88,3 +88,7 @@ export class SFTPAction extends Hub.Action {
   }
 
 }
+
+const sftpAction = new SFTPAction()
+Hub.addUnfilteredAction(sftpAction)
+Hub.addAction(sftpAction)

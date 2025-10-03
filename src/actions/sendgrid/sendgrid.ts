@@ -112,4 +112,6 @@ export class SendGridAction extends Hub.Action {
 
 }
 
-Hub.addAction(new SendGridAction())
+const sendGridAction = new SendGridAction()
+Hub.addUnfilteredAction(sendGridAction)
+Hub.addAction(sendGridAction)

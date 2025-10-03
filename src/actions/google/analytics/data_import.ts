@@ -157,11 +157,12 @@ export class GoogleAnalyticsDataImportAction
 
 /******** Register with Hub if prereqs are satisfied ********/
 
+const gadi = new GoogleAnalyticsDataImportAction(
+  process.env.GOOGLE_ANALYTICS_CLIENT_ID || "",
+  process.env.GOOGLE_ANALYTICS_CLIENT_SECRET || "",
+)
+Hub.addUnfilteredAction(gadi)
 if (process.env.GOOGLE_ANALYTICS_CLIENT_ID && process.env.GOOGLE_ANALYTICS_CLIENT_SECRET) {
-  const gadi = new GoogleAnalyticsDataImportAction(
-    process.env.GOOGLE_ANALYTICS_CLIENT_ID,
-    process.env.GOOGLE_ANALYTICS_CLIENT_SECRET,
-  )
   Hub.addAction(gadi)
 } else {
   winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)

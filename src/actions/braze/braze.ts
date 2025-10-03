@@ -220,4 +220,6 @@ export class BrazeAction extends Hub.Action {
   }
 }
 
-Hub.addAction(new BrazeAction())
+const brazeAction = new BrazeAction()
+Hub.addUnfilteredAction(brazeAction)
+Hub.addAction(brazeAction)

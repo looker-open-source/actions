@@ -86,4 +86,6 @@ export class AmazonEC2Action extends Hub.Action {
 
 }
 
-Hub.addAction(new AmazonEC2Action())
+const amazonEC2Action = new AmazonEC2Action()
+Hub.addUnfilteredAction(amazonEC2Action)
+Hub.addAction(amazonEC2Action)

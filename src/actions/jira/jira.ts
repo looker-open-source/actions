@@ -130,4 +130,6 @@ export class JiraAction extends Hub.Action {
 
 }
 
-Hub.addAction(new JiraAction())
+const jiraAction = new JiraAction()
+Hub.addUnfilteredAction(jiraAction)
+Hub.addAction(jiraAction)

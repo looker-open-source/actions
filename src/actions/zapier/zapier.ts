@@ -23,4 +23,6 @@ export class ZapierAction extends WebhookAction {
   }
 }
 
-Hub.addAction(new ZapierAction())
+const zapierAction = new ZapierAction()
+Hub.addUnfilteredAction(zapierAction)
+Hub.addAction(zapierAction)

@@ -509,6 +509,9 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
 }
 
+const googleDriveAction = new GoogleDriveAction()
+Hub.addUnfilteredAction(googleDriveAction)
+
 if (process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET) {
-  Hub.addAction(new GoogleDriveAction())
+  Hub.addAction(googleDriveAction)
 }

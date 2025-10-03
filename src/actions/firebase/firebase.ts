@@ -160,12 +160,14 @@ export class FirebaseAction extends Hub.Action {
   }
 }
 
+const firebaseAction = new FirebaseAction()
+Hub.addUnfilteredAction(firebaseAction)
 if (process.env.FIREBASE_PROJECT_ID
   && process.env.FIREBASE_CLIENT_EMAIL
   && process.env.FIREBASE_PRIVATE_KEY
   && process.env.FIREBASE_DATABASE
   ) {
-    Hub.addAction(new FirebaseAction())
+    Hub.addAction(firebaseAction)
     winston.warn(`${LOG_PREFIX} Action registered.`)
 } else {
     winston.warn(`${LOG_PREFIX} Action not registered because required environment variables are missing.`)
