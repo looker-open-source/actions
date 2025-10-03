@@ -1,9 +1,12 @@
 import { Action } from "./action";
 export declare const actions: Action[];
+export declare const unfilteredActions: Action[];
 export declare function addAction(action: Action): void;
+export declare function addUnfilteredAction(action: Action): void;
 export declare function allActions(opts?: {
     lookerVersion?: string | null;
 }): Promise<Action[]>;
+export declare function allUnfilteredActions(): Promise<Action[]>;
 export declare function findAction(id: string, opts?: {
     lookerVersion?: string | null;
 }): Promise<Action>;
