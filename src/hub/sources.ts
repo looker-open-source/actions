@@ -3,14 +3,14 @@ import * as semver from "semver"
 import { Action } from "./action"
 
 export const actions: Action[] = []
-export const unfilteredActions: Action[] = []
+export const unfilteredActions: any[] = []
 
 export function addAction(action: Action) {
   actions.push(action)
 }
 
 export function addUnfilteredAction(action: Action) {
-  unfilteredActions.push(action)
+  unfilteredActions.push(action.asJson)
 }
 
 export async function allActions(opts?: { lookerVersion?: string | null }) {
