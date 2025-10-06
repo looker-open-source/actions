@@ -10,7 +10,7 @@ export function addAction(action: Action) {
 }
 
 export function addUnfilteredAction(action: Action) {
-  unfilteredActions.push(action.asJson)
+  unfilteredActions.push(action)
 }
 
 export async function allActions(opts?: { lookerVersion?: string | null }) {
