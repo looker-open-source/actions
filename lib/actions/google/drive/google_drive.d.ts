@@ -37,5 +37,11 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
     protected getUserEmail(redirect: string, tokens: Credentials): Promise<string>;
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
+    protected oauthFetchAndStoreInfo(urlParams: {
+        [key: string]: string;
+    }, redirectUri: string, statePayload: any): Promise<void>;
+    protected oauthCreateLookerRedirectUrl(urlParams: {
+        [key: string]: string;
+    }, redirectUri: string, actionCrypto: Hub.ActionCrypto, statePayload: any): Promise<string>;
     private loginForm;
 }
