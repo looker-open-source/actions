@@ -16,6 +16,11 @@ import { DomainValidator } from "./domain_validator"
 const LOG_PREFIX = "[GOOGLE_DRIVE]"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
+interface OauthState {
+  tokenurl?: string
+  stateurl?: string
+}
+
 export class GoogleDriveAction extends Hub.OAuthActionV2 {
     name = "google_drive"
     label = "Google Drive"
@@ -263,31 +268,16 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       winston.error("Encryption not correctly configured" + err)
       throw err
     })
+    const statePayload: OauthState = JSON.parse(plaintext)
 
-    const statePayload = JSON.parse(plaintext)
-    if (statePayload.hasOwnProperty("tokenurl")) {
+    if (statePayload.tokenurl) {
       // redirect user back to Looker with context
       winston.info("Redirected with V2 flow")
-      const newState = {
-        code: urlParams.code,
-        redirecturi: redirectUri,
-      }
-      const jsonString = JSON.stringify(newState)
-      const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
-        winston.error("Encryption not correctly configured")
-        throw err
-      })
-
-      return `${statePayload.tokenurl}?state=${ciphertextBlob}`
+      return this.oauthCreateLookerRedirectUrl(urlParams, redirectUri, actionCrypto, statePayload)
     } else {
       // Pass back context to Looker
-      winston.info("Posting1 to " + statePayload.stateurl)
-      const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
-      winston.info("Posting2 to " + statePayload.stateurl)
-      await https.post({
-        url: statePayload.stateurl,
-        body: JSON.stringify({tokens, redirect: redirectUri}),
-      }).catch((_err) => { winston.error(_err.toString()) })
+      winston.info("Redirected with V1 flow")
+      await this.oauthFetchAndStoreInfo(urlParams, redirectUri, statePayload)
       return ""
     }
   }
@@ -480,13 +470,45 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
   }
 
+  protected async oauthFetchAndStoreInfo(
+    urlParams: { [key: string]: string },
+    redirectUri: string,
+    statePayload: OauthState,
+  ) {
+    const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
+    await https.post({
+      url: statePayload.stateurl!,
+      body: JSON.stringify({tokens, redirect: redirectUri}),
+    }).catch((_err) => { winston.error(_err.toString()) })
+  }
+
+  protected async oauthCreateLookerRedirectUrl(
+    urlParams: { [key: string]: string },
+    redirectUri: string,
+    actionCrypto: Hub.ActionCrypto,
+    statePayload: OauthState,
+  ) {
+      const newState = {
+        code: urlParams.code,
+        redirecturi: redirectUri,
+      }
+      const jsonString = JSON.stringify(newState)
+      const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
+        winston.error("Encryption not correctly configured")
+        throw err
+      })
+
+      return `${statePayload.tokenurl!}?state=${ciphertextBlob}`
+  }
+
   private async loginForm(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     form.fields = []
 
     const hasTokenUrl = request.params.hasOwnProperty("state_redir_url")
     winston.info(`Using ${hasTokenUrl ? "V2" : "V1"} flow`)
-    const state = hasTokenUrl ? {tokenurl: request.params.state_redir_url} : {stateurl: request.params.state_url}
+    const state: OauthState =
+      hasTokenUrl ? {tokenurl: request.params.state_redir_url} : {stateurl: request.params.state_url}
     const jsonString = JSON.stringify(state)
 
     const actionCrypto = new Hub.ActionCrypto()
