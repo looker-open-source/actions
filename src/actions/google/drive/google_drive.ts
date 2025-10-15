@@ -16,6 +16,11 @@ import { DomainValidator } from "./domain_validator"
 const LOG_PREFIX = "[GOOGLE_DRIVE]"
 const FOLDERID_REGEX = /\/folders\/(?<folderId>[^\/?]+)/
 
+interface OauthState {
+  tokenurl?: string
+  stateurl?: string
+}
+
 export class GoogleDriveAction extends Hub.OAuthActionV2 {
     name = "google_drive"
     label = "Google Drive"
@@ -263,9 +268,9 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       winston.error("Encryption not correctly configured" + err)
       throw err
     })
-    const statePayload = JSON.parse(plaintext)
+    const statePayload: OauthState = JSON.parse(plaintext)
 
-    if (statePayload.hasOwnProperty("tokenurl")) {
+    if (statePayload.tokenurl) {
       // redirect user back to Looker with context
       winston.info("Redirected with V2 flow")
       return this.oauthCreateLookerRedirectUrl(urlParams, redirectUri, actionCrypto, statePayload)
@@ -468,11 +473,11 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
   protected async oauthFetchAndStoreInfo(
     urlParams: { [key: string]: string },
     redirectUri: string,
-    statePayload: any,
+    statePayload: OauthState,
   ) {
     const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
     await https.post({
-      url: statePayload.stateurl,
+      url: statePayload.stateurl!,
       body: JSON.stringify({tokens, redirect: redirectUri}),
     }).catch((_err) => { winston.error(_err.toString()) })
   }
@@ -481,7 +486,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     urlParams: { [key: string]: string },
     redirectUri: string,
     actionCrypto: Hub.ActionCrypto,
-    statePayload: any,
+    statePayload: OauthState,
   ) {
       const newState = {
         code: urlParams.code,
@@ -493,7 +498,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
         throw err
       })
 
-      return `${statePayload.tokenurl}?state=${ciphertextBlob}`
+      return `${statePayload.tokenurl!}?state=${ciphertextBlob}`
   }
 
   private async loginForm(request: Hub.ActionRequest) {
@@ -502,7 +507,8 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
     const hasTokenUrl = request.params.hasOwnProperty("state_redir_url")
     winston.info(`Using ${hasTokenUrl ? "V2" : "V1"} flow`)
-    const state = hasTokenUrl ? {tokenurl: request.params.state_redir_url} : {stateurl: request.params.state_url}
+    const state: OauthState =
+      hasTokenUrl ? {tokenurl: request.params.state_redir_url} : {stateurl: request.params.state_url}
     const jsonString = JSON.stringify(state)
 
     const actionCrypto = new Hub.ActionCrypto()

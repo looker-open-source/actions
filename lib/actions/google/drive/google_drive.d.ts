@@ -3,6 +3,10 @@ import { Credentials, OAuth2Client } from "google-auth-library";
 import { drive_v3 } from "googleapis";
 import * as Hub from "../../../hub";
 import Drive = drive_v3.Drive;
+interface OauthState {
+    tokenurl?: string;
+    stateurl?: string;
+}
 export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     name: string;
     label: string;
@@ -39,9 +43,10 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
     protected oauthFetchAndStoreInfo(urlParams: {
         [key: string]: string;
-    }, redirectUri: string, statePayload: any): Promise<void>;
+    }, redirectUri: string, statePayload: OauthState): Promise<void>;
     protected oauthCreateLookerRedirectUrl(urlParams: {
         [key: string]: string;
-    }, redirectUri: string, actionCrypto: Hub.ActionCrypto, statePayload: any): Promise<string>;
+    }, redirectUri: string, actionCrypto: Hub.ActionCrypto, statePayload: OauthState): Promise<string>;
     private loginForm;
 }
+export {};
