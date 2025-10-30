@@ -283,9 +283,9 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
   }
 
   async oauthFetchAccessToken(request: Hub.ActionRequest) {
-    if (request.params.state) {
+    if (request.fetchTokenState) {
       const actionCrypto = new Hub.ActionCrypto()
-      const plaintext = await actionCrypto.decrypt(request.params.state).catch((err: string) => {
+      const plaintext = await actionCrypto.decrypt(request.fetchTokenState).catch((err: string) => {
         winston.error("Encryption not correctly configured" + err)
         throw err
       })

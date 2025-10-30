@@ -140,6 +140,10 @@ export class ActionRequest {
       request.formParams = json.form_params
     }
 
+    if (json.state) {
+      request.fetchTokenState = json.state
+    }
+
     return request
   }
 
@@ -147,6 +151,7 @@ export class ActionRequest {
   formParams: ParamMap = {}
   params: ParamMap = {}
   scheduledPlan?: ActionScheduledPlan
+  fetchTokenState?: string
   type!: ActionType
   actionId?: string
   instanceId?: string

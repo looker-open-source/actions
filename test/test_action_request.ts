@@ -5,6 +5,25 @@ import {mockReq} from "sinon-express-mock"
 import { ActionRequest } from "../src/hub"
 
 describe("ActionRequest", () => {
+  it("fromRequest correctly parses state from body", () => {
+    const req = mockReq({
+      headers: {
+        "user-agent": "LookerOutgoingWebhook/7.3.0",
+        "x-looker-webhook-id": "123",
+        "x-looker-instance": "instanceId1",
+      },
+      body: {
+        state: "someEncryptedStateString",
+      },
+    })
+
+    // @ts-ignore
+    req.header = (name: string): string | string[] | undefined => req.headers[name]
+
+    const result = ActionRequest.fromRequest(req)
+    chai.expect(result.fetchTokenState).to.equal("someEncryptedStateString")
+  })
+
   it("fromRequest", () => {
 
     const req = mockReq({
