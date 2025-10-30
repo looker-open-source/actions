@@ -204,7 +204,7 @@ export default class Server implements Hub.RouteBuilder {
       if (isOauthActionV2(action)) {
         const payload = await (action as OAuthActionV2).oauthFetchAccessToken(request)
         res.type("json")
-        res.send(JSON.stringify(payload))
+        res.send(JSON.stringify(payload.asJson()))
       } else {
         res.statusCode = 404
       }
