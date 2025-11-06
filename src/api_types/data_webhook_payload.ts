@@ -20,6 +20,8 @@ export interface DataWebhookPayload {
   data: {[key: string]: string} | null
   /** Form parameters associated with the payload. */
   form_params: {[key: string]: string} | null
+  /** Encrypted data used by /actions/:actionId/oauth_token route */
+  state: string | null
 }
 
 export interface RequestDataWebhookPayload {

@@ -405,8 +405,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode")
           .resolves({tokens: "token"})
         const request = new Hub.ActionRequest()
-        request.params = {
-          state: "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"}
+        request.fetchTokenState = "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"
         request.webhookId = "testId"
         const tokenPayload = action.oauthFetchAccessToken(request)
         chai.expect(tokenPayload).to.eventually.deep.equal({tokens: {tokens: "token"}, redirect: "redirect"})
