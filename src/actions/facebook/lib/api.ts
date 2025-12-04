@@ -4,7 +4,7 @@ import {formatFullDate, isNullOrUndefined, sanitizeError, sortCompare} from "./u
 
 const LOG_PREFIX = "[Facebook Custom Audiences]"
 
-export const API_VERSION = "v22.0"
+export const API_VERSION = "v24.0"
 export const API_BASE_URL = `https://graph.facebook.com/${API_VERSION}/`
 export const CUSTOMER_LIST_SOURCE_TYPES = {
     // Used by Facebook for unknown purposes.
