@@ -106,15 +106,16 @@ export class GoogleCloudStorageAction extends Hub.Action {
       return new Hub.ActionResponse({ success: true })
     } catch (e: any) {
       const errorType = getHttpErrorType(e, this.name)
-      let errorMessage = e.message
-
+      let errorMessage = e?.message;
       if (!errorMessage) {
         try {
-          errorMessage = JSON.stringify(e)
-        } catch (jsonError) {
-          errorMessage = "Unknown Error"
+          const str = JSON.stringify(e);
+          errorMessage = (str && str !== '{}') ? str : e?.toString();
+        } catch {
+          errorMessage = e?.toString();
         }
       }
+      if (!errorMessage || errorMessage === '[object Object]') { errorMessage = "Unknown Error"; }
 
       const error: Error = errorWith(
         errorType,
