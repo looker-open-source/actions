@@ -4,6 +4,7 @@ import {CryptoProvider} from "./crypto_base"
 
 export class AESTransitCrypto implements CryptoProvider {
   ALGORITHM = "aes-256-ctr"
+  HASH_ALGORITHM = "md5"
   VERSION = 1
 
   async encrypt(plaintext: string) {
@@ -58,5 +59,16 @@ export class AESTransitCrypto implements CryptoProvider {
     let cipherText = cipher.update(b64.unescape(ciphertext.substring(offset)), "base64", "utf8")
     cipherText += cipher.final("utf8")
     return cipherText
+  }
+
+  cipherId() {
+    if (process.env.CIPHER_MASTER === undefined) {
+      throw "CIPHER_MASTER environment variable not set"
+    }
+
+    const masterBuffer = Buffer.from(process.env.CIPHER_MASTER, "hex")
+    const hash = crypto.createHash(this.HASH_ALGORITHM)
+    hash.update(masterBuffer)
+    return hash.digest("hex")
   }
 }

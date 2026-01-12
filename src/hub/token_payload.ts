@@ -1,4 +1,4 @@
-export class ActionToken {
+export class TokenPayload {
   constructor(public tokens: any, public redirect: any) {}
 
   asJson(): any {

@@ -43,15 +43,18 @@ function expectGoogleDriveMatch(request: Hub.ActionRequest, paramsMatch: any) {
 describe(`${action.constructor.name} unit tests`, () => {
   let encryptStub: any
   let decryptStub: any
+  let cipherIdStub: any
 
   beforeEach(() => {
     encryptStub = sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
     decryptStub = sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+    cipherIdStub = sinon.stub(ActionCrypto.prototype, "cipherId").callsFake( () => "stubbed_cid" )
   })
 
   afterEach(() => {
     encryptStub.restore()
     decryptStub.restore()
+    cipherIdStub.restore()
   })
 
   describe("action", () => {
@@ -326,7 +329,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
+        state_json: JSON.stringify({
+          cid: "stubbed_cid",
+          payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
+        }),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -359,7 +365,10 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
         }],
         state: {
-          data: JSON.stringify({tokens: "access", redirect: "url"}),
+          data: JSON.stringify({
+            cid: "stubbed_cid",
+            payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
+          }),
         },
       }).and.notify(stubClient.restore).and.notify(done)
     })

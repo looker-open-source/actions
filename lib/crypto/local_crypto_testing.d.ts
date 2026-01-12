@@ -4,4 +4,5 @@ export declare class LocalCryptoTesting implements CryptoProvider {
     INSECURE_IV: Buffer<ArrayBuffer>;
     encrypt(plaintext: string): Promise<string>;
     decrypt(ciphertext: string): Promise<string>;
+    cipherId(): string;
 }
