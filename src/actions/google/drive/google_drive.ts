@@ -304,7 +304,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       const state = JSON.parse(plaintext)
 
       const tokens = await this.getAccessTokenCredentialsFromCode(state.redirecturi, state.code)
-      return new Hub.TokenPayload(tokens, state.redirecturi)
+      return new Hub.ActionToken(tokens, state.redirecturi)
     } else {
       throw new Error("Request is missing state parameter.")
     }
@@ -443,7 +443,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
   }
 
   protected async oauthEncryptTokens(
-    tokens: Hub.TokenPayload,
+    tokens: Hub.ActionToken,
     actionCrypto: Hub.ActionCrypto,
   ): Promise<Hub.EncryptedPayload> {
     const jsonTokens = JSON.stringify(tokens)
@@ -499,13 +499,13 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
   }
 
-  protected async oauthExtractTokensFromState(state: any): Promise<Hub.TokenPayload | null> {
-      let tokenPayload: Hub.TokenPayload | null = null
+  protected async oauthExtractTokensFromState(state: any): Promise<Hub.ActionToken | null> {
+      let tokenPayload: Hub.ActionToken | null = null
       if (state.cid && state.payload) {
         const encryptedPayload = new Hub.EncryptedPayload(state.cid, state.payload)
         tokenPayload = await this.oauthDecryptTokens(encryptedPayload, new Hub.ActionCrypto())
       } else if (state.tokens && state.redirect) {
-        tokenPayload = new Hub.TokenPayload(state.tokens, state.redirect)
+        tokenPayload = new Hub.ActionToken(state.tokens, state.redirect)
       }
       return tokenPayload
   }
@@ -513,12 +513,12 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
   protected async oauthDecryptTokens(
     tokenPayload: Hub.EncryptedPayload,
     actionCrypto: Hub.ActionCrypto,
-  ): Promise<Hub.TokenPayload> {
+  ): Promise<Hub.ActionToken> {
     const jsonTokens = await actionCrypto.decrypt(tokenPayload.payload).catch((err: string) => {
         winston.error("Encryption not correctly configured")
         throw err
       })
-    const tokens: Hub.TokenPayload = JSON.parse(jsonTokens)
+    const tokens: Hub.ActionToken = JSON.parse(jsonTokens)
     return tokens
   }
 
@@ -528,7 +528,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     statePayload: OauthState,
   ) {
     const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
-    const tokenPayload = new Hub.TokenPayload(tokens, redirectUri)
+    const tokenPayload = new Hub.ActionToken(tokens, redirectUri)
     const encryptedPayload = await this.oauthEncryptTokens(tokenPayload, new Hub.ActionCrypto())
     await https.post({
       url: statePayload.stateurl!,

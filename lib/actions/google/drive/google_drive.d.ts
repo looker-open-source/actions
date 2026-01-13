@@ -30,20 +30,20 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     oauthHandleRedirect(urlParams: {
         [key: string]: string;
     }, redirectUri: string): Promise<string>;
-    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.TokenPayload>;
+    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.ActionToken>;
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauth2Client(redirectUri: string | undefined): OAuth2Client;
     sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponse<drive_v3.Schema$File>>;
     getDrives(drive: Drive, accumulatedFolders: drive_v3.Schema$Drive[], response: GaxiosResponse<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]>;
     getMimeType(request: Hub.ActionRequest): string | undefined;
     sanitizeGaxiosError(err: any): void;
-    protected oauthEncryptTokens(tokens: Hub.TokenPayload, actionCrypto: Hub.ActionCrypto): Promise<Hub.EncryptedPayload>;
+    protected oauthEncryptTokens(tokens: Hub.ActionToken, actionCrypto: Hub.ActionCrypto): Promise<Hub.EncryptedPayload>;
     protected getAccessTokenCredentialsFromCode(redirect: string, code: string): Promise<Credentials>;
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
     protected getUserEmail(redirect: string, tokens: Credentials): Promise<string>;
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
-    protected oauthExtractTokensFromState(state: any): Promise<Hub.TokenPayload | null>;
-    protected oauthDecryptTokens(tokenPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto): Promise<Hub.TokenPayload>;
+    protected oauthExtractTokensFromState(state: any): Promise<Hub.ActionToken | null>;
+    protected oauthDecryptTokens(tokenPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto): Promise<Hub.ActionToken>;
     protected oauthFetchAndStoreInfo(urlParams: {
         [key: string]: string;
     }, redirectUri: string, statePayload: OauthState): Promise<void>;
