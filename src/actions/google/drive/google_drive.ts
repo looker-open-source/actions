@@ -442,18 +442,6 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     }
   }
 
-  protected async oauthEncryptTokens(
-    tokens: Hub.ActionToken,
-    actionCrypto: Hub.ActionCrypto,
-  ): Promise<Hub.EncryptedPayload> {
-    const jsonTokens = JSON.stringify(tokens)
-    const encrypted = await actionCrypto.encrypt(jsonTokens).catch((err: string) => {
-        winston.error("Encryption not correctly configured")
-        throw err
-      })
-    return new Hub.EncryptedPayload(actionCrypto.cipherId(), encrypted)
-  }
-
   protected async getAccessTokenCredentialsFromCode(redirect: string, code: string) {
     const client = this.oauth2Client(redirect)
     const {tokens} = await client.getToken(code)
@@ -508,6 +496,18 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
         tokenPayload = new Hub.ActionToken(state.tokens, state.redirect)
       }
       return tokenPayload
+  }
+
+  protected async oauthEncryptTokens(
+    tokens: Hub.ActionToken,
+    actionCrypto: Hub.ActionCrypto,
+  ): Promise<Hub.EncryptedPayload> {
+    const jsonTokens = JSON.stringify(tokens)
+    const encrypted = await actionCrypto.encrypt(jsonTokens).catch((err: string) => {
+        winston.error("Encryption not correctly configured")
+        throw err
+      })
+    return new Hub.EncryptedPayload(actionCrypto.cipherId(), encrypted)
   }
 
   protected async oauthDecryptTokens(

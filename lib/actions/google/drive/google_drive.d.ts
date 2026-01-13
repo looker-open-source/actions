@@ -37,12 +37,12 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     getDrives(drive: Drive, accumulatedFolders: drive_v3.Schema$Drive[], response: GaxiosResponse<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]>;
     getMimeType(request: Hub.ActionRequest): string | undefined;
     sanitizeGaxiosError(err: any): void;
-    protected oauthEncryptTokens(tokens: Hub.ActionToken, actionCrypto: Hub.ActionCrypto): Promise<Hub.EncryptedPayload>;
     protected getAccessTokenCredentialsFromCode(redirect: string, code: string): Promise<Credentials>;
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
     protected getUserEmail(redirect: string, tokens: Credentials): Promise<string>;
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
     protected oauthExtractTokensFromState(state: any): Promise<Hub.ActionToken | null>;
+    protected oauthEncryptTokens(tokens: Hub.ActionToken, actionCrypto: Hub.ActionCrypto): Promise<Hub.EncryptedPayload>;
     protected oauthDecryptTokens(tokenPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto): Promise<Hub.ActionToken>;
     protected oauthFetchAndStoreInfo(urlParams: {
         [key: string]: string;
