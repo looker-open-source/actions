@@ -4,7 +4,7 @@ import {CryptoProvider} from "./crypto_base"
 
 export class AESTransitCrypto implements CryptoProvider {
   ALGORITHM = "aes-256-ctr"
-  HASH_ALGORITHM = "md5"
+  HASH_ALGORITHM = "sha-256"
   VERSION = 1
 
   async encrypt(plaintext: string) {
