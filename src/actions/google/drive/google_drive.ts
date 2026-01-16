@@ -304,7 +304,13 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       const state = JSON.parse(plaintext)
 
       const tokens = await this.getAccessTokenCredentialsFromCode(state.redirecturi, state.code)
-      return new Hub.ActionToken(tokens, state.redirecturi)
+      if (this.validTokens(tokens)) {
+        const tokenPayload = new Hub.ActionToken(tokens, state.redirectUri)
+        const encryptedPayload = await this.oauthEncryptTokens(tokenPayload, new Hub.ActionCrypto())
+        return encryptedPayload
+      } else {
+        throw new Error("OAuth tokens are invalid.")
+      }
     } else {
       throw new Error("Request is missing state parameter.")
     }
@@ -498,6 +504,15 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       return tokenPayload
   }
 
+  protected validTokens(tokens: Credentials): boolean {
+    if (tokens.refresh_token) {
+      return true
+    } else {
+      winston.warn("Invalid OAuth token payload")
+      return false
+    }
+  }
+
   protected async oauthEncryptTokens(
     tokens: Hub.ActionToken,
     actionCrypto: Hub.ActionCrypto,
@@ -528,12 +543,14 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     statePayload: OauthState,
   ) {
     const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
-    const tokenPayload = new Hub.ActionToken(tokens, redirectUri)
-    const encryptedPayload = await this.oauthEncryptTokens(tokenPayload, new Hub.ActionCrypto())
-    await https.post({
-      url: statePayload.stateurl!,
-      body: JSON.stringify(encryptedPayload),
-    }).catch((_err) => { winston.error(_err.toString()) })
+    if (this.validTokens(tokens)) {
+      const tokenPayload = new Hub.ActionToken(tokens, redirectUri)
+      const encryptedPayload = await this.oauthEncryptTokens(tokenPayload, new Hub.ActionCrypto())
+      await https.post({
+        url: statePayload.stateurl!,
+        body: JSON.stringify(encryptedPayload),
+      }).catch((_err) => { winston.error(_err.toString()) })
+    }
   }
 
   protected async oauthCreateLookerRedirectUrl(

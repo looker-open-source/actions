@@ -412,12 +412,26 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       it("correctly handles request from Looker to fetch token", (done) => {
         const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode")
-          .resolves({tokens: "token"})
+          .resolves({access_token: "access", refresh_token: "refresh"})
         const request = new Hub.ActionRequest()
         request.fetchTokenState = "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"
         request.webhookId = "testId"
         const tokenPayload = action.oauthFetchAccessToken(request)
-        chai.expect(tokenPayload).to.eventually.deep.equal({tokens: {tokens: "token"}, redirect: "redirect"})
+        chai.expect(tokenPayload).to.eventually.deep.equal({
+          cid: "stubbed_cid",
+          payload: "eyJ0b2tlbnMiOnsiYWNjZXNzX3Rva2VuIjoiYWNjZXNzIiwicmVmcmVzaF90b2tlbiI6InJlZnJlc2gifX0",
+        }).and.notify(stubAccessToken.restore)
+          .and.notify(done)
+      })
+
+      it("throws an error if refresh_token absent", (done) => {
+        const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode")
+          .resolves({access_token: "access"})
+        const request = new Hub.ActionRequest()
+        request.fetchTokenState = "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"
+        request.webhookId = "testId"
+        chai.expect(action.oauthFetchAccessToken(request))
+          .to.be.rejectedWith("OAuth tokens are invalid.")
           .and.notify(stubAccessToken.restore)
           .and.notify(done)
       })
