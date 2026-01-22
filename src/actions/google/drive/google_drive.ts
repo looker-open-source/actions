@@ -50,8 +50,10 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       return resp
     }
 
-    const stateJson = JSON.parse(request.params.state_json)
-    const tokenPayload = await this.oauthExtractTokensFromState(stateJson, request.webhookId)
+    const tokenPayload = await this.oauthExtractTokensFromStateJson(
+      request.params.state_json,
+      request.webhookId,
+    )
     if (tokenPayload) {
       await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
                                          tokenPayload.redirect,
@@ -120,8 +122,10 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
     if (request.params.state_json) {
       try {
-        const stateJson = JSON.parse(request.params.state_json)
-        const tokenPayload = await this.oauthExtractTokensFromState(stateJson, request.webhookId)
+        const tokenPayload = await this.oauthExtractTokensFromStateJson(
+          request.params.state_json,
+          request.webhookId,
+        )
         if (tokenPayload) {
           await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
                                              tokenPayload.redirect,
@@ -323,9 +327,10 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
-      const stateJson = JSON.parse(request.params.state_json)
-      const tokenPayload = await this.oauthExtractTokensFromState(stateJson, request.webhookId)
-
+      const tokenPayload = await this.oauthExtractTokensFromStateJson(
+        request.params.state_json,
+        request.webhookId,
+      )
       if (tokenPayload) {
         const drive = await this.driveClientFromRequest(
           tokenPayload.redirect,
@@ -498,10 +503,11 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
   }
 
-  protected async oauthExtractTokensFromState(
-    state: any,
+  protected async oauthExtractTokensFromStateJson(
+    stateJson: string,
     requestWebhookId: string | undefined,
   ): Promise<Hub.ActionToken | null> {
+      const state = JSON.parse(stateJson)
       let tokenPayload: Hub.ActionToken | null = null
       if (state.cid && state.payload) {
         winston.info("Extracting encrypted state_json", {webhookId: requestWebhookId})

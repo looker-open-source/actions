@@ -41,7 +41,7 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
     protected getUserEmail(redirect: string, tokens: Credentials): Promise<string>;
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
-    protected oauthExtractTokensFromState(state: any, requestWebhookId: string | undefined): Promise<Hub.ActionToken | null>;
+    protected oauthExtractTokensFromStateJson(stateJson: string, requestWebhookId: string | undefined): Promise<Hub.ActionToken | null>;
     protected validTokens(tokens: Credentials, requestWebhookId: string | undefined): boolean;
     protected oauthMaybeEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload | Hub.ActionToken>;
     protected oauthEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload>;
