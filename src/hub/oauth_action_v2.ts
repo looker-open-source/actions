@@ -1,7 +1,7 @@
 import {Action, RouteBuilder} from "./action"
 import {ActionRequest} from "./action_request"
-import { ActionToken } from "./action_token"
-import { EncryptedPayload } from "./encrypted_payload"
+import {ActionToken} from "./action_token"
+import {EncryptedPayload} from "./encrypted_payload"
 
 export abstract class OAuthActionV2 extends Action {
   abstract oauthCheck(request: ActionRequest): Promise<boolean>

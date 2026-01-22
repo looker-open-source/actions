@@ -679,12 +679,101 @@ describe(`${action.constructor.name} unit tests`, () => {
             type: "select",
           }],
           state: {
+            data: JSON.stringify({tokens: "access", redirect: "url"}),
+          },
+        }).and.notify(stubClient.restore).and.notify(done)
+      })
+
+      it("adds option for overwrite with token encryption enabled", (done) => {
+        process.env.ENCRYPT_PAYLOAD = "true"
+
+        const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+          .resolves({
+            files: {
+              list: async () => Promise.resolve({
+                data: {
+                  files: [
+                    {
+                      id: "fake_id",
+                      name: "fake_name",
+                    },
+                  ],
+                },
+              }),
+            },
+            drives: {
+              list: async () => Promise.resolve({
+                data: {
+                  drives: [
+                    {
+                      id: "fake_drive",
+                      name: "fake_drive_label",
+                    },
+                  ],
+                },
+              }),
+            },
+          })
+        const request = new Hub.ActionRequest()
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: JSON.stringify({tokens: "access", redirect: "url"}),
+        }
+        const form = action.validateAndFetchForm(request)
+        chai.expect(form).to.eventually.deep.equal({
+          fields: [{
+            description: "Google Drive where your file will be saved",
+            label: "Select Drive to save file",
+            name: "drive",
+            options: [{name: "mydrive", label: "My Drive"}, {name: "fake_drive", label: "fake_drive_label"}],
+            default: "mydrive",
+            interactive: true,
+            required: true,
+            type: "select",
+          }, {
+            description: "Enter the full Google Drive URL of the folder where you want to save your data. It should look something like https://drive.google.com/corp/drive/folders/xyz. If this is inaccessible, your data will be saved to the root folder of your Google Drive. You do not need to enter a URL if you have already chosen a folder in the dropdown menu.\n",
+            label: "Google Drive Destination URL",
+            name: "folderid",
+            type: "string",
+            required: false,
+          }, {
+            description: "Fetch folders",
+            name: "fetchpls",
+            type: "select",
+            interactive: true,
+            label: "Select Fetch to fetch a list of folders in this drive",
+            options: [{label: "Fetch", name: "fetch"}],
+          }, {
+            label: "Enter a filename",
+            name: "filename",
+            type: "string",
+            required: true,
+          }, {
+            default: "yes",
+            description: "Should this action attempt to overwrite an existing file",
+            label: "Overwrite Existing Files",
+            name: "overwrite",
+            options: [
+              {
+                label: "Yes",
+                name: "yes",
+              }, {
+                label: "No",
+                name: "no",
+              },
+            ],
+            required: true,
+            type: "select",
+          }],
+          state: {
             data: JSON.stringify({
               cid: "stubbed_cid",
               payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
             }),
           },
-        }).and.notify(stubClient.restore).and.notify(done)
+        }).and.notify(stubClient.restore)
+          .and.notify(() => { delete process.env.ENCRYPT_PAYLOAD })
+          .and.notify(done)
       })
     })
 

@@ -10,14 +10,6 @@ import * as Hub from "../../../hub"
 import { ActionCrypto } from "../../../hub"
 import { GoogleDriveAction } from "./google_drive"
 
-import * as chaiAsPromised from "chai-as-promised"
-import * as sinonChai from "sinon-chai"
-import * as winston from "winston"
-
-chai.use(sinonChai)
-chai.use(chaiAsPromised) // should be last
-winston.remove(winston.transports.Console)
-
 const action = new GoogleDriveAction()
 
 const stubFileName = "stubSuggestedFilename"
@@ -375,7 +367,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         state: {
           data: JSON.stringify({
             tokens: "access",
-            redirect: "url"
+            redirect: "url",
           }),
         },
       }).and.notify(stubClient.restore).and.notify(done)

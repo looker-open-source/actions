@@ -226,7 +226,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
             type: "string",
             required: true,
           })
-          const encryptedPayload = await this.oauthEncryptTokens(
+          const encryptedPayload = await this.oauthMaybeEncryptTokens(
             tokenPayload,
             new Hub.ActionCrypto(),
             request.webhookId,
@@ -307,7 +307,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       const tokens = await this.getAccessTokenCredentialsFromCode(state.redirecturi, state.code)
       if (this.validTokens(tokens, request.webhookId)) {
         const tokenPayload = new Hub.ActionToken(tokens, state.redirecturi)
-        const encryptedPayload = await this.oauthEncryptTokens(
+        const encryptedPayload = await this.oauthMaybeEncryptTokens(
           tokenPayload,
           new Hub.ActionCrypto(),
           request.webhookId,
@@ -499,7 +499,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
   }
 
   protected async oauthExtractTokensFromState(
-    state: any, 
+    state: any,
     requestWebhookId: string | undefined,
   ): Promise<Hub.ActionToken | null> {
       let tokenPayload: Hub.ActionToken | null = null
@@ -533,34 +533,42 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     }
   }
 
-  protected async oauthEncryptTokens(
-    tokens: Hub.ActionToken,
+  protected async oauthMaybeEncryptTokens(
+    tokenPayload: Hub.ActionToken,
     actionCrypto: Hub.ActionCrypto,
     requestWebhookId: string | undefined,
   ): Promise<Hub.EncryptedPayload | Hub.ActionToken> {
     if (process.env.ENCRYPT_PAYLOAD === "true") {
-      const jsonTokens = JSON.stringify(tokens)
-      const encrypted = await actionCrypto.encrypt(jsonTokens).catch((err: string) => {
-          winston.error("Encryption not correctly configured", {webhookId: requestWebhookId})
-          throw err
-        })
-      return new Hub.EncryptedPayload(actionCrypto.cipherId(), encrypted)
+      return this.oauthEncryptTokens(tokenPayload, actionCrypto, requestWebhookId)
     } else {
-      return tokens
+      return tokenPayload
     }
   }
 
+  protected async oauthEncryptTokens(
+    tokenPayload: Hub.ActionToken,
+    actionCrypto: Hub.ActionCrypto,
+    requestWebhookId: string | undefined,
+  ): Promise<Hub.EncryptedPayload> {
+    const jsonPayload = JSON.stringify(tokenPayload)
+    const encrypted = await actionCrypto.encrypt(jsonPayload).catch((err: string) => {
+        winston.error("Encryption not correctly configured", {webhookId: requestWebhookId})
+        throw err
+      })
+    return new Hub.EncryptedPayload(actionCrypto.cipherId(), encrypted)
+  }
+
   protected async oauthDecryptTokens(
-    tokenPayload: Hub.EncryptedPayload,
+    encryptedPayload: Hub.EncryptedPayload,
     actionCrypto: Hub.ActionCrypto,
     requestWebhookId: string | undefined,
   ): Promise<Hub.ActionToken> {
-    const jsonTokens = await actionCrypto.decrypt(tokenPayload.payload).catch((err: string) => {
+    const jsonPayload = await actionCrypto.decrypt(encryptedPayload.payload).catch((err: string) => {
         winston.error("Failed to decrypt state_json", {webhookId: requestWebhookId})
         throw err
       })
-    const tokens: Hub.ActionToken = JSON.parse(jsonTokens)
-    return tokens
+    const tokenPayload: Hub.ActionToken = JSON.parse(jsonPayload)
+    return tokenPayload
   }
 
   protected async oauthFetchAndStoreInfo(
@@ -572,7 +580,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
     if (this.validTokens(tokens, requestWebhookId)) {
       const tokenPayload = new Hub.ActionToken(tokens, redirectUri)
-      const encryptedPayload = await this.oauthEncryptTokens(
+      const encryptedPayload = await this.oauthMaybeEncryptTokens(
         tokenPayload,
         new Hub.ActionCrypto(),
         requestWebhookId,

@@ -43,8 +43,9 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
     protected oauthExtractTokensFromState(state: any, requestWebhookId: string | undefined): Promise<Hub.ActionToken | null>;
     protected validTokens(tokens: Credentials, requestWebhookId: string | undefined): boolean;
-    protected oauthEncryptTokens(tokens: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload | Hub.ActionToken>;
-    protected oauthDecryptTokens(tokenPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.ActionToken>;
+    protected oauthMaybeEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload | Hub.ActionToken>;
+    protected oauthEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload>;
+    protected oauthDecryptTokens(encryptedPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.ActionToken>;
     protected oauthFetchAndStoreInfo(urlParams: {
         [key: string]: string;
     }, redirectUri: string, statePayload: OauthState, requestWebhookId: string | undefined): Promise<void>;
