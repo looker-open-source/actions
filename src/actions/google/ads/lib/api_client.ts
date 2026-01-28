@@ -146,7 +146,7 @@ export class GoogleAdsApiClient {
         url,
         data,
         headers,
-        baseURL: "https://googleads.googleapis.com/v19/",
+        baseURL: "https://googleads.googleapis.com/v22/",
       })
 
       if (process.env.ACTION_HUB_DEBUG) {
