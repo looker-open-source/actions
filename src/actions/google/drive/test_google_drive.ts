@@ -43,15 +43,18 @@ function expectGoogleDriveMatch(request: Hub.ActionRequest, paramsMatch: any) {
 describe(`${action.constructor.name} unit tests`, () => {
   let encryptStub: any
   let decryptStub: any
+  let cipherIdStub: any
 
   beforeEach(() => {
     encryptStub = sinon.stub(ActionCrypto.prototype, "encrypt").callsFake( async (s: string) => b64.encode(s) )
     decryptStub = sinon.stub(ActionCrypto.prototype, "decrypt").callsFake( async (s: string) => b64.decode(s) )
+    cipherIdStub = sinon.stub(ActionCrypto.prototype, "cipherId").callsFake( () => "stubbed_cid" )
   })
 
   afterEach(() => {
     encryptStub.restore()
     decryptStub.restore()
+    cipherIdStub.restore()
   })
 
   describe("action", () => {
@@ -326,7 +329,10 @@ describe(`${action.constructor.name} unit tests`, () => {
       const request = new Hub.ActionRequest()
       request.params = {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
-        state_json: JSON.stringify({tokens: "access", redirect: "url"}),
+        state_json: JSON.stringify({
+          cid: "stubbed_cid",
+          payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
+        }),
       }
       const form = action.validateAndFetchForm(request)
       chai.expect(form).to.eventually.deep.equal({
@@ -359,9 +365,91 @@ describe(`${action.constructor.name} unit tests`, () => {
           required: true,
         }],
         state: {
-          data: JSON.stringify({tokens: "access", redirect: "url"}),
+          data: JSON.stringify({
+            tokens: "access",
+            redirect: "url",
+          }),
         },
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+
+    it("returns correct fields on oauth success with token encryption enabled", (done) => {
+      process.env.ENCRYPT_PAYLOAD = "true"
+
+      const stubClient = sinon.stub(action as any, "driveClientFromRequest")
+        .resolves({
+          files: {
+            list: async () => Promise.resolve({
+              data: {
+                files: [
+                  {
+                    id: "fake_id",
+                    name: "fake_name",
+                  },
+                ],
+              },
+            }),
+          },
+          drives: {
+            list: async () => Promise.resolve({
+              data: {
+                drives: [
+                  {
+                    id: "fake_drive",
+                    name: "fake_drive_label",
+                  },
+                ],
+              },
+            }),
+          },
+        })
+      const request = new Hub.ActionRequest()
+      request.params = {
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({
+          cid: "stubbed_cid",
+          payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
+        }),
+      }
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          description: "Google Drive where your file will be saved",
+          label: "Select Drive to save file",
+          name: "drive",
+          options: [{name: "mydrive", label: "My Drive"}, {name: "fake_drive", label: "fake_drive_label"}],
+          default: "mydrive",
+          interactive: true,
+          required: true,
+          type: "select",
+        }, {
+          description: "Enter the full Google Drive URL of the folder where you want to save your data. It should look something like https://drive.google.com/corp/drive/folders/xyz. If this is inaccessible, your data will be saved to the root folder of your Google Drive. You do not need to enter a URL if you have already chosen a folder in the dropdown menu.\n",
+          label: "Google Drive Destination URL",
+          name: "folderid",
+          type: "string",
+          required: false,
+        }, {
+          description: "Fetch folders",
+          name: "fetchpls",
+          type: "select",
+          interactive: true,
+          label: "Select Fetch to fetch a list of folders in this drive",
+          options: [{label: "Fetch", name: "fetch"}],
+        }, {
+          label: "Enter a filename",
+          name: "filename",
+          type: "string",
+          required: true,
+        }],
+        state: {
+          data: JSON.stringify({
+            cid: "stubbed_cid",
+            payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
+          }),
+        },
+      }).and.notify(stubClient.restore)
+        .and.notify(() => { delete process.env.ENCRYPT_PAYLOAD })
+        .and.notify(done)
     })
   })
 
@@ -403,12 +491,51 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       it("correctly handles request from Looker to fetch token", (done) => {
         const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode")
-          .resolves({tokens: "token"})
+          .resolves({access_token: "access", refresh_token: "refresh"})
         const request = new Hub.ActionRequest()
         request.fetchTokenState = "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"
         request.webhookId = "testId"
         const tokenPayload = action.oauthFetchAccessToken(request)
-        chai.expect(tokenPayload).to.eventually.deep.equal({tokens: {tokens: "token"}, redirect: "redirect"})
+        chai.expect(tokenPayload).to.eventually.deep.equal({
+          tokens: {
+            access_token: "access",
+            refresh_token: "refresh",
+          },
+          redirect: "redirect",
+        }).and.notify(stubAccessToken.restore)
+          .and.notify(done)
+      })
+
+      it("correctly handles request from Looker to fetch token when encryption enabled", (done) => {
+        process.env.ENCRYPT_PAYLOAD = "true"
+        const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode")
+          .resolves({access_token: "access", refresh_token: "refresh"})
+        const request = new Hub.ActionRequest()
+        request.fetchTokenState = "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"
+        request.webhookId = "testId"
+        const tokenPayload = action.oauthFetchAccessToken(request)
+        chai.expect(tokenPayload).to.eventually.deep.equal({
+          cid: "stubbed_cid",
+          payload: b64.encode(JSON.stringify({
+            tokens: {
+              access_token: "access",
+              refresh_token: "refresh",
+            },
+            redirect: "redirect",
+          })),
+        }).and.notify(stubAccessToken.restore)
+          .and.notify(() => { delete process.env.ENCRYPT_PAYLOAD })
+          .and.notify(done)
+      })
+
+      it("throws an error if refresh_token absent", (done) => {
+        const stubAccessToken = sinon.stub(action as any, "getAccessTokenCredentialsFromCode")
+          .resolves({access_token: "access"})
+        const request = new Hub.ActionRequest()
+        request.fetchTokenState = "eyJjb2RlIjoiY29kZSIsInJlZGlyZWN0dXJpIjoicmVkaXJlY3QifQ"
+        request.webhookId = "testId"
+        chai.expect(action.oauthFetchAccessToken(request))
+          .to.be.rejectedWith("OAuth tokens are invalid.")
           .and.notify(stubAccessToken.restore)
           .and.notify(done)
       })

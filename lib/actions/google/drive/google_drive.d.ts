@@ -30,7 +30,7 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     oauthHandleRedirect(urlParams: {
         [key: string]: string;
     }, redirectUri: string): Promise<string>;
-    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.ActionToken>;
+    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.ActionToken | Hub.EncryptedPayload>;
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauth2Client(redirectUri: string | undefined): OAuth2Client;
     sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponse<drive_v3.Schema$File>>;
@@ -41,9 +41,14 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
     protected getUserEmail(redirect: string, tokens: Credentials): Promise<string>;
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
+    protected oauthExtractTokensFromStateJson(stateJson: string, requestWebhookId: string | undefined): Promise<Hub.ActionToken | null>;
+    protected validTokens(tokens: Credentials, requestWebhookId: string | undefined): boolean;
+    protected oauthMaybeEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload | Hub.ActionToken>;
+    protected oauthEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload>;
+    protected oauthDecryptTokens(encryptedPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.ActionToken>;
     protected oauthFetchAndStoreInfo(urlParams: {
         [key: string]: string;
-    }, redirectUri: string, statePayload: OauthState): Promise<void>;
+    }, redirectUri: string, statePayload: OauthState, requestWebhookId: string | undefined): Promise<void>;
     protected oauthCreateLookerRedirectUrl(urlParams: {
         [key: string]: string;
     }, redirectUri: string, actionCrypto: Hub.ActionCrypto, statePayload: OauthState): Promise<string>;

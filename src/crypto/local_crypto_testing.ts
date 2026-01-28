@@ -27,4 +27,7 @@ export class LocalCryptoTesting implements CryptoProvider {
     cipherText += cipher.final("utf8")
     return cipherText
   }
+  cipherId() {
+    return "fake_hash"
+  }
 }

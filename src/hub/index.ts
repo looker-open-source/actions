@@ -7,6 +7,7 @@ export * from "./oauth_action"
 export * from "./oauth_action_v2"
 export * from "./delegate_oauth_action"
 export * from "./action_token"
+export * from "./encrypted_payload"
 export * from "./sources"
 export * from "./utils"
 

@@ -50,11 +50,14 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       return resp
     }
 
-    const stateJson = JSON.parse(request.params.state_json)
-    if (stateJson.tokens && stateJson.redirect) {
+    const tokenPayload = await this.oauthExtractTokensFromStateJson(
+      request.params.state_json,
+      request.webhookId,
+    )
+    if (tokenPayload) {
       await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
-                                         stateJson.redirect,
-                                         stateJson.tokens,
+                                         tokenPayload.redirect,
+                                         tokenPayload.tokens,
                                          request.webhookId)
         .catch((error) => {
           winston.info(error + " - invalidating token", {webhookId: request.webhookId})
@@ -64,7 +67,10 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
           return resp
         })
 
-      const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
+      const drive = await this.driveClientFromRequest(
+        tokenPayload.redirect,
+        tokenPayload.tokens,
+      )
 
       const filename = request.formParams.filename || request.suggestedFilename()
       if (!filename) {
@@ -116,11 +122,14 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
     if (request.params.state_json) {
       try {
-        const stateJson = JSON.parse(request.params.state_json)
-        if (stateJson.tokens && stateJson.redirect) {
+        const tokenPayload = await this.oauthExtractTokensFromStateJson(
+          request.params.state_json,
+          request.webhookId,
+        )
+        if (tokenPayload) {
           await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
-                                             stateJson.redirect,
-                                             stateJson.tokens,
+                                             tokenPayload.redirect,
+                                             tokenPayload.tokens,
                                              request.webhookId)
             .catch((error) => {
               winston.info(error + " - invalidating token", {webhookId: request.webhookId})
@@ -129,7 +138,10 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
               throw "Domain Verification Failed"
             })
 
-          const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
+          const drive = await this.driveClientFromRequest(
+            tokenPayload.redirect,
+            tokenPayload.tokens,
+          )
 
           const paginatedDrives = await this.getDrives(drive, [], await drive.drives.list({pageSize: 50}))
           const driveSelections = paginatedDrives.filter((_drive) => (
@@ -218,8 +230,13 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
             type: "string",
             required: true,
           })
+          const encryptedPayload = await this.oauthMaybeEncryptTokens(
+            tokenPayload,
+            new Hub.ActionCrypto(),
+            request.webhookId,
+          )
           form.state = new Hub.ActionState()
-          form.state.data = JSON.stringify({tokens: stateJson.tokens, redirect: stateJson.redirect})
+          form.state.data = JSON.stringify(encryptedPayload)
           return form
         }
       } catch (e: any) {
@@ -277,7 +294,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     } else {
       // Pass back context to Looker
       winston.info("Redirected with V1 flow")
-      await this.oauthFetchAndStoreInfo(urlParams, redirectUri, statePayload)
+      await this.oauthFetchAndStoreInfo(urlParams, redirectUri, statePayload, undefined)
       return ""
     }
   }
@@ -292,7 +309,17 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
       const state = JSON.parse(plaintext)
 
       const tokens = await this.getAccessTokenCredentialsFromCode(state.redirecturi, state.code)
-      return new Hub.ActionToken(tokens, state.redirecturi)
+      if (this.validTokens(tokens, request.webhookId)) {
+        const tokenPayload = new Hub.ActionToken(tokens, state.redirecturi)
+        const encryptedPayload = await this.oauthMaybeEncryptTokens(
+          tokenPayload,
+          new Hub.ActionCrypto(),
+          request.webhookId,
+        )
+        return encryptedPayload
+      } else {
+        throw new Error("OAuth tokens are invalid.")
+      }
     } else {
       throw new Error("Request is missing state parameter.")
     }
@@ -300,9 +327,15 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
-      const stateJson = JSON.parse(request.params.state_json)
-      if (stateJson.tokens && stateJson.redirect) {
-        const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
+      const tokenPayload = await this.oauthExtractTokensFromStateJson(
+        request.params.state_json,
+        request.webhookId,
+      )
+      if (tokenPayload) {
+        const drive = await this.driveClientFromRequest(
+          tokenPayload.redirect,
+          tokenPayload.tokens,
+        )
         await drive.files.list({
           pageSize: 10,
         })
@@ -470,16 +503,116 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
   }
 
+  protected async oauthExtractTokensFromStateJson(
+    stateJson: string,
+    requestWebhookId: string | undefined,
+  ): Promise<Hub.ActionToken | null> {
+      let state: any | null = null
+      try {
+        state = JSON.parse(stateJson)
+      } catch (e: any) {
+        winston.error(
+          `Failed to parse state_json: ${e.message}`,
+          {webhookId: requestWebhookId},
+        )
+        // state remains null
+      }
+      let tokenPayload: Hub.ActionToken | null = null
+      if (state.cid && state.payload) {
+        winston.info("Extracting encrypted state_json", {webhookId: requestWebhookId})
+        const encryptedPayload = new Hub.EncryptedPayload(state.cid, state.payload)
+        try {
+          tokenPayload = await this.oauthDecryptTokens(
+            encryptedPayload,
+            new Hub.ActionCrypto(),
+            requestWebhookId,
+          )
+        } catch (e: any) {
+          winston.error(
+            `Failed to decrypt or parse encrypted payload: ${e.message}`,
+            {webhookId: requestWebhookId},
+          )
+          // tokenPayload remains null
+        }
+      } else if (state.tokens && state.redirect) {
+        winston.info("Extracting unencrypted state_json", {webhookId: requestWebhookId})
+        tokenPayload = new Hub.ActionToken(state.tokens, state.redirect)
+      }
+      if (tokenPayload === null) {
+        winston.error("Invalid state_json", {webhookId: requestWebhookId})
+      }
+      return tokenPayload
+  }
+
+  protected validTokens(
+    tokens: Credentials,
+    requestWebhookId: string | undefined,
+  ): boolean {
+    if (tokens.refresh_token) {
+      return true
+    } else {
+      winston.error("Invalid OAuth token payload", {webhookId: requestWebhookId})
+      return false
+    }
+  }
+
+  protected async oauthMaybeEncryptTokens(
+    tokenPayload: Hub.ActionToken,
+    actionCrypto: Hub.ActionCrypto,
+    requestWebhookId: string | undefined,
+  ): Promise<Hub.EncryptedPayload | Hub.ActionToken> {
+    if (process.env.ENCRYPT_PAYLOAD === "true") {
+      return this.oauthEncryptTokens(tokenPayload, actionCrypto, requestWebhookId)
+    } else {
+      return tokenPayload
+    }
+  }
+
+  protected async oauthEncryptTokens(
+    tokenPayload: Hub.ActionToken,
+    actionCrypto: Hub.ActionCrypto,
+    requestWebhookId: string | undefined,
+  ): Promise<Hub.EncryptedPayload> {
+    const jsonPayload = JSON.stringify(tokenPayload)
+    const encrypted = await actionCrypto.encrypt(jsonPayload).catch((err: string) => {
+        winston.error("Encryption not correctly configured", {webhookId: requestWebhookId})
+        throw err
+      })
+    return new Hub.EncryptedPayload(actionCrypto.cipherId(), encrypted)
+  }
+
+  protected async oauthDecryptTokens(
+    encryptedPayload: Hub.EncryptedPayload,
+    actionCrypto: Hub.ActionCrypto,
+    requestWebhookId: string | undefined,
+  ): Promise<Hub.ActionToken> {
+    const jsonPayload = await actionCrypto.decrypt(encryptedPayload.payload).catch((err: string) => {
+        winston.error("Failed to decrypt state_json", {webhookId: requestWebhookId})
+        throw err
+      })
+    const tokenPayload: Hub.ActionToken = JSON.parse(jsonPayload)
+    return tokenPayload
+  }
+
   protected async oauthFetchAndStoreInfo(
     urlParams: { [key: string]: string },
     redirectUri: string,
     statePayload: OauthState,
+    requestWebhookId: string | undefined,
   ) {
     const tokens = await this.getAccessTokenCredentialsFromCode(redirectUri, urlParams.code)
-    await https.post({
-      url: statePayload.stateurl!,
-      body: JSON.stringify({tokens, redirect: redirectUri}),
-    }).catch((_err) => { winston.error(_err.toString()) })
+    if (this.validTokens(tokens, requestWebhookId)) {
+      const tokenPayload = new Hub.ActionToken(tokens, redirectUri)
+      const encryptedPayload = await this.oauthMaybeEncryptTokens(
+        tokenPayload,
+        new Hub.ActionCrypto(),
+        requestWebhookId,
+      )
+      await https.post({
+        url: statePayload.stateurl!,
+        body: JSON.stringify(encryptedPayload),
+      }).catch((_err) => { winston.error(_err.toString()) })
+    }
   }
 
   protected async oauthCreateLookerRedirectUrl(
