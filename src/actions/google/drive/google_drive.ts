@@ -507,16 +507,33 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     stateJson: string,
     requestWebhookId: string | undefined,
   ): Promise<Hub.ActionToken | null> {
-      const state = JSON.parse(stateJson)
+      let state: any | null = null
+      try {
+        state = JSON.parse(stateJson)
+      } catch (e: any) {
+        winston.error(
+          `Failed to parse state_json: ${e.message}`,
+          {webhookId: requestWebhookId},
+        )
+        // state remains null
+      }
       let tokenPayload: Hub.ActionToken | null = null
       if (state.cid && state.payload) {
         winston.info("Extracting encrypted state_json", {webhookId: requestWebhookId})
         const encryptedPayload = new Hub.EncryptedPayload(state.cid, state.payload)
-        tokenPayload = await this.oauthDecryptTokens(
-          encryptedPayload,
-          new Hub.ActionCrypto(),
-          requestWebhookId,
-        )
+        try {
+          tokenPayload = await this.oauthDecryptTokens(
+            encryptedPayload,
+            new Hub.ActionCrypto(),
+            requestWebhookId,
+          )
+        } catch (e: any) {
+          winston.error(
+            `Failed to decrypt or parse encrypted payload: ${e.message}`,
+            {webhookId: requestWebhookId},
+          )
+          // tokenPayload remains null
+        }
       } else if (state.tokens && state.redirect) {
         winston.info("Extracting unencrypted state_json", {webhookId: requestWebhookId})
         tokenPayload = new Hub.ActionToken(state.tokens, state.redirect)
