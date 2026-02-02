@@ -84,6 +84,31 @@ describe(`${action.constructor.name} unit tests`, () => {
         })
       })
 
+      it("successfully interprets execute with encrypted request params", () => {
+        const request = new Hub.ActionRequest()
+        const dataBuffer = Buffer.from("Hello")
+        request.type = Hub.ActionType.Query
+        request.attachment = {dataBuffer, fileExtension: "csv"}
+        request.formParams = {filename: stubFileName, folder: stubFolder}
+        request.params = {
+          state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+          state_json: JSON.stringify({
+            cid: "stubbed_cid",
+            payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
+          }),
+        }
+        return expectGoogleSheetsMatch(request, {
+          requestBody: {
+            name: stubFileName,
+            mimeType: "application/vnd.google-apps.spreadsheet",
+            parents: [stubFolder],
+          },
+          media: {
+            body: dataBuffer,
+          },
+        })
+      })
+
       it("uses sheets overwrite code if overwrite is true and a file exists", (done) => {
         const stubDriveClient = sinon.stub(action as any, "driveClientFromRequest")
           .resolves({
