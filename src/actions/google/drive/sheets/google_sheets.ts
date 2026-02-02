@@ -44,12 +44,14 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             return resp
         }
 
-        const stateJson = JSON.parse(request.params.state_json)
-
-        if (stateJson.tokens && stateJson.redirect) {
+        const tokenPayload = await this.oauthExtractTokensFromStateJson(
+            request.params.state_json,
+            request.webhookId,
+        )
+        if (tokenPayload) {
             await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
-                                                     stateJson.redirect,
-                                                     stateJson.tokens,
+                                                     tokenPayload.redirect,
+                                                     tokenPayload.tokens,
                                                      request.webhookId)
                 .catch((error) => {
                     winston.info(error + " - invalidating token", {webhookId: request.webhookId})
@@ -60,7 +62,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
                     return resp
             })
 
-            const drive = await this.driveClientFromRequest(stateJson.redirect, stateJson.tokens)
+            const drive = await this.driveClientFromRequest(tokenPayload.redirect, tokenPayload.tokens)
 
             let filename = request.formParams.filename || request.suggestedFilename()
             if (!filename) {
@@ -79,7 +81,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
             }
             try {
                 if (request.formParams.overwrite === "yes") {
-                    const sheet = await this.sheetsClientFromRequest(stateJson.redirect, stateJson.tokens)
+                    const sheet = await this.sheetsClientFromRequest(tokenPayload.redirect, tokenPayload.tokens)
                     await this.sendOverwriteData(filename, request, drive, sheet)
                     resp.success = true
                 } else {

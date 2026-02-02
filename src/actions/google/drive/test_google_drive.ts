@@ -81,6 +81,31 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("successfully interprets execute with encrypted request params", () => {
+      const request = new Hub.ActionRequest()
+      const dataBuffer = Buffer.from("Hello")
+      request.type = Hub.ActionType.Query
+      request.attachment = {dataBuffer, fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, folder: stubFolder}
+      request.params = {
+        state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
+        state_json: JSON.stringify({
+          cid: "stubbed_cid",
+          payload: b64.encode(JSON.stringify({tokens: "access", redirect: "url"})),
+        }),
+      }
+      return expectGoogleDriveMatch(request, {
+        requestBody: {
+          name: stubFileName,
+          mimeType: undefined,
+          parents: [stubFolder],
+        },
+        media: {
+          body: dataBuffer,
+        },
+      })
+    })
+
     it("sets state to reset if error in create", (done) => {
       const request = new Hub.ActionRequest()
       const dataBuffer = Buffer.from("Hello")
