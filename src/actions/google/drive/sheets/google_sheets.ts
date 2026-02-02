@@ -47,7 +47,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
         const tokenPayload = await this.oauthExtractTokensFromStateJson(
             request.params.state_json,
             request.webhookId,
-            )
+        )
         if (tokenPayload) {
             await this.validateUserInDomainAllowlist(request.params.domain_allowlist,
                                                      tokenPayload.redirect,
