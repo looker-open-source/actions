@@ -507,15 +507,15 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     stateJson: string,
     requestWebhookId: string | undefined,
   ): Promise<Hub.ActionToken | null> {
-      let state: any | null = null
+      let state: any
       try {
         state = JSON.parse(stateJson)
       } catch (e: any) {
         winston.error(
-          `Failed to parse state_json: ${e.message}`,
+          `Failed to parse state_json`,
           {webhookId: requestWebhookId},
         )
-        // state remains null
+        return null
       }
       let tokenPayload: Hub.ActionToken | null = null
       if (state.cid && state.payload) {
