@@ -4,7 +4,7 @@ import * as Hub from "../../../../hub"
 import { Logger } from "../../common/logger"
 import { MissingAuthError } from "../../common/missing_auth_error"
 import { MissingRequiredParamsError } from "../../common/missing_required_params_error"
-import { safeParseJson } from "../../common/utils"
+
 import { GoogleAnalyticsDataImportAction } from "../data_import"
 import { CsvHeaderTransformStream } from "./csv_header_transform_stream"
 
@@ -21,7 +21,11 @@ export class GoogleAnalyticsActionWorker {
     actionInstance: GoogleAnalyticsDataImportAction,
     logger: Logger,
   ) {
-    const gaWorker = new GoogleAnalyticsActionWorker(hubRequest, actionInstance, logger)
+    const userState = await actionInstance.oauthExtractTokensFromStateJson(
+      `${hubRequest.params.state_json}`,
+      hubRequest.webhookId!,
+    )
+    const gaWorker = new GoogleAnalyticsActionWorker(hubRequest, actionInstance, logger, userState)
     return gaWorker
   }
 
@@ -34,8 +38,9 @@ export class GoogleAnalyticsActionWorker {
     readonly hubRequest: Hub.ActionRequest,
     readonly actionInstance: GoogleAnalyticsDataImportAction,
     readonly log: Logger,
+    userState: any,
   ) {
-    const tmpState = safeParseJson(hubRequest.params.state_json)
+    const tmpState = userState
 
     if (!tmpState || !tmpState.tokens || !tmpState.redirect) {
       throw new MissingAuthError("User state was missing or did not contain tokens & redirect")

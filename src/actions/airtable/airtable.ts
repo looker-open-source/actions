@@ -54,31 +54,33 @@ export class AirtableAction extends Hub.OAuthAction {
     try {
       let accessToken
       if (request.params.state_json) {
-        const stateJson = JSON.parse(request.params.state_json)
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
         accessToken = stateJson.tokens.access_token
-        state.data = JSON.stringify({
+        const encrypted = await this.oauthMaybeEncryptTokens({
           tokens: {
             refresh_token: stateJson.tokens.refresh_token,
             access_token: accessToken,
           },
-        })
+        }, request.webhookId)
+        state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
       }
 
       try {
         await this.executeAirtable(request, records, accessToken)
       } catch {
         if (request.params.state_json) {
-          const stateJson = JSON.parse(request.params.state_json)
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
           // @ts-ignore
           if (Object.keys(refreshResponse.data as any).length !== 0) {
             accessToken = (refreshResponse as any).data.access_token
-            state.data = JSON.stringify({
+            const encrypted = await this.oauthMaybeEncryptTokens({
               tokens: {
                 refresh_token: (refreshResponse as any).data.refresh_token,
                 access_token: accessToken,
               },
-            })
+            }, request.webhookId)
+            state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
           } else {
             delete state.data
           }
@@ -110,29 +112,36 @@ export class AirtableAction extends Hub.OAuthAction {
     const form = new Hub.ActionForm()
     try {
       let accessToken
+      let stateJson
       if (request.params.state_json) {
-        const stateJson = JSON.parse(request.params.state_json)
+        stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
         accessToken = stateJson.tokens.access_token
       }
       try {
         await this.checkBaseList(accessToken)
         if (form.state === undefined) {
           form.state = new ActionState()
-          form.state.data = request.params.state_json
+          if (stateJson) {
+            const encrypted = await this.oauthMaybeEncryptTokens(stateJson, request.webhookId)
+            form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+          }
         }
       } catch {
         // Assume the failure is due to Oauth failure,
         // refresh token and retry once.
         if (request.params.state_json) {
-          const stateJson = JSON.parse(request.params.state_json)
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
           if (Object.keys(refreshResponse.data as any).length !== 0) {
             accessToken = (refreshResponse as any).data.access_token
             form.state = new ActionState()
-            form.state.data = JSON.stringify({tokens: {
+            const encrypted = await this.oauthMaybeEncryptTokens({
+              tokens: {
                 refresh_token: (refreshResponse as any).data.refresh_token,
                 access_token: accessToken,
-              }})
+            }
+            }, request.webhookId)
+            form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
           }
         }
         await this.checkBaseList(accessToken)

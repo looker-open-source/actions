@@ -3,16 +3,10 @@ import { Credentials, OAuth2Client } from "google-auth-library";
 import { drive_v3 } from "googleapis";
 import * as Hub from "../../../hub";
 import Drive = drive_v3.Drive;
+import { DriveTokens } from "./drive_tokens";
 interface OauthState {
     tokenurl?: string;
     stateurl?: string;
-}
-declare class DriveTokens extends Hub.TokenPayload {
-    tokens: any;
-    redirect: string;
-    constructor(tokens: any, redirect: string);
-    static fromJson(json: any): DriveTokens;
-    asJson(): any;
 }
 export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     name: string;

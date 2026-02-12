@@ -160,7 +160,7 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     let tokens: Tokens
 
     try {
-      const stateJson = JSON.parse(request.params.state_json)
+      const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
       if (stateJson.access_token && stateJson.refresh_token) {
         tokens = stateJson
       } else {
@@ -179,7 +179,8 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
       response.message = message
       tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
       response.state = new Hub.ActionState()
-      response.state.data = JSON.stringify(tokens)
+      const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId)
+      response.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
     } catch (e: any) {
       response = { success: false, message: e.message }
     }
@@ -205,13 +206,14 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
     // scenarios 1 and 2 will show loginForm, 3 and 4 will show formBuilder
     if (request.params.state_json) {
       try {
-        const stateJson = JSON.parse(request.params.state_json)
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
         if (stateJson.access_token && stateJson.refresh_token) {
           tokens = stateJson
         } else {
           tokens = await this.sfdcOauthHelper.getAccessTokensFromAuthCode(stateJson)
           form.state = new Hub.ActionState()
-          form.state.data = JSON.stringify(tokens)
+          const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId)
+          form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
         }
 
         // passing back connection object to handle access token refresh and update state
@@ -220,7 +222,8 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
         form.fields = fields
         tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
         form.state = new Hub.ActionState()
-        form.state.data = JSON.stringify(tokens)
+        const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId)
+        form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
 
         return form
       } catch (e: any) {

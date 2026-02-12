@@ -4,7 +4,7 @@ import * as Hub from "../../../../hub"
 import { Logger } from "../../common/logger"
 import { MissingAuthError } from "../../common/missing_auth_error"
 import { MissingRequiredParamsError } from "../../common/missing_required_params_error"
-import { safeParseJson } from "../../common/utils"
+
 import { GoogleAdsCustomerMatch } from "../customer_match"
 import { GoogleAdsActionExecutor} from "./ads_executor"
 import { GoogleAdsActionFormBuilder } from "./ads_form_builder"
@@ -20,7 +20,11 @@ const LOG_PREFIX = "[G Ads Customer Match]"
 export class GoogleAdsActionRequest {
 
   static async fromHub(hubRequest: Hub.ActionRequest, action: GoogleAdsCustomerMatch, logger: Logger) {
-    const adsReq = new GoogleAdsActionRequest(hubRequest, action, logger)
+    const userState = await action.oauthExtractTokensFromStateJson(
+      `${hubRequest.params.state_json}`,
+      hubRequest.webhookId!,
+    )
+    const adsReq = new GoogleAdsActionRequest(hubRequest, action, logger, userState)
     await adsReq.checkTokens()
     adsReq.setApiClient()
     return adsReq
@@ -36,9 +40,10 @@ export class GoogleAdsActionRequest {
     readonly hubRequest: Hub.ActionRequest,
     readonly actionInstance: GoogleAdsCustomerMatch,
     readonly log: Logger,
+    userState: any,
   ) {
 
-    const state = safeParseJson(`${hubRequest.params.state_json}`)
+    const state = userState
 
     if (!state || !state.tokens || !state.tokens.access_token || !state.tokens.refresh_token || !state.redirect) {
       winston.warn(

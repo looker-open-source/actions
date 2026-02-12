@@ -6,17 +6,11 @@ import * as winston from "winston"
 export class EncryptedPayload {
 
   static get crypto() {
-    if (this._crypto === undefined) {
-      this._crypto = new ActionCrypto()
-    }
-    return this._crypto
+    return new ActionCrypto()
   }
 
   static get currentCipherId() {
-    if (this._currentCipherId === undefined) {
-      this._currentCipherId = this.crypto.cipherId()
-    }
-    return this._currentCipherId
+    return this.crypto.cipherId()
   }
 
   static async encrypt(
@@ -30,8 +24,7 @@ export class EncryptedPayload {
     })
     return new EncryptedPayload(this.currentCipherId, encrypted)
   }
-  private static _crypto: ActionCrypto | undefined = undefined
-  private static _currentCipherId: string | undefined = undefined
+
 
   constructor(public cid: string, public payload: string) {}
 

@@ -47,6 +47,6 @@ export class WrappedResponse<T extends HubTypes> {
 
   setUserState(userState: any) {
     this._hubResp.state = new Hub.ActionState()
-    this._hubResp.state.data = JSON.stringify(userState)
+    this._hubResp.state.data = typeof userState === "string" ? userState : JSON.stringify(userState)
   }
 }

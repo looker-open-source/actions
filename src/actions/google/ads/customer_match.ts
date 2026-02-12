@@ -82,7 +82,8 @@ export class GoogleAdsCustomerMatch
       const adsRequest = await GoogleAdsActionRequest.fromHub(hubReq, this, log)
       await adsRequest.execute()
       log("info", "Execution complete")
-      return wrappedResp.returnSuccess(adsRequest.userState)
+      const encrypted = await this.oauthMaybeEncryptTokens(adsRequest.userState, hubReq.webhookId)
+      return wrappedResp.returnSuccess(encrypted)
     } catch (err: any) {
       sanitizeError(err)
       makeBetterErrorMessage(err, hubReq.webhookId)
@@ -98,7 +99,8 @@ export class GoogleAdsCustomerMatch
     try {
       const adsWorker = await GoogleAdsActionRequest.fromHub(hubReq, this, log)
       wrappedResp.form = await adsWorker.makeForm()
-      return wrappedResp.returnSuccess(adsWorker.userState)
+      const encrypted = await this.oauthMaybeEncryptTokens(adsWorker.userState, hubReq.webhookId)
+      return wrappedResp.returnSuccess(encrypted)
       // Use this code if you need to force a state reset and redo oauth login
       // wrappedResp.form = await this.oauthHelper.makeLoginForm(hubReq)
       // wrappedResp.resetState()

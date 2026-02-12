@@ -17,7 +17,7 @@ export declare class GoogleAnalyticsActionWorker {
     userState: GAUserState;
     formParams: any;
     newUploadId?: string;
-    constructor(hubRequest: Hub.ActionRequest, actionInstance: GoogleAnalyticsDataImportAction, log: Logger);
+    constructor(hubRequest: Hub.ActionRequest, actionInstance: GoogleAnalyticsDataImportAction, log: Logger, userState: any);
     makeGAClient(): analytics_v3.Analytics;
     get redirect(): string;
     get tokens(): Credentials;
