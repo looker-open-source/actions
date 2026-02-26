@@ -25,7 +25,6 @@ export class EncryptedPayload {
     return new EncryptedPayload(this.currentCipherId, encrypted)
   }
 
-
   constructor(public cid: string, public payload: string) {}
 
   async decrypt(webhookId: string | undefined): Promise<TokenPayload> {

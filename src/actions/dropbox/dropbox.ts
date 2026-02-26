@@ -97,11 +97,9 @@ export class DropboxAction extends Hub.OAuthAction {
         }],
       }]
       if (accessToken !== "") {
-        if (accessToken !== "") {
-          const encrypted = await this.oauthMaybeEncryptTokens({ access_token: accessToken }, request.webhookId)
+        const encrypted = await this.oauthMaybeEncryptTokens({ access_token: accessToken }, request.webhookId)
         form.state = new Hub.ActionState()
-          form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
-        }
+        form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
       }
       return form
     } catch (_error) {

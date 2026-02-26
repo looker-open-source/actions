@@ -222,8 +222,8 @@ export class SalesforceCampaignsAction extends Hub.OAuthAction {
         form.fields = fields
         tokens = { access_token: sfdcConn.accessToken, refresh_token: sfdcConn.refreshToken }
         form.state = new Hub.ActionState()
-        const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId)
-        form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+        const encryptedState = await this.oauthMaybeEncryptTokens(tokens, request.webhookId)
+        form.state.data = typeof encryptedState === "string" ? encryptedState : JSON.stringify(encryptedState)
 
         return form
       } catch (e: any) {

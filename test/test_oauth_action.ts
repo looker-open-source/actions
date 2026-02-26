@@ -74,8 +74,6 @@ describe("OAuthAction Encryption", () => {
       sinon.assert.calledOnce(encryptStub)
       delete process.env.ENCRYPT_PAYLOAD_TEST_OAUTH
     })
-
-
   })
 
   describe("oauthExtractTokensFromStateJson", () => {

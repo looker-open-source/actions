@@ -4,7 +4,8 @@ import * as crypto from "crypto"
 import * as gaxios from "gaxios"
 import * as qs from "qs"
 import * as winston from "winston"
-import {ActionResponse, ActionState} from "../../hub"
+import { ActionResponse, ActionState } from "../../hub"
+import { AirtableTokens } from "./airtable_tokens"
 
 const airtable: any = require("airtable")
 
@@ -49,44 +50,44 @@ export class AirtableAction extends Hub.OAuthAction {
       return record
     })
 
-    const response = new ActionResponse({success: true})
+    const response = new ActionResponse({ success: true })
     const state = new ActionState()
     try {
-      let accessToken
+      let accessToken: string | undefined
+      let tokens: AirtableTokens | undefined
       if (request.params.state_json) {
-        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-        accessToken = stateJson.tokens.access_token
-        const encrypted = await this.oauthMaybeEncryptTokens({
-          tokens: {
-            refresh_token: stateJson.tokens.refresh_token,
-            access_token: accessToken,
-          },
-        }, request.webhookId)
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+        tokens = AirtableTokens.fromJson(stateJson)
+        accessToken = tokens.access_token
+        const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
+          tokens.refresh_token,
+          accessToken,
+          tokens.redirectUri,
+        ), request.webhookId!)
         state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
       }
 
       try {
-        await this.executeAirtable(request, records, accessToken)
+        await this.executeAirtable(request, records, accessToken as string)
       } catch {
-        if (request.params.state_json) {
-          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+        if (request.params.state_json && tokens) {
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
-          // @ts-ignore
-          if (Object.keys(refreshResponse.data as any).length !== 0) {
-            accessToken = (refreshResponse as any).data.access_token
-            const encrypted = await this.oauthMaybeEncryptTokens({
-              tokens: {
-                refresh_token: (refreshResponse as any).data.refresh_token,
-                access_token: accessToken,
-              },
-            }, request.webhookId)
+          const refreshData = refreshResponse.data as Record<string, string>
+          if (Object.keys(refreshData).length !== 0) {
+            accessToken = refreshData.access_token
+            const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
+              refreshData.refresh_token,
+              accessToken,
+              tokens.redirectUri,
+            ), request.webhookId!)
             state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
           } else {
             delete state.data
           }
         }
         // Try again one more time
-        await this.executeAirtable(request, records, accessToken)
+        await this.executeAirtable(request, records, accessToken as string)
       }
     } catch (e: any) {
       response.success = false
@@ -111,40 +112,43 @@ export class AirtableAction extends Hub.OAuthAction {
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     try {
-      let accessToken
-      let stateJson
+      let accessToken: string | undefined
+      let tokens: AirtableTokens | undefined
       if (request.params.state_json) {
-        stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-        accessToken = stateJson.tokens.access_token
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+        tokens = AirtableTokens.fromJson(stateJson)
+        accessToken = tokens.access_token
       }
       try {
-        await this.checkBaseList(accessToken)
+        await this.checkBaseList(accessToken as string)
         if (form.state === undefined) {
           form.state = new ActionState()
-          if (stateJson) {
-            const encrypted = await this.oauthMaybeEncryptTokens(stateJson, request.webhookId)
-            form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+          if (tokens) {
+            const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId!)
+            const encryptedStr = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+            request.params.state_json = encryptedStr
+            form.state.data = encryptedStr
           }
         }
       } catch {
         // Assume the failure is due to Oauth failure,
         // refresh token and retry once.
-        if (request.params.state_json) {
-          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+        if (request.params.state_json && tokens) {
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
-          if (Object.keys(refreshResponse.data as any).length !== 0) {
-            accessToken = (refreshResponse as any).data.access_token
+          const refreshData = refreshResponse.data as Record<string, string>
+          if (Object.keys(refreshData).length !== 0) {
+            accessToken = refreshData.access_token
             form.state = new ActionState()
-            const encrypted = await this.oauthMaybeEncryptTokens({
-              tokens: {
-                refresh_token: (refreshResponse as any).data.refresh_token,
-                access_token: accessToken,
-            }
-            }, request.webhookId)
+            const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
+              refreshData.refresh_token,
+              accessToken,
+              tokens.redirectUri,
+            ), request.webhookId!)
             form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
           }
         }
-        await this.checkBaseList(accessToken)
+        await this.checkBaseList(accessToken as string)
       }
       form.fields = [{
         label: "Airtable Base",
@@ -162,7 +166,7 @@ export class AirtableAction extends Hub.OAuthAction {
       const codeVerifier = crypto.randomBytes(96).toString("base64url") // 128 characters
 
       const actionCrypto = new Hub.ActionCrypto()
-      const jsonString = JSON.stringify({stateurl: request.params.state_url, verifier: codeVerifier})
+      const jsonString = JSON.stringify({ stateurl: request.params.state_url, verifier: codeVerifier })
       const ciphertextBlob = await actionCrypto.encrypt(jsonString).catch((err: string) => {
         winston.error("Encryption not correctly configured")
         throw err
@@ -178,7 +182,13 @@ export class AirtableAction extends Hub.OAuthAction {
     return form
   }
 
-  async oauthCheck(_request: Hub.ActionRequest) {
+  async oauthCheck(request: Hub.ActionRequest) {
+    if (request.params.state_json) {
+      const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+      if (stateJson) {
+        return true
+      }
+    }
     return false
   }
 
@@ -198,7 +208,7 @@ export class AirtableAction extends Hub.OAuthAction {
       code: urlParams.code,
     })
     const encodedCreds = Buffer.from(`${process.env.AIRTABLE_CLIENT_ID}:${process.env.AIRTABLE_CLIENT_SECRET}`)
-        .toString("base64")
+      .toString("base64")
     const response = await gaxios.request({
       method: "POST",
       url: "https://www.airtable.com/oauth2/v1/token",
@@ -211,13 +221,12 @@ export class AirtableAction extends Hub.OAuthAction {
     // Pass back context to Looker
     if (response.status === 200) {
       const data: any = response.data
+      const tokenPayload = new AirtableTokens(data.refresh_token, data.access_token, redirectUri)
+      const encrypted = await this.oauthMaybeEncryptTokens(tokenPayload, undefined)
       await gaxios.request({
         url: payload.stateurl,
         method: "POST",
-        body: JSON.stringify({tokens: {
-            refresh_token: data.refresh_token,
-            access_token: data.access_token,
-          }, redirect: redirectUri}),
+        body: encrypted,
       }).catch((_err) => { winston.error(_err.toString()) })
     } else {
       winston.warn("Oauth for Airtable unsuccessful")
@@ -227,7 +236,7 @@ export class AirtableAction extends Hub.OAuthAction {
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
 
-    const clientId = process.env.AIRTABLE_CLIENT_ID ?  process.env.AIRTABLE_CLIENT_ID : "must exist"
+    const clientId = process.env.AIRTABLE_CLIENT_ID ? process.env.AIRTABLE_CLIENT_ID : "must exist"
 
     const actionCrypto = new Hub.ActionCrypto()
     const plaintext = await actionCrypto.decrypt(encryptedState).catch((err: string) => {
@@ -240,12 +249,12 @@ export class AirtableAction extends Hub.OAuthAction {
     const codeVerifier = payload.verifier// 128 characters
     const codeChallengeMethod = "S256"
     const codeChallenge = crypto
-        .createHash("sha256")
-        .update(codeVerifier) // hash the code verifier with the sha256 algorithm
-        .digest("base64") // base64 encode, needs to be transformed to base64url
-        .replace(/=/g, "") // remove =
-        .replace(/\+/g, "-") // replace + with -
-        .replace(/\//g, "_") // replace / with _ now base64url encoded
+      .createHash("sha256")
+      .update(codeVerifier) // hash the code verifier with the sha256 algorithm
+      .digest("base64") // base64 encode, needs to be transformed to base64url
+      .replace(/=/g, "") // remove =
+      .replace(/\+/g, "-") // replace + with -
+      .replace(/\//g, "_") // replace / with _ now base64url encoded
     // build the authorization URL
     const authorizationUrl = new URL(`https://www.airtable.com/oauth2/v1/authorize`)
     authorizationUrl.searchParams.set("code_challenge", codeChallenge)
@@ -261,7 +270,7 @@ export class AirtableAction extends Hub.OAuthAction {
   }
 
   private async airtableClientFromRequest(token: string) {
-    return new airtable({apiKey: token})
+    return new airtable({ apiKey: token })
   }
 
   private async refreshTokens(refreshToken: string) {
@@ -273,7 +282,7 @@ export class AirtableAction extends Hub.OAuthAction {
       })
 
       const encodedCreds = Buffer.from(`${process.env.AIRTABLE_CLIENT_ID}:${process.env.AIRTABLE_CLIENT_SECRET}`)
-          .toString("base64")
+        .toString("base64")
       return await gaxios.request({
         method: "POST",
         url: "https://www.airtable.com/oauth2/v1/token",
@@ -289,7 +298,7 @@ export class AirtableAction extends Hub.OAuthAction {
         errorMessage = errorMessage + ` returning http code ${e.code}`
       }
       winston.warn(errorMessage)
-      return {data: {}}
+      return { data: {} }
     }
   }
 
