@@ -104,7 +104,8 @@ export class GoogleAnalyticsDataImportAction
 
       // Since the upload was successful, update the lastUsedFormParams in user state
       gaWorker.setLastUsedFormParams()
-      wrappedResp.setUserState(gaWorker.userState)
+      const encrypted = await this.oauthMaybeEncryptTokens(gaWorker.userState, hubReq.webhookId)
+      wrappedResp.setUserState(encrypted)
 
       if (gaWorker.isDeleteOtherFiles) {
         currentStep = "Delete other files step"

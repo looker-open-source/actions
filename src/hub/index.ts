@@ -6,14 +6,14 @@ export * from "./action"
 export * from "./oauth_action"
 export * from "./oauth_action_v2"
 export * from "./delegate_oauth_action"
-export * from "./action_token"
-export * from "./encrypted_payload"
+export * from "./token_payload"
 export * from "./sources"
 export * from "./utils"
 
 import { LookmlModelExploreField as FieldBase } from "../api_types/lookml_model_explore_field"
 import { LookmlModelExploreFieldset as ExploreFieldset } from "../api_types/lookml_model_explore_fieldset"
 import { AESTransitCrypto as ActionCrypto } from "../crypto/aes_transit_crypto"
+export * from "./encrypted_payload"
 
 import * as JsonDetail from "./json_detail"
 

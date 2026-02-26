@@ -1,3 +1,4 @@
+import { EncryptedPayload } from ".";
 import { Action, RouteBuilder } from "./action";
 import { ActionRequest } from "./action_request";
 export declare abstract class OAuthAction extends Action {
@@ -7,5 +8,8 @@ export declare abstract class OAuthAction extends Action {
         [key: string]: string;
     }, redirectUri: string): Promise<void>;
     asJson(router: RouteBuilder, request: ActionRequest): any;
+    oauthExtractTokensFromStateJson(stateJson: string, requestWebhookId: string | undefined): Promise<any>;
+    oauthMaybeEncryptTokens(tokenPayload: any, requestWebhookId: string | undefined): Promise<EncryptedPayload | string>;
+    oauthDecryptTokens(encryptedPayload: EncryptedPayload, requestWebhookId: string | undefined): Promise<any>;
 }
 export declare function isOauthAction(action: Action): boolean;

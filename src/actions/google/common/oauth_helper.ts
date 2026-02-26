@@ -119,10 +119,11 @@ export class GoogleOAuthHelper {
 
       // So now we use that state url to persist the oauth tokens
       try {
+        const encrypted = await this.actionInstance.oauthMaybeEncryptTokens(userState, webhookId)
         await gaxios.request({
           method: "POST",
           url: payload.stateUrl,
-          data: userState,
+          data: typeof encrypted === "string" ? encrypted : encrypted,
         })
       } catch (err: any) {
         // We have seen weird behavior where Looker correctly updates the state, but returns a nonsense status code

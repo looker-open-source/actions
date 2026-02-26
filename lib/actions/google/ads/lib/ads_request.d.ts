@@ -17,7 +17,7 @@ export declare class GoogleAdsActionRequest {
     formParams: any;
     userState: AdsUserState;
     webhookId?: string;
-    constructor(hubRequest: Hub.ActionRequest, actionInstance: GoogleAdsCustomerMatch, log: Logger);
+    constructor(hubRequest: Hub.ActionRequest, actionInstance: GoogleAdsCustomerMatch, log: Logger, userState: any);
     checkTokens(): Promise<void>;
     setApiClient(): void;
     get accessToken(): string;

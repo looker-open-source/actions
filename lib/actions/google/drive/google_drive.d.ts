@@ -3,6 +3,7 @@ import { Credentials, OAuth2Client } from "google-auth-library";
 import { drive_v3 } from "googleapis";
 import * as Hub from "../../../hub";
 import Drive = drive_v3.Drive;
+import { DriveTokens } from "./drive_tokens";
 interface OauthState {
     tokenurl?: string;
     stateurl?: string;
@@ -30,7 +31,7 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     oauthHandleRedirect(urlParams: {
         [key: string]: string;
     }, redirectUri: string): Promise<string>;
-    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.ActionToken | Hub.EncryptedPayload>;
+    oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.EncryptedPayload | DriveTokens>;
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauth2Client(redirectUri: string | undefined): OAuth2Client;
     sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponse<drive_v3.Schema$File>>;
@@ -41,11 +42,10 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     protected driveClientFromRequest(redirect: string, tokens: Credentials): Promise<drive_v3.Drive>;
     protected getUserEmail(redirect: string, tokens: Credentials): Promise<string>;
     protected validateUserInDomainAllowlist(domainAllowlist: string | undefined, redirect: string, tokens: Credentials, requestWebhookId: string | undefined): Promise<void>;
-    protected oauthExtractTokensFromStateJson(stateJson: string, requestWebhookId: string | undefined): Promise<Hub.ActionToken | null>;
+    protected oauthExtractTokensFromStateJson(stateJson: string, requestWebhookId: string | undefined): Promise<DriveTokens | null>;
     protected validTokens(tokens: Credentials, requestWebhookId: string | undefined): boolean;
-    protected oauthMaybeEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload | Hub.ActionToken>;
-    protected oauthEncryptTokens(tokenPayload: Hub.ActionToken, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload>;
-    protected oauthDecryptTokens(encryptedPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<Hub.ActionToken>;
+    protected oauthMaybeEncryptTokens(tokenPayload: DriveTokens, requestWebhookId: string | undefined): Promise<Hub.EncryptedPayload | DriveTokens>;
+    protected oauthDecryptTokens(encryptedPayload: Hub.EncryptedPayload, actionCrypto: Hub.ActionCrypto, requestWebhookId: string | undefined): Promise<DriveTokens>;
     protected oauthFetchAndStoreInfo(urlParams: {
         [key: string]: string;
     }, redirectUri: string, statePayload: OauthState, requestWebhookId: string | undefined): Promise<void>;

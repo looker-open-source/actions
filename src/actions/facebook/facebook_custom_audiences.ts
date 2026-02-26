@@ -112,10 +112,11 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
 
     // So now we use that state url to persist the oauth tokens
     try {
+      const encrypted = await this.oauthMaybeEncryptTokens(userState, payload.webhookId)
       await gaxios.request({
         method: "POST",
         url: payload.stateUrl,
-        data: userState,
+        data: typeof encrypted === "string" ? encrypted : encrypted,
       })
     } catch (err: any) {
       sanitizeError(err)
@@ -174,8 +175,8 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
 
   protected async getAccessTokenFromRequest(request: Hub.ActionRequest): Promise<string | null> {
     try {
-      const params: any = request.params
-      return JSON.parse(params.state_json).tokens.longLivedToken
+      const stateJson = await this.oauthExtractTokensFromStateJson(`${request.params.state_json}`, request.webhookId!)
+      return stateJson.tokens.longLivedToken
     } catch (e: any) {
       winston.error(`${LOG_PREFIX} Failed to parse state for access token.`, {webhookId: request.webhookId})
       return null
