@@ -19,6 +19,7 @@ import "./test_action_request"
 import "./test_action_response"
 import "./test_actions"
 import "./test_json_detail_stream"
+import "./test_oauth_action"
 // import "./test_server"
 import "./test_smoke"
 
