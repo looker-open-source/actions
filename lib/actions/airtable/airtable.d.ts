@@ -14,7 +14,7 @@ export declare class AirtableAction extends Hub.OAuthAction {
     execute(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     checkBaseList(token: string): Promise<gaxios.GaxiosResponse<unknown>>;
     form(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
-    oauthCheck(_request: Hub.ActionRequest): Promise<boolean>;
+    oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauthFetchInfo(urlParams: {
         [p: string]: string;
     }, redirectUri: string): Promise<void>;

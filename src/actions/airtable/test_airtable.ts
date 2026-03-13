@@ -244,6 +244,21 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   })
 
+  describe("oauthCheck", () => {
+    it("returns true for valid legacy unencrypted state", async () => {
+      const request = new Hub.ActionRequest()
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"lol\",\"access_token\":\"test\"}}"
+      const result = await action.oauthCheck(request)
+      chai.expect(result).to.equal(true)
+    })
+
+    it("returns false for missing state", async () => {
+      const request = new Hub.ActionRequest()
+      const result = await action.oauthCheck(request)
+      chai.expect(result).to.equal(false)
+    })
+  })
+
   describe("form", () => {
 
     it("has form", () => {
