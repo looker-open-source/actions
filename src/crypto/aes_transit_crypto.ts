@@ -9,7 +9,7 @@ export class AESTransitCrypto implements CryptoProvider {
 
   async encrypt(plaintext: string) {
     if (process.env.CIPHER_MASTER === undefined) {
-      throw "CIPHER_MASTER environment variable not set"
+      throw new Error("CIPHER_MASTER environment variable not set")
     }
     const masterbuffer = Buffer.from(process.env.CIPHER_MASTER, "hex")
     const dataKey = crypto.randomBytes(32)
@@ -40,7 +40,7 @@ export class AESTransitCrypto implements CryptoProvider {
   }
   async decrypt(ciphertext: string) {
     if (process.env.CIPHER_MASTER === undefined) {
-      throw "CIPHER_MASTER environment variable not set"
+      throw new Error("CIPHER_MASTER environment variable not set")
     }
     const masterBuffer = Buffer.from(process.env.CIPHER_MASTER, "hex")
     const keySize = Number(ciphertext.substring(1, 4))
@@ -63,7 +63,7 @@ export class AESTransitCrypto implements CryptoProvider {
 
   cipherId() {
     if (process.env.CIPHER_MASTER === undefined) {
-      throw "CIPHER_MASTER environment variable not set"
+      throw new Error("CIPHER_MASTER environment variable not set")
     }
 
     const masterBuffer = Buffer.from(process.env.CIPHER_MASTER, "hex")
