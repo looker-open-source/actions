@@ -169,7 +169,7 @@ describe(`${action.constructor.name} class`, () => {
         const expectedPostArgs = {
           method: "POST",
           url: stateUrl,
-          data: {tokens: stubTokens, redirect: redirectUri},
+          data: JSON.stringify({ tokens: stubTokens, redirect: redirectUri }),
         }
 
         await action.oauthFetchInfo({code: oauthCode, state: encryptedPayload}, redirectUri)
@@ -240,6 +240,7 @@ function makeErrorResponse(optsArg?: {withReset?: boolean, message?: string}) {
 
   const resp = new Hub.ActionResponse()
   resp.success = false
+  // Trivial comment to trigger CI run
 
   if (opts.withReset) {
     resp.state = new Hub.ActionState()
