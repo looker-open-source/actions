@@ -240,6 +240,7 @@ function makeErrorResponse(optsArg?: {withReset?: boolean, message?: string}) {
 
   const resp = new Hub.ActionResponse()
   resp.success = false
+  // Trivial comment to trigger CI run
 
   if (opts.withReset) {
     resp.state = new Hub.ActionState()
