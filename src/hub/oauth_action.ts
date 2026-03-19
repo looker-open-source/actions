@@ -41,6 +41,7 @@ export abstract class OAuthAction extends Action {
           encryptedPayload,
           requestWebhookId,
         )
+        // tokenPayload is the decrypted contents of state.payload
         return tokenPayload
       } catch (e: any) {
         // Outcome 4: Returns null if decryption fails (e.g. wrong key, tampered data).
