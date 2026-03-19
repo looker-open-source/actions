@@ -116,6 +116,7 @@ export class AirtableAction extends Hub.OAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
+    // Step 1: Looker Requests Form. The user selects the Action in Looker, which calls /form on the Action Hub.
     const form = new Hub.ActionForm()
     try {
       let accessToken: string | undefined
@@ -174,7 +175,8 @@ export class AirtableAction extends Hub.OAuthAction {
         type: "string",
       }]
     } catch (e) {
-      // prevents others from impersonating you
+      // Step 2: If no valid tokens exist, the Action Hub generates an OAuth URL link.
+      // We create a codeVerifier (PKCE) and encrypt it in the state payload to secure the exchange.
       const codeVerifier = crypto.randomBytes(96).toString("base64url") // 128 characters
 
       const actionCrypto = new Hub.ActionCrypto()
@@ -205,6 +207,8 @@ export class AirtableAction extends Hub.OAuthAction {
   }
 
   async oauthFetchInfo(urlParams: { [p: string]: string }, redirectUri: string) {
+    // Step 5: Action Hub exchanges AUTHORIZATION CODE for Access/Refresh Tokens.
+    // We decrypt the state to retrieve the stateurl and code_verifier.
     const actionCrypto = new Hub.ActionCrypto()
     const plaintext = await actionCrypto.decrypt(urlParams.state).catch((err: string) => {
       winston.error("Encryption not correctly configured" + err)
@@ -233,6 +237,8 @@ export class AirtableAction extends Hub.OAuthAction {
     // Pass back context to Looker
     if (response.status === 200) {
       const data: any = response.data
+      // Step 6: Action Hub returns tokens to Looker.
+      // We use the stateurl we decrypted in Step 5.
       const tokenPayload = new AirtableTokens(data.refresh_token, data.access_token, redirectUri)
       const encrypted = await this.oauthMaybeEncryptTokens(tokenPayload, undefined)
       await gaxios.request({
@@ -247,7 +253,8 @@ export class AirtableAction extends Hub.OAuthAction {
   }
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
-
+    // Step 3: Redirect to Provider (Airtable).
+    // The Action Hub redirects the user to Airtable's authorization page with the challenge.
     const clientId = process.env.AIRTABLE_CLIENT_ID ? process.env.AIRTABLE_CLIENT_ID : "must exist"
 
     const actionCrypto = new Hub.ActionCrypto()
