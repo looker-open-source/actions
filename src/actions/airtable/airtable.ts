@@ -56,22 +56,25 @@ export class AirtableAction extends Hub.OAuthAction {
       let accessToken: string | undefined
       let tokens: AirtableTokens | undefined
       if (request.params.state_json) {
-        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
         tokens = AirtableTokens.fromJson(stateJson)
         accessToken = tokens.access_token
         const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
           tokens.refresh_token,
           accessToken,
           tokens.redirectUri,
-        ), request.webhookId!)
+        ), request.webhookId)
         state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
       }
 
       try {
-        await this.executeAirtable(request, records, accessToken as string)
+        if (!accessToken) {
+          throw new Error("Missing access token")
+        }
+        await this.executeAirtable(request, records, accessToken)
       } catch {
         if (request.params.state_json && tokens) {
-          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
           const refreshData = refreshResponse.data as Record<string, string>
           if (Object.keys(refreshData).length !== 0) {
@@ -80,14 +83,17 @@ export class AirtableAction extends Hub.OAuthAction {
               refreshData.refresh_token,
               accessToken,
               tokens.redirectUri,
-            ), request.webhookId!)
+            ), request.webhookId)
             state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
           } else {
             delete state.data
           }
         }
+        if (!accessToken) {
+          throw new Error("Missing access token after refresh")
+        }
         // Try again one more time
-        await this.executeAirtable(request, records, accessToken as string)
+        await this.executeAirtable(request, records, accessToken)
       }
     } catch (e: any) {
       response.success = false
@@ -115,16 +121,19 @@ export class AirtableAction extends Hub.OAuthAction {
       let accessToken: string | undefined
       let tokens: AirtableTokens | undefined
       if (request.params.state_json) {
-        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
         tokens = AirtableTokens.fromJson(stateJson)
         accessToken = tokens.access_token
       }
       try {
-        await this.checkBaseList(accessToken as string)
+        if (!accessToken) {
+          throw new Error("Missing access token")
+        }
+        await this.checkBaseList(accessToken)
         if (form.state === undefined) {
           form.state = new ActionState()
           if (tokens) {
-            const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId!)
+            const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId)
             const encryptedStr = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
             request.params.state_json = encryptedStr
             form.state.data = encryptedStr
@@ -134,21 +143,24 @@ export class AirtableAction extends Hub.OAuthAction {
         // Assume the failure is due to Oauth failure,
         // refresh token and retry once.
         if (request.params.state_json && tokens) {
-          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
           const refreshResponse = await this.refreshTokens(stateJson.tokens.refresh_token)
           const refreshData = refreshResponse.data as Record<string, string>
           if (Object.keys(refreshData).length !== 0) {
-            accessToken = refreshData.access_token
             form.state = new ActionState()
+            accessToken = refreshData.access_token
             const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
               refreshData.refresh_token,
               accessToken,
               tokens.redirectUri,
-            ), request.webhookId!)
+            ), request.webhookId)
             form.state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
           }
         }
-        await this.checkBaseList(accessToken as string)
+        if (!accessToken) {
+          throw new Error("Missing access token after refresh")
+        }
+        await this.checkBaseList(accessToken)
       }
       form.fields = [{
         label: "Airtable Base",
@@ -184,7 +196,7 @@ export class AirtableAction extends Hub.OAuthAction {
 
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
-      const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId!)
+      const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
       if (stateJson) {
         return true
       }

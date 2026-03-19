@@ -1,7 +1,12 @@
 import * as chai from "chai"
+import * as chaiAsPromised from "chai-as-promised"
 import * as sinon from "sinon"
+import * as sinonChai from "sinon-chai"
 
 import * as Hub from "../../hub"
+
+chai.use(sinonChai)
+chai.use(chaiAsPromised)
 
 import * as b64 from "base64-url"
 import * as gaxios from "gaxios"
@@ -173,6 +178,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("returns failure on airtable create error", () => {
       const request = new Hub.ActionRequest()
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"lol\",\"access_token\":\"test\"}}"
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -201,11 +207,14 @@ describe(`${action.constructor.name} unit tests`, () => {
         .callsFake(() => ({
           base: baseSpy,
         }))
+      gaxiosStub.resolves({data: {access_token: "test", refresh_token: "lol"}} as any)
       return chai.expect(action.execute(request)).to.eventually.deep.equal({
         success: false,
         message: "Could not find table Contacts123 in application app",
         refreshQuery: false,
-        state: {},
+        state: {
+          data: "{\"tokens\":{\"refresh_token\":\"lol\",\"access_token\":\"test\"}}",
+        },
         validationErrors: [],
       }).then(() => {
         stubPost.restore()
@@ -267,7 +276,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("has form with base and table param", (done) => {
       const request = new Hub.ActionRequest()
-      request.params.state_json = "{\"tokens\":{\"refresh_token\":\"token\"}}"
+      request.params.state_json = "{\"tokens\":{\"refresh_token\":\"token\",\"access_token\":\"test\"}}"
       gaxiosStub.resolves({data: {access_token: "test", refresh_token: "lol"}} as any)
 
       const form = action.validateAndFetchForm(request)
@@ -284,14 +293,14 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "string",
         }],
         state: {
-          data: "{\"tokens\":{\"refresh_token\":\"token\"}}",
+          data: "{\"tokens\":{\"refresh_token\":\"token\",\"access_token\":\"test\"}}",
         },
       }).and.notify(done)
     })
 
     it("succeeds after failing oauth once", (done) => {
       const request = new Hub.ActionRequest()
-      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"token\"}}"
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"token\",\"access_token\":\"test\"}}"
       gaxiosStub
           .onCall(0)
           .throws("oauthTestFailure")
