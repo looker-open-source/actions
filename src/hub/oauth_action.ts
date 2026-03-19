@@ -24,6 +24,7 @@ export abstract class OAuthAction extends Action {
     try {
       state = JSON.parse(stateJson)
     } catch (e: any) {
+      // Outcome 1: Returns null if parsing state_json fails (e.g. malformed JSON).
       winston.error(
         `Failed to parse state_json`,
         { webhookId: requestWebhookId, action: this.name },
@@ -32,6 +33,7 @@ export abstract class OAuthAction extends Action {
     }
 
     if (state.cid && state.payload) {
+      // Outcome 3: State is encrypted. Decrypt using oauthDecryptTokens.
       winston.info("Extracting encrypted state_json", { webhookId: requestWebhookId, action: this.name })
       const encryptedPayload = new EncryptedPayload(state.cid, state.payload)
       try {
@@ -41,6 +43,7 @@ export abstract class OAuthAction extends Action {
         )
         return tokenPayload
       } catch (e: any) {
+        // Outcome 4: Returns null if decryption fails (e.g. wrong key, tampered data).
         winston.error(
           `Failed to decrypt or parse encrypted payload: ${e.message}`,
           { webhookId: requestWebhookId, action: this.name },
@@ -48,6 +51,7 @@ export abstract class OAuthAction extends Action {
         return null
       }
     } else {
+      // Outcome 2: State is unencrypted. Return as is.
       winston.info("Extracting unencrypted state_json", { webhookId: requestWebhookId, action: this.name })
       return state
     }
@@ -67,6 +71,7 @@ export abstract class OAuthAction extends Action {
     const shouldEncrypt = perActionEncryptionValue === "true"
 
     if (shouldEncrypt) {
+      // Outcome 1: Encryption enabled. Encrypt using actionCrypto and return EncryptedPayload.
       const encrypted = await OAuthAction.actionCrypto.encrypt(JSON.stringify(tokenPayload)).catch((err: string) => {
         winston.error("Encryption not correctly configured", { webhookId: requestWebhookId, action: this.name })
         throw err
@@ -77,6 +82,7 @@ export abstract class OAuthAction extends Action {
       )
       return payload
     } else {
+      // Outcome 2: Encryption disabled. Return JSON stringified payload.
       return JSON.stringify(tokenPayload)
     }
   }
@@ -85,6 +91,7 @@ export abstract class OAuthAction extends Action {
     encryptedPayload: EncryptedPayload,
     requestWebhookId: string | undefined,
   ): Promise<Record<string, any>> {
+    // This method decrypts the payload and validates the JSON shape.
     const jsonPayload = await OAuthAction.actionCrypto.decrypt(encryptedPayload.payload).catch((err: string) => {
       winston.error("Failed to decrypt state_json", { webhookId: requestWebhookId, action: this.name })
       throw err
