@@ -253,7 +253,7 @@ export class AirtableAction extends Hub.OAuthAction {
       await gaxios.request({
         url: payload.stateurl,
         method: "POST",
-        body: payloadWithEncryptedToken,
+        data: payloadWithEncryptedToken,
       }).catch((_err) => { winston.error(_err.toString()) })
     } else {
       winston.warn("Oauth for Airtable unsuccessful")

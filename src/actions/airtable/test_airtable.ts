@@ -327,5 +327,43 @@ describe(`${action.constructor.name} unit tests`, () => {
         },
       }).and.notify(done)
     })
+
+    describe("oauthFetchInfo", () => {
+      it("uses data instead of body for the stateurl callback", async () => {
+        const urlParams = {
+          code: "test_code",
+          state: b64.encode(JSON.stringify({
+            verifier: "test_verifier",
+            stateurl: "test_state_url",
+          })),
+        }
+        const redirectUri = "http://redirect"
+
+        // First call (token exchange) resolves with 200 and tokens
+        gaxiosStub.onFirstCall().resolves({
+          status: 200,
+          data: {
+            access_token: "fresh_access",
+            refresh_token: "fresh_refresh",
+          },
+        })
+
+        // Second call (callback to Looker) resolves with 200
+        gaxiosStub.onSecondCall().resolves({
+          status: 200,
+          data: {},
+        })
+
+        await action.oauthFetchInfo(urlParams, redirectUri)
+
+        // Assert that the second call to gaxios.request used 'data' and NOT 'body'
+        chai.expect(gaxiosStub).to.have.been.calledTwice
+        const secondCallArgs = gaxiosStub.secondCall.args[0]
+        chai.expect(secondCallArgs.url).to.equal("test_state_url")
+        chai.expect(secondCallArgs.method).to.equal("POST")
+        chai.expect(secondCallArgs.data).to.not.be.undefined // We want data to be used
+        chai.expect(secondCallArgs.body).to.be.undefined // We want body to be unused
+      })
+    })
   })
 })
