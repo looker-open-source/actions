@@ -13,7 +13,7 @@ const action = new DropboxAction()
 const stubFileName = "stubSuggestedFilename"
 const stubDirectory = "stubSuggestedDirectory"
 
-function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any) {
+async function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any): Promise<any> {
 
   const fileUploadSpy = sinon.spy(async (_path: string, _contents: any) => Promise.resolve({}))
 
@@ -22,10 +22,12 @@ function expectDropboxMatch(request: Hub.ActionRequest, optionsMatch: any) {
       filesUpload: fileUploadSpy,
     }))
 
-  return chai.expect(action.execute(request)).to.be.fulfilled.then(() => {
+  try {
+    await action.execute(request)
     chai.expect(fileUploadSpy).to.have.been.calledWithMatch(optionsMatch)
+  } finally {
     stubClient.restore()
-  })
+  }
 }
 
 describe(`${action.constructor.name} unit tests`, () => {
@@ -48,7 +50,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(action.usesStreaming).equals(false)
     })
 
-    it("successfully interprets execute request params", () => {
+    it("successfully interprets execute request params", async () => {
       const request = new Hub.ActionRequest()
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
@@ -56,7 +58,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
-      return expectDropboxMatch(request,
+      await expectDropboxMatch(request,
         {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
     })
 
@@ -80,6 +82,18 @@ describe(`${action.constructor.name} unit tests`, () => {
         refreshQuery: false,
         validationErrors: [],
       }).and.notify(stubClient.restore).and.notify(done)
+    })
+    it("uses oauthExtractTokensFromStateJson to decrypt state", async () => {
+      const stubDecrypt = sinon.stub(action as any, "oauthExtractTokensFromStateJson").resolves({access_token: "decrypted_token"})
+      const request = new Hub.ActionRequest()
+      request.params = { state_json: "encrypted_json" }
+      request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
+      request.formParams = {filename: stubFileName, directory: stubDirectory}
+
+      await expectDropboxMatch(request, {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
+
+      chai.expect(stubDecrypt).to.have.been.calledWith("encrypted_json", request.webhookId)
+      stubDecrypt.restore()
     })
   })
 
@@ -206,6 +220,20 @@ describe(`${action.constructor.name} unit tests`, () => {
         "redirect")
       chai.expect(result)
         .and.notify(stubReq.restore).and.notify(done)
+    })
+    it("uses oauthMaybeEncryptTokens to secure payload", async () => {
+      const stubEncrypt = sinon.stub(action as any, "oauthMaybeEncryptTokens").resolves("encrypted_state")
+      // @ts-ignore
+      const stubPost = sinon.stub(https, "post").resolves({})
+
+      await action.oauthFetchInfo({code: "code", state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
+        `c2RmIiwiYXBwIjoibXlrZXkifQ`}, "redirect")
+
+      chai.expect(stubEncrypt).to.have.been.calledWithMatch({code: "code", redirect: "redirect"})
+      chai.expect(stubPost).to.have.been.calledWithMatch({body: "encrypted_state"})
+
+      stubEncrypt.restore()
+      stubPost.restore()
     })
   })
 
