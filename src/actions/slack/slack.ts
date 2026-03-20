@@ -1,6 +1,7 @@
 import {WebClient} from "@slack/web-api"
 import {WebAPICallResult} from "@slack/web-api/dist/WebClient"
 import * as winston from "winston"
+import { AESTransitCrypto } from "../../crypto/aes_transit_crypto"
 import {HTTP_ERROR} from "../../error_types/http_errors"
 import * as Hub from "../../hub"
 import {Error, errorWith} from "../../hub/action_response"
@@ -37,9 +38,15 @@ export class SlackAction extends Hub.DelegateOAuthAction {
   usesStreaming = true
   executeInOwnProcess = true
 
+  /**
+   * Executes the Slack action.
+   * Decrypts state_json if it was previously encrypted and passes it to the client manager.
+   * If execution succeeds and the feature flag is on, it encrypts the state before returning.
+   */
   async execute(request: Hub.ActionRequest) {
     const resp = new Hub.ActionResponse()
-    const clientManager = new SlackClientManager(request, true)
+    const decryptedState = await this.decryptStateIfNeeded(request)
+    const clientManager = new SlackClientManager(request, true, decryptedState)
     const selectedClient = clientManager.getSelectedClient()
     if (!selectedClient) {
       const error: Error = errorWith(
@@ -55,12 +62,23 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       winston.error(`${error.message}`, {error, webhookId: request.webhookId})
       return resp
     } else {
-      return await handleExecute(request, selectedClient)
+      const executedResponse = await handleExecute(request, selectedClient)
+      if (decryptedState && decryptedState === request.params.state_json && process.env.ENCRYPT_PAYLOAD_SLACK_APP === "true") {
+        executedResponse.state = new Hub.ActionState()
+        executedResponse.state.data = await this.encryptStateJson(decryptedState)
+      }
+      return executedResponse
     }
   }
 
+  /**
+   * Retrieves the form fields for the action.
+   * Decrypts state_json before creating clients to fetch available workspaces.
+   * If the response state needs to be maintained, it encrypts it before sending it back to Looker.
+   */
   async form(request: Hub.ActionRequest) {
-    const clientManager = new SlackClientManager(request, false)
+    const decryptedState = await this.decryptStateIfNeeded(request)
+    const clientManager = new SlackClientManager(request, false, decryptedState)
     if (!clientManager.hasAnyClients()) {
       return this.loginForm(request)
     }
@@ -107,6 +125,10 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       return this.loginForm(request, form)
     }
 
+    if (decryptedState && decryptedState === request.params.state_json && process.env.ENCRYPT_PAYLOAD_SLACK_APP === "true") {
+      form.state = new Hub.ActionState()
+      form.state.data = await this.encryptStateJson(decryptedState)
+    }
     return form
   }
 
@@ -128,10 +150,14 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     return form
   }
 
+  /**
+   * Checks if the OAuth connection is valid.
+   * Opportunistically decrypts the state and returns whether the connection holds.
+   */
   async oauthCheck(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
-
-    const clientManager = new SlackClientManager(request)
+    const decryptedState = await this.decryptStateIfNeeded(request)
+    const clientManager = new SlackClientManager(request, false, decryptedState)
     if (!clientManager.hasAnyClients()) {
       form.error = AUTH_MESSAGE
       winston.error(`${LOG_PREFIX} ${AUTH_MESSAGE}`, {webhookId: request.webhookId})
@@ -155,6 +181,10 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       form.error = displayError[e.message] || e
       winston.error(`${LOG_PREFIX} ${form.error}`, {webhookId: request.webhookId})
     }
+    if (decryptedState && decryptedState === request.params.state_json && process.env.ENCRYPT_PAYLOAD_SLACK_APP === "true") {
+      form.state = new Hub.ActionState()
+      form.state.data = await this.encryptStateJson(decryptedState)
+    }
     return form
   }
 
@@ -171,6 +201,39 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       throw resp[0]
     }
     return result
+  }
+  /**
+   * Decrypts the state_json parsing it as plain text if decryption fails.
+   * This ensures backward compatibility with older, unencrypted states.
+   */
+  private async decryptStateIfNeeded(request: Hub.ActionRequest): Promise<string | undefined> {
+    if (!request.params.state_json) {
+      return undefined
+    }
+    try {
+      const crypto = new AESTransitCrypto()
+      return await crypto.decrypt(request.params.state_json)
+    } catch (e: any) {
+      winston.warn(`${LOG_PREFIX} Decryption failed, assuming plain text: ${e.message}`)
+      return request.params.state_json
+    }
+  }
+
+  /**
+   * Encrypts the state_json string if the feature flag is enabled.
+   * Returns the encrypted string or the original state if encryption fails or is disabled.
+   */
+  private async encryptStateJson(stateJson: string): Promise<string> {
+    if (process.env.ENCRYPT_PAYLOAD_SLACK_APP === "true") {
+      try {
+        const crypto = new AESTransitCrypto()
+        return await crypto.encrypt(stateJson)
+      } catch (e: any) {
+        winston.error(`${LOG_PREFIX} Encryption failed: ${e.message}`)
+        return stateJson
+      }
+    }
+    return stateJson
   }
 }
 

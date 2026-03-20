@@ -29,8 +29,15 @@ export class SlackClientManager {
     private selectedInstallId: string | undefined
     private clients: { [key: string]: WebClient }
 
-    constructor(request: Hub.ActionRequest, disableRetries = false) {
-        const stateJson = request.params.state_json
+    /**
+     * Initializes the Slack clients by parsing the stateJson payload.
+     * Overrides with decryptedStateJson if provided (opportunistic decryption).
+     */
+    // Decrypts state_json if it was previously encrypted and passes it to the client manager.
+    // Callers should use this decrypted state to initialize the clients.
+
+    constructor(request: Hub.ActionRequest, disableRetries = false, decryptedStateJson?: string) {
+        const stateJson = decryptedStateJson || request.params.state_json
 
         if (!stateJson) {
             this.clients = {}
@@ -72,14 +79,19 @@ export class SlackClientManager {
         }
     }
 
+    /** Checks if there are any initialized Slack clients. */
     hasAnyClients = (): boolean => Object.entries(this.clients).length > 0
 
+    /** Gets all initialized Slack clients as an array. */
     getClients = (): WebClient[] => Object.values(this.clients)
 
+    /** Checks if a specific client is selected. */
     hasSelectedClient = (): boolean => !!this.selectedInstallId
 
+    /** Gets the currently selected Slack client or defaults to the first available connection. */
     getSelectedClient = (): WebClient | undefined => this.selectedInstallId ?
         this.clients[this.selectedInstallId] : undefined
 
+    /** Gets a specific client by its install ID. */
     getClient = (installId: string): WebClient | undefined => this.clients[installId]
 }
