@@ -126,6 +126,8 @@ export class AirtableAction extends Hub.OAuthAction {
     try {
       let accessToken: string | undefined
       let tokens: AirtableTokens | undefined
+      // We expect request.params.state_json to contain either a legacy unencrypted JSON string
+      // with token details or an encrypted payload from Action Hub (if encryption is enabled).
       if (request.params.state_json) {
         const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
         tokens = AirtableTokens.fromJson(stateJson)
@@ -201,6 +203,8 @@ export class AirtableAction extends Hub.OAuthAction {
     return form
   }
 
+  // oauthCheck determines if the user is authenticated by verifying that request.params.state_json
+  // contains valid (encrypted or unencrypted) token state.
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
       const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
@@ -212,7 +216,7 @@ export class AirtableAction extends Hub.OAuthAction {
   }
 
   async oauthFetchInfo(urlParams: { [p: string]: string }, redirectUri: string) {
-    // Step 5: Action Hub exchanges AUTHORIZATION CODE for Access/Refresh Tokens.
+    // oauthFetchInfo exchanges the authorization code for access and refresh tokens from Airtable.
     // We decrypt the state to retrieve the stateurl and code_verifier.
     const actionCrypto = new Hub.ActionCrypto()
     const plaintext = await actionCrypto.decrypt(urlParams.state).catch((err: string) => {
@@ -242,8 +246,7 @@ export class AirtableAction extends Hub.OAuthAction {
     // Pass back context to Looker
     if (response.status === 200) {
       const data: any = response.data
-      // Step 6: Action Hub returns tokens to Looker.
-      // We use the stateurl we decrypted in Step 5.
+      // Successful token exchange. Return tokens to Looker via the stateurl callback.
       const tokenPayload = new AirtableTokens(data.refresh_token, data.access_token, redirectUri)
       // In this case we expect this function to return an encrypted token because AirTable is "enabled" for encryption.
       const payloadWithEncryptedToken = await this.oauthMaybeEncryptTokens(tokenPayload, undefined)
@@ -259,8 +262,7 @@ export class AirtableAction extends Hub.OAuthAction {
   }
 
   async oauthUrl(redirectUri: string, encryptedState: string) {
-    // Step 3: Redirect to Provider (Airtable).
-    // The Action Hub redirects the user to Airtable's authorization page with the challenge.
+    // oauthUrl constructs the authorization URL to redirect the user to Airtable's auth page.
     const clientId = process.env.AIRTABLE_CLIENT_ID ? process.env.AIRTABLE_CLIENT_ID : "must exist"
 
     const actionCrypto = new Hub.ActionCrypto()

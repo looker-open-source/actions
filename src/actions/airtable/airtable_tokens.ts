@@ -1,7 +1,12 @@
 import { TokenPayload } from "../../hub"
 
+// AirtableTokens holds the access and refresh tokens for Airtable OAuth.
+// It extends TokenPayload to integrate with the Action Hub's OAuth framework.
 export class AirtableTokens extends TokenPayload {
 
+  // fromJson parses token payloads from two possible JSON shapes:
+  // 1. A nested shape (`{ tokens: { access_token, refresh_token }, redirect }`) used by newer ActionHub serialization.
+  // 2. A legacy flat shape (`{ access_token, refresh_token, redirectUri }`) used by older states.
   static fromJson(json: any): AirtableTokens {
     if (json.tokens) {
       return new AirtableTokens(json.tokens.refresh_token, json.tokens.access_token, json.redirect)
@@ -22,6 +27,8 @@ export class AirtableTokens extends TokenPayload {
     this.redirectUri = redirectUri
   }
 
+  // asJson serializes the tokens into a standard JSON shape that ActionHub expects.
+  // It matches the shape used by newer ActionHub serialization for encrypted payloads.
   asJson(): any {
     return {
       tokens: {
