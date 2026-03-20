@@ -116,7 +116,12 @@ export class AirtableAction extends Hub.OAuthAction {
   }
 
   async form(request: Hub.ActionRequest) {
-    // Step 1: Looker Requests Form. The user selects the Action in Looker, which calls /form on the Action Hub.
+    // The form function handles the Airtable configuration form.
+    // It attempts to list the user's bases using the existing tokens in request.params.state_json.
+    // If listing succeeds, we return the base/table fields directly.
+    // if listing fails (e.g., token expired), we try to auto-refresh the token.
+    // If no tokens exist or refresh fails, it catches the error (in the outer catch block)
+    // and generates an OAuth link with a PKCE code_verifier to allow the user to re-authenticate.
     const form = new Hub.ActionForm()
     try {
       let accessToken: string | undefined
@@ -175,8 +180,8 @@ export class AirtableAction extends Hub.OAuthAction {
         type: "string",
       }]
     } catch (e) {
-      // Step 2: If no valid tokens exist, the Action Hub generates an OAuth URL link.
-      // We create a codeVerifier (PKCE) and encrypt it in the state payload to secure the exchange.
+      // If no valid tokens exist (or refresh fail), we generate an OAuth link fallback.
+      // We create a code_verifier (PKCE) and encrypt it in the state payload to secure the exchange.
       const codeVerifier = crypto.randomBytes(96).toString("base64url") // 128 characters
 
       const actionCrypto = new Hub.ActionCrypto()
@@ -240,11 +245,12 @@ export class AirtableAction extends Hub.OAuthAction {
       // Step 6: Action Hub returns tokens to Looker.
       // We use the stateurl we decrypted in Step 5.
       const tokenPayload = new AirtableTokens(data.refresh_token, data.access_token, redirectUri)
-      const encrypted = await this.oauthMaybeEncryptTokens(tokenPayload, undefined)
+      // In this case we expect this function to return an encrypted token because AirTable is "enabled" for encryption.
+      const payloadWithEncryptedToken = await this.oauthMaybeEncryptTokens(tokenPayload, undefined)
       await gaxios.request({
         url: payload.stateurl,
         method: "POST",
-        body: encrypted,
+        body: payloadWithEncryptedToken,
       }).catch((_err) => { winston.error(_err.toString()) })
     } else {
       winston.warn("Oauth for Airtable unsuccessful")
