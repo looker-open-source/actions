@@ -67,7 +67,7 @@ export class DropboxAction extends Hub.OAuthAction {
         if (stateJson && stateJson.code && stateJson.redirect) {
           accessToken = await this.getAccessTokenFromCode(stateJson)
         }
-      } catch { winston.warn("Could not parse state_json") }
+      } catch (e) { winston.warn("Could not get access token from code", e) }
     }
     const drop = await this.dropboxClientFromRequest(request, accessToken)
     try {
@@ -196,7 +196,6 @@ export class DropboxAction extends Hub.OAuthAction {
       throw "state_json does not contain correct members"
     }
     const response = await https.post(url.toString(), { json: true })
-        .catch((_err) => { winston.error("Error requesting access_token") })
     return response.access_token
   }
 
@@ -206,13 +205,15 @@ export class DropboxAction extends Hub.OAuthAction {
     if (request.params.state_json && token === "") {
       try {
         const json = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-        if (json.access_token) {
-          token = json.access_token
-        } else if (json.tokens && json.tokens.access_token) {
-          token = json.tokens.access_token
+        if (json) {
+          if (json.access_token) {
+            token = json.access_token
+          } else if (json.tokens && json.tokens.access_token) {
+            token = json.tokens.access_token
+          }
         }
       } catch (er) {
-        winston.error("cannot parse")
+        winston.error("Could not parse state_json for Dropbox client", er)
       }
     }
     return new Dropbox({accessToken: token})
