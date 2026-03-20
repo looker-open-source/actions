@@ -466,6 +466,10 @@ describe(`${action.constructor.name} tests`, () => {
       process.env.ENCRYPT_PAYLOAD_SLACK_APP = originalEncryptPayload
     })
 
+    /**
+     * Tests that when plain text state is received and encryption is enabled,
+     * the action returns an ActionState with the encrypted payload.
+     */
     it("should read unencrypted state and return encrypted state", async () => {
       const mockClient = { auth: { test: sinon.stub().resolves({ ok: true, team: "test", team_id: "T123" }) } }
       const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").returns(mockClient as any)
@@ -484,6 +488,10 @@ describe(`${action.constructor.name} tests`, () => {
       stubClient.restore()
     })
 
+    /**
+     * Tests that when encrypted state is received, the action correctly
+     * decrypts it before passing it to the Slack client manager.
+     */
     it("should decrypt encrypted state", async () => {
       const crypto = new AESTransitCrypto()
       const plainState = JSON.stringify({ tokens: { access_token: "secret-token" } })
