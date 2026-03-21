@@ -33,9 +33,6 @@ export class SlackClientManager {
      * Initializes the Slack clients by parsing the stateJson payload.
      * Overrides with decryptedStateJson if provided (opportunistic decryption).
      */
-    // Decrypts state_json if it was previously encrypted and passes it to the client manager.
-    // Callers should use this decrypted state to initialize the clients.
-
     constructor(request: Hub.ActionRequest, disableRetries = false, decryptedStateJson?: string) {
         const stateJson = decryptedStateJson || request.params.state_json
 

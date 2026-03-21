@@ -476,7 +476,7 @@ describe(`${action.constructor.name} tests`, () => {
 
       const request = new Hub.ActionRequest()
       request.params = {
-        state_json: JSON.stringify({ tokens: { access_token: "plain-token" } }),
+        state_json: "plain-token",
       }
 
       const response = await action.oauthCheck(request)
@@ -494,7 +494,7 @@ describe(`${action.constructor.name} tests`, () => {
      */
     it("should decrypt encrypted state", async () => {
       const crypto = new AESTransitCrypto()
-      const plainState = JSON.stringify({ tokens: { access_token: "secret-token" } })
+      const plainState = "secret-token"
       const encState = await crypto.encrypt(plainState)
 
       const request = new Hub.ActionRequest()

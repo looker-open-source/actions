@@ -18,6 +18,7 @@ export declare class SlackAction extends Hub.DelegateOAuthAction {
     minimumSupportedLookerVersion: string;
     usesStreaming: boolean;
     executeInOwnProcess: boolean;
+    private readonly crypto;
     /**
      * Executes the Slack action.
      * Decrypts state_json if it was previously encrypted and passes it to the client manager.
@@ -37,6 +38,10 @@ export declare class SlackAction extends Hub.DelegateOAuthAction {
      */
     oauthCheck(request: Hub.ActionRequest): Promise<Hub.ActionForm>;
     authTest(clients: WebClient[]): Promise<any[]>;
+    /**
+     * Re-encrypts the state_json if it was decrypted successfully and the feature flag is on.
+     */
+    private updateStateIfNeeded;
     /**
      * Decrypts the state_json parsing it as plain text if decryption fails.
      * This ensures backward compatibility with older, unencrypted states.
