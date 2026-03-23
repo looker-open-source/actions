@@ -68,6 +68,7 @@ export class AirtableAction extends Hub.OAuthAction {
           ), request.webhookId)
           state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
         } else {
+          // Keeping the literal old code to ensure no regressions for unencrypted payloads
           tokens = AirtableTokens.fromJson(parsedState)
           accessToken = tokens.access_token
           state.data = JSON.stringify({
@@ -147,6 +148,7 @@ export class AirtableAction extends Hub.OAuthAction {
           tokens = AirtableTokens.fromJson(stateJson)
           accessToken = tokens.access_token
         } else {
+          // Keeping the literal old code to ensure no regressions for unencrypted payloads
           tokens = AirtableTokens.fromJson(parsedState)
           accessToken = tokens.access_token
         }
@@ -164,6 +166,7 @@ export class AirtableAction extends Hub.OAuthAction {
             request.params.state_json = encryptedStr
             form.state.data = encryptedStr
           } else {
+            // Keeping the literal old code to ensure no regressions for unencrypted payloads
             form.state.data = request.params.state_json
           }
         }
@@ -232,6 +235,7 @@ export class AirtableAction extends Hub.OAuthAction {
         const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
         return !!stateJson
       } else {
+        // Keeping the literal old code to ensure no regressions for unencrypted payloads
         const tokens = AirtableTokens.fromJson(parsedState)
         return !!tokens.access_token
       }
