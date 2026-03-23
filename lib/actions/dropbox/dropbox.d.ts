@@ -19,5 +19,5 @@ export declare class DropboxAction extends Hub.OAuthAction {
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     dropboxFilename(request: Hub.ActionRequest): string | undefined;
     protected getAccessTokenFromCode(stateJson: any): Promise<any>;
-    protected dropboxClientFromRequest(request: Hub.ActionRequest, token: string): Dropbox;
+    protected dropboxClientFromRequest(request: Hub.ActionRequest, token: string): Promise<Dropbox>;
 }
