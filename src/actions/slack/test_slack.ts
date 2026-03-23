@@ -12,9 +12,18 @@ const action = new SlackAction()
 action.executeInOwnProcess = false
 
 // @ts-ignore
-const stubSlackClient = (fn: () => void) => sinon.stub(SlackClientManager, "makeSlackClient").callsFake(fn)
+const stubSlackClient = (sandbox: sinon.SinonSandbox, fn: () => void) => sandbox.stub(SlackClientManager, "makeSlackClient").callsFake(fn)
 
 describe(`${action.constructor.name} tests`, () => {
+  let sandbox: sinon.SinonSandbox
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox()
+  })
+
+  afterEach(() => {
+    sandbox.restore()
+  })
 
   describe("isSupportMultiWorkspaces", () => {
     const request = new Hub.ActionRequest()
@@ -32,21 +41,21 @@ describe(`${action.constructor.name} tests`, () => {
   })
 
   describe("oauthCheck", () => {
-    it("returns error if the user hasn't authed yet - no state_json", () => {
+    it("returns error if the user hasn't authed yet - no state_json", async () => {
       const request = new Hub.ActionRequest()
-      const form = action.oauthCheck(request)
+      const form = await action.oauthCheck(request)
 
-      return chai.expect(form).to.eventually.deep.equal({
+      chai.expect(form).to.deep.equal({
         fields: [],
         error: "You must connect to a Slack workspace first.",
       })
     })
 
-    it("returns error if the user hasn't authed yet - invalid auth", (done) => {
+    it("returns error if the user hasn't authed yet - invalid auth", async () => {
       const request = new Hub.ActionRequest()
       request.params = { state_json: "someToken" }
 
-      const stubClient = stubSlackClient(
+      stubSlackClient(sandbox,
           () => ({
             auth: {
               test: () => { throw Error("An API error occurred: invalid_auth") },
@@ -54,19 +63,19 @@ describe(`${action.constructor.name} tests`, () => {
           }),
       )
 
-      const form = action.oauthCheck(request)
+      const form = await action.oauthCheck(request)
 
-      chai.expect(form).to.eventually.deep.equal({
+      chai.expect(form).to.deep.equal({
         fields: [],
         error: "Your Slack authentication credentials are not valid.",
-      }).and.notify(stubClient.restore).and.notify(done)
+      })
     })
 
-    it("returns user logged in info", (done) => {
+    it("returns user logged in info", async () => {
       const request = new Hub.ActionRequest()
       request.params = { state_json: "someToken" }
 
-      const stubClient = stubSlackClient(
+      stubSlackClient(sandbox,
           () => ({
             auth: {
               test: async () => Promise.resolve({
@@ -78,43 +87,34 @@ describe(`${action.constructor.name} tests`, () => {
           }),
       )
 
-      const form = action.oauthCheck(request)
+      const form = await action.oauthCheck(request)
 
-      chai.expect(form).to.eventually.deep.equal({
+      chai.expect(form).to.deep.equal({
         fields: [{
           name: "Connected",
           type: "message",
           value: `Connected with Some Team (some_team_id)`,
         }],
-      }).and.notify(stubClient.restore).and.notify(done)
+      })
     })
   })
 
   describe("form", () => {
-    let getDisplayedFormFieldsStub: any
-
-    afterEach(() => {
-      getDisplayedFormFieldsStub && getDisplayedFormFieldsStub.restore()
-    })
-
-    it("returns fields correctly from getDisplayedFormFields", () => {
-      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").returns(
-          Promise.resolve([
-              {
-                label: "Super Label",
-                type: "string",
-                name: "boo",
-              },
-          ]),
-      )
+    it("returns fields correctly from getDisplayedFormFields", async () => {
+      sandbox.stub(utils, "getDisplayedFormFields").resolves([
+        {
+          label: "Super Label",
+          type: "string",
+          name: "boo",
+        },
+      ])
 
       const request = new Hub.ActionRequest()
-
       request.params = { state_json: "someToken" }
 
-      const form = action.form(request)
+      const form = await action.form(request)
 
-      return chai.expect(form).to.eventually.deep.equal({
+      chai.expect(form).to.deep.equal({
         fields: [{
           label: "Super Label",
           type: "string",
@@ -123,29 +123,27 @@ describe(`${action.constructor.name} tests`, () => {
       })
     })
 
-    it("returns error message when getDisplayedFormFields throws and state_url is empty", () => {
-      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").rejects()
+    it("returns error message when getDisplayedFormFields throws and state_url is empty", async () => {
+      sandbox.stub(utils, "getDisplayedFormFields").rejects()
 
       const request = new Hub.ActionRequest()
+      const form = await action.form(request)
 
-      const form = action.form(request)
-
-      return chai.expect(form).to.eventually.deep.equal({
+      chai.expect(form).to.deep.equal({
         fields: [],
         error: "Illegal State: state_url is empty.",
       })
     })
 
-    it("returns log in link when we can't fetch form and state_url is valid", () => {
-      getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").rejects()
+    it("returns log in link when we can't fetch form and state_url is valid", async () => {
+      sandbox.stub(utils, "getDisplayedFormFields").rejects()
 
       const request = new Hub.ActionRequest()
-
       request.params.state_url = "/flooby"
 
-      const form = action.form(request)
+      const form = await action.form(request)
 
-      return chai.expect(form).to.eventually.deep.equal({
+      chai.expect(form).to.deep.equal({
         state: {},
         fields: [{
           name: "login",
@@ -158,27 +156,27 @@ describe(`${action.constructor.name} tests`, () => {
     })
 
     describe("multiple workspaces", () => {
-       it("doesn't have any connected workspace", () => {
+      it("doesn't have any connected workspace", async () => {
         const request = new Hub.ActionRequest()
         request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
         request.params = { state_json: JSON.stringify([]) }
         request.params.state_url = "/flooby"
 
-        const form = action.form(request)
+        const form = await action.form(request)
 
-        return chai.expect(form).to.eventually.deep.equal({
-              state: {},
-              fields: [{
-                name: "login",
-                type: "oauth_link",
-                label: "Log in",
-                description: "In order to send to a file, you will need to log in to your Slack account.",
-                oauth_url: "/flooby",
-              }],
-          })
+        chai.expect(form).to.deep.equal({
+          state: {},
+          fields: [{
+            name: "login",
+            type: "oauth_link",
+            label: "Log in",
+            description: "In order to send to a file, you will need to log in to your Slack account.",
+            oauth_url: "/flooby",
+          }],
+        })
       })
 
-       it("default to the first workspace if there is no selected workspace, and fetch form", () => {
+      it("default to the first workspace if there is no selected workspace, and fetch form", async () => {
         const defaultWsId = "ws1"
 
         const request = new Hub.ActionRequest()
@@ -188,31 +186,27 @@ describe(`${action.constructor.name} tests`, () => {
           state_json: JSON.stringify([{ install_id: defaultWsId, token: "someToken1"}]),
         }
 
-        const stubClient = stubSlackClient(
-            () => ({
-              auth: {
-                test: () => ({
-                  ok: true,
-                  team: "Some Team",
-                  team_id: defaultWsId,
-                }),
-              },
+        stubSlackClient(sandbox, () => ({
+          auth: {
+            test: () => ({
+              ok: true,
+              team: "Some Team",
+              team_id: defaultWsId,
             }),
-        )
+          },
+        }))
 
-        getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").returns(
-            Promise.resolve([
-              {
-                label: "Super Label",
-                type: "string",
-                name: "boo",
-              },
-            ]),
-        )
+        sandbox.stub(utils, "getDisplayedFormFields").resolves([
+          {
+            label: "Super Label",
+            type: "string",
+            name: "boo",
+          },
+        ])
 
-        const form = action.form(request)
+        const form = await action.form(request)
 
-        return chai.expect(form).to.eventually.deep.equal({
+        chai.expect(form).to.deep.equal({
           fields: [
             {
               default: defaultWsId,
@@ -235,63 +229,60 @@ describe(`${action.constructor.name} tests`, () => {
               name: "boo",
             },
           ],
-        }).and.notify(stubClient.restore)
+        })
       })
 
-       it("select the correct workspace and fetch form", () => {
+      it("select the correct workspace and fetch form", async () => {
         const selectedWorkspace = "ws2"
 
         const request = new Hub.ActionRequest()
         request.params.state_url = "/flooby"
         request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
         request.params = {
-          state_json: JSON.stringify(
-              [
-                { install_id: "ws1", token: "someToken1"},
-                { install_id: "ws2", token: "someToken2"},
-              ],
-          ),
+          state_json: JSON.stringify([
+            { install_id: "ws1", token: "someToken1"},
+            { install_id: "ws2", token: "someToken2"},
+          ]),
         }
         request.formParams.workspace = selectedWorkspace
 
         const mockClient2 = {
           auth: {
-            test: () => ({ ok: true, team: "WS2", team_id: selectedWorkspace}),
+            test: () => ({ ok: true, team: "WS2", team_id: selectedWorkspace }),
           },
         }
 
-        // @ts-ignore
-        const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
+        sandbox.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
           switch (token) {
             case "someToken1":
               return {
                 auth: {
-                  test: () => ({ ok: true, team: "WS1", team_id: "ws1"}),
+                  test: () => ({ ok: true, team: "WS1", team_id: "ws1" }),
                 },
-              }
+              } as any
             case "someToken2":
-              return mockClient2
+              return mockClient2 as any
           }
+          return null as any
         })
 
-        // @ts-ignore
-        getDisplayedFormFieldsStub = sinon.stub(utils, "getDisplayedFormFields").callsFake((client) => {
-          chai.expect(client).to.equals(mockClient2)
-          return [
+        sandbox.stub(utils, "getDisplayedFormFields").callsFake((client) => {
+          chai.expect(client).to.equal(mockClient2)
+          return Promise.resolve([
             {
               label: "Super Label",
               type: "string",
               name: "boo",
             },
-          ]
+          ])
         })
 
-        const form = action.form(request)
+        const form = await action.form(request)
 
-        return chai.expect(form).to.eventually.deep.equal({
+        chai.expect(form).to.deep.equal({
           fields: [
             {
-              default: selectedWorkspace ,
+              default: selectedWorkspace,
               description: "Name of the Slack workspace you would like to share in.",
               interactive: true,
               label: "Workspace",
@@ -315,7 +306,7 @@ describe(`${action.constructor.name} tests`, () => {
               name: "boo",
             },
           ],
-        }).and.notify(stubClient.restore)
+        })
       })
     })
   })
@@ -331,13 +322,13 @@ describe(`${action.constructor.name} tests`, () => {
       chai.expect(action.usesStreaming).equals(true)
     })
 
-    it("returns error response if no client was selected", () => {
+    it("returns error response if no client was selected", async () => {
       const request = new Hub.ActionRequest()
       request.webhookId = "webhookId"
 
-      const form = action.execute(request)
+      const form = await action.execute(request)
 
-      return chai.expect(form).to.eventually.deep.equal({
+      chai.expect(form).to.deep.equal({
         refreshQuery: false,
         success: false,
         error: {
@@ -353,28 +344,24 @@ describe(`${action.constructor.name} tests`, () => {
       })
     })
 
-    it("returns fields correctly from getDisplayedFormFields", () => {
+    it("returns fields correctly from getDisplayedFormFields", async () => {
       const response = new Hub.ActionResponse({success: true})
-      handleExecuteStub = sinon.stub(utils, "handleExecute").returns(
-          Promise.resolve(response),
-      )
+      sandbox.stub(utils, "handleExecute").resolves(response)
 
       const request = new Hub.ActionRequest()
 
       request.params = { state_json: "someToken" }
 
-      const form = action.execute(request)
+      const form = await action.execute(request)
 
-      return chai.expect(form).to.eventually.deep.equal(response)
+      chai.expect(form).to.deep.equal(response)
     })
 
     describe("multiple workspaces", () => {
-       it("has a selected workspace", () => {
+       it("has a selected workspace", async () => {
         const response = new Hub.ActionResponse({success: true})
 
-        handleExecuteStub = sinon.stub(utils, "handleExecute").returns(
-            Promise.resolve(response),
-        )
+        sandbox.stub(utils, "handleExecute").resolves(response)
 
         const request = new Hub.ActionRequest()
 
@@ -383,39 +370,39 @@ describe(`${action.constructor.name} tests`, () => {
         request.params = { state_json: JSON.stringify([{ install_id: "ws1", token: "someToken"}]) }
         request.formParams = { workspace: "ws1" }
 
-        const form = action.execute(request)
+        const form = await action.execute(request)
 
-        return chai.expect(form).to.eventually.deep.equal(response)
+        chai.expect(form).to.deep.equal(response)
       })
 
-       it("doesn't have a selected workspace default to the first one", () => {
+       it("doesn't have a selected workspace default to the first one", async () => {
          const response = new Hub.ActionResponse({success: true})
 
-         handleExecuteStub = sinon.stub(utils, "handleExecute").returns(Promise.resolve(response))
+         sandbox.stub(utils, "handleExecute").resolves(response)
 
          const request = new Hub.ActionRequest()
          request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
          request.params = { state_json: JSON.stringify([{ install_id: "ws1", token: "someToken"}]) }
 
-         const form = action.execute(request)
+         const form = await action.execute(request)
 
-         return chai.expect(form).to.eventually.deep.equal(response)
+         chai.expect(form).to.deep.equal(response)
       })
 
-       it("uses the selected workspace if multiple ws is given", () => {
+       it("uses the selected workspace if multiple ws is given", async () => {
         const response = new Hub.ActionResponse({success: true})
 
-        const mockClient1 = { id: "I'm mockClient1", token: "some token 1"}
-        const mockClient2 = { id: "I'm mockClient2", token: "some token 2"}
+        const mockClient1 = { id: "I'm mockClient1", token: "some token 1" }
+        const mockClient2 = { id: "I'm mockClient2", token: "some token 2" }
 
-        // @ts-ignore
-        const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
+        sandbox.stub(SlackClientManager, "makeSlackClient").callsFake((token) => {
           switch (token) {
             case "some token 1":
-              return mockClient1
+              return mockClient1 as any
             case "some token 2":
-              return mockClient2
+              return mockClient2 as any
           }
+          return null as any
         })
 
         const request = new Hub.ActionRequest()
@@ -423,30 +410,23 @@ describe(`${action.constructor.name} tests`, () => {
         request.lookerVersion = MULTI_WORKSPACE_SUPPORTED_VERSION
 
         request.params = {
-          state_json: JSON.stringify(
-              [
-                { install_id: "ws1", token: "some token 1"},
-                { install_id: "ws2", token: "some token 2"},
-              ],
-          ),
+          state_json: JSON.stringify([
+            { install_id: "ws1", token: "some token 1"},
+            { install_id: "ws2", token: "some token 2"},
+          ]),
         }
 
         request.formParams = { workspace: "ws2" }
 
-        // @ts-ignore
-        handleExecuteStub = sinon.stub(utils, "handleExecute").callsFake((r, client) => {
-          // pass in the whole request
-          chai.expect(r).to.equals(request)
-
-          // pass in the correct client
-          chai.expect(client).to.equals(mockClient2)
-
-          return response
+        sandbox.stub(utils, "handleExecute").callsFake((r, client) => {
+          chai.expect(r).to.equal(request)
+          chai.expect(client).to.equal(mockClient2)
+          return Promise.resolve(response)
         })
 
-        const form = action.execute(request)
+        const form = await action.execute(request)
 
-        return chai.expect(form).to.eventually.deep.equal(response).and.notify(stubClient.restore)
+        chai.expect(form).to.deep.equal(response)
       })
     })
   })
@@ -472,7 +452,7 @@ describe(`${action.constructor.name} tests`, () => {
      */
     it("should read unencrypted state and return encrypted state", async () => {
       const mockClient = { auth: { test: sinon.stub().resolves({ ok: true, team: "test", team_id: "T123" }) } }
-      const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").returns(mockClient as any)
+      sandbox.stub(SlackClientManager, "makeSlackClient").returns(mockClient as any)
 
       const request = new Hub.ActionRequest()
       request.params = {
@@ -484,8 +464,6 @@ describe(`${action.constructor.name} tests`, () => {
       chai.expect(response.state).to.be.an.instanceOf(Hub.ActionState)
       chai.expect(response.state!.data).to.not.equal(request.params.state_json)
       chai.expect(response.state!.data!.startsWith("1")).to.be.true
-
-      stubClient.restore()
     })
 
     /**
@@ -503,14 +481,12 @@ describe(`${action.constructor.name} tests`, () => {
       }
 
       const mockClient = { auth: { test: sinon.stub().resolves({ ok: true, team: "test", team_id: "T123" }) } }
-      const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((p) => {
+      sandbox.stub(SlackClientManager, "makeSlackClient").callsFake((p) => {
         chai.expect(p).to.equal(plainState)
         return mockClient as any
       })
 
       await action.oauthCheck(request)
-
-      stubClient.restore()
     })
   })
 })

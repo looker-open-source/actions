@@ -8,74 +8,75 @@ import { getDisplayedFormFields, handleExecute } from "./utils"
 
 const stubFileName = "stubSuggestedFilename"
 
-function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadArguments) {
 
-    const slackClient = new WebClient("someToken")
-    const expectedBuffer = optionsMatch.file as Buffer
-    const fileId = "1234ABCDX"
-    delete optionsMatch.file
-    const uploadUrlSpy = sinon.spy(async (_: any) => {
-        return {
-            upload_url: "https://fake-url.com",
-            file_id: fileId,
-        }
-    })
-
-    const filesUploadSpy = sinon.spy(async (params: any) => {
-        chai.expect(params.data.toString()).to.equal(expectedBuffer.toString())
-        return {}
-    })
-
-    const finalizeSpy = sinon.spy(async (params: any) => {
-        chai.expect(params.files[0].id).to.equal(fileId)
-        chai.expect(params.files[0].title).to.equal(optionsMatch.filename)
-        chai.expect(params.channel_id).to.equal(optionsMatch.channels)
-        chai.expect(params.initial_comment).to.equal(optionsMatch.initial_comment)
-        chai.expect(params.initial_comment).to.equal("NOT A MATCH")
-        return {}
-    })
-
-    const stubClientURL = sinon.stub(slackClient.files, "getUploadURLExternal").callsFake(uploadUrlSpy)
-    const stubUpload = sinon.stub(gaxios, "request").callsFake(filesUploadSpy)
-    const stubFinalize = sinon.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeSpy)
-    const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
-        .callsFake(() => stubFileName)
-
-    return chai.expect(handleExecute(request, slackClient)).to.be.fulfilled.then(() => {
-        chai.expect(filesUploadSpy).to.have.been.called
-        chai.expect(uploadUrlSpy).to.have.been.called
-        chai.expect(filesUploadSpy).to.have.been.called
-        chai.expect(finalizeSpy).to.have.been.called
-        stubClientURL.restore()
-        stubUpload.restore()
-        stubFinalize.restore()
-        stubSuggestedFilename.restore()
-    })
-}
-
-function expectSlackChatMatch(request: Hub.ActionRequest, optionsMatch: ChatPostMessageArguments) {
-
-    const slackClient = new WebClient("someToken")
-
-    const stubClient = sinon.stub(slackClient.chat, "postMessage")
-
-    const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
-      .callsFake(() => stubFileName)
-
-    return chai.expect(handleExecute(request, slackClient)).to.be.fulfilled.then(() => {
-        chai.expect(stubClient).to.have.been.calledWithMatch(optionsMatch)
-        stubClient.restore()
-        stubSuggestedFilename.restore()
-    })
-}
 
 describe(`slack/utils unit tests`, () => {
+    let sandbox: sinon.SinonSandbox
+
+    beforeEach(() => {
+        sandbox = sinon.createSandbox()
+    })
+
+    afterEach(() => {
+        sandbox.restore()
+    })
+
+    async function expectSlackMatch(request: Hub.ActionRequest, optionsMatch: FilesUploadArguments) {
+
+        const slackClient = new WebClient("someToken")
+        const expectedBuffer = optionsMatch.file as Buffer
+        const fileId = "1234ABCDX"
+        delete optionsMatch.file
+        const uploadUrlSpy = sandbox.spy(async (_: any) => {
+            return {
+                upload_url: "https://fake-url.com",
+                file_id: fileId,
+            }
+        })
+
+        const filesUploadSpy = sandbox.spy(async (params: any) => {
+            chai.expect(params.data.toString()).to.equal(expectedBuffer.toString())
+            return {}
+        })
+
+        const finalizeSpy = sandbox.spy(async (params: any) => {
+            chai.expect(params.files[0].id).to.equal(fileId)
+            chai.expect(params.files[0].title).to.equal(optionsMatch.filename)
+            chai.expect(params.channel_id).to.equal(optionsMatch.channels)
+            chai.expect(params.initial_comment).to.equal(optionsMatch.initial_comment)
+            return {}
+        })
+
+        sandbox.stub(slackClient.files, "getUploadURLExternal").callsFake(uploadUrlSpy)
+        sandbox.stub(gaxios, "request").callsFake(filesUploadSpy)
+        sandbox.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeSpy)
+        sandbox.stub(request as any, "suggestedFilename")
+            .callsFake(() => stubFileName)
+
+        await handleExecute(request, slackClient)
+        sinon.assert.called(filesUploadSpy)
+        sinon.assert.called(uploadUrlSpy)
+        sinon.assert.called(finalizeSpy)
+    }
+
+    async function expectSlackChatMatch(request: Hub.ActionRequest, optionsMatch: ChatPostMessageArguments) {
+
+        const slackClient = new WebClient("someToken")
+
+        const stubClient = sandbox.stub(slackClient.chat, "postMessage")
+
+        sandbox.stub(request as any, "suggestedFilename")
+          .callsFake(() => stubFileName)
+
+        await handleExecute(request, slackClient)
+        sinon.assert.calledWithMatch(stubClient, optionsMatch)
+    }
 
     describe("getDisplayedFormFields", () => {
-        it("returns correct channels", (done) => {
+        it("returns correct channels", async () => {
             const slackClient = new WebClient("token")
             // @ts-ignore
-            sinon.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
+            sandbox.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
               {
                   ok: true,
                   channels: [
@@ -95,7 +96,7 @@ describe(`slack/utils unit tests`, () => {
               },
             )
             // @ts-ignore
-            sinon.stub(slackClient.users, "list").callsFake((filters: any) => filters.cursor ?
+            sandbox.stub(slackClient.users, "list").callsFake((filters: any) => filters.cursor ?
                 {
                     ok: true,
                     members: [
@@ -113,8 +114,8 @@ describe(`slack/utils unit tests`, () => {
                         next_cursor: "cursor",
                     },
                 })
-            const result = getDisplayedFormFields(slackClient, "channels")
-            chai.expect(result).to.eventually.deep.equal([
+            const result = await getDisplayedFormFields(slackClient, "channels")
+            chai.expect(result).to.deep.equal([
                 {
                     description: "Type of destination to fetch",
                     label: "Channel Type",
@@ -149,13 +150,13 @@ describe(`slack/utils unit tests`, () => {
                     name: "filename",
                     type: "string",
                 },
-            ]).and.notify(done)
+            ])
         })
 
-        it("returns correct users", (done) => {
+        it("returns correct users", async () => {
             const slackClient = new WebClient("token")
             // @ts-ignore
-            sinon.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
+            sandbox.stub(slackClient.conversations, "list").callsFake((filters: any) => filters.cursor ?
                 {
                     ok: true,
                     channels: [
@@ -175,7 +176,7 @@ describe(`slack/utils unit tests`, () => {
                 },
             )
             // @ts-ignore
-            sinon.stub(slackClient.users, "list").callsFake((filters: any) => filters.cursor ?
+            sandbox.stub(slackClient.users, "list").callsFake((filters: any) => filters.cursor ?
                 {
                     ok: true,
                     members: [
@@ -193,8 +194,8 @@ describe(`slack/utils unit tests`, () => {
                         next_cursor: "cursor",
                     },
                 })
-            const result = getDisplayedFormFields(slackClient, "users")
-            chai.expect(result).to.eventually.deep.equal([
+            const result = await getDisplayedFormFields(slackClient, "users")
+            chai.expect(result).to.deep.equal([
                 {
                     description: "Type of destination to fetch",
                     label: "Channel Type",
@@ -228,13 +229,13 @@ describe(`slack/utils unit tests`, () => {
                     name: "filename",
                     type: "string",
                 },
-            ]).and.notify(done)
+            ])
         })
 
-        it("returns form with manual enabled", (done) => {
+        it("returns form with manual enabled", async () => {
             const slackClient = new WebClient("token")
-            const result = getDisplayedFormFields(slackClient, "manual")
-            chai.expect(result).to.eventually.deep.equal([
+            const result = await getDisplayedFormFields(slackClient, "manual")
+            chai.expect(result).to.deep.equal([
                 {
                     description: "Type of destination to fetch",
                     label: "Channel Type",
@@ -262,12 +263,12 @@ describe(`slack/utils unit tests`, () => {
                     name: "filename",
                     type: "string",
                 },
-            ]).and.notify(done)
+            ])
         })
     })
 
     describe("handleExecute", () => {
-        it("errors if there is no channel", (done) => {
+        it("errors if there is no channel", async () => {
             const slackClient = new WebClient()
             const request = new Hub.ActionRequest()
             request.formParams = {}
@@ -276,7 +277,8 @@ describe(`slack/utils unit tests`, () => {
                 fileExtension: "csv",
             }
             request.webhookId = "webhookId"
-            chai.expect(handleExecute(request, slackClient)).to.eventually.deep.equal({
+            const result = await handleExecute(request, slackClient)
+            chai.expect(result).to.deep.equal({
                 refreshQuery: false,
                 success: false,
                 error: {
@@ -289,7 +291,7 @@ describe(`slack/utils unit tests`, () => {
                 message: "Server cannot process request due to client request error. [SLACK] Missing channel",
                 validationErrors: [],
                 webhookId: "webhookId",
-              }).and.notify(done)
+              })
         })
 
         it("sends to right body, channel and filename if specified", () => {
@@ -383,7 +385,7 @@ describe(`slack/utils unit tests`, () => {
             })
         })
 
-        it("returns failure on slack files.upload error", (done) => {
+        it("returns failure on slack files.upload error", async () => {
             const request = new Hub.ActionRequest()
             const fileId = "1234ABCDX"
             request.type = Hub.ActionType.Query
@@ -401,27 +403,28 @@ describe(`slack/utils unit tests`, () => {
             request.webhookId = "webhookId"
 
             const slackClient = new WebClient()
-            const uploadUrlFailSpy = sinon.spy(async (_: any) => {
+            const uploadUrlFailSpy = sandbox.spy(async (_: any) => {
                 return {
                     upload_url: "https://fake-url.com",
                     file_id: fileId,
                 }
             })
 
-            const filesUploadFailSpy = sinon.spy(async (_: any) => {
+            const filesUploadFailSpy = sandbox.spy(async (_: any) => {
                 return {}
             })
 
-            const finalizeFailSpy = sinon.spy(async () => Promise.reject({
+            const finalizeFailSpy = sandbox.spy(async () => Promise.reject({
                 type: "CHANNEL_NOT_FOUND",
                 message: "Could not find channel mychannel",
             }))
 
-            const stubClientURL = sinon.stub(slackClient.files, "getUploadURLExternal").callsFake(uploadUrlFailSpy)
-            const stubUpload = sinon.stub(gaxios, "request").callsFake(filesUploadFailSpy)
-            const stubFinalize = sinon.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeFailSpy)
+            sandbox.stub(slackClient.files, "getUploadURLExternal").callsFake(uploadUrlFailSpy)
+            sandbox.stub(gaxios, "request").callsFake(filesUploadFailSpy)
+            sandbox.stub(slackClient.files, "completeUploadExternal").callsFake(finalizeFailSpy)
 
-            chai.expect(handleExecute(request, slackClient)).to.eventually.deep.equal({
+            const result = await handleExecute(request, slackClient)
+            chai.expect(result).to.deep.equal({
                 refreshQuery: false,
                 success: false,
                 error: {
@@ -434,12 +437,7 @@ describe(`slack/utils unit tests`, () => {
                 message: "Internal server error. [SLACK] Error while sending data Could not find channel mychannel",
                 validationErrors: [],
                 webhookId: "webhookId",
-              }).then(() => {
-                stubClientURL.restore()
-                stubUpload.restore()
-                stubFinalize.restore()
-                done()
-            })
+              })
         })
     })
 })
