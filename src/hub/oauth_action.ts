@@ -16,6 +16,12 @@ export abstract class OAuthAction extends Action {
     return json
   }
 
+  /**
+   * Extracts token state from a JSON string.
+   * - If parsing fails, returns null.
+   * - If encryption markers are present, attempts to decrypt.
+   * - Otherwise, returns the unencrypted JSON object.
+   */
   async oauthExtractTokensFromStateJson(
     stateJson: string,
     requestWebhookId: string | undefined,
@@ -24,7 +30,6 @@ export abstract class OAuthAction extends Action {
     try {
       state = JSON.parse(stateJson)
     } catch (e: any) {
-      // Outcome 1: Returns null if parsing state_json fails (e.g. malformed JSON).
       winston.error(
         `Failed to parse state_json`,
         { webhookId: requestWebhookId, action: this.name },
@@ -32,60 +37,49 @@ export abstract class OAuthAction extends Action {
       return null
     }
 
-    if (state.cid && state.payload) {
-      // Outcome 3: State is encrypted. Decrypt using oauthDecryptTokens.
-      winston.info("Extracting encrypted state_json", { webhookId: requestWebhookId, action: this.name })
-      const encryptedPayload = new EncryptedPayload(state.cid, state.payload)
-      try {
-        const tokenPayload = await this.oauthDecryptTokens(
-          encryptedPayload,
-          requestWebhookId,
-        )
-        // tokenPayload is the decrypted contents of state.payload
-        return tokenPayload
-      } catch (e: any) {
-        // Outcome 4: Returns null if decryption fails (e.g. wrong key, tampered data).
-        winston.error(
-          `Failed to decrypt or parse encrypted payload: ${e.message}`,
-          { webhookId: requestWebhookId, action: this.name },
-        )
-        return null
-      }
-    } else {
-      // Outcome 2: State is unencrypted. Return as is.
+    if (!state.cid || !state.payload) {
       winston.info("Extracting unencrypted state_json", { webhookId: requestWebhookId, action: this.name })
       return state
     }
+
+    winston.info("Extracting encrypted state_json", { webhookId: requestWebhookId, action: this.name })
+    const encryptedPayload = new EncryptedPayload(state.cid, state.payload)
+    try {
+      return await this.oauthDecryptTokens(encryptedPayload, requestWebhookId)
+    } catch (e: any) {
+      winston.error(
+        `Failed to decrypt or parse encrypted payload: ${e.message}`,
+        { webhookId: requestWebhookId, action: this.name },
+      )
+      return null
+    }
   }
 
+  /**
+   * Conditionally encrypts token payloads based on the per-action environment config.
+   * - If `ENCRYPT_PAYLOAD_<ACTION_NAME>` is "true", returns an EncryptedPayload.
+   * - Otherwise, returns a standard stringified JSON payload.
+   */
   async oauthMaybeEncryptTokens(
     tokenPayload: any,
     requestWebhookId: string | undefined,
   ): Promise<EncryptedPayload | string> {
-    // Generate the per-action environment variable name
-    // e.g. "salesforce_campaigns" -> "ENCRYPT_PAYLOAD_SALESFORCE_CAMPAIGNS"
     const envVarName = `ENCRYPT_PAYLOAD_${this.name.toUpperCase()}`
     const perActionEncryptionValue = process.env[envVarName]
 
-    // Check per-action variable. Default to false if not set.
-    // We explicitly do NOT fallback to ENCRYPT_PAYLOAD as that is reserved for Google Drive.
-    const shouldEncrypt = perActionEncryptionValue === "true"
-
-    if (shouldEncrypt) {
-      // Outcome 1: Encryption enabled. Encrypt using actionCrypto and return EncryptedPayload.
-      const encrypted = await OAuthAction.actionCrypto.encrypt(JSON.stringify(tokenPayload)).catch((err: string) => {
-        winston.error("Encryption not correctly configured", { webhookId: requestWebhookId, action: this.name })
-        throw err
-      })
-      const payload = new EncryptedPayload(
-        EncryptedPayload.currentCipherId,
-        encrypted,
-      )
-      return payload
-    } else {
-      // Outcome 2: Encryption disabled. Return JSON stringified payload.
+    if (perActionEncryptionValue !== "true") {
       return JSON.stringify(tokenPayload)
     }
+
+    const encrypted = await OAuthAction.actionCrypto.encrypt(JSON.stringify(tokenPayload)).catch((err: string) => {
+      winston.error("Encryption not correctly configured", { webhookId: requestWebhookId, action: this.name })
+      throw err
+    })
+
+    return new EncryptedPayload(
+      EncryptedPayload.currentCipherId,
+      encrypted,
+    )
   }
 
   async oauthDecryptTokens(

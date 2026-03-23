@@ -56,15 +56,27 @@ export class AirtableAction extends Hub.OAuthAction {
       let accessToken: string | undefined
       let tokens: AirtableTokens | undefined
       if (request.params.state_json) {
-        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-        tokens = AirtableTokens.fromJson(stateJson)
-        accessToken = tokens.access_token
-        const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
-          tokens.refresh_token,
-          accessToken,
-          tokens.redirectUri,
-        ), request.webhookId)
-        state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+        const parsedState = JSON.parse(request.params.state_json)
+        if (parsedState.cid && parsedState.payload) {
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+          tokens = AirtableTokens.fromJson(stateJson)
+          accessToken = tokens.access_token
+          const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
+            tokens.refresh_token,
+            accessToken,
+            tokens.redirectUri,
+          ), request.webhookId)
+          state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+        } else {
+          tokens = AirtableTokens.fromJson(parsedState)
+          accessToken = tokens.access_token
+          state.data = JSON.stringify({
+            tokens: {
+              refresh_token: tokens.refresh_token,
+              access_token: accessToken,
+            },
+          })
+        }
       }
 
       try {
@@ -126,12 +138,18 @@ export class AirtableAction extends Hub.OAuthAction {
     try {
       let accessToken: string | undefined
       let tokens: AirtableTokens | undefined
-      // We expect request.params.state_json to contain either a legacy unencrypted JSON string
-      // with token details or an encrypted payload from Action Hub (if encryption is enabled).
+      let isEncrypted = false
       if (request.params.state_json) {
-        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-        tokens = AirtableTokens.fromJson(stateJson)
-        accessToken = tokens.access_token
+        const parsedState = JSON.parse(request.params.state_json)
+        if (parsedState.cid && parsedState.payload) {
+          isEncrypted = true
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+          tokens = AirtableTokens.fromJson(stateJson)
+          accessToken = tokens.access_token
+        } else {
+          tokens = AirtableTokens.fromJson(parsedState)
+          accessToken = tokens.access_token
+        }
       }
       try {
         if (!accessToken) {
@@ -140,11 +158,13 @@ export class AirtableAction extends Hub.OAuthAction {
         await this.checkBaseList(accessToken)
         if (form.state === undefined) {
           form.state = new ActionState()
-          if (tokens) {
+          if (isEncrypted && tokens) {
             const encrypted = await this.oauthMaybeEncryptTokens(tokens, request.webhookId)
             const encryptedStr = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
             request.params.state_json = encryptedStr
             form.state.data = encryptedStr
+          } else {
+            form.state.data = request.params.state_json
           }
         }
       } catch {
@@ -207,9 +227,13 @@ export class AirtableAction extends Hub.OAuthAction {
   // contains valid (encrypted or unencrypted) token state.
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
-      const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-      if (stateJson) {
-        return true
+      const parsedState = JSON.parse(request.params.state_json)
+      if (parsedState.cid && parsedState.payload) {
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+        return !!stateJson
+      } else {
+        const tokens = AirtableTokens.fromJson(parsedState)
+        return !!tokens.access_token
       }
     }
     return false
