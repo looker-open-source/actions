@@ -1,5 +1,6 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
+import {AESTransitCrypto} from "../../crypto/aes_transit_crypto"
 
 import * as Hub from "../../hub"
 import {SlackAction} from "./slack"
@@ -447,6 +448,69 @@ describe(`${action.constructor.name} tests`, () => {
 
         return chai.expect(form).to.eventually.deep.equal(response).and.notify(stubClient.restore)
       })
+    })
+  })
+  describe("Token Encryption", () => {
+    let originalCipherMaster: string | undefined
+    let originalEncryptPayload: string | undefined
+
+    beforeEach(() => {
+      originalCipherMaster = process.env.CIPHER_MASTER
+      originalEncryptPayload = process.env.ENCRYPT_PAYLOAD_SLACK_APP
+      process.env.CIPHER_MASTER = "0000000000000000000000000000000000000000000000000000000000000000"
+      process.env.ENCRYPT_PAYLOAD_SLACK_APP = "true"
+    })
+
+    afterEach(() => {
+      process.env.CIPHER_MASTER = originalCipherMaster
+      process.env.ENCRYPT_PAYLOAD_SLACK_APP = originalEncryptPayload
+    })
+
+    /**
+     * Tests that when plain text state is received and encryption is enabled,
+     * the action returns an ActionState with the encrypted payload.
+     */
+    it("should read unencrypted state and return encrypted state", async () => {
+      const mockClient = { auth: { test: sinon.stub().resolves({ ok: true, team: "test", team_id: "T123" }) } }
+      const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").returns(mockClient as any)
+
+      const request = new Hub.ActionRequest()
+      request.params = {
+        state_json: "plain-token",
+      }
+
+      const response = await action.oauthCheck(request)
+      chai.expect(response.fields.some((f: any) => f.name === "Connected")).to.be.true
+      chai.expect(response.state).to.be.an.instanceOf(Hub.ActionState)
+      chai.expect(response.state!.data).to.not.equal(request.params.state_json)
+      chai.expect(response.state!.data!.startsWith("1")).to.be.true
+
+      stubClient.restore()
+    })
+
+    /**
+     * Tests that when encrypted state is received, the action correctly
+     * decrypts it before passing it to the Slack client manager.
+     */
+    it("should decrypt encrypted state", async () => {
+      const crypto = new AESTransitCrypto()
+      const plainState = "secret-token"
+      const encState = await crypto.encrypt(plainState)
+
+      const request = new Hub.ActionRequest()
+      request.params = {
+        state_json: encState,
+      }
+
+      const mockClient = { auth: { test: sinon.stub().resolves({ ok: true, team: "test", team_id: "T123" }) } }
+      const stubClient = sinon.stub(SlackClientManager, "makeSlackClient").callsFake((p) => {
+        chai.expect(p).to.equal(plainState)
+        return mockClient as any
+      })
+
+      await action.oauthCheck(request)
+
+      stubClient.restore()
     })
   })
 })
