@@ -97,8 +97,14 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.formParams = {filename: stubFileName, directory: stubDirectory}
 
       try {
-        await expectDropboxMatch(request, {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
-        chai.expect(stubDecrypt).to.have.been.calledWith(`{"cid": "123", "payload": "encrypted_payload"}`, request.webhookId)
+        await expectDropboxMatch(request, {
+          path: `/${stubDirectory}/${stubFileName}.csv`,
+          contents: Buffer.from("Hello"),
+        })
+        chai.expect(stubDecrypt).to.have.been.calledWith(
+          `{"cid": "123", "payload": "encrypted_payload"}`,
+          request.webhookId,
+        )
       } finally {
         stubDecrypt.restore()
       }
@@ -156,8 +162,8 @@ describe(`${action.constructor.name} unit tests`, () => {
             description: "In order to send to a Dropbox file or folder now and in the future, you will need to log " +
               "in once to your Dropbox account.",
             label: "Log in",
-            oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
-              `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
+            oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6` +
+              `Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
           }],
           state: {},
         })
