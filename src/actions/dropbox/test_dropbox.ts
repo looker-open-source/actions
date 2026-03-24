@@ -59,10 +59,13 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_json: `{"access_token": "token"}`,
       }
       const encryptSpy = sinon.spy(action as any, "oauthExtractTokensFromStateJson")
-      await expectDropboxMatch(request,
-        {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
-      chai.expect(encryptSpy).to.not.have.been.called
-      encryptSpy.restore()
+      try {
+        await expectDropboxMatch(request,
+          {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
+        chai.expect(encryptSpy).to.not.have.been.called
+      } finally {
+        encryptSpy.restore()
+      }
     })
 
     it("sets state to reset if error in fileUpload", (done) => {
@@ -87,16 +90,18 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
     it("uses oauthExtractTokensFromStateJson to decrypt state", async () => {
-      const stubDecrypt = sinon.stub(action as any, "oauthExtractTokensFromStateJson").resolves({code: "mycode", redirect: "myredirect"})
+      const stubDecrypt = sinon.stub(action as any, "oauthExtractTokensFromStateJson").resolves({access_token: "decrypted_token"})
       const request = new Hub.ActionRequest()
       request.params = { state_json: `{"cid": "123", "payload": "encrypted_payload"}` }
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
 
-      await expectDropboxMatch(request, {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
-
-      chai.expect(stubDecrypt).to.have.been.calledWith(`{"cid": "123", "payload": "encrypted_payload"}`, request.webhookId)
-      stubDecrypt.restore()
+      try {
+        await expectDropboxMatch(request, {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
+        chai.expect(stubDecrypt).to.have.been.calledWith(`{"cid": "123", "payload": "encrypted_payload"}`, request.webhookId)
+      } finally {
+        stubDecrypt.restore()
+      }
     })
   })
 
@@ -141,22 +146,25 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_json: `{"access_token": "token"}`,
       }
       const encryptSpy = sinon.spy(action as any, "oauthExtractTokensFromStateJson")
-      const form = await action.validateAndFetchForm(request)
-      chai.expect(encryptSpy).to.not.have.been.called
-      chai.expect(form).to.deep.equal({
-        fields: [{
-          name: "login",
-          type: "oauth_link",
-          description: "In order to send to a Dropbox file or folder now and in the future, you will need to log " +
-            "in once to your Dropbox account.",
-          label: "Log in",
-          oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
-            `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
-        }],
-        state: {},
-      })
-      stubClient.restore()
-      encryptSpy.restore()
+      try {
+        const form = await action.validateAndFetchForm(request)
+        chai.expect(encryptSpy).to.not.have.been.called
+        chai.expect(form).to.deep.equal({
+          fields: [{
+            name: "login",
+            type: "oauth_link",
+            description: "In order to send to a Dropbox file or folder now and in the future, you will need to log " +
+              "in once to your Dropbox account.",
+            label: "Log in",
+            oauth_url: `${process.env.ACTION_HUB_BASE_URL}/actions/dropbox/oauth?state=eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9` +
+              `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
+          }],
+          state: {},
+        })
+      } finally {
+        stubClient.restore()
+        encryptSpy.restore()
+      }
     })
 
     it("returns correct fields on oauth success", (done) => {
