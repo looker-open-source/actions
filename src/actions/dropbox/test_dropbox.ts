@@ -50,7 +50,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(action.usesStreaming).equals(false)
     })
 
-    it("successfully interprets execute request params", async () => {
+    it("successfully interprets unencrypted execute request params", async () => {
       const request = new Hub.ActionRequest()
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
@@ -58,8 +58,11 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
+      const encryptSpy = sinon.spy(action as any, "oauthExtractTokensFromStateJson")
       await expectDropboxMatch(request,
         {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
+      chai.expect(encryptSpy).to.not.have.been.called
+      encryptSpy.restore()
     })
 
     it("sets state to reset if error in fileUpload", (done) => {
@@ -84,15 +87,15 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
     it("uses oauthExtractTokensFromStateJson to decrypt state", async () => {
-      const stubDecrypt = sinon.stub(action as any, "oauthExtractTokensFromStateJson").resolves({access_token: "decrypted_token"})
+      const stubDecrypt = sinon.stub(action as any, "oauthExtractTokensFromStateJson").resolves({code: "mycode", redirect: "myredirect"})
       const request = new Hub.ActionRequest()
-      request.params = { state_json: "encrypted_json" }
+      request.params = { state_json: `{"cid": "123", "payload": "encrypted_payload"}` }
       request.attachment = {dataBuffer: Buffer.from("Hello"), fileExtension: "csv"}
       request.formParams = {filename: stubFileName, directory: stubDirectory}
 
       await expectDropboxMatch(request, {path: `/${stubDirectory}/${stubFileName}.csv`, contents: Buffer.from("Hello")})
 
-      chai.expect(stubDecrypt).to.have.been.calledWith("encrypted_json", request.webhookId)
+      chai.expect(stubDecrypt).to.have.been.calledWith(`{"cid": "123", "payload": "encrypted_payload"}`, request.webhookId)
       stubDecrypt.restore()
     })
   })
@@ -127,7 +130,7 @@ describe(`${action.constructor.name} unit tests`, () => {
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
-    it("does not blow up on bad state JSON and returns an OAUTH form", (done) => {
+    it("does not blow up on bad state JSON and returns an OAUTH form", async () => {
       const stubClient = sinon.stub(action as any, "dropboxClientFromRequest")
         .callsFake(() => ({
           filesListFolder: async (_: any) => Promise.reject("haha I failed auth"),
@@ -137,8 +140,10 @@ describe(`${action.constructor.name} unit tests`, () => {
         state_url: "https://looker.state.url.com/action_hub_state/asdfasdfasdfasdf",
         state_json: `{"access_token": "token"}`,
       }
-      const form = action.validateAndFetchForm(request)
-      chai.expect(form).to.eventually.deep.equal({
+      const encryptSpy = sinon.spy(action as any, "oauthExtractTokensFromStateJson")
+      const form = await action.validateAndFetchForm(request)
+      chai.expect(encryptSpy).to.not.have.been.called
+      chai.expect(form).to.deep.equal({
         fields: [{
           name: "login",
           type: "oauth_link",
@@ -149,7 +154,9 @@ describe(`${action.constructor.name} unit tests`, () => {
             `va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZhc2RmIn0`,
         }],
         state: {},
-      }).and.notify(stubClient.restore).and.notify(done)
+      })
+      stubClient.restore()
+      encryptSpy.restore()
     })
 
     it("returns correct fields on oauth success", (done) => {
