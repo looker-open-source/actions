@@ -221,6 +221,49 @@ describe(`${action.constructor.name} unit tests`, () => {
       })
     })
 
+    it("sends right body with encrypted state", () => {
+      const request = new Hub.ActionRequest()
+      const tokenPayload = JSON.stringify({
+        refresh_token: "lol",
+        access_token: "test",
+      })
+      const encryptedPayload = b64.encode(tokenPayload)
+      request.params.state_json = JSON.stringify({
+        cid: "test-cid",
+        payload: encryptedPayload,
+      })
+      request.formParams = {
+        base: "mybase",
+        table: "mytable",
+      }
+      request.attachment = {dataJSON: {
+        fields: {
+          dimensions: [
+            {name: "coolview.coolfield", tags: ["user_id"]},
+          ],
+        },
+        data: [{"coolview.coolfield": {value: "funvalue"}}],
+      }}
+      return expectWebhookMatch(request,
+        request.formParams.base,
+        request.formParams.table,
+        {"coolview.coolfield": "funvalue"},
+        {
+          refreshQuery: false,
+          state: {
+            data: JSON.stringify({
+              tokens: {
+                refresh_token: "lol",
+                access_token: "test",
+              },
+            }),
+          },
+          success: true,
+          validationErrors: [],
+        },
+      )
+    })
+
     it("refreshes on oauth failure", () => {
       const request = new Hub.ActionRequest()
       request.formParams = {
@@ -261,6 +304,21 @@ describe(`${action.constructor.name} unit tests`, () => {
       chai.expect(result).to.equal(true)
     })
 
+    it("returns true for encrypted state", async () => {
+      const request = new Hub.ActionRequest()
+      const tokenPayload = JSON.stringify({
+        refresh_token: "lol",
+        access_token: "test",
+      })
+      const encryptedPayload = b64.encode(tokenPayload)
+      request.params.state_json = JSON.stringify({
+        cid: "test-cid",
+        payload: encryptedPayload,
+      })
+      const result = await action.oauthCheck(request)
+      chai.expect(result).to.equal(true)
+    })
+
     it("returns false for missing state", async () => {
       const request = new Hub.ActionRequest()
       const result = await action.oauthCheck(request)
@@ -294,6 +352,43 @@ describe(`${action.constructor.name} unit tests`, () => {
         }],
         state: {
           data: "{\"tokens\":{\"refresh_token\":\"token\",\"access_token\":\"test\"}}",
+        },
+      }).and.notify(done)
+    })
+
+    it("succeeds with encrypted state during form setup", (done) => {
+      const request = new Hub.ActionRequest()
+      const tokenPayload = JSON.stringify({
+        refresh_token: "token",
+        access_token: "test",
+      })
+      const encryptedPayload = b64.encode(tokenPayload)
+      request.params.state_json = JSON.stringify({
+        cid: "test-cid",
+        payload: encryptedPayload,
+      })
+      gaxiosStub.resolves({data: {access_token: "test", refresh_token: "lol"}} as any)
+
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          label: "Airtable Base",
+          name: "base",
+          required: true,
+          type: "string",
+         }, {
+          label: "Airtable Table",
+          name: "table",
+          required: true,
+          type: "string",
+         }],
+        state: {
+          data: JSON.stringify({
+            tokens: {
+              refresh_token: "token",
+              access_token: "test",
+            },
+          }),
         },
       }).and.notify(done)
     })
