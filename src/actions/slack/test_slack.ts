@@ -483,7 +483,9 @@ describe(`${action.constructor.name} tests`, () => {
       chai.expect(response.fields.some((f: any) => f.name === "Connected")).to.be.true
       chai.expect(response.state).to.be.an.instanceOf(Hub.ActionState)
       chai.expect(response.state!.data).to.not.equal(request.params.state_json)
-      chai.expect(response.state!.data!.startsWith("1")).to.be.true
+      const parsedData = JSON.parse(response.state!.data!)
+      chai.expect(parsedData.cid).to.equal("1")
+      chai.expect(parsedData.payload).to.be.a("string")
 
       stubClient.restore()
     })
@@ -496,10 +498,11 @@ describe(`${action.constructor.name} tests`, () => {
       const crypto = new AESTransitCrypto()
       const plainState = "secret-token"
       const encState = await crypto.encrypt(plainState)
+      const payload = JSON.stringify({ cid: "1", payload: encState })
 
       const request = new Hub.ActionRequest()
       request.params = {
-        state_json: encState,
+        state_json: payload,
       }
 
       const mockClient = { auth: { test: sinon.stub().resolves({ ok: true, team: "test", team_id: "T123" }) } }

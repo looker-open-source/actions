@@ -65,7 +65,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       return resp
     } else {
       const executedResponse = await handleExecute(request, selectedClient)
-      await this.updateStateIfNeeded(executedResponse, decryptedState, request.params.state_json)
+      await this.updateStateIfNeeded(executedResponse, decryptedState, request.params.state_json, request.webhookId)
       return executedResponse
     }
   }
@@ -124,7 +124,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       return this.loginForm(request, form)
     }
 
-    await this.updateStateIfNeeded(form, decryptedState, request.params.state_json)
+    await this.updateStateIfNeeded(form, decryptedState, request.params.state_json, request.webhookId)
     return form
   }
 
@@ -177,7 +177,7 @@ export class SlackAction extends Hub.DelegateOAuthAction {
       form.error = displayError[e.message] || e
       winston.error(`${LOG_PREFIX} ${form.error}`, {webhookId: request.webhookId})
     }
-    await this.updateStateIfNeeded(form, decryptedState, request.params.state_json)
+    await this.updateStateIfNeeded(form, decryptedState, request.params.state_json, request.webhookId)
     return form
   }
 
@@ -202,10 +202,11 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     response: Hub.ActionResponse | Hub.ActionForm,
     decryptedState: string | undefined,
     originalState: string | undefined,
+    webhookId: string | undefined = undefined,
   ) {
     if (decryptedState && decryptedState === originalState && process.env.ENCRYPT_PAYLOAD_SLACK_APP === "true") {
       response.state = new Hub.ActionState()
-      response.state.data = await this.encryptStateJson(decryptedState)
+      response.state.data = await this.encryptStateJson(decryptedState, webhookId)
     }
   }
 
@@ -217,27 +218,37 @@ export class SlackAction extends Hub.DelegateOAuthAction {
     if (!request.params.state_json) {
       return undefined
     }
-    if (!request.params.state_json.startsWith("1")) {
-      return request.params.state_json
-    }
+
     try {
-      return await this.crypto.decrypt(request.params.state_json)
+      const parsed = JSON.parse(request.params.state_json)
+      if (parsed.cid && parsed.payload) {
+        winston.info("Extracting encrypted state_json", { webhookId: request.webhookId, action: this.name })
+        return await this.crypto.decrypt(parsed.payload)
+      }
     } catch (e: any) {
-      winston.warn(`${LOG_PREFIX} Decryption failed, assuming plain text: ${e.message}`)
+      winston.info("Extracting unencrypted state_json", { webhookId: request.webhookId, action: this.name })
       return request.params.state_json
     }
+
+    winston.info("Extracting unencrypted state_json", { webhookId: request.webhookId, action: this.name })
+    return request.params.state_json
   }
 
   /**
    * Encrypts the state_json string if the feature flag is enabled.
    * Returns the encrypted string or the original state if encryption fails or is disabled.
    */
-  private async encryptStateJson(stateJson: string): Promise<string> {
+  private async encryptStateJson(stateJson: string, webhookId: string | undefined): Promise<string> {
     if (process.env.ENCRYPT_PAYLOAD_SLACK_APP === "true") {
       try {
-        return await this.crypto.encrypt(stateJson)
+        const encrypted = await this.crypto.encrypt(stateJson)
+        const payload = {
+          cid: "1",
+          payload: encrypted,
+        }
+        return JSON.stringify(payload)
       } catch (e: any) {
-        winston.error(`${LOG_PREFIX} Encryption failed: ${e.message}`)
+        winston.error(`${LOG_PREFIX} Encryption failed: ${e.message}`, { webhookId, action: this.name })
         return stateJson
       }
     }
