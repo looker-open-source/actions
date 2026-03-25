@@ -1,7 +1,12 @@
 import * as chai from "chai"
+import * as chaiAsPromised from "chai-as-promised"
 import * as sinon from "sinon"
+import * as sinonChai from "sinon-chai"
 
 import * as Hub from "../../hub"
+
+chai.use(sinonChai)
+chai.use(chaiAsPromised)
 
 import * as b64 from "base64-url"
 import * as gaxios from "gaxios"
@@ -173,6 +178,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("returns failure on airtable create error", () => {
       const request = new Hub.ActionRequest()
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"lol\",\"access_token\":\"test\"}}"
       request.formParams = {
         base: "mybase",
         table: "mytable",
@@ -201,15 +207,61 @@ describe(`${action.constructor.name} unit tests`, () => {
         .callsFake(() => ({
           base: baseSpy,
         }))
+      gaxiosStub.resolves({data: {access_token: "test", refresh_token: "lol"}} as any)
       return chai.expect(action.execute(request)).to.eventually.deep.equal({
         success: false,
         message: "Could not find table Contacts123 in application app",
         refreshQuery: false,
-        state: {},
+        state: {
+          data: "{\"tokens\":{\"refresh_token\":\"lol\",\"access_token\":\"test\"}}",
+        },
         validationErrors: [],
       }).then(() => {
         stubPost.restore()
       })
+    })
+
+    it("sends right body with encrypted state", () => {
+      const request = new Hub.ActionRequest()
+      const tokenPayload = JSON.stringify({
+        refresh_token: "lol",
+        access_token: "test",
+      })
+      const encryptedPayload = b64.encode(tokenPayload)
+      request.params.state_json = JSON.stringify({
+        cid: "test-cid",
+        payload: encryptedPayload,
+      })
+      request.formParams = {
+        base: "mybase",
+        table: "mytable",
+      }
+      request.attachment = {dataJSON: {
+        fields: {
+          dimensions: [
+            {name: "coolview.coolfield", tags: ["user_id"]},
+          ],
+        },
+        data: [{"coolview.coolfield": {value: "funvalue"}}],
+      }}
+      return expectWebhookMatch(request,
+        request.formParams.base,
+        request.formParams.table,
+        {"coolview.coolfield": "funvalue"},
+        {
+          refreshQuery: false,
+          state: {
+            data: JSON.stringify({
+              tokens: {
+                refresh_token: "lol",
+                access_token: "test",
+              },
+            }),
+          },
+          success: true,
+          validationErrors: [],
+        },
+      )
     })
 
     it("refreshes on oauth failure", () => {
@@ -244,6 +296,36 @@ describe(`${action.constructor.name} unit tests`, () => {
 
   })
 
+  describe("oauthCheck", () => {
+    it("returns true for valid legacy unencrypted state", async () => {
+      const request = new Hub.ActionRequest()
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"lol\",\"access_token\":\"test\"}}"
+      const result = await action.oauthCheck(request)
+      chai.expect(result).to.equal(true)
+    })
+
+    it("returns true for encrypted state", async () => {
+      const request = new Hub.ActionRequest()
+      const tokenPayload = JSON.stringify({
+        refresh_token: "lol",
+        access_token: "test",
+      })
+      const encryptedPayload = b64.encode(tokenPayload)
+      request.params.state_json = JSON.stringify({
+        cid: "test-cid",
+        payload: encryptedPayload,
+      })
+      const result = await action.oauthCheck(request)
+      chai.expect(result).to.equal(true)
+    })
+
+    it("returns false for missing state", async () => {
+      const request = new Hub.ActionRequest()
+      const result = await action.oauthCheck(request)
+      chai.expect(result).to.equal(false)
+    })
+  })
+
   describe("form", () => {
 
     it("has form", () => {
@@ -252,7 +334,7 @@ describe(`${action.constructor.name} unit tests`, () => {
 
     it("has form with base and table param", (done) => {
       const request = new Hub.ActionRequest()
-      request.params.state_json = "{\"tokens\":{\"refresh_token\":\"token\"}}"
+      request.params.state_json = "{\"tokens\":{\"refresh_token\":\"token\",\"access_token\":\"test\"}}"
       gaxiosStub.resolves({data: {access_token: "test", refresh_token: "lol"}} as any)
 
       const form = action.validateAndFetchForm(request)
@@ -269,14 +351,51 @@ describe(`${action.constructor.name} unit tests`, () => {
           type: "string",
         }],
         state: {
-          data: "{\"tokens\":{\"refresh_token\":\"token\"}}",
+          data: "{\"tokens\":{\"refresh_token\":\"token\",\"access_token\":\"test\"}}",
+        },
+      }).and.notify(done)
+    })
+
+    it("succeeds with encrypted state during form setup", (done) => {
+      const request = new Hub.ActionRequest()
+      const tokenPayload = JSON.stringify({
+        refresh_token: "token",
+        access_token: "test",
+      })
+      const encryptedPayload = b64.encode(tokenPayload)
+      request.params.state_json = JSON.stringify({
+        cid: "test-cid",
+        payload: encryptedPayload,
+      })
+      gaxiosStub.resolves({data: {access_token: "test", refresh_token: "lol"}} as any)
+
+      const form = action.validateAndFetchForm(request)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          label: "Airtable Base",
+          name: "base",
+          required: true,
+          type: "string",
+         }, {
+          label: "Airtable Table",
+          name: "table",
+          required: true,
+          type: "string",
+         }],
+        state: {
+          data: JSON.stringify({
+            tokens: {
+              refresh_token: "token",
+              access_token: "test",
+            },
+          }),
         },
       }).and.notify(done)
     })
 
     it("succeeds after failing oauth once", (done) => {
       const request = new Hub.ActionRequest()
-      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"token\"}}"
+      request.params.state_json = "{\"tokens\": {\"refresh_token\": \"token\",\"access_token\":\"test\"}}"
       gaxiosStub
           .onCall(0)
           .throws("oauthTestFailure")
@@ -302,6 +421,44 @@ describe(`${action.constructor.name} unit tests`, () => {
           data: "{\"tokens\":{\"refresh_token\":\"lol\",\"access_token\":\"test\"}}",
         },
       }).and.notify(done)
+    })
+
+    describe("oauthFetchInfo", () => {
+      it("uses data instead of body for the stateurl callback", async () => {
+        const urlParams = {
+          code: "test_code",
+          state: b64.encode(JSON.stringify({
+            verifier: "test_verifier",
+            stateurl: "test_state_url",
+          })),
+        }
+        const redirectUri = "http://redirect"
+
+        // First call (token exchange) resolves with 200 and tokens
+        gaxiosStub.onFirstCall().resolves({
+          status: 200,
+          data: {
+            access_token: "fresh_access",
+            refresh_token: "fresh_refresh",
+          },
+        })
+
+        // Second call (callback to Looker) resolves with 200
+        gaxiosStub.onSecondCall().resolves({
+          status: 200,
+          data: {},
+        })
+
+        await action.oauthFetchInfo(urlParams, redirectUri)
+
+        // Assert that the second call to gaxios.request used 'data' and NOT 'body'
+        chai.expect(gaxiosStub).to.have.been.calledTwice
+        const secondCallArgs = gaxiosStub.secondCall.args[0]
+        chai.expect(secondCallArgs.url).to.equal("test_state_url")
+        chai.expect(secondCallArgs.method).to.equal("POST")
+        chai.expect(secondCallArgs.data).to.not.be.undefined // We want data to be used
+        chai.expect(secondCallArgs.body).to.be.undefined // We want body to be unused
+      })
     })
   })
 })
