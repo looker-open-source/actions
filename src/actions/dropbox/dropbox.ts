@@ -17,6 +17,9 @@ export class DropboxAction extends Hub.OAuthAction {
     requiredFields = []
     params = []
 
+  // The execute function handles the final delivery of the file to Dropbox.
+  // It attempts to extract tokens from request.params.state_json (handling both encrypted and legacy shapes),
+  // and if a code/redirect pair is found, it will exchange it for an access token.
   async execute(request: Hub.ActionRequest) {
     const filename = this.dropboxFilename(request)
     const directory = request.formParams.directory
@@ -24,12 +27,19 @@ export class DropboxAction extends Hub.OAuthAction {
 
     let accessToken = ""
     if (request.params.state_json) {
-      const stateJson = JSON.parse(request.params.state_json)
-      if (stateJson.code && stateJson.redirect) {
-        accessToken = await this.getAccessTokenFromCode(stateJson)
+      const parsedState = JSON.parse(request.params.state_json)
+      if (parsedState.cid && parsedState.payload) {
+        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+        if (stateJson && stateJson.code && stateJson.redirect) {
+          accessToken = await this.getAccessTokenFromCode(stateJson)
+        }
+      } else {
+        if (parsedState.code && parsedState.redirect) {
+          accessToken = await this.getAccessTokenFromCode(parsedState)
+        }
       }
     }
-    const drop = this.dropboxClientFromRequest(request, accessToken)
+    const drop = await this.dropboxClientFromRequest(request, accessToken)
 
     const resp = new Hub.ActionResponse()
     resp.success = true
@@ -49,6 +59,10 @@ export class DropboxAction extends Hub.OAuthAction {
     return resp
   }
 
+  // The form function generates the configuration form for the action.
+  // Like execute, it inspects state_json for tokens or code/redirect to determine if it should initialize the client or
+  // present an OAuth link. If the user is unauthenticated, it generates a login link with the state encrypted using
+  // Action Hub's internal crypto.
   async form(request: Hub.ActionRequest) {
     const form = new Hub.ActionForm()
     form.fields = []
@@ -56,13 +70,20 @@ export class DropboxAction extends Hub.OAuthAction {
     let accessToken = ""
     if (request.params.state_json) {
       try {
-        const stateJson = JSON.parse(request.params.state_json)
-        if (stateJson.code && stateJson.redirect) {
-          accessToken = await this.getAccessTokenFromCode(stateJson)
+        const parsedState = JSON.parse(request.params.state_json)
+        if (parsedState.cid && parsedState.payload) {
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+          if (stateJson && stateJson.code && stateJson.redirect) {
+            accessToken = await this.getAccessTokenFromCode(stateJson)
+          }
+        } else {
+          if (parsedState.code && parsedState.redirect) {
+            accessToken = await this.getAccessTokenFromCode(parsedState)
+          }
         }
       } catch { winston.warn("Could not parse state_json") }
     }
-    const drop = this.dropboxClientFromRequest(request, accessToken)
+    const drop = await this.dropboxClientFromRequest(request, accessToken)
     try {
       const response = await drop.filesListFolder({path: ""})
       const folderList = response.entries.filter((entries) => (entries[".tag"] === "folder"))
@@ -134,6 +155,9 @@ export class DropboxAction extends Hub.OAuthAction {
     return url.toString()
   }
 
+  // oauthFetchInfo is called when the OAuth provider redirects back to the action hub with the code.
+  // It decrypts the state (Action Hub crypto) to recover stateurl, and uses the shared encryption framework
+  // (oauthMaybeEncryptTokens) to secure the code payload before pushing it back to Looker's state url.
   async oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string) {
     const actionCrypto = new Hub.ActionCrypto()
     const plaintext = await actionCrypto.decrypt(urlParams.state).catch((err: string) => {
@@ -142,14 +166,18 @@ export class DropboxAction extends Hub.OAuthAction {
     })
 
     const payload = JSON.parse(plaintext)
+
+    const encrypted = await this.oauthMaybeEncryptTokens({code: urlParams.code, redirect: redirectUri}, undefined)
     await https.post({
       url: payload.stateurl,
-      body: JSON.stringify({code: urlParams.code, redirect: redirectUri}),
+      body: encrypted,
     }).catch((_err) => { winston.error(_err.toString()) })
   }
 
+  // oauthCheck verifies if the Action Hub has a valid state for rendering or running.
+  // If listing files from root succeeds, it returns true, otherwise false (triggering forms to present login fields).
   async oauthCheck(request: Hub.ActionRequest) {
-    const drop = this.dropboxClientFromRequest(request, "")
+    const drop = await this.dropboxClientFromRequest(request, "")
     try {
       await drop.filesListFolder({path: ""})
       return true
@@ -186,11 +214,24 @@ export class DropboxAction extends Hub.OAuthAction {
     return response.access_token
   }
 
-  protected dropboxClientFromRequest(request: Hub.ActionRequest, token: string) {
+  // dropboxClientFromRequest initializes a Dropbox client instance.
+  // If token is defined, it uses it directly. Otherwise, it attempts to parse state_json to find an access_token.
+  protected async dropboxClientFromRequest(request: Hub.ActionRequest, token: string) {
     if (request.params.state_json && token === "") {
       try {
-        const json = JSON.parse(request.params.state_json)
-        token = json.access_token
+        const parsedState = JSON.parse(request.params.state_json)
+        if (parsedState.cid && parsedState.payload) {
+          const json = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+          if (json) {
+            if (json.access_token) {
+              token = json.access_token
+            } else if (json.tokens && json.tokens.access_token) {
+              token = json.tokens.access_token
+            }
+          }
+        } else {
+          token = parsedState.access_token
+        }
       } catch (er) {
         winston.error("cannot parse")
       }
