@@ -106,10 +106,20 @@ export class GoogleCloudStorageAction extends Hub.Action {
       return new Hub.ActionResponse({ success: true })
     } catch (e: any) {
       const errorType = getHttpErrorType(e, this.name)
+      let errorMessage = e?.message;
+      if (!errorMessage) {
+        try {
+          const str = JSON.stringify(e);
+          errorMessage = (str && str !== '{}') ? str : e?.toString();
+        } catch {
+          errorMessage = e?.toString();
+        }
+      }
+      if (!errorMessage || errorMessage === '[object Object]') { errorMessage = "Unknown Error"; }
 
       const error: Error = errorWith(
         errorType,
-        `${LOG_PREFIX} ${e.message}`,
+        `${LOG_PREFIX} ${errorMessage}`,
       )
 
       response.success = false
@@ -120,6 +130,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
       winston.error(
         `${LOG_PREFIX} Error uploading file. Error: ${error.message}`, {
           error,
+          originalError: e,
           webhookId: request.webhookId,
         })
       return response
