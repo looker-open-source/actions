@@ -195,17 +195,17 @@ describe(`${action.constructor.name} class`, () => {
 
         await action.oauthFetchInfo({code: oauthCode, state: encryptedPayload}, redirectUri)
 
-        expect(oauthClientStub).to.be.calledOnce
+        expect(oauthClientStub.calledOnce).to.be.true
         expect(oauthClientStub.getCall(0).args).to.deep.equal([
           "test_oauth_client_id",
           "test_oauth_client_secret",
           redirectUri,
         ])
 
-        expect(getTokenStub).to.be.calledOnce
+        expect(getTokenStub.calledOnce).to.be.true
         expect(getTokenStub.getCall(0).args[0]).to.equal(oauthCode)
 
-        expect(gaxiosStub).to.be.calledOnce
+        expect(gaxiosStub.calledOnce).to.be.true
         expect(gaxiosStub.getCall(0).args[0]).to.deep.equal(expectedPostArgs)
       })
 
@@ -250,8 +250,7 @@ describe(`${action.constructor.name} class`, () => {
         const decrypted = b64.decode(encrypted)
         const payload = JSON.parse(decrypted)
 
-        // Under the broken code, payload.stateUrl is completely undefined because it looks at request.params!
-        expect(payload.stateUrl).to.be.undefined
+        expect(payload.stateUrl).to.equal("https://looker.example.com/state_url_endpoint")
       })
     })
   })
