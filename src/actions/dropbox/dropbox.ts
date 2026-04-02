@@ -171,6 +171,7 @@ export class DropboxAction extends Hub.OAuthAction {
     await https.post({
       url: payload.stateurl,
       body: encrypted,
+      json: true,
     }).catch((_err) => { winston.error(_err.toString()) })
   }
 

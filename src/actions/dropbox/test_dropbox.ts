@@ -251,7 +251,7 @@ describe(`${action.constructor.name} unit tests`, () => {
         `c2RmIiwiYXBwIjoibXlrZXkifQ`}, "redirect")
 
       chai.expect(stubEncrypt).to.have.been.calledWithMatch({code: "code", redirect: "redirect"})
-      chai.expect(stubPost).to.have.been.calledWithMatch({body: "encrypted_state"})
+      chai.expect(stubPost).to.have.been.calledWithMatch({body: "encrypted_state", json: true})
 
       stubEncrypt.restore()
       stubPost.restore()

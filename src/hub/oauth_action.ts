@@ -58,17 +58,17 @@ export abstract class OAuthAction extends Action {
   /**
    * Conditionally encrypts token payloads based on the per-action environment config.
    * - If `ENCRYPT_PAYLOAD_<ACTION_NAME>` is "true", returns an EncryptedPayload.
-   * - Otherwise, returns a standard stringified JSON payload.
+   * - Otherwise, returns the raw JSON object so standard libraries like gaxios can set the correct Content-Type header.
    */
   async oauthMaybeEncryptTokens(
     tokenPayload: any,
     requestWebhookId: string | undefined,
-  ): Promise<EncryptedPayload | string> {
+  ): Promise<EncryptedPayload | any> {
     const envVarName = `ENCRYPT_PAYLOAD_${this.name.toUpperCase()}`
     const perActionEncryptionValue = process.env[envVarName]
 
     if (perActionEncryptionValue !== "true") {
-      return JSON.stringify(tokenPayload)
+      return tokenPayload
     }
 
     const encrypted = await OAuthAction.actionCrypto.encrypt(JSON.stringify(tokenPayload)).catch((err: string) => {
