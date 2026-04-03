@@ -20,6 +20,7 @@ const LOG_PREFIX = "[G Ads Customer Match]"
 export class GoogleAdsActionRequest {
 
   static async fromHub(hubRequest: Hub.ActionRequest, action: GoogleAdsCustomerMatch, logger: Logger) {
+    winston.info("GOOGLE_ADS_FROM_HUB: Request params: " + JSON.stringify(hubRequest.params))
     const userState = await action.oauthExtractTokensFromStateJson(
       `${hubRequest.params.state_json}`,
       hubRequest.webhookId!,
