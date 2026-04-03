@@ -31,7 +31,7 @@ export declare class GoogleAdsCustomerMatch extends Hub.OAuthAction implements U
     oauthFetchInfo(urlParams: {
         [key: string]: string;
     }, redirectUri: string): Promise<void>;
-    oauthCheck(_request: Hub.ActionRequest): Promise<boolean>;
+    oauthCheck(hubReq: Hub.ActionRequest): Promise<boolean>;
     /******** Action Endpoints ********/
     execute(hubReq: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     form(hubReq: Hub.ActionRequest): Promise<Hub.ActionForm>;
