@@ -94,6 +94,8 @@ export class ActionRequest {
       throw "Request body must be valid JSON."
     }
 
+    winston.info("ACTION_REQUEST_FROM_JSON: Incoming JSON: " + JSON.stringify(json))
+
     const request = new ActionRequest()
 
     if (json.type === null) {
