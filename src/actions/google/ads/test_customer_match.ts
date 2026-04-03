@@ -190,7 +190,8 @@ describe(`${action.constructor.name} class`, () => {
         const expectedPostArgs = {
           method: "POST",
           url: stateUrl,
-          data: { tokens: stubTokens, redirect: redirectUri },
+          data: JSON.stringify({ tokens: stubTokens, redirect: redirectUri }),
+          headers: { "Content-Type": "application/json" },
         }
 
         await action.oauthFetchInfo({code: oauthCode, state: encryptedPayload}, redirectUri)
@@ -223,7 +224,42 @@ describe(`${action.constructor.name} class`, () => {
     })
     */
 
+    describe("oauthCheck reproduction", () => {
+      it("returns false when state_json is missing", async () => {
+        const request = new Hub.ActionRequest()
+        request.params = {}
+        const result = await action.oauthCheck(request)
+        expect(result).to.be.false
+      })
+
+      it("returns false when state_json is 'reset'", async () => {
+        const request = new Hub.ActionRequest()
+        request.params = { state_json: "reset" }
+        const result = await action.oauthCheck(request)
+        expect(result).to.be.false
+      })
+    })
+
     describe("state_url parsing bug reproduction", () => {
+      it("returns an error form if Looker omits state_url", async () => {
+        // This simulates Looker sending a form request after oauthCheck returned true
+        // and Looker believing it doesn't need to provide a state_url
+        const jsonPayload = {
+          type: "form",
+          webhookId: "test_webhook_id",
+          data: {
+             state_json: "reset",
+          },
+        } as any
+
+        const request = Hub.ActionRequest.fromJSON(jsonPayload)
+
+        const form = await action.oauthHelper.makeLoginForm(request)
+
+        expect(form.error).to.equal("Looker did not provide a valid callback URL to complete authentication. Please try reloading the page or resetting the action configuration.")
+        expect(form.fields).to.be.empty
+      })
+
       it("fails to pass stateUrl into payload if state_url is mapped to the root of JSON request", async () => {
         // Looker Action API states state_url is generated per form request and sent inside the body root
         const jsonPayload = {

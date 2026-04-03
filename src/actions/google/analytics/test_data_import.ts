@@ -727,7 +727,8 @@ describe(`${action.constructor.name} class`, () => {
         const expectedPostArgs = {
           method: "POST",
           url: stateUrl,
-          data: {tokens: stubTokens, redirect: redirectUri},
+          data: JSON.stringify({ tokens: stubTokens, redirect: redirectUri }),
+          headers: { "Content-Type": "application/json" },
         }
 
         await action.oauthFetchInfo({code: oauthCode, state: encryptedPayload}, redirectUri)

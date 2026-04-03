@@ -144,6 +144,9 @@ export class FacebookCustomAudiencesAction extends Hub.OAuthAction {
     }
   */
   async oauthCheck(request: Hub.ActionRequest): Promise<boolean> {
+    if (request.params.state_json === "reset") {
+      return false
+    }
     try {
       const accessToken = await this.getAccessTokenFromRequest(request)
       if (!accessToken) {

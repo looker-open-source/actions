@@ -229,15 +229,19 @@ export class AirtableAction extends Hub.OAuthAction {
   // oauthCheck determines if the user is authenticated by verifying that request.params.state_json
   // contains valid (encrypted or unencrypted) token state.
   async oauthCheck(request: Hub.ActionRequest) {
-    if (request.params.state_json) {
-      const parsedState = JSON.parse(request.params.state_json)
-      if (parsedState.cid && parsedState.payload) {
-        const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-        return !!stateJson
-      } else {
-        // Keeping the literal old code to ensure no regressions for unencrypted payloads
-        const tokens = AirtableTokens.fromJson(parsedState)
-        return !!tokens.access_token
+    if (request.params.state_json && request.params.state_json !== "reset") {
+      try {
+        const parsedState = JSON.parse(request.params.state_json)
+        if (parsedState.cid && parsedState.payload) {
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+          return !!stateJson
+        } else {
+          // Keeping the literal old code to ensure no regressions for unencrypted payloads
+          const tokens = AirtableTokens.fromJson(parsedState)
+          return !!tokens.access_token
+        }
+      } catch (e: any) {
+        return false
       }
     }
     return false
