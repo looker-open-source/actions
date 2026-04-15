@@ -2,7 +2,7 @@
 
 **This is not an officially supported Google product.**
 
-**Important:** Microsoft is [retiring](https://mc.merill.net/message/MC1181996) the legacy Office 365 Connectors in favor of Power Automate Workflows. Connectors will stop working by the end of April 2026. To ensure that your Looker alerts continue to deliver to Teams, you must replace your current webhook URL with a new "Workflow" URL. For more information, see the [Migrate your Teams webhook to "Workflows"](/looker/docs/best-practices/migrate-teams-webhook-to-workflows) Best Practices notice.
+**Important:** Microsoft is [retiring](https://mc.merill.net/message/MC1181996) the legacy Office 365 Connectors in favor of Power Automate Workflows. Connectors will stop working by the end of April 2026. To ensure that your Looker alerts continue to deliver to Teams, you must replace your current webhook URL with a new "Workflow" URL. For more information, see the [Migrate your Teams webhook to "Workflows"](https://docs.cloud.google.com/looker/docs/best-practices/migrate-teams-webhook-to-workflows) Best Practices notice.
 
 ## Send message from a Look to Microsoft Teams using incoming webhook
 
