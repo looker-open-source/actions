@@ -68,9 +68,21 @@ export class GoogleAdsCustomerMatch
     return this.oauthHelper.oauthFetchInfo(urlParams, redirectUri)
   }
 
-  async oauthCheck(_request: Hub.ActionRequest) {
-    // This part of Hub.OAuthAction is deprecated and unused
-    return true
+  async oauthCheck(request: Hub.ActionRequest) {
+    if (request.params.state_json) {
+      try {
+        const parsedState = JSON.parse(request.params.state_json)
+        if (parsedState.cid && parsedState.payload) {
+          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+          return !!stateJson
+        } else {
+          return !!(parsedState && parsedState.tokens && parsedState.tokens.access_token)
+        }
+      } catch {
+        return false
+      }
+    }
+    return false
   }
 
   /******** Action Endpoints ********/
