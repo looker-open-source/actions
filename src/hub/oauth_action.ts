@@ -26,6 +26,10 @@ export abstract class OAuthAction extends Action {
     stateJson: string,
     requestWebhookId: string | undefined,
   ): Promise<any> {
+    if (stateJson === "reset") {
+      winston.info("State is reset, ignoring tokens", { webhookId: requestWebhookId, action: this.name })
+      return null
+    }
     let state: any
     try {
       state = JSON.parse(stateJson)

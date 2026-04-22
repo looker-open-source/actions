@@ -10,7 +10,18 @@ export declare abstract class OAuthAction extends Action {
         [key: string]: string;
     }, redirectUri: string): Promise<void>;
     asJson(router: RouteBuilder, request: ActionRequest): any;
+    /**
+     * Extracts token state from a JSON string.
+     * - If parsing fails, returns null.
+     * - If encryption markers are present, attempts to decrypt.
+     * - Otherwise, returns the unencrypted JSON object.
+     */
     oauthExtractTokensFromStateJson(stateJson: string, requestWebhookId: string | undefined): Promise<any>;
+    /**
+     * Conditionally encrypts token payloads based on the per-action environment config.
+     * - If `ENCRYPT_PAYLOAD_<ACTION_NAME>` is "true", returns an EncryptedPayload.
+     * - Otherwise, returns a standard stringified JSON payload.
+     */
     oauthMaybeEncryptTokens(tokenPayload: any, requestWebhookId: string | undefined): Promise<EncryptedPayload | string>;
     oauthDecryptTokens(encryptedPayload: EncryptedPayload, requestWebhookId: string | undefined): Promise<Record<string, any>>;
 }
