@@ -68,6 +68,10 @@ export class GoogleAdsCustomerMatch
     return this.oauthHelper.oauthFetchInfo(urlParams, redirectUri)
   }
 
+  // We must override the legacy hardcoded 'true' return here.
+  // Modern Looker instances optimize OAuth flows based on this check. Lying and returning
+  // true when tokens are missing causes Looker to assume valid auth state, leading to
+  // infinite loops during fresh logins.
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
       try {
