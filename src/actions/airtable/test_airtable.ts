@@ -459,6 +459,40 @@ describe(`${action.constructor.name} unit tests`, () => {
         chai.expect(secondCallArgs.data).to.not.be.undefined // We want data to be used
         chai.expect(secondCallArgs.body).to.be.undefined // We want body to be unused
       })
+
+      it("sends an object payload instead of a string to ensure gaxios sets the correct Content-Type", async () => {
+        const urlParams = {
+          code: "test_code",
+          state: b64.encode(JSON.stringify({
+            verifier: "test_verifier",
+            stateurl: "test_state_url",
+          })),
+        }
+        const redirectUri = "http://redirect"
+
+        gaxiosStub.onFirstCall().resolves({
+          status: 200,
+          data: {
+            access_token: "fresh_access",
+            refresh_token: "fresh_refresh",
+          },
+        })
+
+        gaxiosStub.onSecondCall().resolves({
+          status: 200,
+          data: {},
+        })
+
+        // Ensure encryption is OFF to test the unencrypted fallback
+        delete process.env.ENCRYPT_PAYLOAD_AIRTABLE
+        await action.oauthFetchInfo(urlParams, redirectUri)
+
+        const secondCallArgs = gaxiosStub.secondCall.args[0]
+        // This is the crucial assertion: If data is a string, gaxios will set Content-Type to text/plain.
+        // It MUST be an object for gaxios to set Content-Type to application/json.
+        chai.expect(typeof secondCallArgs.data).to.equal("object")
+        chai.expect(typeof secondCallArgs.data).to.not.equal("string")
+      })
     })
   })
 })

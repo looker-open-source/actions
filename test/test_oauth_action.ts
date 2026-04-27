@@ -59,7 +59,7 @@ describe("OAuthAction Encryption", () => {
       process.env.ENCRYPT_PAYLOAD = "true"
       const payload = { tokens: "secret" }
       const result = await action.oauthMaybeEncryptTokens(payload, "webhookId")
-      chai.expect(result).to.equal(JSON.stringify(payload))
+      chai.expect(result).to.deep.equal(payload)
       sinon.assert.notCalled(encryptStub)
     })
 
