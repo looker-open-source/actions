@@ -1,7 +1,7 @@
 import * as winston from "winston"
 import { AESTransitCrypto as ActionCrypto } from "../crypto/aes_transit_crypto"
-import {Action, RouteBuilder} from "./action"
-import {ActionRequest} from "./action_request"
+import { Action, RouteBuilder } from "./action"
+import { ActionRequest } from "./action_request"
 import { EncryptedPayload } from "./encrypted_payload"
 
 export abstract class OAuthAction extends Action {
@@ -27,7 +27,7 @@ export abstract class OAuthAction extends Action {
     requestWebhookId: string | undefined,
   ): Promise<any> {
     // Looker sends the literal string "reset" to clear action state.
-    // We check for it explicitly here to prevent JSON parsing failures 
+    // We check for it explicitly here to prevent JSON parsing failures
     // and avoid spamming the logs with SyntaxErrors for a valid protocol state.
     if (stateJson === "reset") {
       winston.info("State is reset, ignoring tokens", { webhookId: requestWebhookId, action: this.name })

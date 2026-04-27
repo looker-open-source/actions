@@ -1,4 +1,6 @@
 import { Dropbox } from "dropbox"
+import * as gaxios from "gaxios"
+import * as qs from "qs"
 import * as querystring from "querystring"
 import * as https from "request-promise-native"
 import {URL} from "url"
@@ -171,7 +173,7 @@ export class DropboxAction extends Hub.OAuthAction {
     await https.post({
       url: payload.stateurl,
       body: encrypted,
-    }).catch((_err) => { winston.error(_err.toString()) })
+    }).catch((_err: any) => { winston.error(_err.toString()) })
   }
 
   // oauthCheck verifies if the Action Hub has a valid state for rendering or running.
@@ -195,23 +197,38 @@ export class DropboxAction extends Hub.OAuthAction {
     }
   }
 
+  /**
+   * Exchanges the authorization code for an access token with Dropbox.
+   * Parameters are sent in the request body as application/x-www-form-urlencoded
+   * to comply with RFC 6749 and avoid leaking secrets in URL logs (b/426567813).
+   */
   protected async getAccessTokenFromCode(stateJson: any) {
-    const url = new URL("https://api.dropboxapi.com/oauth2/token")
+    const url = "https://api.dropboxapi.com/oauth2/token"
 
     if (stateJson.code && stateJson.redirect) {
-      url.search = querystring.stringify({
+      const data = {
         grant_type: "authorization_code",
         code: stateJson.code,
         client_id: process.env.DROPBOX_ACTION_APP_KEY,
         client_secret: process.env.DROPBOX_ACTION_APP_SECRET,
         redirect_uri: stateJson.redirect,
+      }
+
+      const response = await gaxios.request<any>({
+        method: "POST",
+        url,
+        data: qs.stringify(data),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }).catch((err) => {
+        winston.error(`OAuth token exchange failed: ${err.message}`)
+        throw err
       })
+      return response.data.access_token
     } else {
       throw "state_json does not contain correct members"
     }
-    const response = await https.post(url.toString(), { json: true })
-        .catch((_err) => { winston.error("Error requesting access_token") })
-    return response.access_token
   }
 
   // dropboxClientFromRequest initializes a Dropbox client instance.

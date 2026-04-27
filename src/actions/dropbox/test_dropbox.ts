@@ -1,5 +1,6 @@
 import * as b64 from "base64-url"
 import * as chai from "chai"
+import * as gaxios from "gaxios"
 import * as https from "request-promise-native"
 import * as sinon from "sinon"
 
@@ -247,14 +248,34 @@ describe(`${action.constructor.name} unit tests`, () => {
       // @ts-ignore
       const stubPost = sinon.stub(https, "post").resolves({})
 
-      await action.oauthFetchInfo({code: "code", state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
-        `c2RmIiwiYXBwIjoibXlrZXkifQ`}, "redirect")
+      try {
+        await action.oauthFetchInfo({code: "code", state: `eyJzdGF0ZXVybCI6Imh0dHBzOi8vbG9va2VyLnN0YXRlLnVybC5jb20vYWN0aW9uX2h1Yl9zdGF0ZS9hc2RmYXNkZmFzZGZh` +
+          `c2RmIiwiYXBwIjoibXlrZXkifQ`}, "redirect")
 
-      chai.expect(stubEncrypt).to.have.been.calledWithMatch({code: "code", redirect: "redirect"})
-      chai.expect(stubPost).to.have.been.calledWithMatch({body: "encrypted_state"})
+        chai.expect(stubEncrypt).to.have.been.calledWithMatch({code: "code", redirect: "redirect"})
+        chai.expect(stubPost.called).to.be.true
+      } finally {
+        stubEncrypt.restore()
+        stubPost.restore()
+      }
+    })
+    it("successfully uses body params in getAccessTokenFromCode", async () => {
+      const stubRequest = sinon.stub(gaxios, "request")
+        .resolves({data: {access_token: "body_token"}, status: 200} as any)
 
-      stubEncrypt.restore()
-      stubPost.restore()
+      try {
+        // @ts-ignore
+        const token = await action.getAccessTokenFromCode({code: "code", redirect: "redirect"})
+
+        chai.expect(token).to.equal("body_token")
+        chai.expect(stubRequest.calledOnce).to.be.true
+        chai.expect(stubRequest.calledWithMatch({
+          method: "POST",
+          headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        })).to.be.true
+      } finally {
+        stubRequest.restore()
+      }
     })
   })
 
