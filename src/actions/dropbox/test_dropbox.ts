@@ -1,5 +1,6 @@
 import * as b64 from "base64-url"
 import * as chai from "chai"
+import * as gaxios from "gaxios"
 import * as https from "request-promise-native"
 import * as sinon from "sinon"
 
@@ -255,6 +256,24 @@ describe(`${action.constructor.name} unit tests`, () => {
 
       stubEncrypt.restore()
       stubPost.restore()
+    })
+    it("successfully uses body params in getAccessTokenFromCode", async () => {
+      const stubRequest = sinon.stub(gaxios, "request")
+        .resolves({data: {access_token: "body_token"}, status: 200} as any)
+
+      try {
+        // @ts-ignore
+        const token = await action.getAccessTokenFromCode({code: "code", redirect: "redirect"})
+
+        chai.expect(token).to.equal("body_token")
+        chai.expect(stubRequest.calledOnce).to.be.true
+        chai.expect(stubRequest.calledWithMatch({
+          method: "POST",
+          headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        })).to.be.true
+      } finally {
+        stubRequest.restore()
+      }
     })
   })
 
