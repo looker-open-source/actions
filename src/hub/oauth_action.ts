@@ -44,6 +44,10 @@ export abstract class OAuthAction extends Action {
       return null
     }
 
+    if (state === null) {
+      return null
+    }
+
     if (!state.cid || !state.payload) {
       winston.info("Extracting unencrypted state_json", { webhookId: requestWebhookId, action: this.name })
       return state
