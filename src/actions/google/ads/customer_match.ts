@@ -74,17 +74,8 @@ export class GoogleAdsCustomerMatch
   // infinite loops during fresh logins.
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
-      try {
-        const parsedState = JSON.parse(request.params.state_json)
-        if (parsedState.cid && parsedState.payload) {
-          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-          return !!stateJson
-        } else {
-          return !!(parsedState && parsedState.tokens && parsedState.tokens.access_token)
-        }
-      } catch {
-        return false
-      }
+      const state = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+      return !!(state && state.tokens && state.tokens.access_token)
     }
     return false
   }
