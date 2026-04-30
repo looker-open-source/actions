@@ -134,11 +134,17 @@ export class GoogleAdsCustomerMatch
       }
 
       // Other errors from the API client - typically an auth problem
-      if (err.code) {
+      const isAuthError =
+        err.response?.status === 401 ||
+        err.code === "401" ||
+        err.code === 401 ||
+        (err.response?.status === 400 && err.response?.data?.error === "invalid_grant");
+
+      if (isAuthError) {
         loginForm.fields[0].label =
-          `Received error code ${err.code} from the API, so your credentials have been discarded.`
+          `Received an authentication error from the API, so your credentials have been discarded.`
           + " Please reauthenticate and try again."
-        log("error", `Received error code ${err.code} from the API, credentials have been discarded.`)
+        log("error", `Received auth error from the API, credentials have been discarded.`)
         return loginForm
       }
       // All other errors
