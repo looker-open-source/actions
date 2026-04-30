@@ -138,7 +138,7 @@ export class GoogleAdsCustomerMatch
         err.response?.status === 401 ||
         err.code === "401" ||
         err.code === 401 ||
-        (err.response?.status === 400 && err.response?.data?.error === "invalid_grant");
+        (err.response?.status === 400 && err.response?.data?.error === "invalid_grant")
 
       if (isAuthError) {
         loginForm.fields[0].label =
