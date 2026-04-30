@@ -161,8 +161,17 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth_check", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, {lookerVersion: request.lookerVersion})
+
+      const headerValue = req.header("authorization")
+      const tokenMatch = headerValue ? headerValue.match(TOKEN_REGEX) : undefined
+      if (!tokenMatch || !apiKey.validate(tokenMatch[1])) {
+        res.status(403)
+        res.json({success: false, error: "Invalid 'Authorization' header."})
+        return
+      }
+
       if (isOauthAction(action) || isOauthActionV2(action)) {
-        const check = (action as OAuthAction).oauthCheck(request)
+        const check = await (action as OAuthAction).oauthCheck(request)
         res.json(check)
       } else {
         res.statusCode = 404
