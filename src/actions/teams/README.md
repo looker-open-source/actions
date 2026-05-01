@@ -2,6 +2,8 @@
 
 **This is not an officially supported Google product.**
 
+**Important:** Microsoft is [retiring](https://mc.merill.net/message/MC1181996) the legacy Office 365 Connectors in favor of Power Automate Workflows. Connectors will stop working by the end of April 2026. To ensure that your Looker alerts continue to deliver to Teams, you must replace your current webhook URL with a new "Workflow" URL. For more information, see the [Migrate your Teams webhook to "Workflows"](https://docs.cloud.google.com/looker/docs/best-practices/migrate-teams-webhook-to-workflows) Best Practices notice.
+
 ## Send message from a Look to Microsoft Teams using incoming webhook
 
 The Microsoft Teams Action allow you to send message from looker to Teams channel via incoming webhook. By entering the incoming webhook endpoint, card title, and body in the form, the message will be sent like a bot in Teams.（also, you can attache metadata of Look/Explore/Dashboard）
