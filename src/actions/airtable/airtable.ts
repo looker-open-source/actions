@@ -56,27 +56,31 @@ export class AirtableAction extends Hub.OAuthAction {
       let accessToken: string | undefined
       let tokens: AirtableTokens | undefined
       if (request.params.state_json) {
-        const parsedState = JSON.parse(request.params.state_json)
-        if (parsedState.cid && parsedState.payload) {
-          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-          tokens = AirtableTokens.fromJson(stateJson)
-          accessToken = tokens.access_token
-          const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
-            tokens.refresh_token,
-            accessToken,
-            tokens.redirectUri,
-          ), request.webhookId)
-          state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+        if (request.params.state_json === "reset") {
+          winston.info("State is reset, ignoring tokens", { webhookId: request.webhookId })
         } else {
-          // Keeping the literal old code to ensure no regressions for unencrypted payloads
-          tokens = AirtableTokens.fromJson(parsedState)
-          accessToken = tokens.access_token
-          state.data = JSON.stringify({
-            tokens: {
-              refresh_token: tokens.refresh_token,
-              access_token: accessToken,
-            },
-          })
+          const parsedState = JSON.parse(request.params.state_json)
+          if (parsedState.cid && parsedState.payload) {
+            const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+            tokens = AirtableTokens.fromJson(stateJson)
+            accessToken = tokens.access_token
+            const encrypted = await this.oauthMaybeEncryptTokens(new AirtableTokens(
+              tokens.refresh_token,
+              accessToken,
+              tokens.redirectUri,
+            ), request.webhookId)
+            state.data = typeof encrypted === "string" ? encrypted : JSON.stringify(encrypted)
+          } else {
+            // Keeping the literal old code to ensure no regressions for unencrypted payloads
+            tokens = AirtableTokens.fromJson(parsedState)
+            accessToken = tokens.access_token
+            state.data = JSON.stringify({
+              tokens: {
+                refresh_token: tokens.refresh_token,
+                access_token: accessToken,
+              },
+            })
+          }
         }
       }
 
@@ -141,16 +145,20 @@ export class AirtableAction extends Hub.OAuthAction {
       let tokens: AirtableTokens | undefined
       let isEncrypted = false
       if (request.params.state_json) {
-        const parsedState = JSON.parse(request.params.state_json)
-        if (parsedState.cid && parsedState.payload) {
-          isEncrypted = true
-          const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
-          tokens = AirtableTokens.fromJson(stateJson)
-          accessToken = tokens.access_token
+        if (request.params.state_json === "reset") {
+          winston.info("State is reset, ignoring tokens", { webhookId: request.webhookId })
         } else {
-          // Keeping the literal old code to ensure no regressions for unencrypted payloads
-          tokens = AirtableTokens.fromJson(parsedState)
-          accessToken = tokens.access_token
+          const parsedState = JSON.parse(request.params.state_json)
+          if (parsedState.cid && parsedState.payload) {
+            isEncrypted = true
+            const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)
+            tokens = AirtableTokens.fromJson(stateJson)
+            accessToken = tokens.access_token
+          } else {
+            // Keeping the literal old code to ensure no regressions for unencrypted payloads
+            tokens = AirtableTokens.fromJson(parsedState)
+            accessToken = tokens.access_token
+          }
         }
       }
       try {
@@ -230,6 +238,10 @@ export class AirtableAction extends Hub.OAuthAction {
   // contains valid (encrypted or unencrypted) token state.
   async oauthCheck(request: Hub.ActionRequest) {
     if (request.params.state_json) {
+      if (request.params.state_json === "reset") {
+        winston.info("State is reset, ignoring tokens", { webhookId: request.webhookId })
+        return false
+      }
       const parsedState = JSON.parse(request.params.state_json)
       if (parsedState.cid && parsedState.payload) {
         const stateJson = await this.oauthExtractTokensFromStateJson(request.params.state_json, request.webhookId)

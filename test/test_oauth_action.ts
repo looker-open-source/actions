@@ -83,6 +83,16 @@ describe("OAuthAction Encryption", () => {
       chai.expect(result).to.deep.equal(state)
     })
 
+    it("returns null gracefully on 'reset' state", async () => {
+      const result = await action.oauthExtractTokensFromStateJson("reset", "webhookId")
+      chai.expect(result).to.be.null
+    })
+
+    it("returns null gracefully on 'null' state string", async () => {
+      const result = await action.oauthExtractTokensFromStateJson("null", "webhookId")
+      chai.expect(result).to.be.null
+    })
+
     it("decrypts encrypted tokens", async () => {
       const state = { cid: "cid", payload: "encrypted_payload" }
       const result = await action.oauthExtractTokensFromStateJson(JSON.stringify(state), "webhookId")
