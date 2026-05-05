@@ -94,7 +94,7 @@
     "tslint-language-service": "^0.9.9",
     "twilio": "^3.48.2",
     "typescript": "^5.7.3",
-    "uuid": "^3.4.0",
+    "uuid": "^14.0.0",
     "winston": "^2.4.5",
     "yarn": "^1.22.18"
   },
