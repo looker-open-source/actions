@@ -212,19 +212,21 @@ import { MarketoTransaction } from "./marketo_transaction"
         listRemoveLeadsFromList: spies[3],
       }
 
-      sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(() => {
-        return {
-          lead: {
-            createOrUpdate: spy.leadCreateOrUpdate,
-          },
-          campaign: {
-            request: spy.campaignRequest,
-          },
-          list: {
-            addLeadsToList: spy.listAddLeadsToList,
-            removeLeadsFromList: spy.listRemoveLeadsFromList,
-          },
-        }
+      before(() => {
+        sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(() => {
+          return {
+            lead: {
+              createOrUpdate: spy.leadCreateOrUpdate,
+            },
+            campaign: {
+              request: spy.campaignRequest,
+            },
+            list: {
+              addLeadsToList: spy.listAddLeadsToList,
+              removeLeadsFromList: spy.listRemoveLeadsFromList,
+            },
+          }
+        })
       })
 
       it("sends all the data to Marketo for the legacy request format", () => {
