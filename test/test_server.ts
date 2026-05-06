@@ -4,7 +4,17 @@ import * as sinon from "sinon"
 import * as apiKey from "../src/server/api_key"
 import Server from "../src/server/server"
 
+import "../src/actions/index"
+
+const chaiHttp = require("chai-http")
+chai.use(chaiHttp)
+
 describe("the action hub", () => {
+
+  // Clear out sinon state after each test to ensure hermeticity
+  afterEach(() => {
+    sinon.restore()
+  })
 
   it("responds to get requests with a nice html page", (done) => {
     chai.request(new Server().app)

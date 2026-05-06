@@ -4,9 +4,8 @@ import * as chaiAsPromised from "chai-as-promised"
 import * as sinonChai from "sinon-chai"
 import * as winston from "winston"
 
-// const chaiHttp = require("chai-http")
-
-// chai.use(chaiHttp)
+const chaiHttp = require("chai-http")
+chai.use(chaiHttp)
 chai.use(sinonChai)
 chai.use(chaiAsPromised) // should be last
 winston.remove(winston.transports.Console)
@@ -20,7 +19,7 @@ import "./test_action_response"
 import "./test_actions"
 import "./test_json_detail_stream"
 import "./test_oauth_action"
-// import "./test_server"
+import "./test_server"
 import "./test_smoke"
 
 import "../src/actions/airtable/test_airtable"
