@@ -363,10 +363,10 @@ export class ActionRequest {
           }))
           .done(() => {
             winston.info(`[streamJsonDetail] oboe reports done`, {...this.logInfo, rows})
+            resolve()
           })
       }).then(() => {
         winston.info(`[streamJsonDetail] complete`, {...this.logInfo, rows})
-        resolve()
       }).catch((error) => {
         // This error should not be logged as it could come from an action
         // which might decide to include user information in the error message
