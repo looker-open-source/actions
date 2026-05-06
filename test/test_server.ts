@@ -4,11 +4,10 @@ import * as sinon from "sinon"
 import * as apiKey from "../src/server/api_key"
 import Server from "../src/server/server"
 
+import "../src/actions/index"
 
 const chaiHttp = require("chai-http")
 chai.use(chaiHttp)
-
-import "../src/actions/index"
 
 describe("the action hub", () => {
 
