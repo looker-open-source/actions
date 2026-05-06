@@ -136,6 +136,15 @@ export class ActionRequest {
       request.params = json.data
     }
 
+    const jsonAny = json as any
+    if (jsonAny.state_url) {
+      request.params.state_url = jsonAny.state_url
+    }
+
+    if (jsonAny.state_redir_url) {
+      request.params.state_redir_url = jsonAny.state_redir_url
+    }
+
     if (json.form_params) {
       request.formParams = json.form_params
     }

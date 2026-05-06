@@ -20,9 +20,9 @@ export declare abstract class OAuthAction extends Action {
     /**
      * Conditionally encrypts token payloads based on the per-action environment config.
      * - If `ENCRYPT_PAYLOAD_<ACTION_NAME>` is "true", returns an EncryptedPayload.
-     * - Otherwise, returns a standard stringified JSON payload.
+     * - Otherwise, returns the raw JSON object so standard libraries like gaxios can set the correct Content-Type header.
      */
-    oauthMaybeEncryptTokens(tokenPayload: any, requestWebhookId: string | undefined): Promise<EncryptedPayload | string>;
+    oauthMaybeEncryptTokens(tokenPayload: any, requestWebhookId: string | undefined): Promise<EncryptedPayload | any>;
     oauthDecryptTokens(encryptedPayload: EncryptedPayload, requestWebhookId: string | undefined): Promise<Record<string, any>>;
 }
 export declare function isOauthAction(action: Action): boolean;
