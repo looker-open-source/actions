@@ -1,8 +1,8 @@
 import * as https from "request-promise-native"
 
-import { GaxiosResponseWithHTTP2 } from "googleapis-common"
 import { Credentials, OAuth2Client } from "google-auth-library"
 import { drive_v3, google } from "googleapis"
+import { GaxiosResponseWithHTTP2 } from "googleapis-common"
 
 import * as winston from "winston"
 import { HTTP_ERROR } from "../../../error_types/http_errors"
