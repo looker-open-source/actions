@@ -1,6 +1,6 @@
 import * as https from "request-promise-native"
 
-import { GaxiosResponse } from "gaxios"
+import { GaxiosResponseWithHTTP2 } from "googleapis-common"
 import { Credentials, OAuth2Client } from "google-auth-library"
 import { drive_v3, google } from "googleapis"
 
@@ -181,7 +181,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
             async function pagedFileList(
                 accumulatedFiles: drive_v3.Schema$File[],
-                response: GaxiosResponse<drive_v3.Schema$FileList>): Promise<drive_v3.Schema$File[]> {
+                response: GaxiosResponseWithHTTP2<drive_v3.Schema$FileList>): Promise<drive_v3.Schema$File[]> {
               const mergedFiles = accumulatedFiles.concat(response.data.files!)
 
               // When a `nextPageToken` exists, recursively call this function to get the next page.
@@ -403,7 +403,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
 
    async getDrives(drive: Drive,
                    accumulatedFolders: drive_v3.Schema$Drive[],
-                   response: GaxiosResponse<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]> {
+                   response: GaxiosResponseWithHTTP2<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]> {
      const driveList = accumulatedFolders.concat(response.data.drives!)
 
      if (response.data.nextPageToken) {
