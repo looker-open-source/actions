@@ -1,6 +1,6 @@
-import { GaxiosResponse } from "gaxios";
 import { Credentials, OAuth2Client } from "google-auth-library";
 import { drive_v3 } from "googleapis";
+import { GaxiosResponseWithHTTP2 } from "googleapis-common";
 import * as Hub from "../../../hub";
 import Drive = drive_v3.Drive;
 interface OauthState {
@@ -34,8 +34,8 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     oauthFetchAccessToken(request: Hub.ActionRequest): Promise<Hub.ActionToken | Hub.EncryptedPayload>;
     oauthCheck(request: Hub.ActionRequest): Promise<boolean>;
     oauth2Client(redirectUri: string | undefined): OAuth2Client;
-    sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponse<drive_v3.Schema$File>>;
-    getDrives(drive: Drive, accumulatedFolders: drive_v3.Schema$Drive[], response: GaxiosResponse<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]>;
+    sendData(filename: string, request: Hub.ActionRequest, drive: Drive): Promise<GaxiosResponseWithHTTP2<drive_v3.Schema$File>>;
+    getDrives(drive: Drive, accumulatedFolders: drive_v3.Schema$Drive[], response: GaxiosResponseWithHTTP2<drive_v3.Schema$DriveList>): Promise<drive_v3.Schema$Drive[]>;
     getMimeType(request: Hub.ActionRequest): string | undefined;
     sanitizeGaxiosError(err: any): void;
     protected getAccessTokenCredentialsFromCode(redirect: string, code: string): Promise<Credentials>;
