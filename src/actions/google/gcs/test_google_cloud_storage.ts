@@ -22,7 +22,9 @@ const FILENAME_FIELD = {
   label: "Filename",
   name: "filename",
   type: "string",
-  description: "Optional. Supports UTC date tokens: {YYYYMMDD}, {YYYY}, {MM}, {DD}." +
+  description: "Optional. Supports UTC tokens, combinable with any separators:" +
+    " {YYYYMMDD}, {YYYY}, {YY}, {MM} (month), {DD}, {HH}, {mm} (minutes), {ss}." +
+    " Note {MM} is month and {mm} is minutes (case-sensitive)." +
     " GCS object names may contain \"/\", so you can date-partition into folders," +
     " e.g. \"daily/report_{YYYYMMDD}.csv\" becomes \"daily/report_20260617.csv\".",
 }
@@ -298,6 +300,69 @@ describe(`${action.constructor.name} unit tests`, () => {
       return expectGoogleCloudStorageMatch(request,
         "mybucket",
         "daily/2026/06/report_17.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("substitutes the 2-digit {YY} year token combined with other tokens", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "report_{MM}-{DD}-{YY}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "report_06-17-26.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("substitutes UTC time tokens {HH}, {mm}, {ss} alongside date tokens", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17, 8, 30, 45), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "report_{YYYYMMDD}T{HH}{mm}{ss}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "report_20260617T083045.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("distinguishes {MM} month from {mm} minutes (case-sensitive)", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17, 8, 30, 45), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "{MM}_vs_{mm}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "06_vs_30.csv",
         Buffer.from("1,2,3,4", "utf8"),
         false).then(() => clock.restore())
     })

@@ -22,21 +22,33 @@ The action requires a Google Cloud Storage account, a programmatic service accou
 
 ## Filename date tokens
 
-The **Filename** field supports UTC date tokens, which are substituted at delivery time:
+The **Filename** field supports UTC date/time tokens, which are substituted at delivery time. Each
+token is replaced independently wherever it appears, so you can compose any format using your own
+separators (`-`, `_`, `/`, etc.). Tokens are evaluated for the example moment `2026-06-17 08:30:45`
+UTC below:
 
-| Token        | Meaning                          | Example (2026-06-17 UTC) |
-| ------------ | -------------------------------- | ------------------------ |
-| `{YYYYMMDD}` | 4-digit year + 2-digit month/day | `20260617`               |
-| `{YYYY}`     | 4-digit year                     | `2026`                   |
-| `{MM}`       | 2-digit month (zero-padded)      | `06`                     |
-| `{DD}`       | 2-digit day (zero-padded)        | `17`                     |
+| Token        | Meaning                            | Example    |
+| ------------ | ---------------------------------- | ---------- |
+| `{YYYYMMDD}` | 4-digit year + 2-digit month/day   | `20260617` |
+| `{YYYY}`     | 4-digit year                       | `2026`     |
+| `{YY}`       | 2-digit year                       | `26`       |
+| `{MM}`       | 2-digit month (zero-padded)        | `06`       |
+| `{DD}`       | 2-digit day of month (zero-padded) | `17`       |
+| `{HH}`       | 2-digit hour, 24-hour (zero-padded)| `08`       |
+| `{mm}`       | 2-digit minutes (zero-padded)      | `30`       |
+| `{ss}`       | 2-digit seconds (zero-padded)      | `45`       |
+
+> **Note:** tokens are **case-sensitive**. `{MM}` is the **month** and `{mm}` is **minutes**
+> (the moment.js convention). `{YYYYMMDD}` is simply a convenience for `{YYYY}{MM}{DD}`.
 
 GCS object names may contain `/`, so tokens can be used to date-partition deliveries into "folders":
 
 ```
-report_{YYYYMMDD}.csv          ->  report_20260617.csv
-daily/report_{YYYYMMDD}.csv    ->  gs://<bucket>/daily/report_20260617.csv
-daily/{YYYY}/{MM}/report.csv   ->  gs://<bucket>/daily/2026/06/report.csv
+report_{YYYYMMDD}.csv                 ->  report_20260617.csv
+{YYYY}-{MM}-{DD}.csv                  ->  2026-06-17.csv
+daily/report_{YYYYMMDD}.csv           ->  gs://<bucket>/daily/report_20260617.csv
+daily/{YYYY}/{MM}/report.csv          ->  gs://<bucket>/daily/2026/06/report.csv
+hourly/{YYYYMMDD}T{HH}{mm}{ss}.csv    ->  gs://<bucket>/hourly/20260617T083045.csv
 ```
 
 Filenames with no tokens are written unchanged. When **Overwrite** is set to "No", a uniqueness

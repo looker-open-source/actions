@@ -63,17 +63,23 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
     let filename = request.formParams.filename || request.suggestedFilename()
 
-    // Substitute UTC date tokens ({YYYYMMDD}, {YYYY}, {MM}, {DD}) anywhere in the filename. Since
-    // GCS object names may contain "/", this enables date-partitioned "folders". Done before the
-    // Overwrite timestamp logic below so a token-based name can still be made unique.
+    // Substitute UTC date/time tokens anywhere in the filename. Tokens are case-sensitive:
+    // {MM} is month while {mm} is minutes (moment.js convention). Since GCS object names may
+    // contain "/", this enables date-partitioned "folders". Done before the Overwrite timestamp
+    // logic below so a token-based name can still be made unique.
     const now = new Date()
     const tokens: { [k: string]: string } = {
       YYYY: `${now.getUTCFullYear()}`,
+      YY: `${now.getUTCFullYear()}`.slice(-2),
       MM: String(now.getUTCMonth() + 1).padStart(2, "0"),
       DD: String(now.getUTCDate()).padStart(2, "0"),
+      HH: String(now.getUTCHours()).padStart(2, "0"),
+      mm: String(now.getUTCMinutes()).padStart(2, "0"),
+      ss: String(now.getUTCSeconds()).padStart(2, "0"),
     }
     tokens.YYYYMMDD = tokens.YYYY + tokens.MM + tokens.DD
-    filename = filename.replace(/\{(YYYYMMDD|YYYY|MM|DD)\}/g, (_m: string, t: string) => tokens[t])
+    filename = filename.replace(
+      /\{(YYYYMMDD|YYYY|YY|MM|DD|HH|mm|ss)\}/g, (_m: string, t: string) => tokens[t])
 
     // If the overwrite formParam exists and it is "no" - ensure a timestamp is appended
     if (request.formParams.overwrite && request.formParams.overwrite === "no") {
@@ -191,7 +197,9 @@ export class GoogleCloudStorageAction extends Hub.Action {
       label: "Filename",
       name: "filename",
       type: "string",
-      description: "Optional. Supports UTC date tokens: {YYYYMMDD}, {YYYY}, {MM}, {DD}." +
+      description: "Optional. Supports UTC tokens, combinable with any separators:" +
+        " {YYYYMMDD}, {YYYY}, {YY}, {MM} (month), {DD}, {HH}, {mm} (minutes), {ss}." +
+        " Note {MM} is month and {mm} is minutes (case-sensitive)." +
         " GCS object names may contain \"/\", so you can date-partition into folders," +
         " e.g. \"daily/report_{YYYYMMDD}.csv\" becomes \"daily/report_20260617.csv\".",
     }, {
