@@ -19,3 +19,41 @@ The action requires a Google Cloud Storage account, a programmatic service accou
 ![](Create&#32;GCS&#32;Service&#32;Account.png)
 
 4. Enable Google Cloud Storage in your looker Administration page for actions (/admin/actions).
+
+## Filename date tokens
+
+The **Filename** field supports UTC date tokens, which are substituted at delivery time:
+
+| Token        | Meaning                          | Example (2026-06-17 UTC) |
+| ------------ | -------------------------------- | ------------------------ |
+| `{YYYYMMDD}` | 4-digit year + 2-digit month/day | `20260617`               |
+| `{YYYY}`     | 4-digit year                     | `2026`                   |
+| `{MM}`       | 2-digit month (zero-padded)      | `06`                     |
+| `{DD}`       | 2-digit day (zero-padded)        | `17`                     |
+
+GCS object names may contain `/`, so tokens can be used to date-partition deliveries into "folders":
+
+```
+report_{YYYYMMDD}.csv          ->  report_20260617.csv
+daily/report_{YYYYMMDD}.csv    ->  gs://<bucket>/daily/report_20260617.csv
+daily/{YYYY}/{MM}/report.csv   ->  gs://<bucket>/daily/2026/06/report.csv
+```
+
+Filenames with no tokens are written unchanged. When **Overwrite** is set to "No", a uniqueness
+timestamp is still appended after token substitution.
+
+**Note on time zone:** tokens are resolved using the action hub server's UTC clock, not the timezone
+of the query or schedule. The action only receives the rendered data file, not the query's filters or
+timezone, so server-side UTC is used for deterministic, predictable partitioning.
+
+## Writing to a bucket in another project
+
+By default the **Bucket** dropdown lists buckets visible to the service account in its configured
+project, which requires the project-level `storage.buckets.list` permission. To deliver to a bucket
+in a different project (for example, a partner's bucket) you usually only have object-level access on
+that single bucket and cannot list the project's buckets.
+
+For this case, leave the **Bucket** dropdown blank and enter the exact bucket name in the
+**Bucket name (manual override)** field. The manual override takes precedence over the dropdown, and
+delivery only requires `storage.objects.create` (e.g. the `roles/storage.objectCreator` role) on the
+target bucket — no project-level listing permission is needed.
