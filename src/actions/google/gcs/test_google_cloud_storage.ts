@@ -69,7 +69,9 @@ function expectGoogleCloudStorageMatch(request: Hub.ActionRequest,
   // so stubbing it again would throw. Such callers pass stubNow = false.
   const stubDate = stubNow ? sinon.stub(Date, "now").callsFake(() => 1234) : undefined
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-    chai.expect(bucketSpy).to.have.been.calledWithMatch(bucketMatch)
+    // Exact match (not calledWithMatch, which does substring matching for strings) so that
+    // whitespace-trimming assertions on the bucket name are meaningful.
+    chai.expect(bucketSpy).to.have.been.calledWith(bucketMatch)
     chai.expect(fileSpy).to.have.been.calledWithMatch(fileMatch)
     stubClient.restore()
     stubSuggestedFilename.restore()
@@ -427,6 +429,46 @@ describe(`${action.constructor.name} unit tests`, () => {
       request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
       return expectGoogleCloudStorageMatch(request,
         "partner-bucket",
+        "mywackyfilename",
+        Buffer.from("1,2,3,4", "utf8"))
+    })
+
+    it("trims whitespace from the bucket_override value", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "listedbucket",
+        bucket_override: "  partner-bucket\n",
+        filename: "mywackyfilename",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "partner-bucket",
+        "mywackyfilename",
+        Buffer.from("1,2,3,4", "utf8"))
+    })
+
+    it("falls back to the dropdown bucket when bucket_override is only whitespace", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "listedbucket",
+        bucket_override: "   ",
+        filename: "mywackyfilename",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "listedbucket",
         "mywackyfilename",
         Buffer.from("1,2,3,4", "utf8"))
     })

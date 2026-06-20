@@ -45,7 +45,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
     // The manual override takes precedence over the bucket selected from the dropdown. This allows
     // writing to a bucket in another project (e.g. a partner bucket) where the service account only
     // has object-level access (storage.objects.create) and cannot list buckets at the project level.
-    const bucket = request.formParams.bucket_override || request.formParams.bucket
+    const bucket = request.formParams.bucket_override?.trim() || request.formParams.bucket
 
     if (!bucket) {
       const error: Error = errorWith(
