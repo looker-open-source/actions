@@ -81,7 +81,12 @@ export class GoogleAdsApiClient {
         validate_only: false,
       }
 
-      return this.apiCall(method, path, body)
+      try {
+        return await this.apiCall(method, path, body)
+      } catch (error) {
+        this.handleEuPoliticalError(error)
+        throw error
+      }
     }
 
     async createDataJob(
@@ -108,7 +113,12 @@ export class GoogleAdsApiClient {
         },
       }
 
-      return this.apiCall(method, path, body)
+      try {
+        return await this.apiCall(method, path, body)
+      } catch (error) {
+        this.handleEuPoliticalError(error)
+        throw error
+      }
     }
 
     async addDataJobOperations(offlineUserDataJobResourceName: string, userIdentifiers: any[]) {
@@ -156,5 +166,22 @@ export class GoogleAdsApiClient {
       }
 
       return response.data
+    }
+
+    /**
+     * Inspects the error response for EU Political Advertising Declaration requirements.
+     * Re-throws a customized error message if the specific Google Ads API error is found.
+     */
+    private handleEuPoliticalError(error: any) {
+      const gadsError = error?.response?.data?.error?.details?.[0]?.errors?.[0]
+      if (gadsError?.errorCode?.mutateError === "EU_POLITICAL_ADVERTISING_DECLARATION_REQUIRED") {
+        const message = "Action required: To use Customer Match for EU political advertising, " +
+                        "you must first complete the identity verification and " +
+                        "declare your intent in the Google Ads UI. " +
+                        "See: https://developers.google.com/google-ads/api/docs/api-policy/eu-par"
+        this.log("error", `EU Political Advertising Error: ${message}`)
+        error.message = message
+        error.name = "EU Political Advertising Error"
+      }
     }
 }

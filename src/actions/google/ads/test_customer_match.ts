@@ -138,6 +138,58 @@ describe(`${action.constructor.name} class`, () => {
         })
       }
     })
+
+    describe("Google Ads API error handling", () => {
+      let gaxiosStub: sinon.SinonStub
+
+      beforeEach(() => {
+        gaxiosStub = adsSinonSandbox.stub(gaxios, "request")
+      })
+
+      it("customizes the error message for EU_POLITICAL_ADVERTISING_DECLARATION_REQUIRED", async () => {
+        const request = makeBaseRequest()
+        const state = JSON.parse(request.params.state_json!)
+        state.tokens.expiry_date = Date.now() + 24 * 60 * 60 * 1000
+        request.params.state_json = JSON.stringify(state)
+        request.formParams.loginCid = "123456789"
+        request.formParams.createOrAppend = "create"
+        request.formParams.newListName = "Test List"
+
+        const euPoliticalAdError = new Error("Request failed with status code 400") as any
+        euPoliticalAdError.response = {
+          status: 400,
+          data: {
+            error: {
+              code: 400,
+              message: "Request contains an invalid argument.",
+              details: [
+                {
+                  errors: [
+                    {
+                      errorCode: {
+                        mutateError: "EU_POLITICAL_ADVERTISING_DECLARATION_REQUIRED",
+                      },
+                      message: "EU political advertising declaration is required.",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        }
+
+        gaxiosStub.rejects(euPoliticalAdError)
+
+        const expectedMessage = "Action required: To use Customer Match for EU political advertising, " +
+          "you must first complete the identity verification and " +
+          "declare your intent in the Google Ads UI. " +
+          "See: https://developers.google.com/google-ads/api/docs/api-policy/eu-par"
+
+        const response = await action.validateAndExecute(request)
+        expect(response.success).to.be.false
+        expect(response.message).to.include(expectedMessage)
+      })
+    })
   })
 
   describe("oauth interface", () => {
