@@ -36,7 +36,13 @@ export class GoogleCloudStorageAction extends Hub.Action {
       required: true,
       sensitive: false,
       description: "The Project Id for your GCS project from https://console.cloud.google.com/apis/credentials",
-    },
+    }, {
+      name: "authorized_buckets",
+      label: "Authorized Buckets",
+      required: true,
+      sensitive: false,
+      description: "List of authorized Buckets for the Users (semicolon separated)",
+    }
   ]
 
   async execute(request: Hub.ActionRequest) {
@@ -44,17 +50,50 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
     if (!request.formParams.bucket) {
       const error: Error = errorWith(
-        HTTP_ERROR.bad_request,
-        `${LOG_PREFIX} needs a GCS bucket specified.`,
+          HTTP_ERROR.bad_request,
+          `${LOG_PREFIX} needs a GCS bucket specified.`
       )
       response.success = false
       response.error = error
       response.message = error.message
       response.webhookId = request.webhookId
-
-      winston.error(`${error.message}`, {error, webhookId: request.webhookId})
+      winston.error(`${error.message}`, { error, webhookId: request.webhookId })
       return response
     }
+
+
+    const selectedBucket = request.formParams.bucket
+    const authorizedBuckets = (request.params.authorized_buckets || "")
+        .split(";")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+
+    if (authorizedBuckets.length === 0) {
+      const error: Error = errorWith(
+          HTTP_ERROR.bad_request,
+          `${LOG_PREFIX} No buckets are authorized for use. Selected bucket "${selectedBucket}" cannot be used.`
+      )
+      response.success = false
+      response.error = error
+      response.message = error.message
+      response.webhookId = request.webhookId
+      winston.error(`${error.message}`, { error, webhookId: request.webhookId })
+      return response
+    }
+
+    if (!authorizedBuckets.includes(selectedBucket)) {
+      const error: Error = errorWith(
+          HTTP_ERROR.bad_request,
+          `${LOG_PREFIX} Selected bucket "${selectedBucket}" is not in the list of authorized buckets.`
+      )
+      response.success = false
+      response.error = error
+      response.message = error.message
+      response.webhookId = request.webhookId
+      winston.error(`${error.message}`, { error, webhookId: request.webhookId })
+      return response
+    }
+
 
     let filename = request.formParams.filename || request.suggestedFilename()
 
@@ -141,8 +180,8 @@ export class GoogleCloudStorageAction extends Hub.Action {
 
       Google SDK Error: "${e.message}"`
       winston.error(
-        `${LOG_PREFIX} An error occurred while fetching the bucket list. Google SDK Error: ${e.message} `,
-        {webhookId: request.webhookId},
+          `${LOG_PREFIX} An error occurred while fetching the bucket list. Google SDK Error: ${e.message} `,
+          {webhookId: request.webhookId},
       )
       return form
     }
@@ -153,17 +192,31 @@ export class GoogleCloudStorageAction extends Hub.Action {
       return form
     }
 
-    const buckets = results[0]
+    const allBuckets = results[0]
+    const authorizedBuckets = (request.params.authorized_buckets || "")
+        .split(";")
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0)
+
+    const filteredBuckets = allBuckets.filter((b: any) =>
+        authorizedBuckets.includes(b.name)
+    )
+
+    if (filteredBuckets.length === 0) {
+      form.error = "None of the authorized buckets were found in your GCS account."
+      winston.error(`${LOG_PREFIX} No authorized buckets found`, { webhookId: request.webhookId })
+      return form
+    }
 
     form.fields = [{
       label: "Bucket",
       name: "bucket",
       required: true,
-      options: buckets.map((b: any) => {
-          return {name: b.id, label: b.name}
-        }),
+      options: filteredBuckets.map((b: any) => {
+        return { name: b.id, label: b.name }
+      }),
+      default: filteredBuckets[0].id,
       type: "select",
-      default: buckets[0].id,
     }, {
       label: "Filename",
       name: "filename",
@@ -174,7 +227,7 @@ export class GoogleCloudStorageAction extends Hub.Action {
       options: [{label: "Yes", name: "yes"}, {label: "No", name: "no"}],
       default: "yes",
       description: "If Overwrite is enabled, will use the title or filename and overwrite existing data." +
-        " If disabled, a date time will be appended to the name to make the file unique.",
+          " If disabled, a date time will be appended to the name to make the file unique.",
     }]
 
     return form
