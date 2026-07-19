@@ -39,21 +39,56 @@ export class TeamsAction extends Hub.Action {
         : req.formParams.text.replace(/\n/g, "\n\n")
 
     const resCard = {
-      "@type": "MessageCard",
-      "@context": "http://schema.org/extensions",
-      "themeColor": "5035b4",
-      "summary": "Looker Reports",
-      "title": title,
-      "text": text,
-      "sections": [] as any,
-      "potentialAction": [
+      type: "message",
+      attachments: [
         {
-          "@type": "OpenUri",
-          "name": "View in Looker",
-          "targets": [{ os: "default", uri: req.scheduledPlan.url }],
+          contentType: "application/vnd.microsoft.card.adaptive",
+          contentUrl: null,
+          content: {
+            $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+            type: "AdaptiveCard",
+            version: "1.2",
+            body: [
+              {
+                type: "TextBlock",
+                text: title,
+                weight: "bolder",
+                size: "medium",
+              },
+              {
+                type: "TextBlock",
+                text: text,
+                wrap: true,
+              },
+              {
+                type: "Image",
+                url: `data:image/png;base64,${req.attachment?.dataBuffer?.toString("base64") || ""}`,
+                msTeams: {
+                  allowExpand: true,
+                },
+              },
+              {
+                type: "TextBlock",
+                text: "Type: " + (req.scheduledPlan.type || ""),
+                weight: "bolder",
+              },
+              {
+                type: "TextBlock",
+                text: "Title: " + title,
+                weight: "bolder",
+              },
+            ],
+            actions: [
+              {
+                type: "Action.OpenUrl",
+                title: "View this Dashboard in Looker",
+                url: req.scheduledPlan.url,
+              },
+            ],
+          },
         },
       ],
-    }
+    };
 
     if (req.formParams.isAttached === "true") {
       const facts = []
@@ -75,9 +110,11 @@ export class TeamsAction extends Hub.Action {
           value: req.scheduledPlan.query.view,
         })
       }
-      resCard.sections.push({
-        facts,
-      })
+
+      resCard.attachments[0].content.body.push({
+        type: "FactSet",
+        facts: facts.map(f => ({ title: f.name, value: f.value })),
+      } as any);
     }
 
     const option = {
@@ -130,7 +167,6 @@ export class TeamsAction extends Hub.Action {
         { name: "true", label: "true" },
       ],
     })
-
     return form
   }
 }
