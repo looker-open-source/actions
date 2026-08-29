@@ -21,6 +21,7 @@ import "./test_json_detail_stream"
 import "./test_oauth_action"
 import "./test_server"
 import "./test_smoke"
+import "./test_ssrf_filter"
 
 import "../src/actions/airtable/test_airtable"
 import "../src/actions/amazon/test_amazon_ec2"

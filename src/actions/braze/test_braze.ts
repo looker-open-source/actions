@@ -111,6 +111,18 @@ describe(`${action.constructor.name} unit tests`, () => {
         .be.rejectedWith("Bad Endpoint.")
     })
 
+    it("errors if the endpoint host only ends with a Braze domain in the path", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Query
+      request.params = {
+        braze_api_key: "AAACCCKKKATTT",
+        braze_api_endpoint: "https://169.254.169.254/x.braze.com",
+      }
+
+      return chai.expect(action.execute(request)).to.eventually
+        .be.rejectedWith("Bad Endpoint.")
+    })
+
     it("errors if missing API key", () => {
       const request = new Hub.ActionRequest()
       request.type = Hub.ActionType.Query
