@@ -22,6 +22,9 @@ import {
 import { Query } from "../api_types/query"
 import { Fieldset } from "./index"
 import { Row as JsonDetailRow } from "./json_detail"
+import { assertAllowedRequestUrl, ssrfSafeLookup } from "./ssrf_filter"
+
+const MAX_STREAM_REDIRECTS = 10
 
 export {
   ActionType,
@@ -208,63 +211,100 @@ export class ActionRequest {
         // Here we can cork the stream and uncork if we receive a 200 OK response
         // If we do not receive a 200 we do not want to allow data to pipe and ignore a non-200 response
         stream.cork()
-        httpRequest
-          .get(url, {timeout})
-          .on("error", (err) => {
-            if (hasResolved && (err as any).code === "ECONNRESET") {
-              winston.info(`[stream] ignoring ECONNRESET that occured after streaming finished`, this.logInfo)
-            } else {
-              winston.error(`[stream] request stream error`, {
-                ...this.logInfo,
-                error: err.message,
-                stack: err.stack,
-              })
-              reject(err)
-            }
-          })
-          .on("response", (response) => {
-            if (response.statusCode === 200) {
-              // Stop buffering in memory and allow action to send data
-              stream.uncork()
-            } else {
-              winston.warn(`[stream] There was an error received from Looker.` +
-                  `ErrorCode: ${response.statusCode} ErrorMessage: ${response.statusMessage}`, this.logInfo)
-              if (!hasResolved) {
-                reject(`There was an error with Action Hub calling back to Looker, status code: ${response.statusCode}`)
+
+        // Redirects are followed manually so that every hop is validated by
+        // `ssrfSafeLookup`. The `request` library does not re-apply the `lookup`
+        // option to redirect targets, so a download url that 3xx-redirects to an
+        // internal host would otherwise bypass the guard on the initial url.
+        const performGet = (requestUrl: string, redirectsRemaining: number) => {
+          try {
+            // Literal addresses never trigger the `lookup` below, so validate
+            // the protocol and any address literal up front for every hop.
+            assertAllowedRequestUrl(requestUrl)
+          } catch (guardErr) {
+            reject(guardErr)
+            return
+          }
+          const requestOptions: httpRequest.CoreOptions = {
+            timeout,
+            followRedirect: false,
+          }
+          // `lookup` is honoured by the underlying http agent but is not present
+          // in the request library's type definitions.
+          const requestOptionsWithLookup = requestOptions as any
+          requestOptionsWithLookup.lookup = ssrfSafeLookup
+          const downloadRequest = httpRequest.get(requestUrl, requestOptions)
+          downloadRequest
+            .on("error", (err) => {
+              if (hasResolved && (err as any).code === "ECONNRESET") {
+                winston.info(`[stream] ignoring ECONNRESET that occured after streaming finished`, this.logInfo)
+              } else {
+                winston.error(`[stream] request stream error`, {
+                  ...this.logInfo,
+                  error: err.message,
+                  stack: err.stack,
+                })
+                reject(err)
               }
-            }
-          })
-          .on("finish", () => {
-            winston.info(`[stream] streaming via download url finished`, this.logInfo)
-          })
-          .on("socket", (socket) => {
-            winston.info(`[stream] setting keepalive on socket`, this.logInfo)
-            socket.setKeepAlive(true)
-          })
-          .on("abort", () => {
-            winston.info(`[stream] streaming via download url aborted`, this.logInfo)
-          })
-          .on("response", () => {
-            winston.info(`[stream] got response from download url`, this.logInfo)
-          })
-          .on("close", () => {
-            winston.info(`[stream] request stream closed`, this.logInfo)
-          })
-          .pipe(stream)
-          .on("error", (err) => {
-            winston.error(`[stream] PassThrough stream error`, {
-              ...this.logInfo,
             })
-            reject(err)
-          })
-          .on("finish", () => {
-            winston.info(`[stream] PassThrough stream finished`, this.logInfo)
-            resolve()
-            hasResolved = true
-          })
-          .on("close", () => {
-            winston.info(`[stream] PassThrough stream closed`, this.logInfo)
-          })
+            .on("socket", (socket) => {
+              winston.info(`[stream] setting keepalive on socket`, this.logInfo)
+              socket.setKeepAlive(true)
+            })
+            .on("response", (response) => {
+              const statusCode = response.statusCode
+              const location = response.headers.location
+              if (statusCode >= 300 && statusCode < 400 && location) {
+                downloadRequest.abort()
+                if (redirectsRemaining <= 0) {
+                  winston.warn(`[stream] exceeded the maximum number of download url redirects`, this.logInfo)
+                  reject("Exceeded the maximum number of redirects while streaming the download url.")
+                  return
+                }
+                let nextUrl: string
+                try {
+                  nextUrl = new URL(location, requestUrl).toString()
+                } catch (e) {
+                  reject("Received an invalid redirect location while streaming the download url.")
+                  return
+                }
+                winston.info(`[stream] following redirect from download url`, this.logInfo)
+                performGet(nextUrl, redirectsRemaining - 1)
+                return
+              }
+
+              winston.info(`[stream] got response from download url`, this.logInfo)
+              if (statusCode === 200) {
+                // Stop buffering in memory and allow action to send data
+                stream.uncork()
+                downloadRequest
+                  .pipe(stream)
+                  .on("error", (err) => {
+                    winston.error(`[stream] PassThrough stream error`, {
+                      ...this.logInfo,
+                    })
+                    reject(err)
+                  })
+                  .on("finish", () => {
+                    winston.info(`[stream] PassThrough stream finished`, this.logInfo)
+                    resolve()
+                    hasResolved = true
+                  })
+                  .on("close", () => {
+                    winston.info(`[stream] PassThrough stream closed`, this.logInfo)
+                  })
+              } else {
+                winston.warn(`[stream] There was an error received from Looker.` +
+                    `ErrorCode: ${statusCode} ErrorMessage: ${response.statusMessage}`, this.logInfo)
+                downloadRequest.abort()
+                if (!hasResolved) {
+                  reject(`There was an error with Action Hub calling back to Looker, status code: ${statusCode}`)
+                }
+              }
+            })
+        }
+
+        performGet(url, MAX_STREAM_REDIRECTS)
       } else {
         if (this.attachment && this.attachment.dataBuffer) {
           winston.info(`Using "fake" streaming because request contained attachment data.`, this.logInfo)
