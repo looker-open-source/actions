@@ -328,7 +328,12 @@ export class GoogleAdsActionFormBuilder {
   private async getCustomer(cId: string) {
     return await this.apiClient.searchClientCustomers(cId)
       .then((data: any) => {
-        const cust  = data[0].results.filter((c: any) => c.customerClient.id === cId)[0].customerClient
+        const results = (data && data.length && data[0].results) ? data[0].results : []
+        const matching = results.filter((c: any) => c.customerClient.id === cId)
+        if (!matching.length) {
+          throw new Error(`Customer ${cId} not found`)
+        }
+        const cust = matching[0].customerClient
         if (!cust.descriptiveName) { cust.descriptiveName = "Untitled" }
         return cust as AdsCustomer
       })
@@ -339,7 +344,7 @@ export class GoogleAdsActionFormBuilder {
       throw new Error("Could not reference the login customer record.")
     }
     const searchResp = await this.apiClient.searchClientCustomers(this.loginCustomer.id)
-    const searchResults = searchResp.length ? searchResp[0].results : []
+    const searchResults = (searchResp && searchResp.length && searchResp[0].results) ? searchResp[0].results : []
     const clients = searchResults.map((result: any) => {
       const client = result.customerClient
       if (!client.descriptiveName) {
@@ -381,7 +386,7 @@ export class GoogleAdsActionFormBuilder {
       throw new Error("Could not reference the target customer record.")
     }
     const searchResp = await this.apiClient.searchOpenUserLists(this.targetCustomer.id, this.uploadKeyType)
-    const userListResults = searchResp.length ? searchResp[0].results : []
+    const userListResults = (searchResp && searchResp.length && searchResp[0].results) ? searchResp[0].results : []
 
     const selectOptions = userListResults.map((i: any) => (
       {
