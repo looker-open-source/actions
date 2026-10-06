@@ -302,6 +302,103 @@ describe(`${action.constructor.name} class`, () => {
         expect(payload.stateUrl).to.equal("https://looker.example.com/state_url_endpoint")
       })
     })
+
+    describe("form generation with empty search stream results", () => {
+      let gaxiosStub: sinon.SinonStub
+
+      beforeEach(() => {
+        gaxiosStub = adsSinonSandbox.stub(gaxios, "request")
+      })
+
+      it("handles undefined results array when searching client customers in getTargetCidOptions", async () => {
+        const request = makeBaseRequest()
+        const state = JSON.parse(request.params.state_json!)
+        state.tokens.expiry_date = Date.now() + 24 * 60 * 60 * 1000
+        request.params.state_json = JSON.stringify(state)
+        request.formParams = {
+          loginCid: "123456789",
+        }
+
+        gaxiosStub.callsFake(async (options: any) => {
+          if (options.url === "customers:listAccessibleCustomers") {
+            return {
+              data: [
+                {
+                  resourceNames: ["customers/123456789"],
+                },
+              ],
+            }
+          }
+          if (options.url.includes("customers/123456789/googleAds:searchStream")) {
+            // Simulate response with no results array (undefined)
+            return {
+              data: [{}],
+            }
+          }
+          return { data: [] }
+        })
+
+        const form = await action.form(request)
+        expect(form).to.be.an.instanceOf(Hub.ActionForm)
+        expect(form.fields).to.be.an("array")
+      })
+
+      it("handles undefined results array when searching open user lists in getUserListOptions", async () => {
+        const request = makeBaseRequest()
+        const state = JSON.parse(request.params.state_json!)
+        state.tokens.expiry_date = Date.now() + 24 * 60 * 60 * 1000
+        request.params.state_json = JSON.stringify(state)
+        request.formParams = {
+          loginCid: "123456789",
+          createOrAppend: "append",
+          mobileDevice: "no",
+        }
+
+        gaxiosStub.callsFake(async (options: any) => {
+          if (options.url === "customers:listAccessibleCustomers") {
+            return {
+              data: [
+                {
+                  resourceNames: ["customers/123456789"],
+                },
+              ],
+            }
+          }
+          if (options.url.includes("customers/123456789/googleAds:searchStream")) {
+            // Search client customers query
+            if (options.data && options.data.query && options.data.query.includes("FROM customer_client")) {
+              return {
+                data: [
+                  {
+                    results: [
+                      {
+                        customerClient: {
+                          id: "123456789",
+                          descriptiveName: "Test Customer Account",
+                          manager: false,
+                        },
+                      },
+                    ],
+                  },
+                ],
+              }
+            }
+            // Search user list query with no results array (undefined)
+            if (options.data && options.data.query && options.data.query.includes("FROM user_list")) {
+              return {
+                data: [{}],
+              }
+            }
+          }
+          return { data: [] }
+        })
+
+        const form = await action.form(request)
+        expect(form).to.be.an.instanceOf(Hub.ActionForm)
+        const lastField = form.fields[form.fields.length - 1]
+        expect(lastField.name).to.equal("noAvalaibleLists")
+      })
+    })
   })
 })
 
