@@ -212,19 +212,27 @@ import { MarketoTransaction } from "./marketo_transaction"
         listRemoveLeadsFromList: spies[3],
       }
 
-      sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(() => {
-        return {
-          lead: {
-            createOrUpdate: spy.leadCreateOrUpdate,
-          },
-          campaign: {
-            request: spy.campaignRequest,
-          },
-          list: {
-            addLeadsToList: spy.listAddLeadsToList,
-            removeLeadsFromList: spy.listRemoveLeadsFromList,
-          },
-        }
+      // Wrap stubbing in before() to ensure it is created after any global sinon.restore()
+      // calls from previous test files (like test_server.ts) have run.
+      before(() => {
+        sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(() => {
+          return {
+            lead: {
+              createOrUpdate: spy.leadCreateOrUpdate,
+            },
+            campaign: {
+              request: spy.campaignRequest,
+            },
+            list: {
+              addLeadsToList: spy.listAddLeadsToList,
+              removeLeadsFromList: spy.listRemoveLeadsFromList,
+            },
+          }
+        })
+      })
+
+      after(() => {
+        sinon.restore()
       })
 
       it("sends all the data to Marketo for the legacy request format", () => {

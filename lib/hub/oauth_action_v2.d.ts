@@ -3,6 +3,11 @@ import { ActionRequest } from "./action_request";
 import { EncryptedPayload } from "./encrypted_payload";
 import { TokenPayload } from "./token_payload";
 export declare abstract class OAuthActionV2 extends Action {
+    /**
+     * Indicates whether this OAuth action utilizes double-submit cookie/nonce
+     * validation for enhanced CSRF protection.
+     */
+    usesCsrfProtection: boolean;
     abstract oauthCheck(request: ActionRequest): Promise<boolean>;
     abstract oauthUrl(redirectUri: string, encryptedState: string): Promise<string>;
     abstract oauthHandleRedirect(urlParams: {

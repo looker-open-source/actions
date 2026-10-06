@@ -6,6 +6,13 @@ import { EncryptedPayload } from "./encrypted_payload"
 
 export abstract class OAuthAction extends Action {
   protected static readonly actionCrypto = new ActionCrypto()
+
+  /**
+   * Indicates whether this OAuth action utilizes double-submit cookie/nonce
+   * validation for enhanced CSRF protection.
+   */
+  usesCsrfProtection = false
+
   abstract oauthCheck(request: ActionRequest): Promise<boolean>
   abstract oauthUrl(redirectUri: string, encryptedState: string): Promise<string>
   abstract oauthFetchInfo(urlParams: { [key: string]: string }, redirectUri: string): Promise<void>

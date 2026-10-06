@@ -1,3 +1,4 @@
+import * as crypto from "crypto"
 import * as express from "express"
 import * as fs from "fs"
 import * as path from "path"
@@ -85,6 +86,7 @@ export default class Server implements Hub.RouteBuilder {
   constructor() {
 
     this.app = express()
+    this.app.set("trust proxy", true)
     this.app.use(express.json({limit: "250mb"}))
     this.app.use(expressWinston.logger({
       winstonInstance: winston,
@@ -148,11 +150,35 @@ export default class Server implements Hub.RouteBuilder {
     this.app.get("/actions/:actionId/oauth", async (req, res) => {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
+
+      const parts = uparse.parse(req.url, true)
+      const state = parts.query.state as string
+      if (!state) {
+        res.status(400).send("Missing state parameter.")
+        return
+      }
+
       if (isOauthAction(action) || isOauthActionV2(action)) {
-        const parts = uparse.parse(req.url, true)
-        const state = parts.query.state
-        const url = await (action as OAuthAction).oauthUrl(this.oauthRedirectUrl(action), state)
-        res.redirect(url)
+        const actionId = req.params.actionId
+        const isTargetAction = (action as OAuthAction | OAuthActionV2).usesCsrfProtection === true
+
+        winston.info(`Oauth route hit for actionId: ${actionId}, isTargetAction: ${isTargetAction}`)
+
+        if (isTargetAction) {
+          const nonce = crypto.randomBytes(16).toString("hex")
+          res.cookie("action_hub_state", nonce, {
+            httpOnly: true,
+            secure: req.secure || process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 3600000, // 1 hour
+          })
+          const combinedState = `${nonce}.${state}`
+          const url = await (action as OAuthAction).oauthUrl(this.oauthRedirectUrl(action), combinedState)
+          res.redirect(url)
+        } else {
+          const url = await (action as OAuthAction).oauthUrl(this.oauthRedirectUrl(action), state)
+          res.redirect(url)
+        }
       } else {
         throw "Action does not support OAuth."
       }
@@ -183,13 +209,51 @@ export default class Server implements Hub.RouteBuilder {
       const request = Hub.ActionRequest.fromRequest(req)
       const action = await Hub.findAction(req.params.actionId, { lookerVersion: request.lookerVersion })
       try {
+        const isTargetAction = (action as OAuthAction | OAuthActionV2).usesCsrfProtection === true
+
+        let originalState = req.query.state as string
+
+        if (isTargetAction) {
+          const stateParam = req.query.state as string
+          if (!stateParam) {
+            throw new Error("Missing state parameter.")
+          }
+
+          const parts = stateParam.split(".")
+          if (parts.length < 2) {
+            throw new Error("Invalid state parameter format.")
+          }
+
+          const nonce = parts[0]
+          originalState = parts.slice(1).join(".")
+
+          const cookies = this.parseCookies(req.headers.cookie)
+          const expectedNonce = cookies.action_hub_state
+
+          if (!expectedNonce || expectedNonce !== nonce) {
+            this.logError(req, res, `CSRF validation failed for action ${req.params.actionId}: Nonce mismatch.`)
+            res.status(403).send("CSRF validation failed.")
+            return
+          }
+
+          // Clear the cookie
+          res.clearCookie("action_hub_state", {
+            httpOnly: true,
+            secure: req.secure || process.env.NODE_ENV === "production",
+            sameSite: "lax",
+          })
+        }
+
+        // Rewrite req.query.state with original state for the action
+        const modifiedQuery = { ...req.query, state: originalState }
+
         if (isOauthAction(action)) {
-          await (action as OAuthAction).oauthFetchInfo(req.query as {[key: string]: string},
+          await (action as OAuthAction).oauthFetchInfo(modifiedQuery as {[key: string]: string},
               this.oauthRedirectUrl(action))
           res.statusCode = 200
           res.send(`<html><script>window.close()</script><body>You may now close this tab.</body></html>`)
         } else if (isOauthActionV2(action)) {
-          const redirUrl = await (action as OAuthActionV2).oauthHandleRedirect(req.query as {[key: string]: string},
+          const redirUrl = await (action as OAuthActionV2).oauthHandleRedirect(modifiedQuery as {[key: string]: string},
                 this.oauthRedirectUrl(action))
           if (redirUrl === "") {
             res.statusCode = 200
@@ -201,8 +265,8 @@ export default class Server implements Hub.RouteBuilder {
           throw "Action does not support OAuth."
         }
       } catch (e: any) {
-        this.logPromiseFail(req, res, e)
-        res.statusCode = 400
+        this.logError(req, res, "Error in oauth_redirect")
+        res.status(400).send(e.message || e)
       }
     })
 
@@ -313,19 +377,6 @@ export default class Server implements Hub.RouteBuilder {
     })
   }
 
-  private logPromiseFail(req: express.Request, res: express.Response, e: any) {
-    this.logError(req, res, "Error on request")
-    if (typeof (e) === "string") {
-      res.status(404)
-      res.json({ success: false, error: e })
-      this.logError(req, res, e)
-    } else {
-      res.status(500)
-      res.json({ success: false, error: "Internal server error." })
-      this.logError(req, res, e)
-    }
-  }
-
   private logInfo(req: express.Request, res: express.Response, message: any, options: any = {}) {
     winston.info(message, {
       ...options,
@@ -348,6 +399,21 @@ export default class Server implements Hub.RouteBuilder {
       instanceId: req.header("x-looker-instance"),
       webhookId: req.header("x-looker-webhook-id"),
     }
+  }
+
+  private parseCookies(cookieHeader: string | undefined): {[key: string]: string} {
+    const cookies: {[key: string]: string} = {}
+    if (cookieHeader) {
+      cookieHeader.split(";").forEach((cookie) => {
+        const index = cookie.indexOf("=")
+        if (index !== -1) {
+          const name = cookie.substring(0, index).trim()
+          const value = cookie.substring(index + 1).trim()
+          cookies[name] = value
+        }
+      })
+    }
+    return cookies
   }
 
   private absUrl(rootRelativeUrl: string) {

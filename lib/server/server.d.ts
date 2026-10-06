@@ -17,9 +17,9 @@ export default class Server implements Hub.RouteBuilder {
      */
     private jsonKeepAlive;
     private route;
-    private logPromiseFail;
     private logInfo;
     private logError;
     private requestLog;
+    private parseCookies;
     private absUrl;
 }

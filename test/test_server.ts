@@ -1,10 +1,22 @@
 import * as chai from "chai"
 import * as sinon from "sinon"
 
+import * as Hub from "../src/hub"
+import { OAuthAction } from "../src/hub/oauth_action"
 import * as apiKey from "../src/server/api_key"
 import Server from "../src/server/server"
 
+import "../src/actions/index"
+
+const chaiHttp = require("chai-http")
+chai.use(chaiHttp)
+
 describe("the action hub", () => {
+
+  // Clear out sinon state after each test to ensure hermeticity
+  afterEach(() => {
+    sinon.restore()
+  })
 
   it("responds to get requests with a nice html page", (done) => {
     chai.request(new Server().app)
@@ -130,6 +142,160 @@ describe("the action hub", () => {
         stub.restore()
         done()
       })
+  })
+
+  describe("OAuth CSRF protection", () => {
+    const mockAction = new class extends OAuthAction {
+      name = "mock_oauth_action"
+      label = "Mock OAuth Action"
+      description = "Mock OAuth Action"
+      usesCsrfProtection = true
+      supportedActionTypes = []
+      params = []
+      async oauthCheck(_request: Hub.ActionRequest) { return true }
+      async oauthUrl(redirectUri: string, encryptedState: string) {
+        return `https://example.com/oauth?redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(encryptedState)}`
+      }
+      async oauthFetchInfo(_urlParams: { [key: string]: string }, _redirectUri: string) {
+        return
+      }
+      async execute(_request: Hub.ActionRequest) {
+        return new Hub.ActionResponse()
+      }
+    }()
+
+    before(() => {
+      Hub.addAction(mockAction)
+    })
+
+    beforeEach(() => {
+      process.env.ACTION_HUB_BASE_URL = "http://localhost:8080"
+    })
+
+    afterEach(() => {
+      delete process.env.ACTION_HUB_BASE_URL
+    })
+
+    it("sets cookie and redirects in oauth flow", (done) => {
+      chai.request(new Server().app)
+        .get("/actions/mock_oauth_action/oauth?state=my_state")
+        .redirects(0)
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(302)
+          chai.expect(res).to.have.header("set-cookie")
+          const cookies = res.header["set-cookie"][0]
+          chai.expect(cookies).to.include("action_hub_state=")
+          chai.expect(res.header.location).to.include("state=")
+          done()
+        })
+    })
+
+    it("fails oauth_redirect if cookie is missing", (done) => {
+      chai.request(new Server().app)
+        .get("/actions/mock_oauth_action/oauth_redirect?state=nonce.my_state")
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(403)
+          chai.expect(res.text).to.equal("CSRF validation failed.")
+          done()
+        })
+    })
+
+    it("fails oauth_redirect if state is missing", (done) => {
+      chai.request(new Server().app)
+        .get("/actions/mock_oauth_action/oauth_redirect")
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(400)
+          done()
+        })
+    })
+
+    it("fails oauth_redirect if state format is invalid", (done) => {
+      chai.request(new Server().app)
+        .get("/actions/mock_oauth_action/oauth_redirect?state=invalidstate")
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(400)
+          done()
+        })
+    })
+
+    it("fails oauth_redirect if nonce mismatches", (done) => {
+      chai.request(new Server().app)
+        .get("/actions/mock_oauth_action/oauth_redirect?state=wrongnonce.my_state")
+        .set("Cookie", "action_hub_state=correctnonce")
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(403)
+          chai.expect(res.text).to.equal("CSRF validation failed.")
+          done()
+        })
+    })
+
+    it("succeeds oauth_redirect if nonce matches", (done) => {
+      const oauthFetchInfoStub = sinon.stub(mockAction, "oauthFetchInfo").resolves()
+      chai.request(new Server().app)
+        .get("/actions/mock_oauth_action/oauth_redirect?state=correctnonce.my_state")
+        .set("Cookie", "action_hub_state=correctnonce")
+        .end((_err, res) => {
+          chai.expect(res).to.have.status(200)
+          chai.expect(oauthFetchInfoStub.calledOnce).to.be.true
+          oauthFetchInfoStub.restore()
+          done()
+        })
+    })
+
+    describe("Secure cookie flags", () => {
+      let originalNodeEnv: string | undefined
+
+      beforeEach(() => {
+        originalNodeEnv = process.env.NODE_ENV
+      })
+
+      afterEach(() => {
+        if (originalNodeEnv !== undefined) {
+          process.env.NODE_ENV = originalNodeEnv
+        } else {
+          delete process.env.NODE_ENV
+        }
+      })
+
+      it("sets secure cookie if X-Forwarded-Proto is https", (done) => {
+        chai.request(new Server().app)
+          .get("/actions/mock_oauth_action/oauth?state=my_state")
+          .set("X-Forwarded-Proto", "https")
+          .redirects(0)
+          .end((_err, res) => {
+            chai.expect(res).to.have.status(302)
+            const cookies = res.header["set-cookie"][0]
+            chai.expect(cookies).to.include("Secure")
+            done()
+          })
+      })
+
+      it("sets secure cookie if NODE_ENV is production", (done) => {
+        process.env.NODE_ENV = "production"
+        chai.request(new Server().app)
+          .get("/actions/mock_oauth_action/oauth?state=my_state")
+          .redirects(0)
+          .end((_err, res) => {
+            chai.expect(res).to.have.status(302)
+            const cookies = res.header["set-cookie"][0]
+            chai.expect(cookies).to.include("Secure")
+            done()
+          })
+      })
+
+      it("does not set secure cookie in development over HTTP", (done) => {
+        delete process.env.NODE_ENV
+        chai.request(new Server().app)
+          .get("/actions/mock_oauth_action/oauth?state=my_state")
+          .redirects(0)
+          .end((_err, res) => {
+            chai.expect(res).to.have.status(302)
+            const cookies = res.header["set-cookie"][0]
+            chai.expect(cookies).to.not.include("Secure")
+            done()
+          })
+      })
+    })
   })
 
 })

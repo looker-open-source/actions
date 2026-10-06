@@ -28,6 +28,7 @@ export class GoogleDriveAction extends Hub.OAuthActionV2 {
     description = "Create a new file in Google Drive."
     supportedActionTypes = [Hub.ActionType.Dashboard, Hub.ActionType.Query]
     usesStreaming = true
+    usesCsrfProtection = true
     minimumSupportedLookerVersion = "7.3.0"
     requiredFields = []
     params = [{

@@ -14,6 +14,7 @@ export declare class GoogleDriveAction extends Hub.OAuthActionV2 {
     description: string;
     supportedActionTypes: Hub.ActionType[];
     usesStreaming: boolean;
+    usesCsrfProtection: boolean;
     minimumSupportedLookerVersion: string;
     requiredFields: never[];
     params: {
