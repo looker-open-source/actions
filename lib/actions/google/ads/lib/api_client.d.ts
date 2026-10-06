@@ -14,5 +14,10 @@ export declare class GoogleAdsApiClient {
     addDataJobOperations(offlineUserDataJobResourceName: string, userIdentifiers: any[]): Promise<any>;
     runJob(offlineUserDataJobResourceName: string): Promise<any>;
     apiCall(method: "GET" | "POST", url: string, data?: any): Promise<any>;
+    /**
+     * Inspects the error response for EU Political Advertising Declaration requirements.
+     * Re-throws a customized error message if the specific Google Ads API error is found.
+     */
+    private handleEuPoliticalError;
 }
 export {};
