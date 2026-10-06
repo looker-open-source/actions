@@ -28,6 +28,12 @@ export function sanitizeError(err: any) {
 }
 
 export function makeBetterErrorMessage(err: any, webhookId?: string) {
+  if (err.name === "EU Political Advertising Error") {
+    if (webhookId) {
+      err.message = err.message + ` (Webhook ID: ${webhookId})`
+    }
+    return
+  }
   let apiError: any
   let subError: any
   let errorCode: number | undefined
