@@ -38,9 +38,15 @@ export class DigitalOceanObjectStorageAction extends AmazonS3Action {
   }
 
   protected amazonS3ClientFromRequest(request: Hub.ActionRequest) {
+   const region = request.params.region
+   // The region is interpolated into the Spaces endpoint host, so it is
+   // restricted to the DigitalOcean region charset to prevent host injection.
+   if (!region || !/^[A-Za-z0-9-]+$/.test(region)) {
+     throw "Invalid DigitalOcean region."
+   }
    return new S3({
-     region: request.params.region,
-     endpoint: `https://${request.params.region}.digitaloceanspaces.com`,
+     region,
+     endpoint: `https://${region}.digitaloceanspaces.com`,
      accessKeyId: request.params.access_key_id,
      secretAccessKey: request.params.secret_access_key,
    })

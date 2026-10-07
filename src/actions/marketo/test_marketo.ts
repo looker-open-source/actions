@@ -215,7 +215,7 @@ import { MarketoTransaction } from "./marketo_transaction"
       // Wrap stubbing in before() to ensure it is created after any global sinon.restore()
       // calls from previous test files (like test_server.ts) have run.
       before(() => {
-        sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(() => {
+        sinon.stub(MarketoTransaction.prototype, "marketoClientFromRequest").callsFake(async () => {
           return {
             lead: {
               createOrUpdate: spy.leadCreateOrUpdate,

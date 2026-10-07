@@ -68,7 +68,7 @@ export class MarketoTransaction {
       throw "Missing Lookup Field."
     }
 
-    this.marketo = this.marketoClientFromRequest(request)
+    this.marketo = await this.marketoClientFromRequest(request)
 
     const queue = new Queue()
 
@@ -192,7 +192,8 @@ export class MarketoTransaction {
     return result
   }
 
-  marketoClientFromRequest(request: Hub.ActionRequest) {
+  async marketoClientFromRequest(request: Hub.ActionRequest) {
+    await Hub.assertPublicUrl(request.params.url!)
     return new MARKETO({
       endpoint: `${request.params.url}/rest`,
       identity: `${request.params.url}/identity`,

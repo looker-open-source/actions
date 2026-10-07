@@ -11,8 +11,13 @@ enum BrazeConfig {
   BRAZE_ATTRIBUTE_REGEX = "(?<=braze\\[)(.*)(?=\\])",
   EXPORT_DEFAULT_VALUE = "LOOKER_EXPORT",
   MAX_EXPORT = 100000,
-  DEFAULT_DOMAIN_REGEX = "^https?\:\/\/(.*)\\.braze\\.(com|eu)$",
 }
+
+// Braze endpoints are always hosted under braze.com / braze.eu. The endpoint is
+// validated against the parsed URL hostname rather than a substring match so
+// that an address such as https://169.254.169.254/x.braze.com (whose real host
+// is internal) cannot pass the check.
+const BRAZE_ALLOWED_DOMAINS = ["braze.com", "braze.eu"]
 
 interface BrazeApiRow {
   [key: string]: any
@@ -94,8 +99,11 @@ export class BrazeAction extends Hub.Action {
       throw "Missing Protocol for endpoint."
     }
 
-    const bzDomainRegex = new RegExp(BrazeConfig.DEFAULT_DOMAIN_REGEX, "gi")
-    if (!(request.params.braze_api_endpoint.toLowerCase().match(bzDomainRegex))) {
+    const brazeHostname = new URL(endpoint).hostname.toLowerCase()
+    const isAllowedBrazeHost = BRAZE_ALLOWED_DOMAINS.some(
+      (domain) => brazeHostname === domain || brazeHostname.endsWith(`.${domain}`),
+    )
+    if (!isAllowedBrazeHost) {
       throw "Bad Endpoint."
     }
 

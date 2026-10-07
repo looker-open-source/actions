@@ -163,6 +163,7 @@ export const sfdcConnFromRequest = async (
   tokens: Tokens,
   oauthCreds: { oauthClientId: string; oauthClientSecret: string },
 ) => {
+  await Hub.assertPublicUrl(request.params.salesforce_domain!)
   const oauth2 = new jsforce.OAuth2({
     clientId: oauthCreds.oauthClientId,
     clientSecret: oauthCreds.oauthClientSecret,
@@ -181,6 +182,7 @@ export const sfdcConnFromRequest = async (
 
 // login with username, password + security_token (deprecated - action is using oauth)
 export const salesforceLogin = async (request: Hub.ActionRequest) => {
+  await Hub.assertPublicUrl(request.params.salesforce_domain!)
   const sfdcConn = new jsforce.Connection({
     loginUrl: request.params.salesforce_domain!,
   })

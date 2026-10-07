@@ -14,7 +14,7 @@ export declare class MarketoTransaction {
     lookupField?: string;
     handleRequest(request: Hub.ActionRequest): Promise<Hub.ActionResponse>;
     processChunk(chunk: any[]): Promise<Result>;
-    marketoClientFromRequest(request: Hub.ActionRequest): any;
+    marketoClientFromRequest(request: Hub.ActionRequest): Promise<any>;
     private getFieldMap;
     private getLeadList;
     private hasErrors;

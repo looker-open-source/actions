@@ -41,7 +41,7 @@ export class JiraAction extends Hub.Action {
       throw "Couldn't get data from attachment"
     }
 
-    const jira = this.jiraClientFromRequest(request)
+    const jira = await this.jiraClientFromRequest(request)
 
     const issue = {
       fields: {
@@ -69,7 +69,7 @@ export class JiraAction extends Hub.Action {
 
     const form = new Hub.ActionForm()
     try {
-      const jira = this.jiraClientFromRequest(request)
+      const jira = await this.jiraClientFromRequest(request)
 
       const [projects, issueTypes] = await Promise.all([
         jira.listProjects(),
@@ -113,11 +113,12 @@ export class JiraAction extends Hub.Action {
     return form
   }
 
-  private jiraClientFromRequest(request: Hub.ActionRequest) {
+  private async jiraClientFromRequest(request: Hub.ActionRequest) {
     const parsedUrl = new URL(request.params.address!)
     if (!parsedUrl.host) {
       throw "Invalid JIRA server address."
     }
+    await Hub.assertPublicUrl(request.params.address!)
     return new jiraApi({
       protocol: parsedUrl.protocol ? parsedUrl.protocol : "https",
       host: parsedUrl.host,

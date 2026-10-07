@@ -160,3 +160,60 @@ describe("ActionRequest", () => {
     })
   })
 })
+
+import * as http from "http"
+import { AddressInfo } from "net"
+
+describe("ActionRequest.stream SSRF mitigation", () => {
+  async function listen(server: http.Server): Promise<number> {
+    return new Promise((resolve) => {
+      server.listen(0, "127.0.0.1", () => resolve((server.address() as AddressInfo).port))
+    })
+  }
+
+  async function streamAndCollect(downloadUrl: string) {
+    const received: Buffer[] = []
+    const request = new ActionRequest()
+    request.scheduledPlan = { downloadUrl }
+    let rejected = false
+    try {
+      await request.stream(async (readable) => {
+        readable.on("data", (chunk: Buffer) => received.push(chunk))
+        return "done"
+      })
+    } catch (e) {
+      rejected = true
+    }
+    return { rejected, body: Buffer.concat(received).toString() }
+  }
+
+  it("refuses to stream a download url that points at an internal address", async () => {
+    const internal = http.createServer((_req, res) => res.end("INTERNAL_SECRET"))
+    const port = await listen(internal)
+    try {
+      const result = await streamAndCollect(`http://127.0.0.1:${port}/`)
+      chai.expect(result.rejected).to.equal(true)
+      chai.expect(result.body).to.not.contain("INTERNAL_SECRET")
+    } finally {
+      internal.close()
+    }
+  })
+
+  it("refuses to follow a download url redirect that leads to an internal address", async () => {
+    const internal = http.createServer((_req, res) => res.end("INTERNAL_SECRET"))
+    const internalPort = await listen(internal)
+    const redirector = http.createServer((_req, res) => {
+      res.writeHead(302, { Location: `http://127.0.0.1:${internalPort}/` })
+      res.end()
+    })
+    const redirectorPort = await listen(redirector)
+    try {
+      const result = await streamAndCollect(`http://127.0.0.1:${redirectorPort}/`)
+      chai.expect(result.rejected).to.equal(true)
+      chai.expect(result.body).to.not.contain("INTERNAL_SECRET")
+    } finally {
+      internal.close()
+      redirector.close()
+    }
+  })
+})

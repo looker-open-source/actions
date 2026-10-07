@@ -86,10 +86,16 @@ export class AzureStorageAction extends Hub.Action {
   }
 
   private azureClientFromRequest(request: Hub.ActionRequest): BlobServiceClient {
+    const account = request.params.account
+    // The account name is interpolated into the Blob storage host, so it is
+    // restricted to the Azure storage account charset to prevent host injection.
+    if (!account || !/^[a-z0-9]{3,24}$/.test(account)) {
+      throw "Invalid Azure storage account name."
+    }
     try {
-      const sharedKeyCredential = new StorageSharedKeyCredential(request.params.account!, request.params.accessKey!)
+      const sharedKeyCredential = new StorageSharedKeyCredential(account, request.params.accessKey!)
       return new BlobServiceClient(
-        `https://${request.params.account!}.blob.core.windows.net`,
+        `https://${account}.blob.core.windows.net`,
         sharedKeyCredential,
       )
     } catch (err: any) {
