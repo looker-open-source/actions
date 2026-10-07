@@ -64,3 +64,6 @@ typings/
 
 # ActionHub specifics
 status.json
+
+# Jetski CLI metadata
+.jetskicli/

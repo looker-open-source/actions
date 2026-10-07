@@ -9,7 +9,7 @@ import {QueueTestAction} from "./queue_action_for_testing"
 const action = new QueueTestAction()
 const executeQueue = new ExecuteProcessQueue()
 const extendedQueue = new ExtendedProcessQueue()
-process.execArgv = ["./node_modules/ts-node/dist/bin.js"]
+process.execArgv = ["./node_modules/ts-node/dist/bin.js", "--transpile-only"]
 process.argv = ["node", "./integrations/src/boot.ts"]
 process.env.CHILD_TEST = "true"
 

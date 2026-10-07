@@ -4,7 +4,7 @@ import * as Hub from "../../../../hub"
 import * as parse from "csv-parse"
 import { Credentials } from "google-auth-library"
 import { drive_v3, google, sheets_v4 } from "googleapis"
-import { GaxiosPromise } from "googleapis-common"
+import { GaxiosResponseWithHTTP2 } from "googleapis-common"
 import * as winston from "winston"
 import { getHttpErrorType } from "../../../../error_types/utils"
 import { Error, errorWith } from "../../../../hub"
@@ -357,7 +357,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
     async retriableClearSheet(spreadsheetId: string, sheet: Sheet,
                               sheetId: number, attempt: number, webhookId: string):
-                                  GaxiosPromise<sheets_v4.Schema$ClearValuesResponse>  {
+                                  Promise<GaxiosResponseWithHTTP2<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>>  {
       return sheet.spreadsheets.batchUpdate({
           spreadsheetId,
           requestBody: {
@@ -388,7 +388,7 @@ export class GoogleSheetsAction extends GoogleDriveAction {
 
       async retriableResize(maxRows: number, sheet: Sheet, spreadsheetId: string,
                             sheetId: number, attempt: number, webhookId: string):
-                                GaxiosPromise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> {
+                                Promise<GaxiosResponseWithHTTP2<sheets_v4.Schema$BatchUpdateSpreadsheetResponse>> {
         return sheet.spreadsheets.batchUpdate({
             spreadsheetId,
             requestBody: {

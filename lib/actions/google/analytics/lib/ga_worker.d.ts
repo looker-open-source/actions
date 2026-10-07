@@ -28,7 +28,7 @@ export declare class GoogleAnalyticsActionWorker {
     getEntityIds(): any;
     setLastUsedFormParams(): void;
     uploadData(): Promise<void>;
-    deleteOtherFiles(): Promise<import("gaxios").GaxiosResponse<void> | undefined>;
+    deleteOtherFiles(): Promise<import("googleapis-common").GaxiosResponseWithHTTP2<void> | undefined>;
     makeForm(): Promise<Hub.ActionForm>;
     getDataSetSelectOptions(accountSummaries: analytics_v3.Schema$AccountSummary[]): Promise<{
         name: string;
