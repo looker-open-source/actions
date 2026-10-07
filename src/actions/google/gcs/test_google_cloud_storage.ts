@@ -8,10 +8,40 @@ import { GoogleCloudStorageAction } from "./google_cloud_storage"
 
 const action = new GoogleCloudStorageAction()
 
+const BUCKET_FIELD_DESCRIPTION = "Buckets visible to the service account in its configured project." +
+  " Leave blank and use the manual override below to write to a bucket in another project."
+const BUCKET_OVERRIDE_FIELD = {
+  label: "Bucket name (manual override)",
+  name: "bucket_override",
+  type: "string",
+  description: "Optional. Exact GCS bucket name to write to; takes precedence over the dropdown." +
+    " Use this for cross-project delivery where the service account only has" +
+    " storage.objects.create on the target bucket and cannot list buckets.",
+}
+const FILENAME_FIELD = {
+  label: "Filename",
+  name: "filename",
+  type: "string",
+  description: "Optional. Supports UTC tokens, combinable with any separators:" +
+    " {YYYYMMDD}, {YYYY}, {YY}, {MM} (month), {DD}, {HH}, {mm} (minutes), {ss}." +
+    " Note {MM} is month and {mm} is minutes (case-sensitive)." +
+    " GCS object names may contain \"/\", so you can date-partition into folders," +
+    " e.g. \"daily/report_{YYYYMMDD}.csv\" becomes \"daily/report_20260617.csv\".",
+}
+const OVERWRITE_FIELD = {
+  label: "Overwrite",
+  name: "overwrite",
+  options: [{label: "Yes", name: "yes"}, {label: "No", name: "no"}],
+  default: "yes",
+  description: "If Overwrite is enabled, will use the title or filename and overwrite existing data." +
+    " If disabled, a date time will be appended to the name to make the file unique.",
+}
+
 function expectGoogleCloudStorageMatch(request: Hub.ActionRequest,
                                        bucketMatch: string,
                                        fileMatch: string,
-                                       fileSaveMatch: Buffer) {
+                                       fileSaveMatch: Buffer,
+                                       stubNow = true) {
 
   const createWriteStreamSpy = sinon.spy(async () => {
     let data = Buffer.from("")
@@ -35,14 +65,19 @@ function expectGoogleCloudStorageMatch(request: Hub.ActionRequest,
 
   const stubSuggestedFilename = sinon.stub(request as any, "suggestedFilename")
     .callsFake(() => "stubSuggestedFilename")
-  const stubDate = sinon.stub(Date, "now")
-    .callsFake(() => 1234)
+  // When the caller has installed fake timers (sinon.useFakeTimers), Date.now is already replaced,
+  // so stubbing it again would throw. Such callers pass stubNow = false.
+  const stubDate = stubNow ? sinon.stub(Date, "now").callsFake(() => 1234) : undefined
   return chai.expect(action.validateAndExecute(request)).to.be.fulfilled.then(() => {
-    chai.expect(bucketSpy).to.have.been.calledWithMatch(bucketMatch)
+    // Exact match (not calledWithMatch, which does substring matching for strings) so that
+    // whitespace-trimming assertions on the bucket name are meaningful.
+    chai.expect(bucketSpy).to.have.been.calledWith(bucketMatch)
     chai.expect(fileSpy).to.have.been.calledWithMatch(fileMatch)
     stubClient.restore()
     stubSuggestedFilename.restore()
-    stubDate.restore()
+    if (stubDate) {
+      stubDate.restore()
+    }
   })
 }
 
@@ -228,6 +263,215 @@ describe(`${action.constructor.name} unit tests`, () => {
           "mywackyfilename.carl_1234.csv",
           Buffer.from("1,2,3,4", "utf8"))
     })
+
+    it("substitutes the {YYYYMMDD} date token in the filename", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "report_{YYYYMMDD}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "report_20260617.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("substitutes date tokens combined with path segments into a folder key", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "daily/{YYYY}/{MM}/report_{DD}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "daily/2026/06/report_17.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("substitutes the 2-digit {YY} year token combined with other tokens", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "report_{MM}-{DD}-{YY}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "report_06-17-26.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("substitutes UTC time tokens {HH}, {mm}, {ss} alongside date tokens", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17, 8, 30, 45), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "report_{YYYYMMDD}T{HH}{mm}{ss}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "report_20260617T083045.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("distinguishes {MM} month from {mm} minutes (case-sensitive)", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17, 8, 30, 45), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "{MM}_vs_{mm}.csv",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "06_vs_30.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("leaves a filename with no date tokens unchanged", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "plain_report.csv",
+        overwrite: "yes",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        "plain_report.csv",
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("substitutes date tokens before appending the overwrite timestamp", () => {
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 5, 17), toFake: ["Date"] })
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "mybucket",
+        filename: "report_{YYYYMMDD}.csv",
+        overwrite: "no",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "mybucket",
+        `report_20260617_${Date.UTC(2026, 5, 17)}.csv`,
+        Buffer.from("1,2,3,4", "utf8"),
+        false).then(() => clock.restore())
+    })
+
+    it("uses the bucket_override value in preference to the dropdown bucket", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "listedbucket",
+        bucket_override: "partner-bucket",
+        filename: "mywackyfilename",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "partner-bucket",
+        "mywackyfilename",
+        Buffer.from("1,2,3,4", "utf8"))
+    })
+
+    it("trims whitespace from the bucket_override value", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "listedbucket",
+        bucket_override: "  partner-bucket\n",
+        filename: "mywackyfilename",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "partner-bucket",
+        "mywackyfilename",
+        Buffer.from("1,2,3,4", "utf8"))
+    })
+
+    it("falls back to the dropdown bucket when bucket_override is only whitespace", () => {
+      const request = new Hub.ActionRequest()
+      request.type = Hub.ActionType.Dashboard
+      request.params = {
+        client_email: "myemail",
+        private_key: "mykey",
+        project_id: "myproject",
+      }
+      request.formParams = {
+        bucket: "listedbucket",
+        bucket_override: "   ",
+        filename: "mywackyfilename",
+      }
+      request.attachment = {dataBuffer: Buffer.from("1,2,3,4", "utf8")}
+      return expectGoogleCloudStorageMatch(request,
+        "listedbucket",
+        "mywackyfilename",
+        Buffer.from("1,2,3,4", "utf8"))
+    })
   })
 
   describe("form", () => {
@@ -257,29 +501,23 @@ describe(`${action.constructor.name} unit tests`, () => {
         fields: [{
           label: "Bucket",
           name: "bucket",
-          required: true,
+          required: false,
           options: [
             {name: "1", label: "A"},
             {name: "2", label: "B"},
           ],
           type: "select",
+          description: BUCKET_FIELD_DESCRIPTION,
           default: "1",
-        }, {
-          label: "Filename",
-          name: "filename",
-          type: "string",
-        }, {
-          label: "Overwrite",
-          name: "overwrite",
-          options: [{label: "Yes", name: "yes"}, {label: "No", name: "no"}],
-          default: "yes",
-          description: "If Overwrite is enabled, will use the title or filename and overwrite existing data." +
-            " If disabled, a date time will be appended to the name to make the file unique.",
-        }],
+        },
+          BUCKET_OVERRIDE_FIELD,
+          FILENAME_FIELD,
+          OVERWRITE_FIELD,
+        ],
       }).and.notify(stubClient.restore).and.notify(done)
     })
 
-    it("has friendly error with no buckets", (done) => {
+    it("renders form with manual override when no buckets are listed", (done) => {
 
       const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
         .callsFake(() => ({
@@ -293,15 +531,25 @@ describe(`${action.constructor.name} unit tests`, () => {
         project_id: "foo",
       }
       const form = action.validateAndFetchForm(request)
-      chai.expect(form).to.eventually
-        .deep.eq({error: "No buckets in account.", fields: []})
-        .and.notify(stubClient.restore)
-        .and.notify(done)
+      chai.expect(form).to.eventually.deep.equal({
+        fields: [{
+          label: "Bucket",
+          name: "bucket",
+          required: false,
+          options: [],
+          type: "select",
+          description: BUCKET_FIELD_DESCRIPTION,
+        },
+          BUCKET_OVERRIDE_FIELD,
+          FILENAME_FIELD,
+          OVERWRITE_FIELD,
+        ],
+      }).and.notify(stubClient.restore).and.notify(done)
     })
 
   })
 
-  it("has a friendly error when SDK chokes", (done) => {
+  it("renders form with manual override when listing buckets fails", (done) => {
 
     const stubClient = sinon.stub(action as any, "gcsClientFromRequest")
       .callsFake(() => ({
@@ -315,14 +563,20 @@ describe(`${action.constructor.name} unit tests`, () => {
       project_id: "foo",
     }
     const form = action.validateAndFetchForm(request)
-    chai.expect(form).to.eventually
-      .deep.eq({error: `An error occurred while fetching the bucket list.
-
-      Your Google Cloud Storage credentials may be incorrect.
-
-      Google SDK Error: "something weird from your friends at google"`, fields: []})
-      .and.notify(stubClient.restore)
-      .and.notify(done)
+    chai.expect(form).to.eventually.deep.equal({
+      fields: [{
+        label: "Bucket",
+        name: "bucket",
+        required: false,
+        options: [],
+        type: "select",
+        description: BUCKET_FIELD_DESCRIPTION,
+      },
+        BUCKET_OVERRIDE_FIELD,
+        FILENAME_FIELD,
+        OVERWRITE_FIELD,
+      ],
+    }).and.notify(stubClient.restore).and.notify(done)
   })
 
 })
