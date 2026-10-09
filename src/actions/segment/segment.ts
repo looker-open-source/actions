@@ -226,6 +226,13 @@ export class SegmentAction extends Hub.Action {
   ) {
     const traits: { [key: string]: string } = {}
     for (const field of fields) {
+      /**
+       * Using the short label here allows us to specify the exact field we'd like
+       * to send to Segment. Otherwise, the "name" field is determined by Looker for
+       * us, and has its own limitations (e.g. it does not support uppercase characters).
+       */
+      const traitName = field.label_short || field.name
+      
       if (segmentFields.idFieldNames.indexOf(field.name) === -1) {
         if (hiddenFields.indexOf(field.name) === -1) {
           let values: any = {}
