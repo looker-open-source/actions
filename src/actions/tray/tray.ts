@@ -5,9 +5,9 @@ import {WebhookAction} from "../webhook/webhook"
 export class TrayAction extends WebhookAction {
 
   name = "tray"
-  label = "Tray"
+  label = "Tray.ai"
   iconName = "tray/tray.svg"
-  description = "Send data and begin a Tray workflow."
+  description = "Send Looker data to a Tray.ai workflow and start it."
   domain = "trayapp.io"
 
   async form() {

@@ -1,25 +1,15 @@
-# Tray
+# Tray.ai
 
 **This is not an officially supported Google product.**
 
-## Send data and begin a Tray workflow.
+## Send Looker data to a Tray.ai workflow and start it.
 
-This action allows you to send data directly to a Tray workflow. The data format received by Tray will be the `json_detail` format, which has a lot of interesting metadata ([example here](https://github.com/looker/actions/docs/json_detail_example.json)). Build out your Workflow using Looker data!
+This action sends Looker data directly to a Tray.ai workflow. Tray.ai receives the data in the `json_detail` format, which includes query metadata ([example here](https://github.com/looker/actions/docs/json_detail_example.json)). Use the Looker data in any workflow step. Tray iPaaS connects 700+ enterprise systems and adds AI to any workflow step.
 
-1. Go to your Tray [home page](https://tray.io/dashboard).
+1. Sign in to [Tray.ai](https://app.tray.io/) and create a new workflow.
+2. Choose **Webhook** as the trigger. The **Auto respond with HTTP 200** operation is enough for this action.
+3. Open the trigger step options and select **Copy public URL**.
+4. Enable Tray.ai on your Looker Administration page for actions (`/admin/actions`).
+5. In Looker, choose **Send** or **Schedule**, select Tray.ai and paste the copied URL.
 
-![](tray&#32;home.png)
-
-2. Select Create Workflow.
-
-![](tray&#32;webhook.png)
-
-3. Select Add Webhook Connector.
-
-![](tray&#32;webhook&#32;url.png)
-
-4. Select the Far right Settings Gear -> Copy Workflow Public URL.
-
-5. Enable Tray in your in your looker Administration page for actions (/admin/actions).
-
-6. Use the copied webhook URL in Send or Schedule to Tray.
+To restrict who can start the workflow, set a CSRF token in the trigger's advanced properties. For screenshots and all trigger options, see the [Webhook trigger documentation](https://tray.ai/documentation/connectors/trigger/webhook-trigger).
