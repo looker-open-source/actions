@@ -4,7 +4,7 @@ import "./amazon/amazon_s3"
 import "./auger/auger_train"
 import "./azure/azure_storage"
 import "./braze/braze"
-import "./datarobot/datarobot"
+
 import "./digitalocean/digitalocean_droplet"
 import "./digitalocean/digitalocean_object_storage"
 import "./dropbox/dropbox"
